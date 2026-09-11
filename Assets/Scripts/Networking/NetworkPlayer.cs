@@ -1,5 +1,6 @@
 using Fusion;
 using Herbalist.Player;
+using Herbalist.Presentation;
 using UnityEngine;
 
 namespace Herbalist.Networking
@@ -17,6 +18,7 @@ namespace Herbalist.Networking
         [SerializeField] private PlayerController player;
         [SerializeField] private Renderer bodyRenderer;
         [SerializeField] private Material[] slotMaterials;
+        private PlayScreenController screen;
         public static NetworkPlayer Local { get; private set; }
         [Networked] public Vector3 SimulationPosition { get; set; }
         [Networked] public Vector3 SimulationVelocity { get; set; }
@@ -42,6 +44,8 @@ namespace Herbalist.Networking
                 BodyYaw = transform.eulerAngles.y;
                 LookAngles = new Vector2(BodyYaw, player.Tuning.initialPitch);
             }
+            screen = FindFirstObjectByType<PlayScreenController>();
+            if (screen != null) screen.Register(player.View, Slot, HasInputAuthority);
             // Only state authority and the predicting owner run the physical capsule.
             GetComponent<CharacterController>().enabled = !IsProxy;
             player.View.SetLookAngles(LookAngles.x, LookAngles.y);
@@ -89,6 +93,7 @@ namespace Herbalist.Networking
         }
         public override void Despawned(NetworkRunner runner, bool hasState)
         {
+            if (screen != null) screen.Unregister(player.View);
             if (Local == this) Local = null;
             player.SetLocalControl(false);
         }

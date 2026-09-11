@@ -12,6 +12,7 @@ namespace Herbalist.Player
         [SerializeField] private AudioListener audioListener;
         private Quaternion headRest;
         private bool initialized;
+        public Camera Camera => playerCamera;
         public float Yaw { get; private set; }
         public float Pitch { get; private set; }
         public void SetBodyYaw(float yaw) => body.rotation = Quaternion.Euler(0, yaw, 0);
@@ -36,6 +37,13 @@ namespace Herbalist.Player
         {
             if (playerCamera != null) playerCamera.enabled = active;
             if (audioListener != null) audioListener.enabled = active;
+        }
+
+        public void SetPresentation(bool visible, bool audible, Rect viewport)
+        {
+            playerCamera.rect = viewport;
+            playerCamera.enabled = visible;
+            audioListener.enabled = audible;
         }
 
         public void ApplyLook(Vector2 delta)
@@ -63,7 +71,7 @@ namespace Herbalist.Player
             float headPitch = Mathf.Clamp(Pitch, -tuning.headPitchLimit, tuning.headPitchLimit);
             Quaternion target = headRest * Quaternion.Euler(headPitch, headYaw, 0);
             headPivot.localRotation = Quaternion.RotateTowards(headPivot.localRotation, target, tuning.headTurnSpeed * deltaTime);
-            if (!local) return;
+            if (!playerCamera.enabled) return;
             Quaternion rotation = Quaternion.Euler(Pitch, Yaw, 0);
             Vector3 backward = rotation * Vector3.back;
             float distance = tuning.cameraDistance;
