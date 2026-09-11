@@ -5,9 +5,9 @@
 - WASD: camera-relative movement; diagonal input is normalized.
 - Mouse: orbit camera without holding a button; head follows within configured limits.
 - Space: one grounded jump per press. Holding Space does not repeat, and airborne presses do not grant a second jump.
-- Ability bindings remain undecided.
+- Tab: toggle split/personal screen locally. Ability bindings remain undecided.
 
-Use MainMenu for multiplayer. The host spawns one NetworkPlayer for each connected player after both peers enter PlayerMovementPrototype. Spawn points live under PlayerSpawnLayout. Green/orange materials distinguish the two slots. Each peer enables only its own input, camera and AudioListener. Leaving players are despawned by the host.
+Use MainMenu for multiplayer. The host spawns one NetworkPlayer for each connected player after both peers enter PlayerMovementPrototype. Spawn points live under PlayerSpawnLayout. Green/orange materials distinguish the two slots. Each peer enables only its own input and AudioListener. PlayScreenController controls which cameras render. Leaving players are despawned by the host.
 
 Opening PlayerMovementPrototype directly preserves the offline player for local testing. Its scene object is disabled when entering through a Fusion session.
 
@@ -34,3 +34,16 @@ Movement locks suppress voluntary movement and jump while gravity continues. Hos
 - Screenshot inspected with both visible player colors. No gameplay errors in final network run.
 
 Tests ran on one machine through Photon. High-latency/loss tuning, moving-platform support, animation and ability networking are future work. Test input/position logging is development-only; no UI is created at runtime.
+
+
+## Screen modes (2026-09-11)
+
+PlayScreen in PlayerMovementPrototype owns the local presentation mode. Default: split, Duyeong left / Sodam right. Serialized regions map spawn slot 0 (green) to Duyeong and slot 1 (orange) to Sodam; this is not a character selection system. Personal mode renders the local camera fullscreen, with the partner still visible in the world. A missing partner falls back to local fullscreen while preserving the preferred mode.
+
+Change PlayerControls.inputactions > Presentation/ToggleScreen to rebind Tab. The screen component clones this action independently of movement. Screen choice is never network input or an RPC. Initial mode, personal viewport, role/slot mapping and split rectangles are serialized on PlayScreen. PlayerView updates enabled remote cameras using replicated look angles without enabling remote input or audio.
+
+PlayHUD contains authored CommonHUD, DuyeongHUD, SodamHUD and SplitDivider. Character roots resize via anchors and show/hide with SetActive; CommonHUD stays screen-wide. No runtime UI creation. Prototype labels use the existing Latin font. Future interaction indicators belong to the corresponding character root; aiming must use the owning camera's viewport center.
+
+Level/sequence adapters can call SetOverride(owner, mode) and SetOverride(owner, null). The latest active owner wins; any override blocks Tab. Releasing the final override restores the player's preference. Adapters must release their token on exit/disable. This API is local; future authoritative level rules must distribute their state to both peers. No trigger zones or level networking are introduced yet.
+
+Verified with a Windows Development Build and actual Photon Editor Host + separate Client: role-aligned viewports, one AudioListener, Tab/hold behavior, personal fullscreen, nested override restoration, HUD anchors and continued movement. Client finished in Personal while Host remained Split. Both layouts were visually inspected. Partner disconnect returned Host to fullscreen. PlayScreenSmokeTest is opt-in via -herbalist-test-screen in development builds.
