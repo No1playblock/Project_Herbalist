@@ -81,6 +81,19 @@ namespace Herbalist.Player
             playerCamera.transform.SetPositionAndRotation(cameraTarget.position + backward * distance, rotation);
         }
 
+        // Also used by the host for a hidden/remote camera and by split-screen aiming.
+        public Ray GetAimRay(float yaw, float pitch)
+        {
+            pitch = Mathf.Clamp(pitch, tuning.pitchLimits.x, tuning.pitchLimits.y);
+            Quaternion rotation = Quaternion.Euler(pitch, yaw, 0);
+            Vector3 backward = rotation * Vector3.back;
+            float distance = tuning.cameraDistance;
+            if (Physics.SphereCast(cameraTarget.position, tuning.cameraProbeRadius, backward, out RaycastHit hit,
+                distance, tuning.cameraObstacles, QueryTriggerInteraction.Ignore))
+                distance = Mathf.Max(0, hit.distance - tuning.cameraWallPadding);
+            return new Ray(cameraTarget.position + backward * distance, rotation * Vector3.forward);
+        }
+
         private void OnDisable() => SetLocalView(false);
     }
 }
