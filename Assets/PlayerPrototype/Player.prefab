@@ -383,6 +383,9 @@ GameObject:
   - component: {fileID: 7403625881262023461}
   - component: {fileID: 2807452430198039815}
   - component: {fileID: 5213209393404527543}
+  - component: {fileID: 9029222071552065044}
+  - component: {fileID: 377349139973846309}
+  - component: {fileID: 2909113311999606437}
   m_Layer: 2
   m_Name: Player
   m_TagString: Untagged
@@ -499,6 +502,47 @@ MonoBehaviour:
   view: {fileID: 2807452430198039815}
   tuning: {fileID: 11400000, guid: d4650b1bce6ab964a965f7f513e7e170, type: 2}
   locallyControlled: 1
+--- !u!114 &9029222071552065044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7234601531701780049}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f06dce89eef9c3f4ca6473c4c76ad6f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.AbilityInputReader
+  cycle: {fileID: 11400000, guid: 19d5a72529548a64bb23e3509d80884f, type: 2}
+  use: {fileID: 11400000, guid: 2d5372bfff920b2449dfb370ac2129d1, type: 2}
+--- !u!114 &377349139973846309
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7234601531701780049}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ad9ef2ddb4bc784195fd0df3fa39151, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.LeafThrowAbility
+  settings: {fileID: 11400000, guid: 90ae7992ac06e1a47b11aafd7312d4a3, type: 2}
+  launchFrame: {fileID: 5317734854731831256}
+--- !u!114 &2909113311999606437
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7234601531701780049}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 202f5a4a89b415f438cfd058ece6ae9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.PlayerAbilityController
+  prototypeOfflineUnlock: 1
 --- !u!1 &7478575300291906797
 GameObject:
   m_ObjectHideFlags: 0
