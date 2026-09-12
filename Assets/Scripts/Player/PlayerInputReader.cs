@@ -14,7 +14,7 @@ namespace Herbalist.Player
         public uint JumpSequence { get; private set; }
         private bool active;
         public Vector2 Move => active ? moveAction.ReadValue<Vector2>() : Vector2.zero;
-        public Vector2 Look => active && (!requireOrbitButton || orbitAction.IsPressed()) ? lookAction.ReadValue<Vector2>() : Vector2.zero;
+        public Vector2 Look => active && Herbalist.Presentation.GameplayCursor.AllowsPointerInput && (!requireOrbitButton || orbitAction.IsPressed()) ? lookAction.ReadValue<Vector2>() : Vector2.zero;
 
         public bool Initialize()
         {

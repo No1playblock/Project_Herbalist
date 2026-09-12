@@ -68,6 +68,11 @@ namespace Herbalist.Presentation
             if (mode.HasValue) overrides.Add(new KeyValuePair<object, PlayScreenMode>(owner, mode.Value));
             Apply();
         }
+        public PlayerView ViewForSlot(int slot)
+        {
+            foreach (var region in regions) if (region.spawnSlot == slot) return region.view;
+            return null;
+        }
         public void Register(PlayerView view, int slot, bool local)
         {
             foreach (var region in regions)

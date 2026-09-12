@@ -47,3 +47,31 @@ PlayHUD contains authored CommonHUD, DuyeongHUD, SodamHUD and SplitDivider. Char
 Level/sequence adapters can call SetOverride(owner, mode) and SetOverride(owner, null). The latest active owner wins; any override blocks Tab. Releasing the final override restores the player's preference. Adapters must release their token on exit/disable. This API is local; future authoritative level rules must distribute their state to both peers. No trigger zones or level networking are introduced yet.
 
 Verified with a Windows Development Build and actual Photon Editor Host + separate Client: role-aligned viewports, one AudioListener, Tab/hold behavior, personal fullscreen, nested override restoration, HUD anchors and continued movement. Client finished in Personal while Host remained Split. Both layouts were visually inspected. Partner disconnect returned Host to fullscreen. PlayScreenSmokeTest is opt-in via -herbalist-test-screen in development builds.
+
+
+## Leaf ability prototype (2026-09-12)
+
+R cycles Off -> Pin -> Platform -> Off. Left-click throws only in Pin/Platform mode. Bindings are Ability/Cycle and Ability/Use in PlayerControls.inputactions. The selected form is copied into the projectile at launch. Turning the ability off does not remove existing leaves. Shots follow a curved path and return on a miss or an incompatible surface. Only authored LeafInstallTarget components accept installation.
+
+LeafAbilitySettings.asset contains range, speed, arc width, collision radius, return speed, cooldown, capacity (3), lifetime (5 seconds), launch offset and offline prefab. Installed platforms are solid on the Leaf layer. The projectile hit mask excludes that layer so an existing leaf does not incorrectly intercept another shot; the player still collides with platforms.
+
+Flying, installed and returning leaves all occupy capacity. At capacity, clicking recalls the oldest installed leaf and waits for THAT leaf to return. It does not queue an automatic throw; click again afterwards. If all leaves are airborne/returning there is no installation to recall, so additional input is ignored. Recall immediately removes the platform collider and pin effect. Expiry, capacity recovery, revoke and owner cleanup share the same release path.
+
+PlayerAbilityController exposes UnlockLeaf/RevokeLeaf for future authoritative potion effects. Offline test grant is serialized on Player.prefab; NetworkLeafAbility.prototypeUnlockSlots grants slots 0 and 1 (Duyeong and Sodam) for multiplayer testing. The offline character also receives a test grant regardless of its temporary role label. No potion UI or crafting system is implemented.
+
+LeafThrowAbility/LeafProjectile contain gameplay; NetworkLeafAbility/NetworkLeafProjectile adapt spawning, input and state to Fusion. Host alone advances leaf gameplay and decides hits, timers and installation. Clients render NetworkTransform poses and apply replicated form/state/target IDs to colliders and target effects. Movement remains predicted, but this first leaf implementation waits for Host confirmation rather than predicting projectiles. Do not call authority grant functions from client potion UI; future potion validation belongs on Host.
+
+LeafInstallTarget defines allowed forms, optional socket and installation/release UnityEvents. Each scene target needs a unique positive targetId for replicas. SapBindingSource is an integration hook: authority calls Deposit before the shot; only a subsequent leaf hit binds it. Bound leaves and sap remain until recall, and sap deposited after installation never retroactively binds. Standalone sap creation/movement/network replication is not implemented here; a future sap ability must own that lifecycle. Local test targets provide this hook for automated checks, not a new player sap input.
+
+PlayerMovementPrototype/LeafAbilityTestTargets has PlatformTarget (x=6,z=6) and PinTarget (x=-6,z=6). The pin target lights an indicator while pinned. This verifies the target event contract; real maze plugs and altar behavior will implement their own reactions. The player's LeafHUD is preauthored under each character HUD, with mode/count and an active-mode reticle. No UI objects are created at runtime.
+
+Verification: Editor LeafAbilityChecks.Run exercises real virtual R/click input, Off blocking, incompatible target return, immutable thrown form, five-second expiry, revoke/unlock, sap ordering/binding/removal, three-leaf capacity and pin effect release. Windows Development Build passed; actual Photon Editor Host + separate Client with -herbalist-test-leaf passed authoritative spawning, three replicated solid platforms, R mode replication, oldest recall, Off and expiry. High latency/loss and moving-platform carrying are not validated by these local-machine checks.
+
+Additional multiplayer check: a different player stood grounded on the bound leaf platform; disconnecting its owner removed all leaves and the standing player fell and landed normally.
+
+
+## Gameplay cursor
+
+GameplayCursor on PlayScreen locks and hides the cursor during focused gameplay. Escape releases it; clicking inside Game View captures it again. The capture click is consumed and cannot throw a leaf. Look and ability inputs are blocked while released or unfocused; movement is unchanged. Returning focus does not steal the cursor: click to resume. Scene exit/disable releases it for menus. Future menus call SetUiMode(owner, true/false); any open owner blocks recapture. Bindings are Presentation/ReleaseCursor and Presentation/CaptureCursor. Pointer input smoke tests now require a focused, captured Game View/player window. Verified virtual input: normal click, Escape, consumed recapture click, next click and menu blocking.
+
+Pin-form leaves now install horizontally and support players with an authored collider, while retaining their target-pinning effect. Both offline and network prefabs are updated; replica state enables the same collider. Verified horizontal orientation, actual CharacterController standing, and immediate collider/effect removal on recall in play mode.

@@ -140,6 +140,10 @@ GameObject:
   - component: {fileID: 5855557322306971455}
   - component: {fileID: 24017493883435909}
   - component: {fileID: 5091712788411109560}
+  - component: {fileID: 2806766869484487668}
+  - component: {fileID: 6297139529326489436}
+  - component: {fileID: 8198797577182379482}
+  - component: {fileID: 6708749211600563885}
   m_Layer: 8
   m_Name: NetworkPlayer
   m_TagString: Untagged
@@ -276,6 +280,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 24017493883435909}
   - {fileID: 5091712788411109560}
+  - {fileID: 6708749211600563885}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &24017493883435909
 MonoBehaviour:
@@ -344,6 +349,61 @@ MonoBehaviour:
   _MovementBlocked:
     RawValue: 0
   _Slot: 0
+--- !u!114 &2806766869484487668
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4785592984878322728}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f06dce89eef9c3f4ca6473c4c76ad6f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.AbilityInputReader
+  cycle: {fileID: 11400000, guid: 19d5a72529548a64bb23e3509d80884f, type: 2}
+  use: {fileID: 11400000, guid: 2d5372bfff920b2449dfb370ac2129d1, type: 2}
+--- !u!114 &6297139529326489436
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4785592984878322728}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ad9ef2ddb4bc784195fd0df3fa39151, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.LeafThrowAbility
+  settings: {fileID: 11400000, guid: 90ae7992ac06e1a47b11aafd7312d4a3, type: 2}
+  launchFrame: {fileID: 8245535206254052208}
+--- !u!114 &8198797577182379482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4785592984878322728}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 202f5a4a89b415f438cfd058ece6ae9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.PlayerAbilityController
+  prototypeOfflineUnlock: 1
+--- !u!114 &6708749211600563885
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4785592984878322728}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94248a1fe2bf35c44affafdce64c555f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Networking.NetworkLeafAbility
+  leafPrefab: {fileID: 8265695948419732421, guid: 8c8be797dbccc1a43b95d90fa2a9b008, type: 3}
+  prototypeUnlockSlots: 0000000001000000i
 --- !u!1 &5455624637811504777
 GameObject:
   m_ObjectHideFlags: 0
