@@ -35,16 +35,17 @@ namespace Herbalist.Abilities
             Vector3 up = Mathf.Abs(Vector3.Dot(forward.normalized, Vector3.up)) > 0.99f ? Vector3.forward : Vector3.up;
             return Quaternion.LookRotation(forward, up);
         }
-        public bool TryBind(LeafProjectile leaf) => sap != null && sap.TryBind(leaf);
+        public bool TryBind(LeafProjectile leaf) => SapDeposit.TryBind(leaf) || (GetComponent<SapReceiver>() == null && sap != null && sap.TryBind(leaf));
         public void Attach(LeafProjectile leaf, bool bound)
         {
             bool before = Pinned; occupants.Add(leaf);
-            if (bound && sap != null) sap.ShowBound(leaf);
+            if (bound && GetComponent<SapReceiver>() == null && sap != null) sap.ShowBound(leaf);
             if (!before && Pinned) onPinned.Invoke();
         }
         public void Detach(LeafProjectile leaf)
         {
             bool before = Pinned; occupants.Remove(leaf);
+            SapDeposit.Release(leaf);
             if (sap != null) sap.Release(leaf);
             if (before && !Pinned) onReleased.Invoke();
         }
