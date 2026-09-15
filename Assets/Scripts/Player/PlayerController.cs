@@ -45,7 +45,6 @@ namespace Herbalist.Player
             Vector3 direction = view.PlanarRotation * new Vector3(movement.x, 0, movement.y);
             if (lastJump != input.JumpSequence) { lastJump = input.JumpSequence; motor.TryJump(); }
             motor.Simulate(direction * tuning.moveSpeed, Time.deltaTime);
-            if (!motor.MovementLocked) view.FaceMovement(direction, Time.deltaTime);
         }
         private void LateUpdate() { if (ready) view.Present(Time.deltaTime, locallyControlled); }
         private void OnDisable()
