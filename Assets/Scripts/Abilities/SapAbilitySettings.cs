@@ -7,6 +7,7 @@ namespace Herbalist.Abilities
     public sealed class SapAbilitySettings : ScriptableObject
     {
         public SapDeposit offlinePrefab;
+        public Vector3 extractionProbeOffset = new Vector3(0, 1.3f, 0);
         [Min(0.1f)] public float extractionRange = 3;
         [Min(0.1f)] public float controlRange = 18;
         [Min(0.1f)] public float freeAimDistance = 10;
