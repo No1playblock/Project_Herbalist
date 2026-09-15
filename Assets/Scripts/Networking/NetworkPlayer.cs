@@ -21,6 +21,7 @@ namespace Herbalist.Networking
         [SerializeField] private Renderer bodyRenderer;
         [SerializeField] private Material[] slotMaterials;
         private PlayScreenController screen;
+        private PlayerCharacterPresentation characterPresentation;
         public static NetworkPlayer Local { get; private set; }
         [Networked] public Vector3 SimulationPosition { get; set; }
         [Networked] public Vector3 SimulationVelocity { get; set; }
@@ -37,6 +38,8 @@ namespace Herbalist.Networking
         public override void Spawned()
         {
             player.SetNetworkControl(HasInputAuthority);
+            characterPresentation = GetComponent<PlayerCharacterPresentation>();
+            if (characterPresentation != null) characterPresentation.SetNetworkSlot(Slot);
             if (HasInputAuthority) Local = this;
             if (HasStateAuthority)
             {
@@ -93,6 +96,7 @@ namespace Herbalist.Networking
         public override void Render()
         {
             player.View.SetBodyYaw(BodyYaw);
+            if (characterPresentation != null) characterPresentation.SetNetworkGrounded(Grounded);
             if (!HasInputAuthority) player.View.SetLookAngles(LookAngles.x, LookAngles.y);
         }
         public override void Despawned(NetworkRunner runner, bool hasState)
