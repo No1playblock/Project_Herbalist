@@ -15,6 +15,8 @@ namespace Herbalist.Abilities
         [Min(0)] public float curveWidth = 0f;
         [Min(0)] public float collisionRadius = 0.08f;
         [Min(0)] public float surfaceOffset = 0.12f;
+        [Min(0)] public float tipEmbedDepth = 0.12f;
+        [Range(0, 0.49f)] public float maxEmbedFraction = 0.1f;
         [Min(0.01f)] public float catchDistance = 0.25f;
         [Min(0)] public float cooldown = 0.25f;
         public Vector3 launchOffset = new Vector3(0f, 1.3f, 0.5f);
