@@ -387,6 +387,7 @@ GameObject:
   - component: {fileID: 377349139973846309}
   - component: {fileID: 2909113311999606437}
   - component: {fileID: 6907332106242619443}
+  - component: {fileID: 4135782989056626551}
   m_Layer: 2
   m_Name: Player
   m_TagString: Untagged
@@ -558,6 +559,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapControlAbility
   settings: {fileID: 11400000, guid: b2301629831e379419adaf8d2b24dc27, type: 2}
+--- !u!114 &4135782989056626551
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7234601531701780049}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35bffeec0a9da0246af8a4b10e4330d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.OfflineAbilitySwitcher
+  switchAbility: {fileID: 11400000, guid: 2f3895318fb57804baf216a7cb39e92e, type: 2}
 --- !u!1 &7478575300291906797
 GameObject:
   m_ObjectHideFlags: 0
