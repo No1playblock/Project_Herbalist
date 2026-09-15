@@ -19,6 +19,8 @@ namespace Herbalist.Player
         [SerializeField] private string playbackParameter = "PlaybackDirection";
         [SerializeField, Range(0, 1)] private float backwardThreshold = 0.1f;
         [SerializeField, Min(0)] private float speedDamping = 0.12f;
+        [SerializeField, Min(0)] private float stoppedSpeedThreshold = 0.05f;
+        [SerializeField, Min(0)] private float stopDamping = 0.04f;
         [SerializeField, Min(0.01f)] private float teleportDistance = 2f;
         private Transform head;
         private Vector3 previousPosition;
@@ -68,7 +70,9 @@ namespace Herbalist.Player
             previousPosition = transform.position;
             if (!characterRoot.activeInHierarchy || Time.deltaTime <= 0) return;
             float speed = delta.magnitude > teleportDistance ? 0 : Vector3.ProjectOnPlane(delta, Vector3.up).magnitude / Time.deltaTime;
-            animator.SetFloat(speedId, speed, speedDamping, Time.deltaTime);
+            // Use a shorter blend when stopping without snapping the current speed to zero.
+            bool stopping = speed <= stoppedSpeedThreshold;
+            animator.SetFloat(speedId, stopping ? 0 : speed, stopping ? stopDamping : speedDamping, Time.deltaTime);
             Vector3 planar = Vector3.ProjectOnPlane(delta, Vector3.up);
             animator.SetFloat(playbackId, Vector3.Dot(planar.normalized, body.forward) < -backwardThreshold ? -1f : 1f);
             animator.SetBool(groundedId, network ? grounded : motor.IsGrounded);
