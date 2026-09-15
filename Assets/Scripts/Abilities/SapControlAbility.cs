@@ -13,57 +13,84 @@ namespace Herbalist.Abilities
         private Action<SapDeposit> destroy;
         private PlayerController player;
         private SapSource source;
-        private Vector3 controlOrigin;
         private SapDeposit held;
-        private bool externalTick;
+        private bool externalTick, replicaReady;
+        private float sourceRefresh;
         public SapAbilitySettings Settings => settings;
         public bool Controlling { get; private set; }
         public bool CanPlace { get; private set; }
+        public bool Ready => held != null ? held.State == SapState.Controlled : replicaReady;
         public int ActiveCount => deposits.Count;
         public SapDeposit Held => held;
         private void Awake() => player = GetComponent<PlayerController>();
         public void Configure(Func<SapDeposit> factory, Action<SapDeposit> release, bool network)
         { create = factory; destroy = release; externalTick = network; }
+        public Vector3 HoverPosition(Ray aim)
+        {
+            var forward = Vector3.ProjectOnPlane(aim.direction, Vector3.up);
+            var rotation = forward.sqrMagnitude > 0.000001f ? Quaternion.LookRotation(forward) : player.View.PlanarRotation;
+            return transform.position + rotation * settings.hoverOffset;
+        }
         public void Toggle()
         {
             if (Controlling) { Cancel(); return; }
             if (settings == null || create == null || deposits.Count >= settings.capacity) return;
-            source = SapSource.FindNearest(transform.position + settings.extractionProbeOffset, settings.extractionRange, settings.radius + settings.surfaceOffset, out controlOrigin);
+            source = SapSource.FindNearest(transform.position + settings.extractionProbeOffset, settings.extractionRange,
+                settings.radius + settings.surfaceOffset, out var origin);
             if (source == null || !source.TryExtract()) return;
             held = create();
             if (held == null) { source.Refund(); source = null; return; }
-            deposits.Add(held); held.Initialize(settings, controlOrigin, Remove, externalTick);
+            deposits.Add(held); held.Initialize(settings, origin, Remove, externalTick);
+            source.TryClosestSurface(origin, out var surface, out _);
+            held.BeginExtraction(surface); sourceRefresh = 0;
             Controlling = true; player.Motor.SetMovementLock(this, true);
+        }
+        // Shared by the authoritative shot check and the owner's purely visual preview.
+        public bool TryPlacement(Ray aim, Vector3 origin, out SapReceiver receiver, out Vector3 placement, out Vector3 normal)
+        {
+            receiver = null; placement = normal = default;
+            float rayRange = settings.controlRange + Vector3.Distance(aim.origin, origin);
+            if (!Physics.Raycast(aim, out var hit, rayRange, settings.collisionMask, QueryTriggerInteraction.Ignore)) return false;
+            receiver = hit.collider.GetComponentInParent<SapReceiver>();
+            if (receiver == null || !receiver.TryPlacement(hit, settings.surfaceOffset, out placement, out normal)) return false;
+            Vector3 delta = placement - origin;
+            if (delta.magnitude > settings.controlRange) return false;
+            if (Physics.SphereCast(origin, settings.radius, delta.normalized, out var block, delta.magnitude,
+                settings.collisionMask, QueryTriggerInteraction.Ignore))
+                return block.collider.GetComponentInParent<SapReceiver>() == receiver &&
+                    Vector3.Distance(block.point, placement) <= settings.radius + settings.placementTolerance;
+            return true;
         }
         public void Tick(Ray aim, bool use, float dt)
         {
             CanPlace = false;
             if (!Controlling) return;
-            if (held == null || source == null || !source.isActiveAndEnabled ||
-                Vector3.Distance(transform.position, controlOrigin) > settings.controlRange)
+            if (held == null || source == null || !source.isActiveAndEnabled || held.State == SapState.Complete)
             { Cancel(); return; }
-            Vector3 desired = aim.GetPoint(settings.freeAimDistance);
-            SapReceiver receiver = null; Vector3 placement = default, normal = default;
-            bool valid = false;
-            if (Physics.Raycast(aim, out var hit, settings.controlRange + Vector3.Distance(aim.origin, controlOrigin), settings.collisionMask, QueryTriggerInteraction.Ignore))
-            {
-                desired = hit.point + hit.normal * (settings.radius + settings.surfaceOffset);
-                receiver = hit.collider.GetComponentInParent<SapReceiver>();
-                valid = receiver != null && receiver.TryPlacement(hit, settings.surfaceOffset, out placement, out normal);
-                valid &= Vector3.Distance(controlOrigin, placement) <= settings.controlRange;
-            }
-            desired = controlOrigin + Vector3.ClampMagnitude(desired - controlOrigin, settings.controlRange);
-            Vector3 next = Vector3.MoveTowards(held.transform.position, desired, settings.moveSpeed * dt);
+            Vector3 hover = HoverPosition(aim);
+            Vector3 next = Vector3.MoveTowards(held.transform.position, hover, settings.extractionSpeed * dt);
+            // The connected source is allowed at extraction's start; unrelated obstacles stop the pull.
             Vector3 delta = next - held.transform.position;
-            if (delta.sqrMagnitude > 0.000001f && Physics.SphereCast(held.transform.position, settings.radius, delta.normalized, out var block, delta.magnitude, settings.collisionMask, QueryTriggerInteraction.Ignore))
-                next = held.transform.position + delta.normalized * Mathf.Max(0, block.distance - settings.surfaceOffset);
+            if (delta.sqrMagnitude > 0.000001f && Physics.SphereCast(held.transform.position, settings.radius,
+                delta.normalized, out var obstruction, delta.magnitude, settings.collisionMask, QueryTriggerInteraction.Ignore) &&
+                obstruction.collider.GetComponentInParent<SapSource>() != source)
+            { Cancel(); return; }
             held.transform.position = next;
-            CanPlace = valid && Vector3.Distance(next, placement) <= settings.radius + settings.placementTolerance;
-            if (!use || !CanPlace) return;
-            var deposited = held;
-            held = null; EndControl();
-            if (deposited.RefreshAt(receiver, placement)) deposited.Finish();
-            else deposited.Place(receiver, placement, normal);
+            if (Vector3.Distance(next, hover) <= settings.arrivalTolerance) held.SetHeld();
+            sourceRefresh -= dt;
+            if (sourceRefresh <= 0)
+            {
+                sourceRefresh = settings.sourceRefreshInterval;
+                if (!source.TryClosestSurface(next, out var surface, out _) ||
+                    Vector3.Distance(surface, transform.position + settings.extractionProbeOffset) > settings.controlRange)
+                { Cancel(); return; }
+                held.SetStream(surface, true);
+            }
+            CanPlace = Ready && TryPlacement(aim, next, out _, out _, out _);
+            if (!use || !CanPlace || !TryPlacement(aim, next, out var receiver, out var placement, out var normal)) return;
+            var launched = held; held = null;
+            launched.Launch(receiver, placement, normal);
+            EndControl();
         }
         public void Cancel()
         {
@@ -75,10 +102,11 @@ namespace Herbalist.Abilities
             EndControl();
         }
         private void EndControl()
-        { source = null; Controlling = false; CanPlace = false; if (player != null) player.Motor.SetMovementLock(this, false); }
+        { source = null; Controlling = false; CanPlace = false; replicaReady = false; if (player != null) player.Motor.SetMovementLock(this, false); }
         private void Remove(SapDeposit sap) { deposits.Remove(sap); destroy?.Invoke(sap); }
         public void Clear() { Cancel(); foreach (var sap in deposits.ToArray()) if (sap != null) sap.Finish(); deposits.Clear(); }
-        public void ApplyReplica(bool controlling, bool canPlace) { Controlling = controlling; CanPlace = canPlace; }
+        public void ApplyReplica(bool controlling, bool canPlace, bool ready = false)
+        { Controlling = controlling; CanPlace = canPlace; replicaReady = ready; }
         private void OnDisable() { Clear(); }
     }
 }

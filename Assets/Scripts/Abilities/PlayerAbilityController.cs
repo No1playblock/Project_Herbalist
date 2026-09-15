@@ -67,8 +67,8 @@ namespace Herbalist.Abilities
             }
             DisplayCount = Kind == PlayerAbilityKind.Sap && Sap != null ? Sap.ActiveCount : Leaf.ActiveCount; DisplayRecovering = Leaf.Recovering;
         }
-        public void ApplyReplica(bool unlocked, LeafMode mode, int count, bool recovering, PlayerAbilityKind kind = PlayerAbilityKind.Leaf, bool controlling = false, bool canPlace = false)
-        { Kind = kind; if (Sap != null) Sap.ApplyReplica(controlling, canPlace); Unlocked = unlocked; Mode = mode; DisplayCount = count; DisplayRecovering = recovering; }
+        public void ApplyReplica(bool unlocked, LeafMode mode, int count, bool recovering, PlayerAbilityKind kind = PlayerAbilityKind.Leaf, bool controlling = false, bool canPlace = false, bool ready = false)
+        { Kind = kind; if (Sap != null) Sap.ApplyReplica(controlling, canPlace, ready); Unlocked = unlocked; Mode = mode; DisplayCount = count; DisplayRecovering = recovering; }
         private void OnDisable() { if (authority && Leaf != null) Leaf.Clear(); if (authority && Sap != null) Sap.Clear(); }
     }
 }
