@@ -30,7 +30,7 @@ namespace Herbalist.Abilities
         public Quaternion Rotation(LeafMode mode, Vector3 normal, Vector3 heading)
         {
             if (socket != null && mode != LeafMode.Pin) return socket.rotation;
-            Vector3 forward = Vector3.ProjectOnPlane(socket != null ? socket.forward : (mode == LeafMode.Pin ? -normal : heading), Vector3.up);
+            Vector3 forward = Vector3.ProjectOnPlane(heading, Vector3.up);
             if (forward.sqrMagnitude < 0.001f) forward = Vector3.forward;
             Vector3 up = Mathf.Abs(Vector3.Dot(forward.normalized, Vector3.up)) > 0.99f ? Vector3.forward : Vector3.up;
             return Quaternion.LookRotation(forward, up);
