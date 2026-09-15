@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 1810984950379543728}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.3, z: 0}
+  m_LocalPosition: {x: 0, y: 2.1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -144,6 +144,7 @@ GameObject:
   - component: {fileID: 6297139529326489436}
   - component: {fileID: 8198797577182379482}
   - component: {fileID: 6708749211600563885}
+  - component: {fileID: 2281683777917986764}
   m_Layer: 8
   m_Name: NetworkPlayer
   m_TagString: Untagged
@@ -390,6 +391,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.PlayerAbilityController
   prototypeOfflineUnlock: 1
+  prototypeOfflineAbility: 1
 --- !u!114 &6708749211600563885
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -403,7 +405,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Networking.NetworkLeafAbility
   leafPrefab: {fileID: 8265695948419732421, guid: 8c8be797dbccc1a43b95d90fa2a9b008, type: 3}
-  prototypeUnlockSlots: 0000000001000000i
+  sapPrefab: {fileID: 8293350883400916443, guid: 76a9dd702732e874897feee8287c57ff, type: 3}
+  prototypeSapSlots: 00000000i
+  prototypeUnlockSlots: 01000000i
+--- !u!114 &2281683777917986764
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4785592984878322728}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ee595ce58f9a0444baf27c250532954, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapControlAbility
+  settings: {fileID: 11400000, guid: b2301629831e379419adaf8d2b24dc27, type: 2}
 --- !u!1 &5455624637811504777
 GameObject:
   m_ObjectHideFlags: 0
