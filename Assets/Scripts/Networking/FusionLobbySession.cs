@@ -21,6 +21,7 @@ namespace Herbalist.Networking
         public LobbyState State { get; private set; }
         public string Message { get; private set; }
         public string RoomName { get; private set; }
+        public bool HasNetworkSession => runner != null || connecting || started || loadRequested;
         public int ConnectedCount => runner != null && runner.IsRunning ? runner.ActivePlayers.Count() : 0;
         public event Action Changed;
         private NetworkRunner runner;
