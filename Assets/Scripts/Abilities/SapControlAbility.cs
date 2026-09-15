@@ -13,6 +13,7 @@ namespace Herbalist.Abilities
         private Action<SapDeposit> destroy;
         private PlayerController player;
         private SapSource source;
+        private Vector3 controlOrigin;
         private SapDeposit held;
         private bool externalTick;
         public SapAbilitySettings Settings => settings;
@@ -27,11 +28,11 @@ namespace Herbalist.Abilities
         {
             if (Controlling) { Cancel(); return; }
             if (settings == null || create == null || deposits.Count >= settings.capacity) return;
-            source = SapSource.FindNearest(transform.position, settings.extractionRange);
+            source = SapSource.FindNearest(transform.position + settings.extractionProbeOffset, settings.extractionRange, settings.radius + settings.surfaceOffset, out controlOrigin);
             if (source == null || !source.TryExtract()) return;
             held = create();
             if (held == null) { source.Refund(); source = null; return; }
-            deposits.Add(held); held.Initialize(settings, source.ExtractionPoint, Remove, externalTick);
+            deposits.Add(held); held.Initialize(settings, controlOrigin, Remove, externalTick);
             Controlling = true; player.Motor.SetMovementLock(this, true);
         }
         public void Tick(Ray aim, bool use, float dt)
@@ -39,19 +40,19 @@ namespace Herbalist.Abilities
             CanPlace = false;
             if (!Controlling) return;
             if (held == null || source == null || !source.isActiveAndEnabled ||
-                Vector3.Distance(transform.position, source.ExtractionPoint) > settings.controlRange)
+                Vector3.Distance(transform.position, controlOrigin) > settings.controlRange)
             { Cancel(); return; }
             Vector3 desired = aim.GetPoint(settings.freeAimDistance);
             SapReceiver receiver = null; Vector3 placement = default, normal = default;
             bool valid = false;
-            if (Physics.Raycast(aim, out var hit, settings.controlRange + Vector3.Distance(aim.origin, source.ExtractionPoint), settings.collisionMask, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(aim, out var hit, settings.controlRange + Vector3.Distance(aim.origin, controlOrigin), settings.collisionMask, QueryTriggerInteraction.Ignore))
             {
                 desired = hit.point + hit.normal * (settings.radius + settings.surfaceOffset);
                 receiver = hit.collider.GetComponentInParent<SapReceiver>();
                 valid = receiver != null && receiver.TryPlacement(hit, settings.surfaceOffset, out placement, out normal);
-                valid &= Vector3.Distance(source.ExtractionPoint, placement) <= settings.controlRange;
+                valid &= Vector3.Distance(controlOrigin, placement) <= settings.controlRange;
             }
-            desired = source.ExtractionPoint + Vector3.ClampMagnitude(desired - source.ExtractionPoint, settings.controlRange);
+            desired = controlOrigin + Vector3.ClampMagnitude(desired - controlOrigin, settings.controlRange);
             Vector3 next = Vector3.MoveTowards(held.transform.position, desired, settings.moveSpeed * dt);
             Vector3 delta = next - held.transform.position;
             if (delta.sqrMagnitude > 0.000001f && Physics.SphereCast(held.transform.position, settings.radius, delta.normalized, out var block, delta.magnitude, settings.collisionMask, QueryTriggerInteraction.Ignore))

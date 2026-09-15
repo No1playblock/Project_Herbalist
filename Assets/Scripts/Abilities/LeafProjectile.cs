@@ -11,7 +11,7 @@ namespace Herbalist.Abilities
         private LeafAbilitySettings settings;
         private Transform owner;
         private Action<LeafProjectile> release;
-        private Vector3 start, destination, curveRight, localPosition;
+        private Vector3 start, destination, curveRight, localPosition, localContactPoint;
         private Quaternion localRotation;
         private float progress, duration, remaining;
         private bool initialized, externalTick;
@@ -19,6 +19,7 @@ namespace Herbalist.Abilities
         public LeafState State { get; private set; } = LeafState.Complete;
         public LeafInstallTarget Target { get; private set; }
         public float InstalledAt { get; private set; }
+        public Vector3 ContactPoint => Target != null ? Target.transform.TransformPoint(localContactPoint) : transform.position;
         public bool Installed => State == LeafState.Installed || State == LeafState.Bound;
         public void Initialize(LeafAbilitySettings config, Transform returningOwner, LeafMode mode, Vector3 origin, Vector3 aim, Action<LeafProjectile> onRelease, bool network)
         {
@@ -73,12 +74,41 @@ namespace Herbalist.Abilities
         private void Install(LeafInstallTarget target, Vector3 hit, Vector3 normal, Vector3 heading)
         {
             Target = target;
-            transform.SetPositionAndRotation(target.Position(hit, normal, settings.surfaceOffset), target.Rotation(Mode, normal, heading));
+            localContactPoint = target.transform.InverseTransformPoint(hit);
+            transform.SetPositionAndRotation(hit, target.Rotation(Mode, normal, heading));
+            transform.position = target.Position(hit, normal, TipPlacementOffset(normal));
             localPosition = target.transform.InverseTransformPoint(transform.position);
             localRotation = Quaternion.Inverse(target.transform.rotation) * transform.rotation;
             State = target.TryBind(this) ? LeafState.Bound : LeafState.Installed;
             remaining = settings.lifetime; InstalledAt = Time.time;
             target.Attach(this, State == LeafState.Bound); RefreshVisuals();
+        }
+        private float TipPlacementOffset(Vector3 normal)
+        {
+            var visual = Mode == LeafMode.Pin ? pinVisual : platformVisual;
+            var filter = visual != null ? visual.GetComponent<MeshFilter>() : null;
+            if (filter == null || filter.sharedMesh == null) return settings.surfaceOffset;
+            var mesh = filter.sharedMesh;
+            Vector3[] points;
+            if (mesh.isReadable) points = mesh.vertices;
+            else
+            {
+                // Conservative fallback for imported meshes without CPU-readable vertices.
+                var bounds = mesh.bounds; points = new Vector3[8];
+                for (int i = 0; i < points.Length; i++)
+                    points[i] = bounds.center + Vector3.Scale(bounds.extents,
+                        new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1));
+            }
+            float minimum = float.PositiveInfinity, maximum = float.NegativeInfinity;
+            foreach (var point in points)
+            {
+                float projection = Vector3.Dot(filter.transform.TransformPoint(point) - transform.position, normal);
+                minimum = Mathf.Min(minimum, projection); maximum = Mathf.Max(maximum, projection);
+            }
+            if (points.Length == 0) return settings.surfaceOffset;
+            // Thin faces must not disappear into floors when the configured depth exceeds their thickness.
+            float depth = Mathf.Min(settings.tipEmbedDepth, (maximum - minimum) * settings.maxEmbedFraction);
+            return -minimum - depth;
         }
         public void BeginReturn()
         {

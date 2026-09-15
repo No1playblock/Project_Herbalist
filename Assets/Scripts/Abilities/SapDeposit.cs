@@ -62,7 +62,7 @@ namespace Herbalist.Abilities
             foreach (var sap in all)
             {
                 if (!sap.authority || sap.State != SapState.Attached || sap.remaining <= 0 || sap.Receiver == null || sap.Receiver.LeafTarget != leaf.Target) continue;
-                float candidate = Vector3.Distance(leaf.transform.position, sap.transform.position);
+                float candidate = Vector3.Distance(leaf.ContactPoint, sap.transform.position);
                 if (candidate <= sap.settings.bindingRadius && candidate < distance) { nearest = sap; distance = candidate; }
             }
             if (nearest == null) return false;

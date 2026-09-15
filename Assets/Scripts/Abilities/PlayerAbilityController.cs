@@ -32,6 +32,18 @@ namespace Herbalist.Abilities
         public bool UnlockLeaf() { if (!authority) return false; if (Unlocked && Kind != PlayerAbilityKind.Leaf) return false; Kind = PlayerAbilityKind.Leaf; Unlocked = true; return true; }
         public bool UnlockSap() { if (!authority || Sap == null || (Unlocked && Kind != PlayerAbilityKind.Sap)) return false; Kind = PlayerAbilityKind.Sap; Unlocked = true; return true; }
         public void RevokeLeaf() { if (!authority) return; Unlocked = false; Mode = LeafMode.Off; Leaf.Clear(); if (Sap != null) Sap.Clear(); }
+        // Temporary solo test hook. Existing deposits/leaves keep their normal lifecycle.
+        public bool TrySwitchOfflineAbility()
+        {
+            if (network || !authority || !player.LocallyControlled || Sap == null) return false;
+            Sap.Cancel();
+            Kind = Kind == PlayerAbilityKind.Sap ? PlayerAbilityKind.Leaf : PlayerAbilityKind.Sap;
+            Unlocked = true; Mode = LeafMode.Off;
+            lastCycle = Input.CycleSequence; lastUse = Input.UseSequence;
+            DisplayCount = Kind == PlayerAbilityKind.Sap ? Sap.ActiveCount : Leaf.ActiveCount;
+            DisplayRecovering = Kind == PlayerAbilityKind.Leaf && Leaf.Recovering;
+            return true;
+        }
         private void Update()
         {
             if (network || !player.LocallyControlled) return;
