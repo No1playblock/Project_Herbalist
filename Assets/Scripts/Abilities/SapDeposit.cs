@@ -14,6 +14,49 @@ namespace Herbalist.Abilities
         private LeafProjectile boundLeaf;
         private Vector3 localPosition;
         private Quaternion localRotation;
+        private SapReceiver flightReceiver;
+        private Vector3 flightLocalPosition, flightLocalNormal;
+        private float flightRemaining;
+        public Vector3 StreamStart { get; private set; }
+        public bool HasStream { get; private set; }
+        public SapAbilitySettings Settings => settings;
+        public void SetStream(Vector3 start, bool active) { StreamStart = start; HasStream = active; }
+        public void BeginExtraction(Vector3 sourcePoint) { State = SapState.Extracting; SetStream(sourcePoint, true); RefreshVisual(); }
+        public void SetHeld() { if (State == SapState.Extracting) State = SapState.Controlled; }
+        public void Launch(SapReceiver receiver, Vector3 position, Vector3 normal)
+        {
+            if (!authority || State != SapState.Controlled || receiver == null) return;
+            flightReceiver = receiver;
+            flightLocalPosition = receiver.transform.InverseTransformPoint(position);
+            flightLocalNormal = receiver.transform.InverseTransformDirection(normal);
+            flightRemaining = settings.flightTimeout;
+            SetStream(transform.position, true); State = SapState.Flying;
+        }
+        private void TickFlight(float dt)
+        {
+            flightRemaining -= dt;
+            if (flightReceiver == null || !flightReceiver.isActiveAndEnabled || flightRemaining <= 0) { Finish(); return; }
+            var destination = flightReceiver.transform.TransformPoint(flightLocalPosition);
+            var normal = flightReceiver.transform.TransformDirection(flightLocalNormal).normalized;
+            var delta = destination - transform.position;
+            float travel = Mathf.Min(delta.magnitude, settings.flightSpeed * dt);
+            if (Physics.SphereCast(transform.position, settings.radius, delta.normalized, out var hit, travel,
+                settings.collisionMask, QueryTriggerInteraction.Ignore))
+            {
+                if (hit.collider.GetComponentInParent<SapReceiver>() != flightReceiver ||
+                    Vector3.Distance(hit.point, destination) > settings.radius + settings.placementTolerance) { Finish(); return; }
+                Arrive(destination, normal); return;
+            }
+            transform.position = Vector3.MoveTowards(transform.position, destination, travel);
+            if (Vector3.Distance(transform.position, destination) <= settings.arrivalTolerance) Arrive(destination, normal);
+        }
+        private void Arrive(Vector3 destination, Vector3 normal)
+        {
+            HasStream = false;
+            if (RefreshAt(flightReceiver, destination)) Finish();
+            else Place(flightReceiver, destination, normal);
+            flightReceiver = null;
+        }
         public SapState State { get; private set; }
         public SapReceiver Receiver { get; private set; }
         public bool IsPlaced => State == SapState.Attached || State == SapState.Bound;
@@ -28,7 +71,9 @@ namespace Herbalist.Abilities
         private void Update() { if (authority && !externalTick) Tick(Time.deltaTime); }
         public void Tick(float dt)
         {
-            if (!authority || !IsPlaced) return;
+            if (!authority) return;
+            if (State == SapState.Flying) { TickFlight(dt); return; }
+            if (!IsPlaced) return;
             if (Receiver == null || !Receiver.isActiveAndEnabled) { Finish(); return; }
             transform.SetPositionAndRotation(Receiver.transform.TransformPoint(localPosition), Receiver.transform.rotation * localRotation);
             if (State == SapState.Bound)
@@ -39,7 +84,8 @@ namespace Herbalist.Abilities
         }
         public void Place(SapReceiver receiver, Vector3 position, Vector3 normal)
         {
-            if (!authority || State != SapState.Controlled) return;
+            if (!authority || (State != SapState.Controlled && State != SapState.Flying)) return;
+            HasStream = false;
             Receiver = receiver; State = SapState.Attached; remaining = settings.lifetime;
             transform.SetPositionAndRotation(position, Quaternion.LookRotation(normal));
             localPosition = receiver.transform.InverseTransformPoint(position);
@@ -62,7 +108,7 @@ namespace Herbalist.Abilities
             foreach (var sap in all)
             {
                 if (!sap.authority || sap.State != SapState.Attached || sap.remaining <= 0 || sap.Receiver == null || sap.Receiver.LeafTarget != leaf.Target) continue;
-                float candidate = Vector3.Distance(leaf.transform.position, sap.transform.position);
+                float candidate = Vector3.Distance(leaf.ContactPoint, sap.transform.position);
                 if (candidate <= sap.settings.bindingRadius && candidate < distance) { nearest = sap; distance = candidate; }
             }
             if (nearest == null) return false;
@@ -75,7 +121,7 @@ namespace Herbalist.Abilities
         public void Finish()
         {
             if (!authority || State == SapState.Complete) return;
-            State = SapState.Complete;
+            HasStream = false; State = SapState.Complete;
             var leaf = boundLeaf; boundLeaf = null;
             if (leaf != null && leaf.Installed) leaf.BeginReturn();
             Detach(); RefreshVisual(); remove?.Invoke(this);

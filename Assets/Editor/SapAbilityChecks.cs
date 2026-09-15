@@ -27,7 +27,17 @@ namespace Herbalist.Editor
             Ray aim = new Ray(new Vector3(100, 1, -1), Vector3.forward);
             Action<bool> tick = fire => manager.Tick(cycle, fire ? ++use : use, aim, 1f / 60);
             Action extract = () => { cycle++; tick(false); Require(sap.Controlling, "extract"); for (int i=0;i<150;i++) tick(false); };
-            Func<SapDeposit> place = () => { extract(); var held = sap.Held; Require(sap.CanPlace, "valid placement preview"); tick(true); Require(held.State == SapState.Attached, "place"); return held; };
+            Action<SapDeposit> arrive = value => { for (int i=0;i<300 && value.State == SapState.Flying;i++) value.Tick(1f/60); };
+            Func<SapDeposit> place = () =>
+            {
+                extract(); var held = sap.Held;
+                Require(sap.Ready && Vector3.Distance(held.transform.position, sap.HoverPosition(aim)) < settings.arrivalTolerance, "hover beside face");
+                Require(sap.CanPlace, "valid placement preview");
+                var launch = held.transform.position; tick(true);
+                Require(held.State == SapState.Flying && !sap.Controlling && !player.Motor.MovementLocked, "launch and unlock");
+                Require(Vector3.Distance(held.StreamStart, launch) < 0.001f, "flight stream starts at held blob");
+                arrive(held); Require(held.State == SapState.Attached && !held.HasStream, "arrival installs and ends stream"); return held;
+            };
             Func<float, LeafProjectile> leafAt = x =>
             {
                 var leaf = UnityEngine.Object.Instantiate(manager.Leaf.Settings.offlinePrefab); created.Add(leaf.gameObject);
@@ -44,7 +54,7 @@ namespace Herbalist.Editor
                 cycle++; tick(false); Require(!sap.Controlling && !player.Motor.MovementLocked && sap.ActiveCount == 0, "cancel cleanup");
                 var first = place(); Require(receiver.Supplied && !player.Motor.MovementLocked, "receiver supplied and unlock");
                 first.Tick(settings.lifetime - 0.1f);
-                extract(); tick(true); Require(sap.ActiveCount == 1, "same position refresh without duplicate");
+                extract(); var refresh = sap.Held; tick(true); arrive(refresh); Require(sap.ActiveCount == 1, "same position refresh without duplicate");
                 first.Tick(0.2f); Require(first.State == SapState.Attached, "refreshed timer");
                 first.Tick(settings.lifetime); Require(first.State == SapState.Complete && !receiver.Supplied, "expiry and receiver drained");
                 var bound = place(); var leaf = leafAt(100);
@@ -58,7 +68,7 @@ namespace Herbalist.Editor
                 extract(); aim = new Ray(new Vector3(100,1,0), Vector3.down); tick(true); Require(sap.Controlling && !sap.CanPlace, "unsupported surface rejected");
                 cycle++; tick(false);
                 player.Motor.Teleport(new Vector3(120,0,0)); cycle++; tick(false); Require(!sap.Controlling, "extraction range enforced");
-                return "PASS: sap unlock, extract, aim movement, placement, movement/jump lock, cancel, refresh, expiry, receiver events, positional/ordered binding, persistent bound sap, recall cleanup, invalid placement, range.";
+                return "PASS: sap unlock, extract, face-right hover, launch, arrival, stream lifecycle, placement, movement/jump lock, cancel, refresh, expiry, receiver events, positional/ordered binding, persistent bound sap, recall cleanup, invalid placement, range.";
             }
             finally
             {

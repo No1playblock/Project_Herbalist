@@ -16,6 +16,7 @@ namespace Herbalist.Networking
         [Networked] private PlayerAbilityKind Kind { get; set; }
         [Networked] private NetworkBool Controlling { get; set; }
         [Networked] private NetworkBool CanPlace { get; set; }
+        [Networked] private NetworkBool Ready { get; set; }
         [Networked] private NetworkBool Unlocked { get; set; }
         [Networked] private LeafMode Selected { get; set; }
         [Networked] private int Count { get; set; }
@@ -52,8 +53,8 @@ namespace Herbalist.Networking
             }
             Publish();
         }
-        private void Publish() { Unlocked = abilities.Unlocked; Selected = abilities.Mode; Count = abilities.DisplayCount; Kind = abilities.Kind; Controlling = abilities.Sap != null && abilities.Sap.Controlling; CanPlace = abilities.Sap != null && abilities.Sap.CanPlace; Recovering = abilities.Leaf.Recovering; }
-        public override void Render() { if (!HasStateAuthority) abilities.ApplyReplica(Unlocked, Selected, Count, Recovering, Kind, Controlling, CanPlace); }
+        private void Publish() { Unlocked = abilities.Unlocked; Selected = abilities.Mode; Count = abilities.DisplayCount; Kind = abilities.Kind; Controlling = abilities.Sap != null && abilities.Sap.Controlling; CanPlace = abilities.Sap != null && abilities.Sap.CanPlace; Ready = abilities.Sap != null && abilities.Sap.Ready; Recovering = abilities.Leaf.Recovering; }
+        public override void Render() { if (!HasStateAuthority) abilities.ApplyReplica(Unlocked, Selected, Count, Recovering, Kind, Controlling, CanPlace, Ready); }
         public override void Despawned(NetworkRunner runner, bool hasState) { abilities.RevokeLeaf(); }
     }
 }

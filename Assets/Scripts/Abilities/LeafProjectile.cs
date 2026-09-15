@@ -8,10 +8,11 @@ namespace Herbalist.Abilities
         [SerializeField] private GameObject pinVisual;
         [SerializeField] private Collider platformCollider;
         [SerializeField] private Collider pinCollider;
+        [SerializeField] private Transform pinAttachmentTip;
         private LeafAbilitySettings settings;
         private Transform owner;
         private Action<LeafProjectile> release;
-        private Vector3 start, destination, curveRight, localPosition;
+        private Vector3 start, destination, curveRight, localPosition, localContactPoint;
         private Quaternion localRotation;
         private float progress, duration, remaining;
         private bool initialized, externalTick;
@@ -19,6 +20,7 @@ namespace Herbalist.Abilities
         public LeafState State { get; private set; } = LeafState.Complete;
         public LeafInstallTarget Target { get; private set; }
         public float InstalledAt { get; private set; }
+        public Vector3 ContactPoint => Target != null ? Target.transform.TransformPoint(localContactPoint) : transform.position;
         public bool Installed => State == LeafState.Installed || State == LeafState.Bound;
         public void Initialize(LeafAbilitySettings config, Transform returningOwner, LeafMode mode, Vector3 origin, Vector3 aim, Action<LeafProjectile> onRelease, bool network)
         {
@@ -73,12 +75,48 @@ namespace Herbalist.Abilities
         private void Install(LeafInstallTarget target, Vector3 hit, Vector3 normal, Vector3 heading)
         {
             Target = target;
-            transform.SetPositionAndRotation(target.Position(hit, normal, settings.surfaceOffset), target.Rotation(Mode, normal, heading));
+            localContactPoint = target.transform.InverseTransformPoint(hit);
+            transform.SetPositionAndRotation(hit, target.Rotation(Mode, normal, heading));
+            transform.position = target.Position(hit, normal, 0) + TipPlacementOffset(normal);
             localPosition = target.transform.InverseTransformPoint(transform.position);
             localRotation = Quaternion.Inverse(target.transform.rotation) * transform.rotation;
             State = target.TryBind(this) ? LeafState.Bound : LeafState.Installed;
             remaining = settings.lifetime; InstalledAt = Time.time;
             target.Attach(this, State == LeafState.Bound); RefreshVisuals();
+        }
+        private Vector3 TipPlacementOffset(Vector3 normal)
+        {
+            var visual = Mode == LeafMode.Pin ? pinVisual : platformVisual;
+            var filter = visual != null ? visual.GetComponent<MeshFilter>() : null;
+            if (filter == null || filter.sharedMesh == null) return normal * settings.surfaceOffset;
+            var mesh = filter.sharedMesh;
+            Vector3[] points;
+            if (mesh.isReadable) points = mesh.vertices;
+            else
+            {
+                // Conservative fallback for imported meshes without CPU-readable vertices.
+                var bounds = mesh.bounds; points = new Vector3[8];
+                for (int i = 0; i < points.Length; i++)
+                    points[i] = bounds.center + Vector3.Scale(bounds.extents,
+                        new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1));
+            }
+            float minimum = float.PositiveInfinity, maximum = float.NegativeInfinity;
+            Vector3 contactOffset = Vector3.zero;
+            foreach (var point in points)
+            {
+                Vector3 offset = filter.transform.TransformPoint(point) - transform.position;
+                float projection = Vector3.Dot(offset, normal);
+                if (projection < minimum) { minimum = projection; contactOffset = offset; }
+                maximum = Mathf.Max(maximum, projection);
+            }
+            if (points.Length == 0) return normal * settings.surfaceOffset;
+            // Thin faces must not disappear into floors when the configured depth exceeds their thickness.
+            float depth = Mathf.Min(settings.tipEmbedDepth, (maximum - minimum) * settings.maxEmbedFraction);
+            // Pin's authored long-axis tip is the anchor even for oblique shots.
+            // The broad sides of a rounded leaf may intersect the wall at steep angles.
+            if (Mode == LeafMode.Pin && pinAttachmentTip != null)
+                contactOffset = pinAttachmentTip.position - transform.position;
+            return -contactOffset - normal * depth;
         }
         public void BeginReturn()
         {

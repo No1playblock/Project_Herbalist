@@ -50,6 +50,7 @@ namespace Herbalist.Player
         {
             Yaw = Mathf.Repeat(Yaw + delta.x * tuning.mouseSensitivity, 360f);
             Pitch = Mathf.Clamp(Pitch - delta.y * tuning.mouseSensitivity, tuning.pitchLimits.x, tuning.pitchLimits.y);
+            SetBodyYaw(Yaw);
         }
 
         // Network presentation can use this without reading local input.
@@ -57,16 +58,13 @@ namespace Herbalist.Player
         {
             Yaw = Mathf.Repeat(yaw, 360f);
             Pitch = Mathf.Clamp(pitch, tuning.pitchLimits.x, tuning.pitchLimits.y);
-        }
-
-        public void FaceMovement(Vector3 direction, float deltaTime)
-        {
-            if (direction.sqrMagnitude <= Mathf.Epsilon) return;
-            body.rotation = Quaternion.RotateTowards(body.rotation, Quaternion.LookRotation(direction, Vector3.up), tuning.bodyTurnSpeed * deltaTime);
+            SetBodyYaw(Yaw);
         }
 
         public void Present(float deltaTime, bool local)
         {
+            // Keep the camera behind the body, including owner render frames between network ticks.
+            SetBodyYaw(Yaw);
             float headYaw = Mathf.Clamp(Mathf.DeltaAngle(body.eulerAngles.y, Yaw), -tuning.headYawLimit, tuning.headYawLimit);
             float headPitch = Mathf.Clamp(Pitch, -tuning.headPitchLimit, tuning.headPitchLimit);
             Quaternion target = headRest * Quaternion.Euler(headPitch, headYaw, 0);

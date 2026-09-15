@@ -7,7 +7,6 @@ namespace Herbalist.Abilities
     {
         [SerializeField] private Transform extractionPoint;
         [SerializeField] private Collider interactionVolume;
-        [SerializeField] private bool extractFromNearestSurface;
         private Mesh cachedMesh;
         private Vector3[] vertices;
         private int[] triangles;
@@ -33,17 +32,17 @@ namespace Herbalist.Abilities
                 if (!source.Available) continue;
                 if (source.interactionVolume != null && source.interactionVolume.bounds.SqrDistance(position) > distance) continue;
                 Vector3 point, normal;
-                if (!source.TrySurface(position, out point, out normal)) continue;
+                if (!source.TryClosestSurface(position, out point, out normal)) continue;
                 float candidate = (point - position).sqrMagnitude;
                 if (candidate <= distance)
                 {
                     distance = candidate; best = source;
-                    extraction = source.extractFromNearestSurface ? point + normal * clearance : source.ExtractionPoint;
+                    extraction = point + normal * clearance;
                 }
             }
             return best;
         }
-        private bool TrySurface(Vector3 position, out Vector3 point, out Vector3 normal)
+        public bool TryClosestSurface(Vector3 position, out Vector3 point, out Vector3 normal)
         {
             point = ExtractionPoint; normal = Vector3.up;
             var meshCollider = interactionVolume as MeshCollider;
@@ -54,7 +53,7 @@ namespace Herbalist.Abilities
                 return true;
             }
             // PhysX ClosestPoint does not support concave MeshColliders. Query triangles
-            // only on extraction input, never each simulation tick. World-space distances
+            // on extraction and at the configured stream refresh interval. World-space distances
             // also handle non-uniformly scaled imported tree models.
             var mesh = meshCollider.sharedMesh;
             if (mesh == null || !mesh.isReadable) return false;

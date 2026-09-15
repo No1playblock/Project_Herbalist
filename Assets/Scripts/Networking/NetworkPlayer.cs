@@ -21,6 +21,7 @@ namespace Herbalist.Networking
         [SerializeField] private Renderer bodyRenderer;
         [SerializeField] private Material[] slotMaterials;
         private PlayScreenController screen;
+        private PlayerCharacterPresentation characterPresentation;
         public static NetworkPlayer Local { get; private set; }
         [Networked] public Vector3 SimulationPosition { get; set; }
         [Networked] public Vector3 SimulationVelocity { get; set; }
@@ -37,6 +38,8 @@ namespace Herbalist.Networking
         public override void Spawned()
         {
             player.SetNetworkControl(HasInputAuthority);
+            characterPresentation = GetComponent<PlayerCharacterPresentation>();
+            if (characterPresentation != null) characterPresentation.SetNetworkSlot(Slot);
             if (HasInputAuthority) Local = this;
             if (HasStateAuthority)
             {
@@ -84,15 +87,14 @@ namespace Herbalist.Networking
                 }
             }
             player.Motor.Simulate(direction * player.Tuning.moveSpeed, Runner.DeltaTime);
-            if (!MovementBlocked && direction.sqrMagnitude > Mathf.Epsilon)
-                BodyYaw = Mathf.MoveTowardsAngle(BodyYaw, Quaternion.LookRotation(direction).eulerAngles.y, player.Tuning.bodyTurnSpeed * Runner.DeltaTime);
+            BodyYaw = LookAngles.x;
             var state = player.Motor.CaptureState();
             SimulationPosition = state.Position; SimulationVelocity = state.Velocity; Grounded = state.Grounded;
         }
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
         public override void Render()
         {
-            player.View.SetBodyYaw(BodyYaw);
+            if (characterPresentation != null) characterPresentation.SetNetworkGrounded(Grounded);
             if (!HasInputAuthority) player.View.SetLookAngles(LookAngles.x, LookAngles.y);
         }
         public override void Despawned(NetworkRunner runner, bool hasState)

@@ -8,15 +8,18 @@ namespace Herbalist.Networking
         private SapDeposit sap;
         [Networked] private SapState State { get; set; }
         [Networked] private int ReceiverId { get; set; }
+        [Networked] private UnityEngine.Vector3 StreamStart { get; set; }
+        [Networked] private NetworkBool HasStream { get; set; }
         private void Awake() => sap = GetComponent<SapDeposit>();
         public override void FixedUpdateNetwork()
         {
             if (!HasStateAuthority) return;
             sap.Tick(Runner.DeltaTime);
             if (Object == null || !Object.IsValid) return;
+            StreamStart = sap.StreamStart; HasStream = sap.HasStream;
             State = sap.State; ReceiverId = sap.Receiver != null ? sap.Receiver.Id : 0;
         }
-        public override void Render() { if (!HasStateAuthority) sap.ApplyReplica(State, ReceiverId); }
+        public override void Render() { if (!HasStateAuthority) { sap.ApplyReplica(State, ReceiverId); sap.SetStream(StreamStart, HasStream); } }
         public override void Despawned(NetworkRunner runner, bool hasState) => sap.ApplyReplica(SapState.Complete, 0);
     }
 }
