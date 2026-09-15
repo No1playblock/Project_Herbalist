@@ -16,6 +16,8 @@ namespace Herbalist.Player
         [SerializeField] private int[] visibleSlots;
         [SerializeField] private string speedParameter = "Speed";
         [SerializeField] private string groundedParameter = "Grounded";
+        [SerializeField] private string playbackParameter = "PlaybackDirection";
+        [SerializeField, Range(0, 1)] private float backwardThreshold = 0.1f;
         [SerializeField, Min(0)] private float speedDamping = 0.12f;
         [SerializeField, Min(0.01f)] private float teleportDistance = 2f;
         private Transform head;
@@ -25,12 +27,13 @@ namespace Herbalist.Player
         private bool headModified;
         private bool network;
         private bool grounded;
-        private int speedId, groundedId;
+        private int speedId, groundedId, playbackId;
 
         private void Awake()
         {
             speedId = Animator.StringToHash(speedParameter);
             groundedId = Animator.StringToHash(groundedParameter);
+            playbackId = Animator.StringToHash(playbackParameter);
             lookRest = Quaternion.Inverse(body.rotation) * lookPivot.rotation;
             ApplyVisibility(showOffline);
         }
@@ -66,6 +69,8 @@ namespace Herbalist.Player
             if (!characterRoot.activeInHierarchy || Time.deltaTime <= 0) return;
             float speed = delta.magnitude > teleportDistance ? 0 : Vector3.ProjectOnPlane(delta, Vector3.up).magnitude / Time.deltaTime;
             animator.SetFloat(speedId, speed, speedDamping, Time.deltaTime);
+            Vector3 planar = Vector3.ProjectOnPlane(delta, Vector3.up);
+            animator.SetFloat(playbackId, Vector3.Dot(planar.normalized, body.forward) < -backwardThreshold ? -1f : 1f);
             animator.SetBool(groundedId, network ? grounded : motor.IsGrounded);
             if (head == null) return;
             animatedHead = head.localRotation;

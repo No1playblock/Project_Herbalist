@@ -87,15 +87,13 @@ namespace Herbalist.Networking
                 }
             }
             player.Motor.Simulate(direction * player.Tuning.moveSpeed, Runner.DeltaTime);
-            if (!MovementBlocked && direction.sqrMagnitude > Mathf.Epsilon)
-                BodyYaw = Mathf.MoveTowardsAngle(BodyYaw, Quaternion.LookRotation(direction).eulerAngles.y, player.Tuning.bodyTurnSpeed * Runner.DeltaTime);
+            BodyYaw = LookAngles.x;
             var state = player.Motor.CaptureState();
             SimulationPosition = state.Position; SimulationVelocity = state.Velocity; Grounded = state.Grounded;
         }
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
         public override void Render()
         {
-            player.View.SetBodyYaw(BodyYaw);
             if (characterPresentation != null) characterPresentation.SetNetworkGrounded(Grounded);
             if (!HasInputAuthority) player.View.SetLookAngles(LookAngles.x, LookAngles.y);
         }
