@@ -11,7 +11,7 @@ namespace Herbalist.Networking
         private void Awake()
         {
             // Preserve direct offline testing without leaving an extra player in network sessions.
-            offlinePlayer.SetActive(FusionLobbySession.Instance == null);
+            offlinePlayer.SetActive(FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession);
         }
         public void SpawnPlayers(NetworkRunner runner)
         {
