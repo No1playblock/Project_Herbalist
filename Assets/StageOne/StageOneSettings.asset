@@ -27,20 +27,20 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   herbGlowLayer: 30
-  gatherMessage: Find herbs. Duyeong gathers; Sodam crafts.
-  craftMessage: Deliver the herbs to Sodam and craft both potions.
-  drinkMessage: Drink one potion each. Abilities are not tied to characters.
-  enterMessage: Both abilities acquired. Enter the tree together.
-  clearMessage: STAGE 1 CLEAR
+  gatherMessage: "\uB450\uC601\uC740 \uC57D\uCD08\uB97C \uCC3E\uACE0, \uC18C\uB2F4\uC740 \uC57D\uC81C\uB97C \uB9CC\uB4ED\uB2C8\uB2E4"
+  craftMessage: "\uC57D\uCD08\uB97C \uC18C\uB2F4\uC5D0\uAC8C \uC804\uB2EC\uD574 \uB450 \uC57D\uC81C\uB97C \uC644\uC131\uD558\uC138\uC694"
+  drinkMessage: "\uAC01\uC790 \uD558\uB098\uC758 \uC57D\uC81C\uB97C \uBCF5\uC6A9\uD558\uC138\uC694"
+  enterMessage: "\uB450 \uC0AC\uB78C\uC774 \uD568\uAED8 \uBB34\uB2F9\uB098\uBB34 \uC785\uAD6C\uB85C \uB4E4\uC5B4\uAC00\uC138\uC694"
+  clearMessage: "\uC232\uC758 \uC785\uAD6C\uB97C \uD1B5\uACFC\uD588\uC2B5\uB2C8\uB2E4"
   controlsFormat: '{0}: Gather / Give   {1}: Craft   {2}: Drink'
   pocketFormat: '{0} | Holding: {1} | Ability: {2}'
-  emptyText: Empty
-  lockedText: Locked
-  fullMessage: Your partner must have empty hands.
-  rangeMessage: Move closer to a herb or your partner, with a clear path.
-  roleMessage: Duyeong gathers herbs; Sodam crafts potions.
-  drinkBlockedMessage: You already have an ability. You cannot drink another potion.
-  invalidItemMessage: Hold the required herb or potion first.
-  successMessage: Done.
-  waitingMessage: Waiting for both players.
+  emptyText: "\uBE48\uC190"
+  lockedText: "\uBBF8\uD574\uAE08"
+  fullMessage: "\uC0C1\uB300\uC758 \uC190\uC774 \uBE44\uC5B4 \uC788\uC5B4\uC57C \uD569\uB2C8\uB2E4"
+  rangeMessage: "\uC57D\uCD08\uB098 \uB3D9\uB8CC\uC5D0\uAC8C \uAC00\uAE4C\uC774 \uB2E4\uAC00\uAC00\uC138\uC694"
+  roleMessage: "\uB450\uC601\uC740 \uCC44\uC9D1, \uC18C\uB2F4\uC740 \uC81C\uC870\uB97C \uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4"
+  drinkBlockedMessage: "\uC774\uBBF8 \uB2A5\uB825\uC744 \uC5BB\uC5B4 \uB2E4\uB978 \uC57D\uC81C\uB97C \uB9C8\uC2E4 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
+  invalidItemMessage: "\uD544\uC694\uD55C \uC57D\uCD08\uB098 \uC57D\uC81C\uB97C \uBA3C\uC800 \uB4E4\uC5B4 \uC8FC\uC138\uC694"
+  successMessage: "\uC644\uB8CC\uD588\uC2B5\uB2C8\uB2E4"
+  waitingMessage: "\uB450 \uD50C\uB808\uC774\uC5B4\uB97C \uAE30\uB2E4\uB9AC\uACE0 \uC788\uC2B5\uB2C8\uB2E4"
   clearedFormat: '{0} / {1} players inside'
