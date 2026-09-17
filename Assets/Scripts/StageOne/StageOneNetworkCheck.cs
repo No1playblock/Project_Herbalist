@@ -20,6 +20,7 @@ namespace Herbalist.StageOne
         private static async void Run()
         {
             var args=Environment.GetCommandLineArgs(); int index=Array.IndexOf(args,"-herbalist-stage-test");
+            bool levels=args.Contains("-herbalist-level-test"); bool swap=args.Contains("-swap-potions");
             if(index<0 || index+2>=args.Length) return;
             bool host=args[index+1]=="host";
             Application.runInBackground=true;
@@ -33,13 +34,13 @@ namespace Herbalist.StageOne
                 if(host)
                 {
                     if(NetworkPlayer.Local.Slot!=0) throw new Exception("Expected host test slot 0");
-                    PlacePair(f,0);
+                    PlacePair(f,swap?1:0);
                     await Task.Delay(800);
                     local.RPC_Command(StageCommand.Interact);
                     await Wait(()=>f.Progress.Held[0]!=0,"first gather");
                     local.RPC_Command(StageCommand.Interact);
                     await Wait(()=>f.Progress.Consumed[1]!=0,"partner first potion");
-                    PlacePair(f,1); await Task.Delay(800);
+                    PlacePair(f,swap?0:1); await Task.Delay(800);
                     local.RPC_Command(StageCommand.Interact);
                     await Wait(()=>f.Progress.Held[0]!=0,"second gather");
                     local.RPC_Command(StageCommand.Interact);
@@ -72,6 +73,26 @@ namespace Herbalist.StageOne
                         }
                     }
                 }
+                if(levels)
+                {
+                    await Wait(()=>UnityEngine.SceneManagement.SceneManager.GetActiveScene().name=="StageTwoPrototype"&&NetworkPlayer.Local!=null&&StageActor.All.Count(a=>a.Available)==2,"stage two spawns");
+                    await Task.Delay(1000);
+                    var actors=StageActor.All.Where(a=>a.Available).OrderBy(a=>a.Slot).ToArray();
+                    var expected0=swap?Herbalist.Abilities.PlayerAbilityKind.Leaf:Herbalist.Abilities.PlayerAbilityKind.Sap;
+                    var expected1=swap?Herbalist.Abilities.PlayerAbilityKind.Sap:Herbalist.Abilities.PlayerAbilityKind.Leaf;
+                    if(!actors.All(a=>a.Abilities.Unlocked)||actors[0].Abilities.Kind!=expected0||actors[1].Abilities.Kind!=expected1)throw new Exception("Stage transfer lost potion assignments");
+                    var goal=UnityEngine.Object.FindAnyObjectByType<Herbalist.Levels.StageTwoGoal>();
+                    if(host)
+                    {
+                        Vector3 target=goal.arrival.transform.TransformPoint(goal.arrival.center)-goal.playerProbeOffset;
+                        Teleport(actors[0],target+Vector3.left*.5f);await Task.Delay(700);
+                        if(goal.Complete)throw new Exception("Stage Two cleared with only one player");
+                        Teleport(actors[1],target+Vector3.right*.5f);
+                    }
+                    await Wait(()=>goal.Complete,"stage two clear replica");
+                    Debug.Log("[StageLevelsCheck] PASS "+(host?"HOST":"CLIENT")+" slot0="+actors[0].Abilities.Kind+" slot1="+actors[1].Abilities.Kind+" stage2clear="+goal.Complete);
+                    return;
+                }
                 await Wait(()=>f.Progress.Cleared,"stage clear replica");
                 if(!f.Actors.All(a=>a.Abilities.Unlocked)) throw new Exception("Ability replication missing");
                 int bit=1<<f.settings.herbGlowLayer;
@@ -82,7 +103,7 @@ namespace Herbalist.StageOne
         }
         private static void PlacePair(StageOneFlow f,int source)
         {
-            Vector3 ground=f.sources[source].Point; ground.y=f.Actors[0].transform.position.y;
+            Vector3 ground=f.sources[source].Point; ground.y=f.sources[source].Point.y-.25f;
             Teleport(f.Actors[0],ground+Vector3.back); Teleport(f.Actors[1],ground+Vector3.back+Vector3.right);
         }
         private static void Teleport(StageActor actor,Vector3 position)
