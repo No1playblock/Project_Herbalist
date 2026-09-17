@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1ba011a8cbcd2e489a21487348efe97, type: 3}
+  m_Name: StageOneSettings
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.StageOne.StageOneSettings
+  items:
+  - {fileID: 11400000, guid: 6a22309cf7e8e5e43b1901c2638626d9, type: 2}
+  - {fileID: 11400000, guid: 7546bc472621a0249983689e380bf316, type: 2}
+  - {fileID: 11400000, guid: 24f5ffdecd6a9da4a8fb24ed46d92da4, type: 2}
+  - {fileID: 11400000, guid: dad47ad89f43d59448034fd5240a465d, type: 2}
+  recipes:
+  - {fileID: 11400000, guid: 33be9b9878ace284a8df813c3e21d50e, type: 2}
+  - {fileID: 11400000, guid: 411c48d4473ca2d49881dbe5a4bf2c4d, type: 2}
+  slotRoles: 0000000001000000i
+  interactionRange: 3
+  interactionOffset: {x: 0, y: 1, z: 0}
+  obstructionMask:
+    serializedVersion: 2
+    m_Bits: 1
+  herbGlowLayer: 30
+  gatherMessage: Find herbs. Duyeong gathers; Sodam crafts.
+  craftMessage: Deliver the herbs to Sodam and craft both potions.
+  drinkMessage: Drink one potion each. Abilities are not tied to characters.
+  enterMessage: Both abilities acquired. Enter the tree together.
+  clearMessage: STAGE 1 CLEAR
+  controlsFormat: '{0}: Gather / Give   {1}: Craft   {2}: Drink'
+  pocketFormat: '{0} | Holding: {1} | Ability: {2}'
+  emptyText: Empty
+  lockedText: Locked
+  fullMessage: Your partner must have empty hands.
+  rangeMessage: Move closer to a herb or your partner, with a clear path.
+  roleMessage: Duyeong gathers herbs; Sodam crafts potions.
+  drinkBlockedMessage: You already have an ability. You cannot drink another potion.
+  invalidItemMessage: Hold the required herb or potion first.
+  successMessage: Done.
+  waitingMessage: Waiting for both players.
+  clearedFormat: '{0} / {1} players inside'
