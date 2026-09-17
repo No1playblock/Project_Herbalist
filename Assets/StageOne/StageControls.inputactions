@@ -1,0 +1,78 @@
+{
+    "version": 1,
+    "name": "StageControls",
+    "maps": [
+        {
+            "name": "StageInteraction",
+            "id": "0dac79bc-ef28-4934-8bbf-39b885a9e8af",
+            "actions": [
+                {
+                    "name": "Interact",
+                    "type": "Button",
+                    "id": "4616d994-a77c-4e86-b6f5-2fe295321991",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
+                    "name": "Craft",
+                    "type": "Button",
+                    "id": "4312c094-9ae5-46da-9a03-afbc805f8013",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
+                    "name": "Drink",
+                    "type": "Button",
+                    "id": "a4909ebb-0bb0-44e4-b8ae-cb565f77a349",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "a3f71b1a-80f5-4287-a4c3-510e461be976",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Interact",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "80dd1b2a-63ba-4761-bb28-b316bebad037",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Craft",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "49a5c604-a642-4ec0-b9db-92a353420c56",
+                    "path": "<Keyboard>/g",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Drink",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
