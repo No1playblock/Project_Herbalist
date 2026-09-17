@@ -1,3 +1,21 @@
+# Removing the temporary solo entry
+
+The shared Game UI supersedes the old PrototypeModeMenu flow. The legacy canvas and controller remain disabled for reference.
+
+When asked to remove solo play, remove only the menu entry unless offline Editor testing is explicitly included:
+
+1. Edit Assets/GameUI/MainMenuUI.prefab and remove Home/SoloTest.
+2. Remove MainMenuUI.solo, its Start listener and Solo method; remove GameUiSettings.soloScene if unused.
+3. Keep the room create/join, character selection and host Start flows.
+4. The old disabled MainMenuCanvas/PrototypeModeMenu and obsolete PrototypeModeMenu.cs can be removed after checking references; do not reactivate the old LobbyCard.
+5. Preserve PlayerSpawnLayout offline guards, the offline player and the Q test switch for direct Editor testing.
+6. Keep PlayerMovementPrototype in Build Settings while direct/offline testing still needs it.
+7. Verify MainMenu opens to the shared Home, two peers select distinct characters and start correctly, and direct Editor play still works.
+
+UI roots are authored before Play. No runtime UI instantiation is used.
+
+## Historical layout (superseded)
+
 # Temporary play-test mode menu
 
 `Assets/Scenes/MainMenu.unity` starts with an authored UGUI mode selection panel.
