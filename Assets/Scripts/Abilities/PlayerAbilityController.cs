@@ -25,7 +25,7 @@ namespace Herbalist.Abilities
             authority = true;
             Leaf.Configure(() => Instantiate(Leaf.Settings.offlinePrefab), leaf => Destroy(leaf.gameObject), false);
             if (Sap != null) Sap.Configure(() => Instantiate(Sap.Settings.offlinePrefab), sap => Destroy(sap.gameObject), false);
-            if (prototypeOfflineUnlock) { if (prototypeOfflineAbility == PlayerAbilityKind.Sap) UnlockSap(); else UnlockLeaf(); }
+            if (prototypeOfflineUnlock && Herbalist.StageOne.StageOneFlow.Instance == null) { if (prototypeOfflineAbility == PlayerAbilityKind.Sap) UnlockSap(); else UnlockLeaf(); }
         }
         public void ConfigureNetwork(bool isAuthority) { network = true; authority = isAuthority; }
         // Potion effects call this on the authoritative player. It never grants client authority.
@@ -35,7 +35,7 @@ namespace Herbalist.Abilities
         // Temporary solo test hook. Existing deposits/leaves keep their normal lifecycle.
         public bool TrySwitchOfflineAbility()
         {
-            if (network || !authority || !player.LocallyControlled || Sap == null) return false;
+            if (network || !authority || !player.LocallyControlled || Sap == null || Herbalist.StageOne.StageOneFlow.Instance != null) return false;
             Sap.Cancel();
             Kind = Kind == PlayerAbilityKind.Sap ? PlayerAbilityKind.Leaf : PlayerAbilityKind.Sap;
             Unlocked = true; Mode = LeafMode.Off;

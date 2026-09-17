@@ -36,9 +36,9 @@ namespace Herbalist.Networking
             {
                 abilities.Sap.Configure(() => Runner.Spawn(sapPrefab, transform.position, Quaternion.identity, Object.InputAuthority).GetComponent<SapDeposit>(),
                     sap => { if (sap != null && Runner != null && Runner.IsRunning) Runner.Despawn(sap.GetComponent<NetworkObject>()); }, true);
-                foreach (int slot in prototypeSapSlots) if (player.Slot == slot) abilities.UnlockSap();
+                if (Herbalist.StageOne.StageOneFlow.Instance == null) foreach (int slot in prototypeSapSlots) if (player.Slot == slot) abilities.UnlockSap();
             }
-            foreach (int slot in prototypeUnlockSlots) if (player.Slot == slot) abilities.UnlockLeaf();
+            if (Herbalist.StageOne.StageOneFlow.Instance == null) foreach (int slot in prototypeUnlockSlots) if (player.Slot == slot) abilities.UnlockLeaf();
             Publish();
         }
         public override void FixedUpdateNetwork()
