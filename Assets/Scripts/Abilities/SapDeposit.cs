@@ -81,6 +81,7 @@ namespace Herbalist.Abilities
         private void Update() { if (authority && !externalTick) Tick(Time.deltaTime); }
         public void Tick(float dt)
         {
+            if (Herbalist.GameUI.GameplayPause.IsPaused) return;
             if (!authority) return;
             if (State == SapState.Flying) { TickFlight(dt); return; }
             if (!IsPlaced) return;

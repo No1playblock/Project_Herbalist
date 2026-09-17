@@ -47,7 +47,7 @@ namespace Herbalist.StageOne
         }
         public void Request(StageCommand command)
         {
-            if (!Local || StageOneFlow.Instance == null || !Herbalist.Presentation.GameplayCursor.AllowsPointerInput) return;
+            if (Herbalist.GameUI.GameplayPause.IsPaused || !Local || StageOneFlow.Instance == null || !Herbalist.Presentation.GameplayCursor.AllowsPointerInput) return;
             if (adapter != null && adapter.Object != null && adapter.Object.IsValid) adapter.RPC_Command(command);
             else SetFeedback(StageOneFlow.Instance.Execute(this, command));
         }

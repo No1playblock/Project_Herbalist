@@ -25,12 +25,13 @@ namespace Herbalist.Networking
         public int ConnectedCount => runner != null && runner.IsRunning ? runner.ActivePlayers.Count() : 0;
         public event Action Changed;
         private NetworkRunner runner;
+        public NetworkRunner Runner => runner;
         private bool connecting, stopping, loadRequested, started;
         private CancellationTokenSource cancellation;
         private struct StagePlayerState { public int Slot; public Herbalist.Abilities.PlayerAbilityKind Ability; }
         private readonly Dictionary<PlayerRef, StagePlayerState> stagePlayers = new();
         private bool stageTransition;
-        public int ResolveStageSlot(PlayerRef player, int fallback) => stagePlayers.TryGetValue(player,out var state)?state.Slot:fallback;
+        public int ResolveStageSlot(PlayerRef player, int fallback) => stagePlayers.TryGetValue(player,out var state)?state.Slot: (Herbalist.GameUI.RoomControl.Instance != null && Herbalist.GameUI.RoomControl.Instance.Choice(player.RawEncoded) >= 0 ? Herbalist.GameUI.RoomControl.Instance.Choice(player.RawEncoded) : fallback);
         public bool RestoreStageAbility(PlayerRef player, Herbalist.Abilities.PlayerAbilityController ability)
         {
             if(runner==null || !runner.IsServer || !stagePlayers.TryGetValue(player,out var state))return false;
@@ -82,6 +83,7 @@ namespace Herbalist.Networking
             if (!Guid.TryParse(PhotonAppSettings.Global.AppSettings.AppIdFusion, out _))
             { SetState(LobbyState.Error, settings.missingAppIdMessage); return; }
             stagePlayers.Clear(); stageTransition = false;
+            Herbalist.GameUI.RoomControl.Instance?.ResetRoom();
             connecting = true; loadRequested = false; started = false; RoomName = name;
             SetState(LobbyState.Connecting, settings.connectingMessage);
             cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(settings.connectTimeout));
@@ -123,9 +125,11 @@ namespace Herbalist.Networking
             if (!started || loadRequested || State == LobbyState.Playing || stopping) return;
             SetState(LobbyState.Waiting, string.Format(settings.waitingFormat, ConnectedCount, settings.playerCount));
         }
-        private async void TryStart()
+        public void StartSelectedGame() => TryStart(true);
+        private async void TryStart(bool requested = false)
         {
             if (!started || runner == null || !runner.IsServer || loadRequested || stopping || ConnectedCount < settings.playerCount) return;
+            if (settings.manualCharacterSelection && (!requested || Herbalist.GameUI.RoomControl.Instance == null || !Herbalist.GameUI.RoomControl.Instance.Ready)) return;
             loadRequested = true;
             runner.SessionInfo.IsOpen = false;
             SetState(LobbyState.Loading, settings.loadingMessage);
@@ -147,6 +151,7 @@ namespace Herbalist.Networking
             SetState(LobbyState.Leaving, settings.leavingMessage);
             var oldRunner = runner;
             runner = null; started = false; stagePlayers.Clear();
+            Herbalist.GameUI.RoomControl.Instance?.ResetRoom();
             try
             {
                 if (oldRunner != null)
@@ -205,7 +210,7 @@ namespace Herbalist.Networking
         public void OnInputMissing(NetworkRunner r, PlayerRef player, NetworkInput input) { }
         public void OnObjectEnterAOI(NetworkRunner r, NetworkObject obj, PlayerRef player) { }
         public void OnObjectExitAOI(NetworkRunner r, NetworkObject obj, PlayerRef player) { }
-        public void OnReliableDataReceived(NetworkRunner r, PlayerRef player, ReliableKey key, ReadOnlySpan<byte> data) { }
+        public void OnReliableDataReceived(NetworkRunner r, PlayerRef player, ReliableKey key, ReadOnlySpan<byte> data) { Herbalist.GameUI.RoomControl.Instance?.Receive(r, player, key, data); }
         public void OnReliableDataProgress(NetworkRunner r, PlayerRef player, ReliableKey key, float progress) { }
         public void OnSessionListUpdated(NetworkRunner r, List<SessionInfo> sessions) { }
         public void OnCustomAuthenticationResponse(NetworkRunner r, Dictionary<string, object> data) { }

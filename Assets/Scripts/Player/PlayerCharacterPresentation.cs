@@ -68,6 +68,7 @@ namespace Herbalist.Player
         }
         private void LateUpdate()
         {
+            animator.speed = Herbalist.GameUI.GameplayPause.IsPaused ? 0 : 1;
             Vector3 delta = transform.position - previousPosition;
             previousPosition = transform.position;
             if (!characterRoot.activeInHierarchy || Time.deltaTime <= 0) return;

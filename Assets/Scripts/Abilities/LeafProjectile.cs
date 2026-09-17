@@ -37,6 +37,7 @@ namespace Herbalist.Abilities
         private void Update() { if (initialized && !externalTick) Tick(Time.deltaTime); }
         public void Tick(float dt)
         {
+            if (Herbalist.GameUI.GameplayPause.IsPaused) return;
             if (!initialized || State == LeafState.Complete) return;
             if (owner == null) { Finish(); return; }
             if (State == LeafState.Flying)

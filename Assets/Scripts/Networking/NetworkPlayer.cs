@@ -69,6 +69,7 @@ namespace Herbalist.Networking
         public override void FixedUpdateNetwork()
         {
             if (IsProxy) return;
+            if (Herbalist.GameUI.GameplayPause.IsPaused) { if (GetInput(out PlayerNetworkInput pausedInput)) LastJumpSequence = pausedInput.JumpSequence; return; }
             // All values needed for re-simulation come from Fusion's restored tick state.
             if (HasStateAuthority) MovementBlocked = player.Motor.HasMovementLockExcept(this);
             player.Motor.SetMovementLock(this, MovementBlocked);

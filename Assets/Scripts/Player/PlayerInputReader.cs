@@ -13,7 +13,7 @@ namespace Herbalist.Player
         private InputAction moveAction, lookAction, orbitAction, jumpAction;
         public uint JumpSequence { get; private set; }
         private bool active;
-        public Vector2 Move => active ? moveAction.ReadValue<Vector2>() : Vector2.zero;
+        public Vector2 Move => active && !Herbalist.GameUI.GameplayPause.IsPaused ? moveAction.ReadValue<Vector2>() : Vector2.zero;
         public Vector2 Look => active && Herbalist.Presentation.GameplayCursor.AllowsPointerInput && (!requireOrbitButton || orbitAction.IsPressed()) ? lookAction.ReadValue<Vector2>() : Vector2.zero;
 
         public bool Initialize()
@@ -40,7 +40,7 @@ namespace Herbalist.Player
             if (active) { moveAction.Enable(); lookAction.Enable(); orbitAction.Enable(); jumpAction.Enable(); }
             else { moveAction.Disable(); lookAction.Disable(); orbitAction.Disable(); jumpAction.Disable(); }
         }
-        private void OnJump(InputAction.CallbackContext context) { if (active) JumpSequence++; }
+        private void OnJump(InputAction.CallbackContext context) { if (active && !Herbalist.GameUI.GameplayPause.IsPaused) JumpSequence++; }
         private void OnDisable() { if (moveAction != null) SetInputActive(false); }
         private void OnDestroy() { moveAction?.Dispose(); lookAction?.Dispose(); orbitAction?.Dispose(); jumpAction?.Dispose(); }
     }

@@ -52,6 +52,7 @@ namespace Herbalist.Abilities
         public void Tick(uint cycle, uint use, Ray aim, float dt, bool useHeld = false)
         {
             if (!authority) return;
+            if (Herbalist.GameUI.GameplayPause.IsPaused) { lastCycle = cycle; lastUse = use; return; }
             Leaf.Tick(dt);
             uint steps = unchecked(cycle - lastCycle); lastCycle = cycle;
             bool fire = use != lastUse; lastUse = use;

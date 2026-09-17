@@ -38,7 +38,7 @@ namespace Herbalist.Player
         }
         private void Update()
         {
-            if (!ready || !locallyControlled) return;
+            if (!ready || !locallyControlled || Herbalist.GameUI.GameplayPause.IsPaused) return;
             view.ApplyLook(input.Look);
             if (networkDriven) return;
             Vector2 movement = Vector2.ClampMagnitude(input.Move, 1);

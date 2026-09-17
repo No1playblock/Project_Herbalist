@@ -18,7 +18,7 @@ namespace Herbalist.Levels
         private bool notified;
         public override void FixedUpdateNetwork()
         {
-            if(!HasStateAuthority || Complete) return;
+            if(Herbalist.GameUI.GameplayPause.IsPaused || !HasStateAuthority || Complete) return;
             bool first=false,second=false;
             foreach(var a in StageActor.All)
             {

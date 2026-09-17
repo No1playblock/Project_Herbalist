@@ -68,6 +68,7 @@ namespace Herbalist.Abilities
         }
         public void Tick(Ray aim, bool use, float dt)
         {
+            if (Herbalist.GameUI.GameplayPause.IsPaused) return;
             CanPlace = false;
             if (!Controlling) return;
             if (held == null || source == null || !source.isActiveAndEnabled || held.State == SapState.Complete)

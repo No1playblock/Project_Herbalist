@@ -55,7 +55,7 @@ namespace Herbalist.Presentation
         private void OnToggle(InputAction.CallbackContext context) => TryToggle();
         public bool TryToggle()
         {
-            if (IsLocked) return false;
+            if (IsLocked || Herbalist.GameUI.GameplayPause.IsPaused) return false;
             preferredMode = preferredMode == PlayScreenMode.Split ? PlayScreenMode.Personal : PlayScreenMode.Split;
             Apply();
             return true;

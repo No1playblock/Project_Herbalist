@@ -30,7 +30,7 @@ namespace Herbalist.StageOne
         private void Update()
         {
             RefreshActors();
-            if (Authority)
+            if (Authority && !Herbalist.GameUI.GameplayPause.IsPaused)
             {
                 bool a = IsInside(Actors[0]), b = IsInside(Actors[1]); InsideCount = (a ? 1 : 0) + (b ? 1 : 0);
                 Progress.CheckClear(a, b);
@@ -61,7 +61,7 @@ namespace Herbalist.StageOne
         }
         public string Execute(StageActor actor, StageCommand command)
         {
-            if (!Authority || actor == null || !actor.Available || Progress.Cleared) return settings.waitingMessage;
+            if (Herbalist.GameUI.GameplayPause.IsPaused || !Authority || actor == null || !actor.Available || Progress.Cleared) return settings.waitingMessage;
             RefreshActors(); int slot = actor.Slot;
             if (slot < 0 || slot >= Actors.Length || Actors[slot] != actor) return settings.waitingMessage;
             bool done = false;

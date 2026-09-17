@@ -5,6 +5,7 @@ namespace Herbalist.Networking
     [CreateAssetMenu(menuName = "Herbalist/Lobby Settings")]
     public sealed class LobbySettings : ScriptableObject
     {
+        public bool manualCharacterSelection;
         [Min(2)] public int playerCount = 2;
         [Min(1)] public int roomNameLimit = 32;
         [Min(1)] public float connectTimeout = 30;
