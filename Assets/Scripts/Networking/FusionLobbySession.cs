@@ -27,6 +27,40 @@ namespace Herbalist.Networking
         private NetworkRunner runner;
         private bool connecting, stopping, loadRequested, started;
         private CancellationTokenSource cancellation;
+        private struct StagePlayerState { public int Slot; public Herbalist.Abilities.PlayerAbilityKind Ability; }
+        private readonly Dictionary<PlayerRef, StagePlayerState> stagePlayers = new();
+        private bool stageTransition;
+        public int ResolveStageSlot(PlayerRef player, int fallback) => stagePlayers.TryGetValue(player,out var state)?state.Slot:fallback;
+        public bool RestoreStageAbility(PlayerRef player, Herbalist.Abilities.PlayerAbilityController ability)
+        {
+            if(runner==null || !runner.IsServer || !stagePlayers.TryGetValue(player,out var state))return false;
+            return state.Ability==Herbalist.Abilities.PlayerAbilityKind.Leaf?ability.UnlockLeaf():ability.UnlockSap();
+        }
+        public async void AdvanceStage(string scenePath)
+        {
+            if(runner==null || !runner.IsServer || stageTransition || State!=LobbyState.Playing)return;
+            int sceneIndex=SceneUtility.GetBuildIndexByScenePath(scenePath);
+            if(sceneIndex<0){Debug.LogError("Next stage is missing from Build Settings: "+scenePath);return;}
+            var current=runner.ActivePlayers.ToArray();
+            if(current.Length!=settings.playerCount)return;
+            var saved=new Dictionary<PlayerRef,StagePlayerState>();
+            foreach(var id in current)
+            {
+                if(!runner.TryGetPlayerObject(id,out var obj))return;
+                var player=obj.GetComponent<NetworkPlayer>();var ability=obj.GetComponent<Herbalist.Abilities.PlayerAbilityController>();
+                if(player==null||ability==null||!ability.Unlocked)return;
+                saved[id]=new StagePlayerState{Slot=player.Slot,Ability=ability.Kind};
+            }
+            stageTransition=true;stagePlayers.Clear();foreach(var pair in saved)stagePlayers.Add(pair.Key,pair.Value);
+            SetState(LobbyState.Loading,settings.loadingMessage);
+            try
+            {
+                foreach(var id in current)if(runner.TryGetPlayerObject(id,out var obj))runner.Despawn(obj);
+                await runner.LoadScene(SceneRef.FromIndex(sceneIndex),LoadSceneMode.Single);
+            }
+            catch(Exception exception){await FinishAsync(string.Format(settings.failureFormat,exception.Message));}
+            finally{stageTransition=false;}
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => Instance = null;
@@ -47,6 +81,7 @@ namespace Herbalist.Networking
             { SetState(LobbyState.Error, settings.invalidRoomMessage); return; }
             if (!Guid.TryParse(PhotonAppSettings.Global.AppSettings.AppIdFusion, out _))
             { SetState(LobbyState.Error, settings.missingAppIdMessage); return; }
+            stagePlayers.Clear(); stageTransition = false;
             connecting = true; loadRequested = false; started = false; RoomName = name;
             SetState(LobbyState.Connecting, settings.connectingMessage);
             cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(settings.connectTimeout));
@@ -111,7 +146,7 @@ namespace Herbalist.Networking
             stopping = true;
             SetState(LobbyState.Leaving, settings.leavingMessage);
             var oldRunner = runner;
-            runner = null; started = false;
+            runner = null; started = false; stagePlayers.Clear();
             try
             {
                 if (oldRunner != null)
@@ -155,7 +190,7 @@ namespace Herbalist.Networking
         public void OnSceneLoadStart(NetworkRunner r) { if (loadRequested || started) SetState(LobbyState.Loading, settings.loadingMessage); }
         public void OnSceneLoadDone(NetworkRunner r)
         {
-            if (SceneManager.GetActiveScene().path == settings.playScenePath)
+            if (SceneManager.GetActiveScene().path == settings.playScenePath || Herbalist.Levels.StageLevel.Instance != null)
             {
                 var layout = FindFirstObjectByType<PlayerSpawnLayout>();
                 if (layout != null) layout.SpawnPlayers(r);
