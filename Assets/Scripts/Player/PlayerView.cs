@@ -49,8 +49,8 @@ namespace Herbalist.Player
 
         public void ApplyLook(Vector2 delta)
         {
-            Yaw = Mathf.Repeat(Yaw + delta.x * tuning.mouseSensitivity, 360f);
-            Pitch = Mathf.Clamp(Pitch - delta.y * tuning.mouseSensitivity, tuning.pitchLimits.x, tuning.pitchLimits.y);
+            Yaw = Mathf.Repeat(Yaw + delta.x * tuning.mouseSensitivity * Herbalist.GameUI.UserOptions.LookMultiplier, 360f);
+            Pitch = Mathf.Clamp(Pitch - delta.y * tuning.mouseSensitivity * Herbalist.GameUI.UserOptions.LookMultiplier, tuning.pitchLimits.x, tuning.pitchLimits.y);
             if (tuning.facingMode == PlayerFacingMode.CameraAligned) SetBodyYaw(Yaw);
         }
 

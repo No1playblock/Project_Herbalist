@@ -59,6 +59,29 @@ namespace Herbalist.StageOne
                 if (hit.collider.GetComponentInParent<StageActor>() == null && hit.collider.GetComponentInParent<HerbSource>() == null) return false;
             return true;
         }
+        public bool TryInteractionHint(StageActor actor, out Vector3 point, out bool transfer)
+        {
+            point = default; transfer = false;
+            if (actor == null || Progress == null || Progress.Cleared || actor.Slot < 0 || actor.Slot > 1) return false;
+            int slot = actor.Slot;
+            if (Progress.Held[slot] != 0)
+            {
+                var other = Actors[1-slot];
+                if (other == null || Progress.Held[1-slot] != 0) return false;
+                point = other.transform.position + settings.interactionOffset;
+                transfer = true; return Reach(actor, point);
+            }
+            if (settings.slotRoles[slot] != CharacterRole.Duyeong) return false;
+            float best = float.PositiveInfinity; bool found = false;
+            for (int i=0;i<sources.Length;i++)
+            {
+                if (sources[i] == null || (Progress.Harvested & (1UL<<i)) != 0 || !Reach(actor,sources[i].Point)) continue;
+                float d=(actor.transform.position-sources[i].Point).sqrMagnitude;
+                if (d>=best) continue;
+                best=d; point=sources[i].Point; found=true;
+            }
+            return found;
+        }
         public string Execute(StageActor actor, StageCommand command)
         {
             if (Herbalist.GameUI.GameplayPause.IsPaused || !Authority || actor == null || !actor.Available || Progress.Cleared) return settings.waitingMessage;
