@@ -29,6 +29,7 @@ namespace Herbalist.Networking
         public override void Spawned()
         {
             abilities.ConfigureNetwork(HasStateAuthority);
+            abilities.Leaf.FacingRequested += SetShotFacing;
             if (!HasStateAuthority) return;
             abilities.Leaf.Configure(() => Runner.Spawn(leafPrefab, transform.position, Quaternion.identity, Object.InputAuthority).GetComponent<LeafProjectile>(),
                 leaf => { if (leaf != null && Runner != null && Runner.IsRunning) Runner.Despawn(leaf.GetComponent<NetworkObject>()); }, true);
@@ -56,6 +57,11 @@ namespace Herbalist.Networking
         }
         private void Publish() { Unlocked = abilities.Unlocked; Selected = abilities.Mode; Count = abilities.DisplayCount; Kind = abilities.Kind; Controlling = abilities.Sap != null && abilities.Sap.Controlling; CanPlace = abilities.Sap != null && abilities.Sap.CanPlace; Ready = abilities.Sap != null && abilities.Sap.Ready; Recovering = abilities.Leaf.Recovering; }
         public override void Render() { if (!HasStateAuthority) abilities.ApplyReplica(Unlocked, Selected, Count, Recovering, Kind, Controlling, CanPlace, Ready); }
-        public override void Despawned(NetworkRunner runner, bool hasState) { abilities.RevokeLeaf(); }
+        private void SetShotFacing(float yaw) { if (HasStateAuthority) player.BodyYaw = yaw; }
+        public override void Despawned(NetworkRunner runner, bool hasState)
+        {
+            abilities.Leaf.FacingRequested -= SetShotFacing;
+            abilities.RevokeLeaf();
+        }
     }
 }
