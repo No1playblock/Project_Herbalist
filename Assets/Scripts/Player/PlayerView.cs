@@ -15,6 +15,7 @@ namespace Herbalist.Player
         public Camera Camera => playerCamera;
         public float Yaw { get; private set; }
         public float Pitch { get; private set; }
+        public float BodyYaw => body.eulerAngles.y;
         public void SetBodyYaw(float yaw) => body.rotation = Quaternion.Euler(0, yaw, 0);
         public Quaternion PlanarRotation => Quaternion.Euler(0, Yaw, 0);
 
@@ -50,7 +51,7 @@ namespace Herbalist.Player
         {
             Yaw = Mathf.Repeat(Yaw + delta.x * tuning.mouseSensitivity, 360f);
             Pitch = Mathf.Clamp(Pitch - delta.y * tuning.mouseSensitivity, tuning.pitchLimits.x, tuning.pitchLimits.y);
-            SetBodyYaw(Yaw);
+            if (tuning.facingMode == PlayerFacingMode.CameraAligned) SetBodyYaw(Yaw);
         }
 
         // Network presentation can use this without reading local input.
@@ -58,13 +59,13 @@ namespace Herbalist.Player
         {
             Yaw = Mathf.Repeat(yaw, 360f);
             Pitch = Mathf.Clamp(pitch, tuning.pitchLimits.x, tuning.pitchLimits.y);
-            SetBodyYaw(Yaw);
+            if (tuning.facingMode == PlayerFacingMode.CameraAligned) SetBodyYaw(Yaw);
         }
 
         public void Present(float deltaTime, bool local)
         {
-            // Keep the camera behind the body, including owner render frames between network ticks.
-            SetBodyYaw(Yaw);
+            // Retain the previous camera-aligned mode for comparison and rollback.
+            if (tuning.facingMode == PlayerFacingMode.CameraAligned) SetBodyYaw(Yaw);
             float headYaw = Mathf.Clamp(Mathf.DeltaAngle(body.eulerAngles.y, Yaw), -tuning.headYawLimit, tuning.headYawLimit);
             float headPitch = Mathf.Clamp(Pitch, -tuning.headPitchLimit, tuning.headPitchLimit);
             Quaternion target = headRest * Quaternion.Euler(headPitch, headYaw, 0);

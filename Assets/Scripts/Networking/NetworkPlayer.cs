@@ -87,7 +87,7 @@ namespace Herbalist.Networking
                 }
             }
             player.Motor.Simulate(direction * player.Tuning.moveSpeed, Runner.DeltaTime);
-            BodyYaw = LookAngles.x;
+            BodyYaw = player.Tuning.ResolveBodyYaw(BodyYaw, LookAngles.x, direction, player.Motor.MovementLocked, Runner.DeltaTime);
             var state = player.Motor.CaptureState();
             SimulationPosition = state.Position; SimulationVelocity = state.Velocity; Grounded = state.Grounded;
         }
@@ -96,6 +96,8 @@ namespace Herbalist.Networking
         {
             if (characterPresentation != null) characterPresentation.SetNetworkGrounded(Grounded);
             if (!HasInputAuthority) player.View.SetLookAngles(LookAngles.x, LookAngles.y);
+            player.View.SetBodyYaw(player.Tuning.facingMode == PlayerFacingMode.CameraAligned && HasInputAuthority
+                ? player.View.Yaw : BodyYaw);
         }
         public override void Despawned(NetworkRunner runner, bool hasState)
         {

@@ -2,6 +2,8 @@ using UnityEngine;
 
 namespace Herbalist.Player
 {
+    public enum PlayerFacingMode { CameraAligned, MovementDirection }
+
     [CreateAssetMenu(menuName = "Herbalist/Player Tuning")]
     public sealed class PlayerTuning : ScriptableObject
     {
@@ -11,6 +13,15 @@ namespace Herbalist.Player
         [Min(0)] public float terminalSpeed = 35f;
         [Min(0)] public float groundStickSpeed = 2f;
         [Min(0)] public float bodyTurnSpeed = 540f;
+        public PlayerFacingMode facingMode = PlayerFacingMode.CameraAligned;
+
+        public float ResolveBodyYaw(float currentYaw, float cameraYaw, Vector3 movement, bool movementLocked, float deltaTime)
+        {
+            if (facingMode == PlayerFacingMode.CameraAligned) return cameraYaw;
+            if (movementLocked || movement.sqrMagnitude < 0.0001f) return currentYaw;
+            float target = Mathf.Atan2(movement.x, movement.z) * Mathf.Rad2Deg;
+            return Mathf.MoveTowardsAngle(currentYaw, target, bodyTurnSpeed * deltaTime);
+        }
         [Header("Jump")]
         [Min(0)] public float jumpHeight = 1.5f;
         [Min(0)] public float airAcceleration = 16f;
