@@ -118,6 +118,12 @@ namespace Herbalist.Abilities
                 contactOffset = pinAttachmentTip.position - transform.position;
             return -contactOffset - normal * depth;
         }
+        public void ReleaseSapBinding()
+        {
+            if (State != LeafState.Bound) return;
+            State = LeafState.Installed;
+            RefreshVisuals();
+        }
         public void BeginReturn()
         {
             if (State == LeafState.Returning || State == LeafState.Complete) return;

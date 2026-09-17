@@ -16,6 +16,7 @@ namespace Herbalist.Presentation
         [SerializeField] private string sapIdleText = "SAP  |  Near tree: R to extract";
         [SerializeField] private string sapControlText = "SAP  |  Aim to move  |  R: cancel";
         [SerializeField] private string sapPlaceText = "SAP  |  LMB: attach / inject  |  R: cancel";
+        [SerializeField] private string sapHoseText = "SAP  |  Hold LMB: spray  |  R: cancel";
         private void Update()
         {
             var view = screen.ViewForSlot(slot);
@@ -24,7 +25,9 @@ namespace Herbalist.Presentation
             {
                 bool controlling = ability.Sap != null && ability.Sap.Controlling;
                 reticle.SetActive(controlling);
-                status.text = !controlling ? sapIdleText : ability.Sap.CanPlace ? sapPlaceText : sapControlText;
+                status.text = !controlling ? sapIdleText :
+                    ability.Sap.Settings.controlMode == SapControlMode.Hose && ability.Sap.Ready ? sapHoseText :
+                    ability.Sap.CanPlace ? sapPlaceText : sapControlText;
                 return;
             }
             bool active = ability != null && ability.Unlocked && ability.Mode != LeafMode.Off;

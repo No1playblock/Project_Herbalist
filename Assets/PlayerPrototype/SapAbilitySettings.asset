@@ -13,6 +13,13 @@ MonoBehaviour:
   m_Name: SapAbilitySettings
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapAbilitySettings
   offlinePrefab: {fileID: 2631380105216188163, guid: 199e67f748b08fb45b4ad00b8c86caac, type: 3}
+  controlMode: 1
+  hoseHoverOffset: {x: 0.55, y: 1.15, z: 0.15}
+  hoseGrowthPerSecond: 0.5
+  hoseMaxScale: 2.4
+  hoseMergeNormalDot: 0.85
+  hoseMarkLifetime: 5
+  hoseMarkSpacing: 1
   hoverOffset: {x: 0.55, y: 1.5, z: 0.15}
   extractionSpeed: 4
   flightSpeed: 12
@@ -24,7 +31,7 @@ MonoBehaviour:
   streamBeadSize: 0.075
   extractionProbeOffset: {x: 0, y: 1.3, z: 0}
   extractionRange: 3
-  controlRange: 18
+  controlRange: 14
   radius: 0.22
   surfaceOffset: 0.025
   placementTolerance: 0.3

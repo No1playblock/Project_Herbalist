@@ -12,6 +12,7 @@ namespace Herbalist.Networking
         public uint JumpSequence;
         public uint AbilityCycle;
         public uint AbilityUse;
+        public NetworkBool AbilityHeld;
     }
 
     [RequireComponent(typeof(NetworkObject), typeof(NetworkTransform))]
@@ -62,7 +63,8 @@ namespace Herbalist.Networking
             LookAngles = new Vector2(player.View.Yaw, player.View.Pitch),
             JumpSequence = player.Input.JumpSequence,
             AbilityCycle = GetComponent<Herbalist.Abilities.AbilityInputReader>().CycleSequence,
-            AbilityUse = GetComponent<Herbalist.Abilities.AbilityInputReader>().UseSequence
+            AbilityUse = GetComponent<Herbalist.Abilities.AbilityInputReader>().UseSequence,
+            AbilityHeld = GetComponent<Herbalist.Abilities.AbilityInputReader>().UseHeld
         };
         public override void FixedUpdateNetwork()
         {

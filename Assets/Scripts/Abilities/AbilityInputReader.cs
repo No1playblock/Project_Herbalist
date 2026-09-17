@@ -13,6 +13,7 @@ namespace Herbalist.Abilities
         private bool active;
         public uint CycleSequence { get; private set; }
         public uint UseSequence { get; private set; }
+        public bool UseHeld => active && useAction != null && useAction.IsPressed() && Herbalist.Presentation.GameplayCursor.AllowsPointerInput;
         private void Awake()
         {
             player = GetComponent<PlayerController>();
