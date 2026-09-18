@@ -37,6 +37,7 @@ namespace Herbalist.Abilities
         private void Update() { if (initialized && !externalTick) Tick(Time.deltaTime); }
         public void Tick(float dt)
         {
+            if (Herbalist.GameUI.GameplayPause.IsPaused) return;
             if (!initialized || State == LeafState.Complete) return;
             if (owner == null) { Finish(); return; }
             if (State == LeafState.Flying)
@@ -83,6 +84,8 @@ namespace Herbalist.Abilities
             State = target.TryBind(this) ? LeafState.Bound : LeafState.Installed;
             remaining = settings.lifetime; InstalledAt = Time.time;
             target.Attach(this, State == LeafState.Bound); RefreshVisuals();
+            if (State == LeafState.Bound)
+                Debug.Log($"[SapLeafBinding] 수액 + 나뭇잎 결합 성공 | Leaf={name} | Target={target.name} (ID={target.Id}) | Mode={Mode} | Contact={ContactPoint}", this);
         }
         private Vector3 TipPlacementOffset(Vector3 normal)
         {
@@ -117,6 +120,12 @@ namespace Herbalist.Abilities
             if (Mode == LeafMode.Pin && pinAttachmentTip != null)
                 contactOffset = pinAttachmentTip.position - transform.position;
             return -contactOffset - normal * depth;
+        }
+        public void ReleaseSapBinding()
+        {
+            if (State != LeafState.Bound) return;
+            State = LeafState.Installed;
+            RefreshVisuals();
         }
         public void BeginReturn()
         {

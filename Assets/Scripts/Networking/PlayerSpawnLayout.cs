@@ -21,8 +21,8 @@ namespace Herbalist.Networking
             for (int i = 0; i < players.Length; i++)
             {
                 if (runner.TryGetPlayerObject(players[i], out _)) continue;
-                int slot = i;
-                var point = spawnPoints[i];
+                int slot = FusionLobbySession.Instance != null ? FusionLobbySession.Instance.ResolveStageSlot(players[i], i) : i;
+                var point = spawnPoints[slot];
                 var obj = runner.Spawn(playerPrefab, point.position, point.rotation, players[i],
                     (r, spawned) => spawned.GetComponent<NetworkPlayer>().Slot = slot);
                 runner.SetPlayerObject(players[i], obj);

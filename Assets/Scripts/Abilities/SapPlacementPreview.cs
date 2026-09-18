@@ -13,7 +13,7 @@ namespace Herbalist.Abilities
         {
             var sap = abilities.Sap;
             bool visible = player.LocallyControlled && abilities.Unlocked && abilities.Kind == PlayerAbilityKind.Sap &&
-                sap != null && sap.Controlling && sap.Ready;
+                sap != null && sap.Settings.controlMode == SapControlMode.Placement && sap.Controlling && sap.Ready;
             if (visible)
             {
                 var aim = player.View.GetAimRay(player.View.Yaw, player.View.Pitch);

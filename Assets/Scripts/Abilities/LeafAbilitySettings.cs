@@ -7,6 +7,7 @@ namespace Herbalist.Abilities
     public sealed class LeafAbilitySettings : ScriptableObject
     {
         public LeafProjectile offlinePrefab;
+        public bool faceAimOnThrow;
         [Min(1)] public int capacity = 3;
         [Min(0.01f)] public float lifetime = 5;
         [Min(0.1f)] public float range = 18;

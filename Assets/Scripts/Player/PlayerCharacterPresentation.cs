@@ -22,6 +22,7 @@ namespace Herbalist.Player
         [SerializeField, Min(0)] private float stoppedSpeedThreshold = 0.05f;
         [SerializeField, Min(0)] private float stopDamping = 0.04f;
         [SerializeField, Min(0.01f)] private float teleportDistance = 2f;
+        private PlayerController player;
         private Transform head;
         private Vector3 previousPosition;
         private Quaternion animatedHead;
@@ -33,6 +34,7 @@ namespace Herbalist.Player
 
         private void Awake()
         {
+            player = GetComponent<PlayerController>();
             speedId = Animator.StringToHash(speedParameter);
             groundedId = Animator.StringToHash(groundedParameter);
             playbackId = Animator.StringToHash(playbackParameter);
@@ -66,6 +68,7 @@ namespace Herbalist.Player
         }
         private void LateUpdate()
         {
+            animator.speed = Herbalist.GameUI.GameplayPause.IsPaused ? 0 : 1;
             Vector3 delta = transform.position - previousPosition;
             previousPosition = transform.position;
             if (!characterRoot.activeInHierarchy || Time.deltaTime <= 0) return;
@@ -74,7 +77,9 @@ namespace Herbalist.Player
             bool stopping = speed <= stoppedSpeedThreshold;
             animator.SetFloat(speedId, stopping ? 0 : speed, stopping ? stopDamping : speedDamping, Time.deltaTime);
             Vector3 planar = Vector3.ProjectOnPlane(delta, Vector3.up);
-            animator.SetFloat(playbackId, Vector3.Dot(planar.normalized, body.forward) < -backwardThreshold ? -1f : 1f);
+            bool backpedaling = player != null && player.Tuning.facingMode == PlayerFacingMode.CameraAligned
+                && Vector3.Dot(planar.normalized, body.forward) < -backwardThreshold;
+            animator.SetFloat(playbackId, backpedaling ? -1f : 1f);
             animator.SetBool(groundedId, network ? grounded : motor.IsGrounded);
             if (head == null) return;
             animatedHead = head.localRotation;

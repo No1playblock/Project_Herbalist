@@ -11,6 +11,16 @@ namespace Herbalist.Abilities
         private Action<SapDeposit> remove;
         private bool authority, externalTick;
         private float remaining;
+        private Transform surface;
+        private bool hoseMark;
+        private float markScale = 1;
+        public float MarkScale => markScale;
+        public Vector3 StreamEnd { get; private set; }
+        public bool HoseStream { get; private set; }
+        public Vector3 StreamOrigin => HoseStream ? transform.position : StreamStart;
+        public Vector3 StreamDestination => HoseStream ? StreamEnd : transform.position;
+        public void SetHoseStream(Vector3 end) { HoseStream = true; StreamEnd = end; HasStream = true; }
+        public void SetHoseReplica(bool hose, Vector3 end, float scale) { HoseStream = hose; StreamEnd = end; markScale = scale; RefreshVisual(); }
         private LeafProjectile boundLeaf;
         private Vector3 localPosition;
         private Quaternion localRotation;
@@ -20,7 +30,7 @@ namespace Herbalist.Abilities
         public Vector3 StreamStart { get; private set; }
         public bool HasStream { get; private set; }
         public SapAbilitySettings Settings => settings;
-        public void SetStream(Vector3 start, bool active) { StreamStart = start; HasStream = active; }
+        public void SetStream(Vector3 start, bool active) { StreamStart = start; HasStream = active; HoseStream = false; }
         public void BeginExtraction(Vector3 sourcePoint) { State = SapState.Extracting; SetStream(sourcePoint, true); RefreshVisual(); }
         public void SetHeld() { if (State == SapState.Extracting) State = SapState.Controlled; }
         public void Launch(SapReceiver receiver, Vector3 position, Vector3 normal)
@@ -71,9 +81,22 @@ namespace Herbalist.Abilities
         private void Update() { if (authority && !externalTick) Tick(Time.deltaTime); }
         public void Tick(float dt)
         {
+            if (Herbalist.GameUI.GameplayPause.IsPaused) return;
             if (!authority) return;
             if (State == SapState.Flying) { TickFlight(dt); return; }
             if (!IsPlaced) return;
+            if (hoseMark)
+            {
+                if (surface == null || !surface.gameObject.activeInHierarchy) { Finish(); return; }
+                transform.SetPositionAndRotation(surface.TransformPoint(localPosition), surface.rotation * localRotation);
+                // Bound sap and its leaf persist together until recall or removal.
+                if (State == SapState.Bound)
+                {
+                    if (boundLeaf == null || !boundLeaf.Installed) Finish();
+                }
+                else { remaining -= dt; if (remaining <= 0) Finish(); }
+                return;
+            }
             if (Receiver == null || !Receiver.isActiveAndEnabled) { Finish(); return; }
             transform.SetPositionAndRotation(Receiver.transform.TransformPoint(localPosition), Receiver.transform.rotation * localRotation);
             if (State == SapState.Bound)
@@ -92,6 +115,33 @@ namespace Herbalist.Abilities
             localRotation = Quaternion.Inverse(receiver.transform.rotation) * transform.rotation;
             receiver.Attach(this); RefreshVisual();
         }
+        public static void ApplyHoseHit(RaycastHit hit, SapAbilitySettings settings, float dt, Func<SapDeposit> create)
+        {
+            SapDeposit nearest = null;
+            float distance = settings.hoseMarkSpacing;
+            foreach (var mark in all)
+            {
+                if (!mark.authority || !mark.hoseMark || !mark.IsPlaced || mark.surface != hit.collider.transform) continue;
+                if (Vector3.Dot(mark.transform.forward, hit.normal) < settings.hoseMergeNormalDot) continue;
+                float candidate = Vector3.Distance(mark.transform.position, hit.point);
+                if (candidate <= distance) { nearest = mark; distance = candidate; }
+            }
+            if (nearest == null)
+            {
+                nearest = create();
+                if (nearest == null) return;
+                nearest.hoseMark = true; nearest.surface = hit.collider.transform;
+                nearest.Receiver = hit.collider.GetComponentInParent<SapReceiver>();
+                nearest.State = SapState.Attached;
+                nearest.transform.SetPositionAndRotation(hit.point + hit.normal * settings.surfaceOffset, Quaternion.LookRotation(hit.normal));
+                nearest.localPosition = nearest.surface.InverseTransformPoint(nearest.transform.position);
+                nearest.localRotation = Quaternion.Inverse(nearest.surface.rotation) * nearest.transform.rotation;
+                if (nearest.Receiver != null) nearest.Receiver.Attach(nearest);
+            }
+            nearest.remaining = nearest.settings.hoseMarkLifetime;
+            nearest.markScale = Mathf.Min(nearest.settings.hoseMaxScale, nearest.markScale + nearest.settings.hoseGrowthPerSecond * dt);
+            nearest.RefreshVisual();
+        }
         public bool RefreshAt(SapReceiver receiver, Vector3 position)
         {
             foreach (var sap in all)
@@ -109,10 +159,27 @@ namespace Herbalist.Abilities
             {
                 if (!sap.authority || sap.State != SapState.Attached || sap.remaining <= 0 || sap.Receiver == null || sap.Receiver.LeafTarget != leaf.Target) continue;
                 float candidate = Vector3.Distance(leaf.ContactPoint, sap.transform.position);
-                if (candidate <= sap.settings.bindingRadius && candidate < distance) { nearest = sap; distance = candidate; }
+                if (candidate < distance && sap.ContainsBindingPoint(leaf.ContactPoint)) { nearest = sap; distance = candidate; }
             }
             if (nearest == null) return false;
             nearest.boundLeaf = leaf; nearest.State = SapState.Bound; return true;
+        }
+        private bool ContainsBindingPoint(Vector3 contact)
+        {
+            // Preserve the placement tolerance, but include the visible area of grown hose marks.
+            if (Vector3.Distance(contact, transform.position) <= settings.bindingRadius) return true;
+            if (!hoseMark || visual == null) return false;
+            var filter = visual.GetComponent<MeshFilter>();
+            if (filter == null || filter.sharedMesh == null) return false;
+            var bounds = filter.sharedMesh.bounds;
+            if (bounds.extents.x <= 0 || bounds.extents.y <= 0) return false;
+            Vector3 center = filter.transform.TransformPoint(bounds.center);
+            // Growth only enlarges the surface footprint, never the reach through the surface.
+            if (Mathf.Abs(Vector3.Dot(contact - center, transform.forward)) > settings.bindingRadius) return false;
+            Vector3 point = filter.transform.InverseTransformPoint(contact) - bounds.center;
+            float x = point.x / bounds.extents.x;
+            float y = point.y / bounds.extents.y;
+            return x * x + y * y <= 1f;
         }
         public static void Release(LeafProjectile leaf)
         {
@@ -123,7 +190,7 @@ namespace Herbalist.Abilities
             if (!authority || State == SapState.Complete) return;
             HasStream = false; State = SapState.Complete;
             var leaf = boundLeaf; boundLeaf = null;
-            if (leaf != null && leaf.Installed) leaf.BeginReturn();
+            if (leaf != null && leaf.Installed) { if (hoseMark) leaf.ReleaseSapBinding(); else leaf.BeginReturn(); }
             Detach(); RefreshVisual(); remove?.Invoke(this);
         }
         private void Detach() { if (Receiver != null) Receiver.Detach(this); Receiver = null; }
@@ -139,7 +206,7 @@ namespace Herbalist.Abilities
         {
             if (visual == null || settings == null) return;
             visual.gameObject.SetActive(State != SapState.Complete && State != SapState.Inactive);
-            visual.localScale = IsPlaced ? settings.attachedScale : settings.controlledScale;
+            visual.localScale = IsPlaced ? Vector3.Scale(settings.attachedScale, new Vector3(markScale, markScale, 1)) : settings.controlledScale;
         }
     }
 }

@@ -12,6 +12,7 @@ namespace Herbalist.Networking
         public uint JumpSequence;
         public uint AbilityCycle;
         public uint AbilityUse;
+        public NetworkBool AbilityHeld;
     }
 
     [RequireComponent(typeof(NetworkObject), typeof(NetworkTransform))]
@@ -62,11 +63,13 @@ namespace Herbalist.Networking
             LookAngles = new Vector2(player.View.Yaw, player.View.Pitch),
             JumpSequence = player.Input.JumpSequence,
             AbilityCycle = GetComponent<Herbalist.Abilities.AbilityInputReader>().CycleSequence,
-            AbilityUse = GetComponent<Herbalist.Abilities.AbilityInputReader>().UseSequence
+            AbilityUse = GetComponent<Herbalist.Abilities.AbilityInputReader>().UseSequence,
+            AbilityHeld = GetComponent<Herbalist.Abilities.AbilityInputReader>().UseHeld
         };
         public override void FixedUpdateNetwork()
         {
             if (IsProxy) return;
+            if (Herbalist.GameUI.GameplayPause.IsPaused) { if (GetInput(out PlayerNetworkInput pausedInput)) LastJumpSequence = pausedInput.JumpSequence; return; }
             // All values needed for re-simulation come from Fusion's restored tick state.
             if (HasStateAuthority) MovementBlocked = player.Motor.HasMovementLockExcept(this);
             player.Motor.SetMovementLock(this, MovementBlocked);
@@ -87,7 +90,7 @@ namespace Herbalist.Networking
                 }
             }
             player.Motor.Simulate(direction * player.Tuning.moveSpeed, Runner.DeltaTime);
-            BodyYaw = LookAngles.x;
+            BodyYaw = player.Tuning.ResolveBodyYaw(BodyYaw, LookAngles.x, direction, player.Motor.MovementLocked, Runner.DeltaTime);
             var state = player.Motor.CaptureState();
             SimulationPosition = state.Position; SimulationVelocity = state.Velocity; Grounded = state.Grounded;
         }
@@ -96,6 +99,8 @@ namespace Herbalist.Networking
         {
             if (characterPresentation != null) characterPresentation.SetNetworkGrounded(Grounded);
             if (!HasInputAuthority) player.View.SetLookAngles(LookAngles.x, LookAngles.y);
+            player.View.SetBodyYaw(player.Tuning.facingMode == PlayerFacingMode.CameraAligned && HasInputAuthority
+                ? player.View.Yaw : BodyYaw);
         }
         public override void Despawned(NetworkRunner runner, bool hasState)
         {

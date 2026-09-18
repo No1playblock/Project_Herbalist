@@ -47,18 +47,19 @@ namespace Herbalist.Abilities
         private void Update()
         {
             if (network || !player.LocallyControlled) return;
-            Tick(Input.CycleSequence, Input.UseSequence, player.View.GetAimRay(player.View.Yaw, player.View.Pitch), Time.deltaTime);
+            Tick(Input.CycleSequence, Input.UseSequence, player.View.GetAimRay(player.View.Yaw, player.View.Pitch), Time.deltaTime, Input.UseHeld);
         }
-        public void Tick(uint cycle, uint use, Ray aim, float dt)
+        public void Tick(uint cycle, uint use, Ray aim, float dt, bool useHeld = false)
         {
             if (!authority) return;
+            if (Herbalist.GameUI.GameplayPause.IsPaused) { lastCycle = cycle; lastUse = use; return; }
             Leaf.Tick(dt);
             uint steps = unchecked(cycle - lastCycle); lastCycle = cycle;
             bool fire = use != lastUse; lastUse = use;
             if (Unlocked && Kind == PlayerAbilityKind.Sap && Sap != null)
             {
                 if (steps % 2 != 0) Sap.Toggle();
-                Sap.Tick(aim, fire, dt);
+                Sap.Tick(aim, Sap.Settings.controlMode == SapControlMode.Hose ? useHeld : fire, dt);
             }
             else if (Unlocked)
             {

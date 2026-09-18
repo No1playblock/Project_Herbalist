@@ -1,12 +1,22 @@
 using UnityEngine;
 namespace Herbalist.Abilities
 {
+    public enum SapControlMode { Placement, Hose }
     public enum PlayerAbilityKind { Leaf, Sap }
     public enum SapState { Inactive, Controlled, Attached, Bound, Complete, Extracting, Flying }
     [CreateAssetMenu(menuName = "Herbalist/Sap Ability Settings")]
     public sealed class SapAbilitySettings : ScriptableObject
     {
         public SapDeposit offlinePrefab;
+        [Header("Reversible control mode")]
+        public SapControlMode controlMode = SapControlMode.Placement;
+        public Vector3 hoseHoverOffset = new Vector3(0.55f, 1.15f, 0.15f);
+        [Min(0.01f)] public float hoseGrowthPerSecond = 0.5f;
+        [Min(1)] public float hoseMaxScale = 3f;
+        [Range(-1, 1)] public float hoseMergeNormalDot = 0.85f;
+        [Min(0.1f)] public float hoseMarkLifetime = 5f;
+        [Tooltip("Hits within this distance grow the existing mark instead of creating another.")]
+        [Min(0.01f)] public float hoseMarkSpacing = 1f;
         public Vector3 hoverOffset = new Vector3(0.55f, 1.5f, 0.15f);
         [Min(0.01f)] public float extractionSpeed = 4;
         [Min(0.01f)] public float flightSpeed = 12;

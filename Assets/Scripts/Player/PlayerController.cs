@@ -38,11 +38,12 @@ namespace Herbalist.Player
         }
         private void Update()
         {
-            if (!ready || !locallyControlled) return;
+            if (!ready || !locallyControlled || Herbalist.GameUI.GameplayPause.IsPaused) return;
             view.ApplyLook(input.Look);
             if (networkDriven) return;
             Vector2 movement = Vector2.ClampMagnitude(input.Move, 1);
             Vector3 direction = view.PlanarRotation * new Vector3(movement.x, 0, movement.y);
+            view.SetBodyYaw(tuning.ResolveBodyYaw(view.BodyYaw, view.Yaw, direction, motor.MovementLocked, Time.deltaTime));
             if (lastJump != input.JumpSequence) { lastJump = input.JumpSequence; motor.TryJump(); }
             motor.Simulate(direction * tuning.moveSpeed, Time.deltaTime);
         }

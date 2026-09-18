@@ -13,6 +13,7 @@ namespace Herbalist.Abilities
         private bool network;
         private LeafProjectile pendingRecovery;
         private float cooldown;
+        public event Action<float> FacingRequested;
         public LeafAbilitySettings Settings => settings;
         public int ActiveCount => leaves.Count;
         public bool Recovering { get; private set; }
@@ -31,6 +32,17 @@ namespace Herbalist.Abilities
             }
             Vector3 endpoint = aim.GetPoint(settings.range);
             if (Physics.Raycast(aim, out var hit, settings.range, settings.hitMask, QueryTriggerInteraction.Ignore)) endpoint = hit.point + aim.direction * settings.collisionRadius;
+            if (settings.faceAimOnThrow)
+            {
+                var player = GetComponent<Herbalist.Player.PlayerController>();
+                var planar = Vector3.ProjectOnPlane(aim.direction, Vector3.up);
+                if (player != null && planar.sqrMagnitude > 0.0001f)
+                {
+                    float yaw = Quaternion.LookRotation(planar).eulerAngles.y;
+                    player.View.SetBodyYaw(yaw);
+                    FacingRequested?.Invoke(yaw);
+                }
+            }
             Transform frame = launchFrame != null ? launchFrame : transform;
             Vector3 origin = frame.position + Quaternion.Euler(0, frame.eulerAngles.y, 0) * settings.launchOffset;
             var projectile = spawn();

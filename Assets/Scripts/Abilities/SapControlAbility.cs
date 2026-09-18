@@ -16,17 +16,20 @@ namespace Herbalist.Abilities
         private SapDeposit held;
         private bool externalTick, replicaReady;
         private float sourceRefresh;
+        private SapHoseSprayer hose;
         public SapAbilitySettings Settings => settings;
         public bool Controlling { get; private set; }
         public bool CanPlace { get; private set; }
         public bool Ready => held != null ? held.State == SapState.Controlled : replicaReady;
         public int ActiveCount => deposits.Count;
         public SapDeposit Held => held;
-        private void Awake() => player = GetComponent<PlayerController>();
+        private void Awake() { player = GetComponent<PlayerController>(); hose = new SapHoseSprayer(); }
         public void Configure(Func<SapDeposit> factory, Action<SapDeposit> release, bool network)
         { create = factory; destroy = release; externalTick = network; }
         public Vector3 HoverPosition(Ray aim)
         {
+            if (settings.controlMode == SapControlMode.Hose)
+                return transform.position + Quaternion.Euler(0, player.View.BodyYaw, 0) * settings.hoseHoverOffset;
             var forward = Vector3.ProjectOnPlane(aim.direction, Vector3.up);
             var rotation = forward.sqrMagnitude > 0.000001f ? Quaternion.LookRotation(forward) : player.View.PlanarRotation;
             return transform.position + rotation * settings.hoverOffset;
@@ -34,7 +37,8 @@ namespace Herbalist.Abilities
         public void Toggle()
         {
             if (Controlling) { Cancel(); return; }
-            if (settings == null || create == null || deposits.Count >= settings.capacity) return;
+            if (settings == null || create == null ||
+                (settings.controlMode == SapControlMode.Placement && deposits.Count >= settings.capacity)) return;
             source = SapSource.FindNearest(transform.position + settings.extractionProbeOffset, settings.extractionRange,
                 settings.radius + settings.surfaceOffset, out var origin);
             if (source == null || !source.TryExtract()) return;
@@ -42,7 +46,8 @@ namespace Herbalist.Abilities
             if (held == null) { source.Refund(); source = null; return; }
             deposits.Add(held); held.Initialize(settings, origin, Remove, externalTick);
             source.TryClosestSurface(origin, out var surface, out _);
-            held.BeginExtraction(surface); sourceRefresh = 0;
+            held.BeginExtraction(surface); sourceRefresh = 0; hose.Reset();
+            if (settings.controlMode == SapControlMode.Hose) held.SetStream(surface, false);
             Controlling = true; player.Motor.SetMovementLock(this, true);
         }
         // Shared by the authoritative shot check and the owner's purely visual preview.
@@ -63,6 +68,7 @@ namespace Herbalist.Abilities
         }
         public void Tick(Ray aim, bool use, float dt)
         {
+            if (Herbalist.GameUI.GameplayPause.IsPaused) return;
             CanPlace = false;
             if (!Controlling) return;
             if (held == null || source == null || !source.isActiveAndEnabled || held.State == SapState.Complete)
@@ -77,6 +83,12 @@ namespace Herbalist.Abilities
             { Cancel(); return; }
             held.transform.position = next;
             if (Vector3.Distance(next, hover) <= settings.arrivalTolerance) held.SetHeld();
+            if (settings.controlMode == SapControlMode.Hose)
+            {
+                CanPlace = Ready;
+                hose.Tick(held, aim, Ready && use, dt, settings, CreateHoseMark);
+                return;
+            }
             sourceRefresh -= dt;
             if (sourceRefresh <= 0)
             {
@@ -91,6 +103,16 @@ namespace Herbalist.Abilities
             var launched = held; held = null;
             launched.Launch(receiver, placement, normal);
             EndControl();
+        }
+        private SapDeposit CreateHoseMark()
+        {
+            // Hose marks are bounded by last-hit expiry, not the legacy placement inventory.
+            // A full inventory used to make new aim points silently stop receiving sap.
+            var mark = create();
+            if (mark == null) return null;
+            deposits.Add(mark);
+            mark.Initialize(settings, Vector3.zero, Remove, externalTick);
+            return mark;
         }
         public void Cancel()
         {
