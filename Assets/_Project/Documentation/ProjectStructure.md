@@ -1,5 +1,7 @@
 # 프로젝트 폴더 및 네이밍 규칙
 
+팀 공유 및 Notion 게시용 상세 규칙은 [NamingGuide.md](NamingGuide.md)를 참고한다.
+
 ## 배치 기준
 자체 제작 파일은 `Assets/_Project` 아래에서 파일 종류별로 관리한다.
 기능별 분류는 각 종류 폴더의 하위에 둔다. 캐릭터 영문명은 `Sodam`, `Duyeong`으로 통일한다.
