@@ -84,6 +84,8 @@ namespace Herbalist.Abilities
             State = target.TryBind(this) ? LeafState.Bound : LeafState.Installed;
             remaining = settings.lifetime; InstalledAt = Time.time;
             target.Attach(this, State == LeafState.Bound); RefreshVisuals();
+            if (State == LeafState.Bound)
+                Debug.Log($"[SapLeafBinding] 수액 + 나뭇잎 결합 성공 | Leaf={name} | Target={target.name} (ID={target.Id}) | Mode={Mode} | Contact={ContactPoint}", this);
         }
         private Vector3 TipPlacementOffset(Vector3 normal)
         {

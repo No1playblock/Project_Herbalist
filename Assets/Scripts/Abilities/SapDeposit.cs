@@ -89,9 +89,12 @@ namespace Herbalist.Abilities
             {
                 if (surface == null || !surface.gameObject.activeInHierarchy) { Finish(); return; }
                 transform.SetPositionAndRotation(surface.TransformPoint(localPosition), surface.rotation * localRotation);
-                remaining -= dt;
-                if (remaining <= 0) { Finish(); return; }
-                if (State == SapState.Bound && (boundLeaf == null || !boundLeaf.Installed)) Finish();
+                // Bound sap and its leaf persist together until recall or removal.
+                if (State == SapState.Bound)
+                {
+                    if (boundLeaf == null || !boundLeaf.Installed) Finish();
+                }
+                else { remaining -= dt; if (remaining <= 0) Finish(); }
                 return;
             }
             if (Receiver == null || !Receiver.isActiveAndEnabled) { Finish(); return; }
@@ -156,10 +159,27 @@ namespace Herbalist.Abilities
             {
                 if (!sap.authority || sap.State != SapState.Attached || sap.remaining <= 0 || sap.Receiver == null || sap.Receiver.LeafTarget != leaf.Target) continue;
                 float candidate = Vector3.Distance(leaf.ContactPoint, sap.transform.position);
-                if (candidate <= sap.settings.bindingRadius && candidate < distance) { nearest = sap; distance = candidate; }
+                if (candidate < distance && sap.ContainsBindingPoint(leaf.ContactPoint)) { nearest = sap; distance = candidate; }
             }
             if (nearest == null) return false;
             nearest.boundLeaf = leaf; nearest.State = SapState.Bound; return true;
+        }
+        private bool ContainsBindingPoint(Vector3 contact)
+        {
+            // Preserve the placement tolerance, but include the visible area of grown hose marks.
+            if (Vector3.Distance(contact, transform.position) <= settings.bindingRadius) return true;
+            if (!hoseMark || visual == null) return false;
+            var filter = visual.GetComponent<MeshFilter>();
+            if (filter == null || filter.sharedMesh == null) return false;
+            var bounds = filter.sharedMesh.bounds;
+            if (bounds.extents.x <= 0 || bounds.extents.y <= 0) return false;
+            Vector3 center = filter.transform.TransformPoint(bounds.center);
+            // Growth only enlarges the surface footprint, never the reach through the surface.
+            if (Mathf.Abs(Vector3.Dot(contact - center, transform.forward)) > settings.bindingRadius) return false;
+            Vector3 point = filter.transform.InverseTransformPoint(contact) - bounds.center;
+            float x = point.x / bounds.extents.x;
+            float y = point.y / bounds.extents.y;
+            return x * x + y * y <= 1f;
         }
         public static void Release(LeafProjectile leaf)
         {

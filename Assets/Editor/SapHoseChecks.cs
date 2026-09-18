@@ -84,8 +84,50 @@ public static class SapHoseChecks
             typeof(LeafProjectile).GetMethod("Install", BindingFlags.Instance|BindingFlags.NonPublic).Invoke(bindingLeaf,
                 new object[]{target, marks[2].transform.position, Vector3.back, Vector3.forward});
             Require(marks[2].State == SapState.Bound && bindingLeaf.State == LeafState.Bound, "sap-first binding");
-            marks[2].Tick(5.1f);
-            Require(marks[2].State == SapState.Complete && bindingLeaf.State == LeafState.Installed, "bound expiry releases leaf without recall");
+            for (int i=0; i<10; i++)
+            {
+                marks[2].Tick(settings.hoseMarkLifetime * 10);
+                bindingLeaf.Tick(leafSettings.lifetime * 10);
+            }
+            Require(marks[2].State == SapState.Bound && bindingLeaf.State == LeafState.Bound, "bound sap and leaf persist beyond both lifetimes");
+            bindingLeaf.BeginReturn();
+            Require(marks[2].State == SapState.Complete && bindingLeaf.State == LeafState.Returning && !receiver.Supplied, "recall removes bound sap and drains receiver");
+
+            // A grown mark must bind a real projectile anywhere inside its visible footprint.
+            bindingLeaf.Finish();
+            wall.transform.localScale = new Vector3(10, 10, 1);
+            Physics.SyncTransforms();
+            Func<float, LeafProjectile> shoot = offset => {
+                var leaf = UnityEngine.Object.Instantiate(leafSettings.offlinePrefab); objects.Add(leaf.gameObject);
+                Vector3 start = origin + Vector3.right * offset;
+                leaf.Initialize(leafSettings, root.transform, LeafMode.Pin, start, start + Vector3.forward * 10, _=>{}, true);
+                for (int i=0; i<120 && leaf.State == LeafState.Flying; i++) leaf.Tick(1f/60);
+                Require(leaf.Installed, "physical leaf collision");
+                return leaf;
+            };
+            hose.Tick(held, new Ray(origin, Vector3.forward), true, 100, settings, create);
+            var grownMark = marks[marks.Count-1];
+            float visibleRadius = settings.attachedScale.x * settings.hoseMaxScale * .5f;
+            float edgeOffset = (settings.bindingRadius + visibleRadius) * .5f;
+            Require(edgeOffset > settings.bindingRadius && edgeOffset < visibleRadius, "edge fixture outside old radius");
+            var edgeLeaf = shoot(edgeOffset);
+            Require(edgeLeaf.State == LeafState.Bound && grownMark.State == SapState.Bound, "grown visible edge binds");
+            grownMark.Tick(settings.hoseMarkLifetime * 100);
+            edgeLeaf.Tick(leafSettings.lifetime * 100);
+            Require(grownMark.State == SapState.Bound && edgeLeaf.State == LeafState.Bound, "grown bound pair persists");
+            edgeLeaf.Finish();
+            Require(grownMark.State == SapState.Complete && !receiver.Supplied, "leaf removal cleans up grown bound sap");
+            Physics.SyncTransforms();
+
+            hose.Tick(held, new Ray(origin, Vector3.forward), true, 100, settings, create);
+            var outsideLeaf = shoot(visibleRadius + settings.bindingRadius);
+            Require(outsideLeaf.State == LeafState.Installed, "outside footprint does not bind");
+            outsideLeaf.Finish(); marks[marks.Count-1].Finish(); Physics.SyncTransforms();
+            var expiredLeaf = shoot(0);
+            Require(expiredLeaf.State == LeafState.Installed, "expired mark does not bind");
+            hose.Tick(held, new Ray(origin, Vector3.forward), true, 100, settings, create);
+            Require(expiredLeaf.State == LeafState.Installed, "leaf-first does not bind retroactively");
+            expiredLeaf.Finish(); marks[marks.Count-1].Finish(); Physics.SyncTransforms();
 
             var legacy = create();
             legacy.Place(receiver, origin+Vector3.forward*4.5f, Vector3.back);
@@ -122,7 +164,7 @@ public static class SapHoseChecks
             var createHoseMark = typeof(SapControlAbility).GetMethod("CreateHoseMark", BindingFlags.Instance|BindingFlags.NonPublic);
             for (int i=0; i<3; i++)
                 Require(createHoseMark.Invoke(sap,null) != null, "hose ignores legacy placement capacity");
-            return "PASS: empty-space spray, advancing stream, wall hit, merge/growth/cap, release, refreshed 5s expiry, body-fixed chest hover, leaf-facing, bound expiry/release, legacy placement, near-to-far spray, legacy capacity isolation";
+            return "PASS: empty-space spray, advancing stream, wall hit, merge/growth/cap, release, refreshed 5s expiry, body-fixed chest hover, leaf-facing, bound persistence/recall cleanup, legacy placement, near-to-far spray, legacy capacity isolation, physical grown-edge binding, outside/expired rejection, leaf-first order";
         }
         finally
         {
