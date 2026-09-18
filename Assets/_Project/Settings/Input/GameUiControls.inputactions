@@ -1,0 +1,57 @@
+{
+    "version": 1,
+    "name": "GameUiControls",
+    "maps": [
+        {
+            "name": "GameUI",
+            "id": "2033d611-8099-4106-ad4e-c1d3fb5605f0",
+            "actions": [
+                {
+                    "name": "Pause",
+                    "type": "Button",
+                    "id": "960bfead-ceb1-4450-bc75-923b7af171fc",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
+                    "name": "Help",
+                    "type": "Button",
+                    "id": "52278edc-1886-444c-8ade-0b2bba6a235b",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "c8a4bfca-6f11-4693-b184-bb5a1d3b8336",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Pause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "bc0142f1-bc7c-45af-a6cc-8fa4e187b9b8",
+                    "path": "<Keyboard>/h",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Help",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
