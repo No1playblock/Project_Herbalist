@@ -66,9 +66,7 @@ namespace Herbalist.Player
         {
             // Retain the previous camera-aligned mode for comparison and rollback.
             if (tuning.facingMode == PlayerFacingMode.CameraAligned) SetBodyYaw(Yaw);
-            float headYaw = Mathf.Clamp(Mathf.DeltaAngle(body.eulerAngles.y, Yaw), -tuning.headYawLimit, tuning.headYawLimit);
-            float headPitch = Mathf.Clamp(Pitch, -tuning.headPitchLimit, tuning.headPitchLimit);
-            Quaternion target = headRest * Quaternion.Euler(headPitch, headYaw, 0);
+            Quaternion target = headRest * tuning.ResolveHeadLook(body.eulerAngles.y, Yaw, Pitch);
             headPivot.localRotation = Quaternion.RotateTowards(headPivot.localRotation, target, tuning.headTurnSpeed * deltaTime);
             if (!playerCamera.enabled) return;
             Quaternion rotation = Quaternion.Euler(Pitch, Yaw, 0);
