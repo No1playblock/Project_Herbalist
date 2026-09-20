@@ -31,6 +31,7 @@ namespace Herbalist.Player
             Vector3 horizontal = Vector3.ProjectOnPlane(velocity, Vector3.up);
             horizontal = MovementLocked ? Vector3.zero : grounded ? desired : Vector3.MoveTowards(horizontal, desired, tuning.airAcceleration * deltaTime);
             velocity.x = horizontal.x; velocity.z = horizontal.z;
+            Herbalist.Interaction.OneWayPlatform.PrepareMove(controller, velocity);
             CollisionFlags flags = controller.Move(velocity * deltaTime);
             grounded = (flags & CollisionFlags.Below) != 0;
             if ((flags & CollisionFlags.Above) != 0 && velocity.y > 0) velocity.y = 0;
@@ -46,6 +47,7 @@ namespace Herbalist.Player
             controller.enabled = wasEnabled;
         }
         public override void ResetMotion() { velocity = Vector3.zero; grounded = false; }
+        private void OnDisable() => Herbalist.Interaction.OneWayPlatform.Release(controller);
         public override void Teleport(Vector3 position) => RestoreState(new MotorState { Position = position });
     }
 }
