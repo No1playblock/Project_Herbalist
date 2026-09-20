@@ -65,7 +65,8 @@ public static class GameUiBuilder
             Hint("일시정지",settings.pauseAction),Hint("키 안내",settings.helpAction),
             Hint("화면 전환",Ref(player.FindAction("ToggleScreen"),"ToggleScreen")),
             Hint("이동",Ref(player.FindAction("Move"),"Move")),Hint("점프",Ref(player.FindAction("Jump"),"Jump")),
-            Hint("능력 전환",Ref(player.FindAction("Cycle"),"Cycle")),Hint("능력 사용",Ref(player.FindAction("Use"),"Use")),
+            new ControlHint{label="능력 전환 (솔로 테스트)",action=AssetDatabase.LoadAssetAtPath<InputActionReference>("Assets/_Project/Settings/Input/References/Player/OfflineAbilitySwitch.asset"),offlineTestOnly=true},
+            Hint("능력 모드 / 제어 전환",Ref(player.FindAction("Cycle"),"Cycle")),Hint("능력 사용",Ref(player.FindAction("Use"),"Use")),
             Hint("채집 / 전달",Ref(stage.FindAction("Interact"),"Interact")),Hint("약제 제조",Ref(stage.FindAction("Craft"),"Craft")),
             Hint("약제 복용",Ref(stage.FindAction("Drink"),"Drink"))};
         EditorUtility.SetDirty(settings);
