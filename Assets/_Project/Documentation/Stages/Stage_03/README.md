@@ -2,7 +2,7 @@
 
 ## 배치와 동작
 - 출발 씬: Assets/_Project/Scenes/Stages/Stage_02/Stage_02_BGModel.unity
-- Hierarchy: StageThree_Exit. 위치 (0, 33.6, 6), Y 회전 90도.
+- Hierarchy: StageThree_Exit. 위치 (162.4447, 34.7, -16.3508), Y 회전 90도.
 - 상단 RootEndpoint의 열린 구간에 출구 발판과 문틀이 있습니다. 청록색 바닥 안쪽이 공동 진입 영역입니다.
 - BothPlayersTransitionVolume은 두 명이 동시에 내부에 있을 때만 이동합니다.
 - 먼저 도착하면 기존 UGUI HUD에 '다른 플레이어를 기다리는 중 · 1/2'를 표시합니다. 밖으로 나가면 인원을 다시 계산합니다.
