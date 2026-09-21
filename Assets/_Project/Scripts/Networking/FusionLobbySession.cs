@@ -32,6 +32,9 @@ namespace Herbalist.Networking
         private readonly Dictionary<PlayerRef, StagePlayerState> stagePlayers = new();
         private bool stageTransition;
         private string _stageEntryId;
+        public bool AllowDirectStartPrototypeAbilities =>
+            settings.GrantPrototypeAbilitiesOnDirectStart && stagePlayers.Count == 0 &&
+            SceneManager.GetActiveScene().path == settings.playScenePath;
         public int ResolveStageSlot(PlayerRef player, int fallback) => stagePlayers.TryGetValue(player,out var state)?state.Slot: (Herbalist.GameUI.RoomControl.Instance != null && Herbalist.GameUI.RoomControl.Instance.Choice(player.RawEncoded) >= 0 ? Herbalist.GameUI.RoomControl.Instance.Choice(player.RawEncoded) : fallback);
         public bool RestoreStageAbility(PlayerRef player, Herbalist.Abilities.PlayerAbilityController ability)
         {

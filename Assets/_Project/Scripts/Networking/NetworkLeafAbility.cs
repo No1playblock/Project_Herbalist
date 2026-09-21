@@ -33,13 +33,16 @@ namespace Herbalist.Networking
             if (!HasStateAuthority) return;
             abilities.Leaf.Configure(() => Runner.Spawn(leafPrefab, transform.position, Quaternion.identity, Object.InputAuthority).GetComponent<LeafProjectile>(),
                 leaf => { if (leaf != null && Runner != null && Runner.IsRunning) Runner.Despawn(leaf.GetComponent<NetworkObject>()); }, true);
+            bool grantPrototype = Herbalist.StageOne.StageOneFlow.Instance == null &&
+                (!(Herbalist.Levels.StageLevel.Instance != null && Herbalist.Levels.StageLevel.Instance.requireEarnedAbilities) ||
+                 (FusionLobbySession.Instance != null && FusionLobbySession.Instance.AllowDirectStartPrototypeAbilities));
             if (abilities.Sap != null && sapPrefab != null)
             {
                 abilities.Sap.Configure(() => Runner.Spawn(sapPrefab, transform.position, Quaternion.identity, Object.InputAuthority).GetComponent<SapDeposit>(),
                     sap => { if (sap != null && Runner != null && Runner.IsRunning) Runner.Despawn(sap.GetComponent<NetworkObject>()); }, true);
-                if (Herbalist.StageOne.StageOneFlow.Instance == null && !(Herbalist.Levels.StageLevel.Instance != null && Herbalist.Levels.StageLevel.Instance.requireEarnedAbilities)) foreach (int slot in prototypeSapSlots) if (player.Slot == slot) abilities.UnlockSap();
+                if (grantPrototype) foreach (int slot in prototypeSapSlots) if (player.Slot == slot) abilities.UnlockSap();
             }
-            if (Herbalist.StageOne.StageOneFlow.Instance == null && !(Herbalist.Levels.StageLevel.Instance != null && Herbalist.Levels.StageLevel.Instance.requireEarnedAbilities)) foreach (int slot in prototypeUnlockSlots) if (player.Slot == slot) abilities.UnlockLeaf();
+            if (grantPrototype) foreach (int slot in prototypeUnlockSlots) if (player.Slot == slot) abilities.UnlockLeaf();
             if (FusionLobbySession.Instance != null) FusionLobbySession.Instance.RestoreStageAbility(Object.InputAuthority, abilities);
             Publish();
         }
