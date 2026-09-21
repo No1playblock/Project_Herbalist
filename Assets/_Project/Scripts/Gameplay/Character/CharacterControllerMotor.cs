@@ -8,6 +8,7 @@ namespace Herbalist.Player
         [SerializeField] private PlayerTuning tuning;
         private Vector3 velocity;
         private bool grounded;
+        private uint _enteredGateMask;
         public override bool IsGrounded => grounded;
         public override Vector3 Velocity => velocity;
         private void Awake()
@@ -32,22 +33,25 @@ namespace Herbalist.Player
             horizontal = MovementLocked ? Vector3.zero : grounded ? desired : Vector3.MoveTowards(horizontal, desired, tuning.airAcceleration * deltaTime);
             velocity.x = horizontal.x; velocity.z = horizontal.z;
             Herbalist.Interaction.OneWayPlatform.PrepareMove(controller, velocity);
+            Vector3 previousCenter = transform.TransformPoint(controller.center);
+            Herbalist.Levels.StageEntranceGate.PrepareMove(controller, _enteredGateMask);
             CollisionFlags flags = controller.Move(velocity * deltaTime);
+            _enteredGateMask = Herbalist.Levels.StageEntranceGate.FinishMove(controller, previousCenter, _enteredGateMask);
             grounded = (flags & CollisionFlags.Below) != 0;
             if ((flags & CollisionFlags.Above) != 0 && velocity.y > 0) velocity.y = 0;
             if (grounded && velocity.y < 0) velocity.y = -tuning.groundStickSpeed;
         }
-        public override MotorState CaptureState() => new MotorState { Position = transform.position, Velocity = velocity, Grounded = grounded };
+        public override MotorState CaptureState() => new MotorState { Position = transform.position, Velocity = velocity, Grounded = grounded, EnteredGateMask = _enteredGateMask };
         public override void RestoreState(MotorState state)
         {
             bool wasEnabled = controller.enabled;
             controller.enabled = false;
             transform.position = state.Position;
-            velocity = state.Velocity; grounded = state.Grounded;
+            velocity = state.Velocity; grounded = state.Grounded; _enteredGateMask = state.EnteredGateMask;
             controller.enabled = wasEnabled;
         }
         public override void ResetMotion() { velocity = Vector3.zero; grounded = false; }
-        private void OnDisable() => Herbalist.Interaction.OneWayPlatform.Release(controller);
-        public override void Teleport(Vector3 position) => RestoreState(new MotorState { Position = position });
+        private void OnDisable() { Herbalist.Interaction.OneWayPlatform.Release(controller); Herbalist.Levels.StageEntranceGate.Release(controller); }
+        public override void Teleport(Vector3 position) => RestoreState(new MotorState { Position = position, EnteredGateMask = _enteredGateMask });
     }
 }

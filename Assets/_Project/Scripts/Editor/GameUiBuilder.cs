@@ -30,7 +30,7 @@ public static class GameUiBuilder
         optionsPrefab=BuildOptions(); loadingPrefab=BuildLoading(); menuPrefab=BuildMenu(); overlayPrefab=BuildOverlay(); hudPrefab=BuildHud();
         ConfigureMain(); ConfigurePlay("Assets/_Project/Scenes/Development/Sandbox_Abilities.unity","능력 연습장","능력을 바꾸며 자유롭게 시험해 보세요");
         ConfigurePlay("Assets/_Project/Scenes/Stages/Stage_01/Stage_01_Exterior.unity","서낭당 · 숲의 입구","약초를 모아 두 약제를 완성하세요");
-        ConfigurePlay("Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Interior.unity","서낭당 · 나무의 내부","함께 발판을 만들어 위쪽 가지로 올라가세요");
+        ConfigurePlay("Assets/_Project/Scenes/Stages/Stage_02/Stage_02_BGModel.unity","서낭당 · 나무의 내부","함께 발판을 만들어 위쪽 가지로 올라가세요");
         EditorSceneManager.OpenScene("Assets/_Project/Scenes/01_Title/MainMenu.unity");
         AssetDatabase.SaveAssets();
         return "Authored 5 shared UGUI prefabs and integrated MainMenu + 3 play scenes.";

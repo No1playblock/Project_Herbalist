@@ -75,7 +75,7 @@ namespace Herbalist.StageOne
                 }
                 if(levels)
                 {
-                    await Wait(()=>UnityEngine.SceneManagement.SceneManager.GetActiveScene().name=="Stage_02_Interior"&&NetworkPlayer.Local!=null&&StageActor.All.Count(a=>a.Available)==2,"stage two spawns");
+                    await Wait(()=>UnityEngine.SceneManagement.SceneManager.GetActiveScene().name=="Stage_02_BGModel"&&NetworkPlayer.Local!=null&&StageActor.All.Count(a=>a.Available)==2,"stage two spawns");
                     await Task.Delay(1000);
                     var actors=StageActor.All.Where(a=>a.Available).OrderBy(a=>a.Slot).ToArray();
                     var expected0=swap?Herbalist.Abilities.PlayerAbilityKind.Leaf:Herbalist.Abilities.PlayerAbilityKind.Sap;
