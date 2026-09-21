@@ -6,9 +6,9 @@
 - SacredTree_Entrance belongs to the actual Sacred_Tree model, with a potion-controlled seal at (1.3, 2.8, -14) and interior entry volume centered at (1.3, 2, -9). The obsolete freestanding gate is removed.
 - Stage Two starts at the center of the six Root_Big_Final trees, around (48, .03, -58), with separated player spawn points. The six existing tree meshes were resized and arranged around the center for prototype traversal; their mesh colliders, readable mesh import, SapSource, SapReceiver and LeafInstallTarget are configured. IDs 201-206 are unique and paired.
 - CatchFloor_NoRespawn is a solid lower floor. Falling does not trigger respawn, reset the partner or clear placed ability objects.
-- UpperArrivalBranch is the only authored upper standing platform; it lies around (40.87, 13.55, -55.68). Intermediate leaf platforms do not exist until players create them.
+- UpperArrivalBranch is the only authored upper standing platform; it lies around (48.65, 13.55, -58.19). Intermediate leaf platforms do not exist until players create them.
 - ExpectedExteriorRoute and SuggestedLeafRoute_NoAuthoredPlatforms are Editor-only gizmo guides. The internal landing samples rise by .75m, following actual inner-facing reachable tree surfaces and a clear-body path; the upper goal is offset to avoid covering the final leaf. Leaf placement remains freeform.
-- Trees currently retain their imported presentation. This is playable level blocking with the supplied meshes and simple ground/stone/arrival geometry, not final environment art.
+- Trees use MAT_RootBig01 through MAT_RootBig06 (URP Lit) with individual base color, OpenGL normal, AO and packed metallic/smoothness textures. Tree render bounds are grounded and arranged at radius 8.2 around the central spawn; horizontal half-extent is normalized to 4.9. Existing interaction IDs 201-206 are preserved.
 
 ## Runtime responsibilities
 - StageLevel stores the next scene path and whether network players require earned abilities.
@@ -27,3 +27,11 @@
 
 ## Editing
 Move authored source/entrance/arrival/spawn transforms to tune layout; keep network IDs stable. StageLevelLayout is a one-time Editor authoring tool and intentionally refuses to overwrite an existing Stage Two scene. Saved scenes are the source of truth. Re-run traversal and network transition checks after significant geometry or progression edits.
+
+## Latest art restoration (2026-09-19)
+- Latest FBX files are used; RootBig05 is rotated upright to account for its changed long axis.
+- Created eight materials, including RootEndpoint and RootNormalKit, and remapped FBX material imports. The two extra models are prepared for placement; they are not added to the six-tree gameplay layout.
+- Metallic/smoothness textures pack source metalness into R and 1 - source roughness into A for URP Lit. Source maps remain available.
+- The damaged T_RootNormalKit_Normal.png is not referenced. The valid NormalOpenGL texture is used instead. Height maps remain as source assets; displacement is not enabled.
+- Updated the suggested leaf route to match current surfaces. Moved the upper platform inward to avoid blocking jumping headroom; its standing surface is approximately (48.65, 13.55, -58.19).
+- Play-mode CharacterController traversal passed all 19 points using temporary test platforms. All six source closest-surface queries and receiver/leaf target pairs passed. This is geometry validation, not a full two-player ability playthrough.
