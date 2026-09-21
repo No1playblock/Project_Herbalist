@@ -31,13 +31,14 @@ namespace Herbalist.Networking
         private struct StagePlayerState { public int Slot; public Herbalist.Abilities.PlayerAbilityKind Ability; }
         private readonly Dictionary<PlayerRef, StagePlayerState> stagePlayers = new();
         private bool stageTransition;
+        private string _stageEntryId;
         public int ResolveStageSlot(PlayerRef player, int fallback) => stagePlayers.TryGetValue(player,out var state)?state.Slot: (Herbalist.GameUI.RoomControl.Instance != null && Herbalist.GameUI.RoomControl.Instance.Choice(player.RawEncoded) >= 0 ? Herbalist.GameUI.RoomControl.Instance.Choice(player.RawEncoded) : fallback);
         public bool RestoreStageAbility(PlayerRef player, Herbalist.Abilities.PlayerAbilityController ability)
         {
             if(runner==null || !runner.IsServer || !stagePlayers.TryGetValue(player,out var state))return false;
             return state.Ability==Herbalist.Abilities.PlayerAbilityKind.Leaf?ability.UnlockLeaf():ability.UnlockSap();
         }
-        public async void AdvanceStage(string scenePath)
+        public async void AdvanceStage(string scenePath, string entryId = null)
         {
             if(runner==null || !runner.IsServer || stageTransition || State!=LobbyState.Playing)return;
             int sceneIndex=SceneUtility.GetBuildIndexByScenePath(scenePath);
@@ -52,7 +53,7 @@ namespace Herbalist.Networking
                 if(player==null||ability==null||!ability.Unlocked)return;
                 saved[id]=new StagePlayerState{Slot=player.Slot,Ability=ability.Kind};
             }
-            stageTransition=true;stagePlayers.Clear();foreach(var pair in saved)stagePlayers.Add(pair.Key,pair.Value);
+            _stageEntryId=entryId;stageTransition=true;stagePlayers.Clear();foreach(var pair in saved)stagePlayers.Add(pair.Key,pair.Value);
             SetState(LobbyState.Loading,settings.loadingMessage);
             try
             {
@@ -82,7 +83,7 @@ namespace Herbalist.Networking
             { SetState(LobbyState.Error, settings.invalidRoomMessage); return; }
             if (!Guid.TryParse(PhotonAppSettings.Global.AppSettings.AppIdFusion, out _))
             { SetState(LobbyState.Error, settings.missingAppIdMessage); return; }
-            stagePlayers.Clear(); stageTransition = false;
+            stagePlayers.Clear(); stageTransition = false; _stageEntryId = null;
             Herbalist.GameUI.RoomControl.Instance?.ResetRoom();
             connecting = true; loadRequested = false; started = false; RoomName = name;
             SetState(LobbyState.Connecting, settings.connectingMessage);
@@ -150,7 +151,7 @@ namespace Herbalist.Networking
             stopping = true;
             SetState(LobbyState.Leaving, settings.leavingMessage);
             var oldRunner = runner;
-            runner = null; started = false; stagePlayers.Clear();
+            runner = null; started = false; stagePlayers.Clear(); _stageEntryId = null;
             Herbalist.GameUI.RoomControl.Instance?.ResetRoom();
             try
             {
@@ -197,7 +198,10 @@ namespace Herbalist.Networking
         {
             if (SceneManager.GetActiveScene().path == settings.playScenePath || Herbalist.Levels.StageLevel.Instance != null)
             {
-                var layout = FindFirstObjectByType<PlayerSpawnLayout>();
+                var layout = string.IsNullOrEmpty(_stageEntryId)
+                    ? FindFirstObjectByType<PlayerSpawnLayout>()
+                    : FindObjectsByType<PlayerSpawnLayout>(FindObjectsSortMode.None).FirstOrDefault(p => p.EntryId == _stageEntryId);
+                if (r.IsServer && layout == null) { Debug.LogError("Stage arrival spawn layout not found: " + _stageEntryId); return; }
                 if (layout != null) layout.SpawnPlayers(r);
                 SetState(LobbyState.Playing, settings.playingMessage);
             }

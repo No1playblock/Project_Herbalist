@@ -1,3 +1,5 @@
+> 업데이트: 상단 공동 출구를 통해 Stage_03_Prototype으로 이동합니다. 현재 출구 위치와 설정은 [3스테이지 전환 문서](../Stage_03/README.md)를 참조하세요. 아래 StageTwoGoal의 이전 위치는 공동 출구로 대체되었습니다.
+
 # Stage 02 BGModel 실행 구성
 
 현재 2스테이지는 `Assets/_Project/Scenes/Stages/Stage_02/Stage_02_BGModel.unity`입니다.

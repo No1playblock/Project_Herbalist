@@ -81,16 +81,23 @@ namespace Herbalist.StageOne
                     var expected0=swap?Herbalist.Abilities.PlayerAbilityKind.Leaf:Herbalist.Abilities.PlayerAbilityKind.Sap;
                     var expected1=swap?Herbalist.Abilities.PlayerAbilityKind.Sap:Herbalist.Abilities.PlayerAbilityKind.Leaf;
                     if(!actors.All(a=>a.Abilities.Unlocked)||actors[0].Abilities.Kind!=expected0||actors[1].Abilities.Kind!=expected1)throw new Exception("Stage transfer lost potion assignments");
-                    var goal=UnityEngine.Object.FindAnyObjectByType<Herbalist.Levels.StageTwoGoal>();
+                    var zone=UnityEngine.Object.FindAnyObjectByType<Herbalist.Levels.StageArrivalZone>();
+                    var exit=UnityEngine.Object.FindAnyObjectByType<Herbalist.Levels.CooperativeStageExit>();
                     if(host)
                     {
-                        Vector3 target=goal.arrival.transform.TransformPoint(goal.arrival.center)-goal.playerProbeOffset;
-                        Teleport(actors[0],target+Vector3.left*.5f);await Task.Delay(700);
-                        if(goal.Complete)throw new Exception("Stage Two cleared with only one player");
-                        Teleport(actors[1],target+Vector3.right*.5f);
+                        Vector3 target=zone.PlayerArrivalPoint;
+                        Teleport(actors[0],target+Vector3.forward*.6f);
+                        await Wait(()=>exit.PresentPlayers==1,"first player waiting");
+                        if(exit.TransitionRequested)throw new Exception("Exit transitioned with only one player");
+                        Teleport(actors[0],target+Vector3.left*8);
+                        await Wait(()=>exit.PresentPlayers==0,"waiting player left");
+                        Teleport(actors[0],target+Vector3.forward*.6f);
+                        Teleport(actors[1],target+Vector3.back*.6f);
                     }
-                    await Wait(()=>goal.Complete,"stage two clear replica");
-                    Debug.Log("[StageLevelsCheck] PASS "+(host?"HOST":"CLIENT")+" slot0="+actors[0].Abilities.Kind+" slot1="+actors[1].Abilities.Kind+" stage2clear="+goal.Complete);
+                    await Wait(()=>UnityEngine.SceneManagement.SceneManager.GetActiveScene().name=="Stage_03_Prototype"&&NetworkPlayer.Local!=null&&StageActor.All.Count(a=>a.Available)==2,"stage three arrival");
+                    actors=StageActor.All.Where(a=>a.Available).OrderBy(a=>a.Slot).ToArray();
+                    if(!actors.All(a=>a.Abilities.Unlocked)||actors[0].Abilities.Kind!=expected0||actors[1].Abilities.Kind!=expected1)throw new Exception("Stage three transfer lost potion assignments");
+                    Debug.Log("[StageLevelsCheck] PASS "+(host?"HOST":"CLIENT")+" slot0="+actors[0].Abilities.Kind+" slot1="+actors[1].Abilities.Kind+" stage3arrival=true");
                     return;
                 }
                 await Wait(()=>f.Progress.Cleared,"stage clear replica");
