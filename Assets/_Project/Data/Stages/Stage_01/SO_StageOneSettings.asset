@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1ba011a8cbcd2e489a21487348efe97, type: 3}
+  m_Name: SO_StageOneSettings
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.StageOne.StageOneSettings
+  items:
+  - {fileID: 11400000, guid: 6a22309cf7e8e5e43b1901c2638626d9, type: 2}
+  - {fileID: 11400000, guid: 7546bc472621a0249983689e380bf316, type: 2}
+  - {fileID: 11400000, guid: 24f5ffdecd6a9da4a8fb24ed46d92da4, type: 2}
+  - {fileID: 11400000, guid: dad47ad89f43d59448034fd5240a465d, type: 2}
+  recipes:
+  - {fileID: 11400000, guid: 33be9b9878ace284a8df813c3e21d50e, type: 2}
+  - {fileID: 11400000, guid: 411c48d4473ca2d49881dbe5a4bf2c4d, type: 2}
+  slotRoles: 0000000001000000i
+  interactionRange: 3
+  interactionOffset: {x: 0, y: 1, z: 0}
+  obstructionMask:
+    serializedVersion: 2
+    m_Bits: 1
+  herbGlowLayer: 30
+  gatherMessage: "\uB450\uC601\uC740 \uC57D\uCD08\uB97C \uCC3E\uACE0, \uC18C\uB2F4\uC740 \uC57D\uC81C\uB97C \uB9CC\uB4ED\uB2C8\uB2E4"
+  craftMessage: "\uC57D\uCD08\uB97C \uC18C\uB2F4\uC5D0\uAC8C \uC804\uB2EC\uD574 \uB450 \uC57D\uC81C\uB97C \uC644\uC131\uD558\uC138\uC694"
+  drinkMessage: "\uAC01\uC790 \uD558\uB098\uC758 \uC57D\uC81C\uB97C \uBCF5\uC6A9\uD558\uC138\uC694"
+  enterMessage: "\uB450 \uC0AC\uB78C\uC774 \uD568\uAED8 \uBB34\uB2F9\uB098\uBB34 \uC785\uAD6C\uB85C \uB4E4\uC5B4\uAC00\uC138\uC694"
+  clearMessage: "\uC232\uC758 \uC785\uAD6C\uB97C \uD1B5\uACFC\uD588\uC2B5\uB2C8\uB2E4"
+  controlsFormat: '{0}: Gather / Give   {1}: Craft   {2}: Drink'
+  pocketFormat: '{0} | Holding: {1} | Ability: {2}'
+  emptyText: "\uBE48\uC190"
+  lockedText: "\uBBF8\uD574\uAE08"
+  fullMessage: "\uC0C1\uB300\uC758 \uC190\uC774 \uBE44\uC5B4 \uC788\uC5B4\uC57C \uD569\uB2C8\uB2E4"
+  rangeMessage: "\uC57D\uCD08\uB098 \uB3D9\uB8CC\uC5D0\uAC8C \uAC00\uAE4C\uC774 \uB2E4\uAC00\uAC00\uC138\uC694"
+  roleMessage: "\uB450\uC601\uC740 \uCC44\uC9D1, \uC18C\uB2F4\uC740 \uC81C\uC870\uB97C \uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4"
+  drinkBlockedMessage: "\uC774\uBBF8 \uB2A5\uB825\uC744 \uC5BB\uC5B4 \uB2E4\uB978 \uC57D\uC81C\uB97C \uB9C8\uC2E4 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
+  invalidItemMessage: "\uD544\uC694\uD55C \uC57D\uCD08\uB098 \uC57D\uC81C\uB97C \uBA3C\uC800 \uB4E4\uC5B4 \uC8FC\uC138\uC694"
+  successMessage: "\uC644\uB8CC\uD588\uC2B5\uB2C8\uB2E4"
+  waitingMessage: "\uB450 \uD50C\uB808\uC774\uC5B4\uB97C \uAE30\uB2E4\uB9AC\uACE0 \uC788\uC2B5\uB2C8\uB2E4"
+  clearedFormat: '{0} / {1} players inside'

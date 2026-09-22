@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 760308a8b8c5b1c4d951c0befa755a72, type: 3}
+  m_Name: SO_LobbySettings
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Networking.LobbySettings
+  manualCharacterSelection: 1
+  playerCount: 2
+  roomNameLimit: 32
+  connectTimeout: 30
+  mainScenePath: Assets/_Project/Scenes/01_Title/MainMenu.unity
+  playScenePath: Assets/_Project/Scenes/Stages/Stage_02/Stage_02_BGModel.unity
+  _grantPrototypeAbilitiesOnDirectStart: 1
+  fixedRegion: asia
+  appVersion: herbalist-lobby-test-1
+  idleMessage: Create a room or join your partner's room.
+  connectingMessage: Connecting to Photon...
+  waitingFormat: "{0} / {1} connected \u2014 waiting for your partner"
+  loadingMessage: "\uC232\uC73C\uB85C \uD5A5\uD558\uB294 \uC911\u2026"
+  leavingMessage: Leaving room...
+  invalidRoomMessage: Enter a room name using letters, numbers, - or _.
+  missingAppIdMessage: Set a valid Fusion 2 App ID in PhotonAppSettings before connecting.
+  playingMessage: Connected to play scene
+  hostLeftMessage: Host disconnected. Please create a new room.
+  failureFormat: 'Connection failed: {0}'
