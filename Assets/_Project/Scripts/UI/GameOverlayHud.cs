@@ -60,7 +60,12 @@ namespace Herbalist.GameUI
             loading.SetActive(session!=null&&(session.State==LobbyState.Loading||session.State==LobbyState.Leaving));
             var flow=Herbalist.StageOne.StageOneFlow.Instance;
             if(flow!=null)objective.text=flow.Objective;
-            else if(FindFirstObjectByType<Herbalist.Levels.StageTwoGoal>()==null)objective.text=defaultObjective;
+            else
+            {
+                var exit = FindFirstObjectByType<Herbalist.Levels.CooperativeStageExit>();
+                if (exit != null) objective.text = exit.Objective;
+                else if (FindFirstObjectByType<Herbalist.Levels.StageTwoGoal>() == null) objective.text = defaultObjective;
+            }
             if(!paused)subtitleRemaining-=Time.unscaledDeltaTime;
             subtitle.gameObject.SetActive(subtitleRemaining>0&&!string.IsNullOrEmpty(subtitle.text));
         }

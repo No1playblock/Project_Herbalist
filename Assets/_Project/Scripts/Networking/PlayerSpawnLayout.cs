@@ -5,6 +5,8 @@ namespace Herbalist.Networking
 {
     public sealed class PlayerSpawnLayout : MonoBehaviour
     {
+        [SerializeField] private string _entryId;
+        public string EntryId => _entryId;
         [SerializeField] private NetworkObject playerPrefab;
         [SerializeField] private Transform[] spawnPoints;
         [SerializeField] private GameObject offlinePlayer;

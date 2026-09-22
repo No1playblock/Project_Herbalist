@@ -30,7 +30,7 @@ public static class GameUiBuilder
         optionsPrefab=BuildOptions(); loadingPrefab=BuildLoading(); menuPrefab=BuildMenu(); overlayPrefab=BuildOverlay(); hudPrefab=BuildHud();
         ConfigureMain(); ConfigurePlay("Assets/_Project/Scenes/Development/Sandbox_Abilities.unity","능력 연습장","능력을 바꾸며 자유롭게 시험해 보세요");
         ConfigurePlay("Assets/_Project/Scenes/Stages/Stage_01/Stage_01_Exterior.unity","서낭당 · 숲의 입구","약초를 모아 두 약제를 완성하세요");
-        ConfigurePlay("Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Interior.unity","서낭당 · 나무의 내부","함께 발판을 만들어 위쪽 가지로 올라가세요");
+        ConfigurePlay("Assets/_Project/Scenes/Stages/Stage_02/Stage_02_BGModel.unity","서낭당 · 나무의 내부","함께 발판을 만들어 위쪽 가지로 올라가세요");
         EditorSceneManager.OpenScene("Assets/_Project/Scenes/01_Title/MainMenu.unity");
         AssetDatabase.SaveAssets();
         return "Authored 5 shared UGUI prefabs and integrated MainMenu + 3 play scenes.";
@@ -65,7 +65,8 @@ public static class GameUiBuilder
             Hint("일시정지",settings.pauseAction),Hint("키 안내",settings.helpAction),
             Hint("화면 전환",Ref(player.FindAction("ToggleScreen"),"ToggleScreen")),
             Hint("이동",Ref(player.FindAction("Move"),"Move")),Hint("점프",Ref(player.FindAction("Jump"),"Jump")),
-            Hint("능력 전환",Ref(player.FindAction("Cycle"),"Cycle")),Hint("능력 사용",Ref(player.FindAction("Use"),"Use")),
+            new ControlHint{label="능력 전환 (솔로 테스트)",action=AssetDatabase.LoadAssetAtPath<InputActionReference>("Assets/_Project/Settings/Input/References/Player/OfflineAbilitySwitch.asset"),offlineTestOnly=true},
+            Hint("능력 모드 / 제어 전환",Ref(player.FindAction("Cycle"),"Cycle")),Hint("능력 사용",Ref(player.FindAction("Use"),"Use")),
             Hint("채집 / 전달",Ref(stage.FindAction("Interact"),"Interact")),Hint("약제 제조",Ref(stage.FindAction("Craft"),"Craft")),
             Hint("약제 복용",Ref(stage.FindAction("Drink"),"Drink"))};
         EditorUtility.SetDirty(settings);

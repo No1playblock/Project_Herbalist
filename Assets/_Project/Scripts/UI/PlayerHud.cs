@@ -34,7 +34,11 @@ namespace Herbalist.GameUI
             if(local&&expanded)
             {
                 var lines=new System.Text.StringBuilder();
-                foreach(var h in settings.controls) if(h.action!=null)lines.AppendLine(h.action.action.GetBindingDisplayString()+"  "+h.label);
+                var switcher = player.GetComponent<OfflineAbilitySwitcher>();
+                bool offlineTest = switcher != null && switcher.isActiveAndEnabled;
+                foreach(var h in settings.controls)
+                    if(h.action!=null && (!h.offlineTestOnly || offlineTest))
+                        lines.AppendLine(h.action.action.GetBindingDisplayString()+"  "+h.label);
                 helpText.text=lines.ToString();
             }
             var ability=view.GetComponent<PlayerAbilityController>();
