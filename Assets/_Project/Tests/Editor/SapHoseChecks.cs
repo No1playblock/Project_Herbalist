@@ -37,6 +37,12 @@ public static class SapHoseChecks
             hose.Reset();
             hose.Tick(held, new Ray(origin, Vector3.forward), true, 1, settings, create);
             Require(marks.Count == 1 && marks[0].IsPlaced, "wall mark");
+            var decal = marks[0].GetComponentInChildren<SapSurfaceMarkPresentation>(true);
+            Require(decal != null && decal.Available && decal.gameObject.activeInHierarchy, "authored surface decal presentation");
+            var volume = marks[0].GetComponentInChildren<SapSurfaceVolumePresentation>(true);
+            Require(volume != null && volume.Available && volume.gameObject.activeInHierarchy, "authored raised surface volume");
+            Require(Mathf.Approximately(volume.transform.localScale.z, settings.surfaceVolumeThickness), "configured liquid thickness");
+            Require(!marks[0].Visual.gameObject.activeSelf, "legacy blob hidden while decal is active");
             float first = marks[0].MarkScale;
             marks[0].Tick(4);
             hose.Tick(held, new Ray(origin, Vector3.forward), true, 1, settings, create);
@@ -107,7 +113,7 @@ public static class SapHoseChecks
             };
             hose.Tick(held, new Ray(origin, Vector3.forward), true, 100, settings, create);
             var grownMark = marks[marks.Count-1];
-            float visibleRadius = settings.attachedScale.x * settings.hoseMaxScale * .5f;
+            float visibleRadius = settings.surfaceMarkSize.x * settings.hoseMaxScale * .5f;
             float edgeOffset = (settings.bindingRadius + visibleRadius) * .5f;
             Require(edgeOffset > settings.bindingRadius && edgeOffset < visibleRadius, "edge fixture outside old radius");
             var edgeLeaf = shoot(edgeOffset);

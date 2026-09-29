@@ -15,11 +15,19 @@ MonoBehaviour:
   offlinePrefab: {fileID: 2631380105216188163, guid: 199e67f748b08fb45b4ad00b8c86caac, type: 3}
   controlMode: 1
   hoseHoverOffset: {x: 0.55, y: 1.15, z: 0.15}
+  hoseExtendSpeed: 8
+  hoseRetractSpeed: 24
   hoseGrowthPerSecond: 0.5
   hoseMaxScale: 2.4
   hoseMergeNormalDot: 0.85
   hoseMarkLifetime: 5
   hoseMarkSpacing: 1
+  surfaceMarkSize: {x: 0.85, y: 0.85}
+  surfaceMarkDepth: 0.45
+  surfaceMarkDrawDistance: 50
+  surfaceMarkOpacity: 0.9
+  surfaceVolumeFootprintRatio: 0.72
+  surfaceVolumeThickness: 0.09
   hoverOffset: {x: 0.55, y: 1.5, z: 0.15}
   extractionSpeed: 4
   flightSpeed: 12
