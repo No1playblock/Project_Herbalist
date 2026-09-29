@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Herbalist.Player
 {
-    public struct MotorState { public Vector3 Position; public Vector3 Velocity; public bool Grounded; public uint EnteredGateMask; }
+    public struct MotorState { public Vector3 Position; public Vector3 Velocity; public bool Grounded; public uint EnteredGateMask; public bool ExternalFlight; public float ExternalGravity; }
     /// <summary>Only the backend moves the player root. Abilities depend on this contract.</summary>
     public abstract class PlayerMotor : MonoBehaviour
     {
@@ -22,6 +22,7 @@ namespace Herbalist.Player
         public abstract void Teleport(Vector3 position);
         public abstract void ResetMotion();
         public abstract bool TryJump();
+        public abstract void Launch(Vector3 velocity, float gravity);
         public abstract MotorState CaptureState();
         public abstract void RestoreState(MotorState state);
     }

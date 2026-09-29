@@ -13,6 +13,14 @@ namespace Herbalist.Player
         private bool ready;
         private bool networkDriven;
         private uint lastJump;
+        private IPlayerMovementReceiver _movementReceiver;
+        private object _transportOwner;
+        private Vector3 _transportPosition;
+        public void SetMovementReceiver(IPlayerMovementReceiver receiver) => _movementReceiver=receiver;
+        public void ClearMovementReceiver(IPlayerMovementReceiver receiver) { if(ReferenceEquals(_movementReceiver,receiver))_movementReceiver=null; }
+        public bool RouteMovement(Vector2 move) { if(_movementReceiver==null)return false;_movementReceiver.ReceiveMovement(this,move);return true; }
+        public void SetTransport(object owner,Vector3 position) { _transportOwner=owner;_transportPosition=position;motor.SetMovementLock(owner,true); }
+        public void ClearTransport(object owner) { if(!ReferenceEquals(_transportOwner,owner))return;_transportOwner=null;motor.SetMovementLock(owner,false); }
         public PlayerInputReader Input => input;
         public PlayerView View => view;
         public PlayerTuning Tuning => tuning;
@@ -41,7 +49,9 @@ namespace Herbalist.Player
             if (!ready || !locallyControlled || Herbalist.GameUI.GameplayPause.IsPaused) return;
             view.ApplyLook(input.Look);
             if (networkDriven) return;
+            if(_transportOwner!=null){lastJump=input.JumpSequence;motor.Teleport(_transportPosition);return;}
             Vector2 movement = Vector2.ClampMagnitude(input.Move, 1);
+            if(RouteMovement(movement))movement=Vector2.zero;
             Vector3 direction = view.PlanarRotation * new Vector3(movement.x, 0, movement.y);
             view.SetBodyYaw(tuning.ResolveBodyYaw(view.BodyYaw, view.Yaw, direction, motor.MovementLocked, Time.deltaTime));
             if (lastJump != input.JumpSequence) { lastJump = input.JumpSequence; motor.TryJump(); }

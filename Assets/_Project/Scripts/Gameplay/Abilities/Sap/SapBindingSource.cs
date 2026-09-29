@@ -32,6 +32,7 @@ namespace Herbalist.Abilities
             boundLeaf = null; available = false;
             if (visual != null) visual.SetActive(false);
         }
+        public void ClearUnbound() { if(boundLeaf!=null)return;available=false;if(visual!=null)visual.SetActive(false); }
         private void Update()
         {
             if (available && boundLeaf == null && Time.time >= expires)

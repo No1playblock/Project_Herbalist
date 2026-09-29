@@ -10,12 +10,15 @@ namespace Herbalist.Abilities
         [SerializeField] private bool acceptsPlatform = true;
         [SerializeField] private bool acceptsPin;
         [SerializeField] private Transform socket;
+        [SerializeField] private bool _singleOccupant;
         [SerializeField] private SapBindingSource sap;
         [SerializeField] private UnityEvent onPinned = new UnityEvent();
         [SerializeField] private UnityEvent onReleased = new UnityEvent();
         private readonly HashSet<LeafProjectile> occupants = new();
         private static readonly Dictionary<int, LeafInstallTarget> targets = new();
         public int Id => targetId;
+        public bool ExactSocketPlacement => socket != null && _singleOccupant;
+        public LeafProjectile InstalledLeaf { get { foreach(var leaf in occupants) if(leaf != null && leaf.Installed) return leaf; return null; } }
         public bool Pinned { get { foreach (var leaf in occupants) if (leaf != null && leaf.Mode == LeafMode.Pin) return true; return false; } }
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)] private static void ResetStatics() => targets.Clear();
         private void OnEnable()
@@ -25,7 +28,7 @@ namespace Herbalist.Abilities
         }
         private void OnDisable() { if (targets.TryGetValue(targetId, out var current) && current == this) targets.Remove(targetId); }
         public static LeafInstallTarget Find(int id) => targets.TryGetValue(id, out var target) ? target : null;
-        public bool Accepts(LeafMode mode) => isActiveAndEnabled && (mode == LeafMode.Platform ? acceptsPlatform : mode == LeafMode.Pin && acceptsPin);
+        public bool Accepts(LeafMode mode) => isActiveAndEnabled && (!_singleOccupant || InstalledLeaf == null) && (mode == LeafMode.Platform ? acceptsPlatform : mode == LeafMode.Pin && acceptsPin);
         public Vector3 Position(Vector3 hit, Vector3 normal, float offset) => socket != null ? socket.position : hit + normal * offset;
         public Quaternion Rotation(LeafMode mode, Vector3 normal, Vector3 heading)
         {

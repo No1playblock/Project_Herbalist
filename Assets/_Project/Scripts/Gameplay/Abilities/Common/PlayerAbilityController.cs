@@ -7,6 +7,11 @@ namespace Herbalist.Abilities
     {
         [SerializeField] private bool prototypeOfflineUnlock = true;
         [SerializeField] private PlayerAbilityKind prototypeOfflineAbility = PlayerAbilityKind.Leaf;
+        private readonly System.Collections.Generic.HashSet<object> _inputLocks = new();
+        public void SetInputLock(object owner,bool value) { if(value)_inputLocks.Add(owner);else _inputLocks.Remove(owner); }
+        private IAbilityCycleReceiver _cycleReceiver;
+        public void SetCycleReceiver(IAbilityCycleReceiver receiver) => _cycleReceiver=receiver;
+        public void ClearCycleReceiver(IAbilityCycleReceiver receiver) { if(ReferenceEquals(_cycleReceiver,receiver))_cycleReceiver=null; }
         private uint lastCycle, lastUse;
         private bool network, authority;
         private PlayerController player;
@@ -56,6 +61,8 @@ namespace Herbalist.Abilities
             Leaf.Tick(dt);
             uint steps = unchecked(cycle - lastCycle); lastCycle = cycle;
             bool fire = use != lastUse; lastUse = use;
+            if(_cycleReceiver!=null && _cycleReceiver.ReceiveAbilityCycle(this,steps))return;
+            if(_inputLocks.Count>0)return;
             if (Unlocked && Kind == PlayerAbilityKind.Sap && Sap != null)
             {
                 if (steps % 2 != 0) Sap.Toggle();

@@ -33,6 +33,16 @@ namespace Herbalist.Networking
         [Networked] public NetworkBool MovementBlocked { get; set; }
         [Networked] public int Slot { get; set; }
         [Networked] public uint EnteredGateMask { get; set; }
+        [Networked] public NetworkBool ExternalFlight { get; set; }
+        [Networked] public float ExternalGravity { get; set; }
+        [Networked] public NetworkBool Transported { get; set; }
+        [Networked] public Vector3 TransportPosition { get; set; }
+        public void SetTransportAuthoritatively(bool active,Vector3 position)
+        {
+            if(!HasStateAuthority)return;
+            Transported=active;TransportPosition=position;
+            if(active)TeleportAuthoritatively(position);
+        }
         public PlayerController Player => player;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => Local = null;
@@ -71,16 +81,23 @@ namespace Herbalist.Networking
         {
             if (IsProxy) return;
             if (Herbalist.GameUI.GameplayPause.IsPaused) { if (GetInput(out PlayerNetworkInput pausedInput)) LastJumpSequence = pausedInput.JumpSequence; return; }
+            if(Transported)
+            {
+                if(GetInput(out PlayerNetworkInput ridingInput))LastJumpSequence=ridingInput.JumpSequence;
+                player.Motor.Teleport(TransportPosition);SimulationPosition=TransportPosition;
+                SimulationVelocity=Vector3.zero;Grounded=false;return;
+            }
             // All values needed for re-simulation come from Fusion's restored tick state.
             if (HasStateAuthority) MovementBlocked = player.Motor.HasMovementLockExcept(this);
             player.Motor.SetMovementLock(this, MovementBlocked);
-            player.Motor.RestoreState(new MotorState { Position = SimulationPosition, Velocity = SimulationVelocity, Grounded = Grounded, EnteredGateMask = EnteredGateMask });
+            player.Motor.RestoreState(new MotorState { Position = SimulationPosition, Velocity = SimulationVelocity, Grounded = Grounded, EnteredGateMask = EnteredGateMask, ExternalFlight = ExternalFlight, ExternalGravity = ExternalGravity });
             Vector3 direction = Vector3.zero;
             if (GetInput(out PlayerNetworkInput input))
             {
                 if (Finite(input.Move.x) && Finite(input.Move.y) && Finite(input.LookAngles.x) && Finite(input.LookAngles.y))
                 {
                     var movement = Vector2.ClampMagnitude(input.Move, 1);
+                    if(HasStateAuthority && player.RouteMovement(movement))movement=Vector2.zero;
                     LookAngles = new Vector2(Mathf.Repeat(input.LookAngles.x, 360), Mathf.Clamp(input.LookAngles.y, player.Tuning.pitchLimits.x, player.Tuning.pitchLimits.y));
                     direction = Quaternion.Euler(0, LookAngles.x, 0) * new Vector3(movement.x, 0, movement.y);
                 }
@@ -95,6 +112,20 @@ namespace Herbalist.Networking
             var state = player.Motor.CaptureState();
             SimulationPosition = state.Position; SimulationVelocity = state.Velocity; Grounded = state.Grounded;
             EnteredGateMask = state.EnteredGateMask;
+            ExternalFlight = state.ExternalFlight; ExternalGravity = state.ExternalGravity;
+        }
+        public void LaunchAuthoritatively(Vector3 velocity, float gravity)
+        {
+            if (!HasStateAuthority) return;
+            SimulationVelocity = velocity; Grounded = false; ExternalFlight = true; ExternalGravity = gravity;
+            player.Motor.Launch(velocity, gravity);
+        }
+        public void TeleportAuthoritatively(Vector3 position)
+        {
+            if (!HasStateAuthority) return;
+            SimulationPosition = position; SimulationVelocity = Vector3.zero; Grounded = false;
+            ExternalFlight = false; ExternalGravity = 0;
+            player.Motor.Teleport(position);
         }
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
         public override void Render()

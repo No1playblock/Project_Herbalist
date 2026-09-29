@@ -12,6 +12,10 @@ namespace Herbalist.Player
         [SerializeField] private AudioListener audioListener;
         private Quaternion headRest;
         private bool initialized;
+        private object _cameraOwner;
+        private Transform _cameraOverride;
+        public void SetCameraOverride(object owner,Transform anchor) { _cameraOwner=owner;_cameraOverride=anchor; }
+        public void ClearCameraOverride(object owner) { if(ReferenceEquals(owner,_cameraOwner)){_cameraOverride=null;_cameraOwner=null;} }
         public Camera Camera => playerCamera;
         public float Yaw { get; private set; }
         public float Pitch { get; private set; }
@@ -49,6 +53,7 @@ namespace Herbalist.Player
 
         public void ApplyLook(Vector2 delta)
         {
+            if(_cameraOverride!=null)return;
             Yaw = Mathf.Repeat(Yaw + delta.x * tuning.mouseSensitivity * Herbalist.GameUI.UserOptions.LookMultiplier, 360f);
             Pitch = Mathf.Clamp(Pitch - delta.y * tuning.mouseSensitivity * Herbalist.GameUI.UserOptions.LookMultiplier, tuning.pitchLimits.x, tuning.pitchLimits.y);
             if (tuning.facingMode == PlayerFacingMode.CameraAligned) SetBodyYaw(Yaw);
@@ -69,6 +74,7 @@ namespace Herbalist.Player
             Quaternion target = headRest * tuning.ResolveHeadLook(body.eulerAngles.y, Yaw, Pitch);
             headPivot.localRotation = Quaternion.RotateTowards(headPivot.localRotation, target, tuning.headTurnSpeed * deltaTime);
             if (!playerCamera.enabled) return;
+            if(_cameraOverride!=null){playerCamera.transform.SetPositionAndRotation(_cameraOverride.position,_cameraOverride.rotation);return;}
             Quaternion rotation = Quaternion.Euler(Pitch, Yaw, 0);
             Vector3 backward = rotation * Vector3.back;
             float distance = tuning.cameraDistance;

@@ -73,12 +73,22 @@ namespace Herbalist.Abilities
                 if (Vector3.Distance(transform.position, catchPoint) <= settings.catchDistance) Finish();
             }
         }
+        public bool Supports(CharacterController character, float tolerance)
+        {
+            var surface = Mode == LeafMode.Platform ? platformCollider : pinCollider;
+            if (!Installed || surface == null || !surface.enabled || character == null ||
+                Physics.GetIgnoreCollision(character, surface)) return false;
+            var feet = character.transform.TransformPoint(character.center);
+            feet.y -= character.height * Mathf.Abs(character.transform.lossyScale.y) * .5f;
+            return surface.Raycast(new Ray(feet + Vector3.up * tolerance, Vector3.down), out var hit, tolerance * 2) &&
+                hit.point.y <= feet.y + character.skinWidth;
+        }
         private void Install(LeafInstallTarget target, Vector3 hit, Vector3 normal, Vector3 heading)
         {
             Target = target;
             localContactPoint = target.transform.InverseTransformPoint(hit);
             transform.SetPositionAndRotation(hit, target.Rotation(Mode, normal, heading));
-            transform.position = target.Position(hit, normal, 0) + TipPlacementOffset(normal);
+            transform.position = target.Position(hit, normal, 0) + (target.ExactSocketPlacement ? Vector3.zero : TipPlacementOffset(normal));
             localPosition = target.transform.InverseTransformPoint(transform.position);
             localRotation = Quaternion.Inverse(target.transform.rotation) * transform.rotation;
             State = target.TryBind(this) ? LeafState.Bound : LeafState.Installed;

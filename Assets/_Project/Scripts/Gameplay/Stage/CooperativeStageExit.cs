@@ -4,10 +4,13 @@ using Herbalist.Networking;
 
 namespace Herbalist.Levels
 {
+    public interface IStageExitCondition { bool CanExit { get; } }
+
     [RequireComponent(typeof(NetworkObject))]
     public sealed class CooperativeStageExit : NetworkBehaviour
     {
         [SerializeField] private StageArrivalZone _arrival;
+        [SerializeField] private MonoBehaviour _condition;
         [SerializeField] private StageLevel _level;
         [SerializeField] private string _destinationEntryId;
         [SerializeField] private string _approachText = "출구에 함께 모여주세요 · {0}/{1}";
@@ -28,6 +31,7 @@ namespace Herbalist.Levels
         public override void FixedUpdateNetwork()
         {
             if (!HasStateAuthority || TransitionRequested || Herbalist.GameUI.GameplayPause.IsPaused || _arrival == null) return;
+            if(_condition is IStageExitCondition condition && !condition.CanExit){PresentPlayers=0;return;}
             PresentPlayers = _arrival.CountPresent();
             if (PresentPlayers < _arrival.RequiredPlayers || _level == null) return;
             var session = FusionLobbySession.Instance;
