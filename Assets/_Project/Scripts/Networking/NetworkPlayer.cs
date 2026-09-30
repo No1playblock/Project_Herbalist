@@ -32,6 +32,7 @@ namespace Herbalist.Networking
         [Networked] public uint LastJumpSequence { get; set; }
         [Networked] public NetworkBool MovementBlocked { get; set; }
         [Networked] public int Slot { get; set; }
+        [Networked] public uint EnteredGateMask { get; set; }
         public PlayerController Player => player;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => Local = null;
@@ -73,7 +74,7 @@ namespace Herbalist.Networking
             // All values needed for re-simulation come from Fusion's restored tick state.
             if (HasStateAuthority) MovementBlocked = player.Motor.HasMovementLockExcept(this);
             player.Motor.SetMovementLock(this, MovementBlocked);
-            player.Motor.RestoreState(new MotorState { Position = SimulationPosition, Velocity = SimulationVelocity, Grounded = Grounded });
+            player.Motor.RestoreState(new MotorState { Position = SimulationPosition, Velocity = SimulationVelocity, Grounded = Grounded, EnteredGateMask = EnteredGateMask });
             Vector3 direction = Vector3.zero;
             if (GetInput(out PlayerNetworkInput input))
             {
@@ -93,6 +94,7 @@ namespace Herbalist.Networking
             BodyYaw = player.Tuning.ResolveBodyYaw(BodyYaw, LookAngles.x, direction, player.Motor.MovementLocked, Runner.DeltaTime);
             var state = player.Motor.CaptureState();
             SimulationPosition = state.Position; SimulationVelocity = state.Velocity; Grounded = state.Grounded;
+            EnteredGateMask = state.EnteredGateMask;
         }
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
         public override void Render()

@@ -11,6 +11,9 @@ namespace Herbalist.Networking
         [Min(1)] public float connectTimeout = 30;
         public string mainScenePath;
         public string playScenePath;
+        [SerializeField, Tooltip("Grant configured prototype abilities only when starting a stage directly from the lobby.")]
+        private bool _grantPrototypeAbilitiesOnDirectStart;
+        public bool GrantPrototypeAbilitiesOnDirectStart => _grantPrototypeAbilitiesOnDirectStart;
         public string fixedRegion = "asia";
         public string appVersion = "herbalist-lobby-test-1";
         public string idleMessage = "Create a room or join your partner's room.";

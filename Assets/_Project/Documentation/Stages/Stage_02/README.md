@@ -1,3 +1,5 @@
+> 현재 실행 씬은 **Stage_02_BGModel**입니다. [새 맵 실행 구성과 입구 차단](BGModel.md)을 참조하세요. 아래 레이아웃·검증 기록은 이전 Stage_02_Interior 프로토타입 기준입니다.
+
 # Exterior -> interior stage flow
 
 ## Scenes and layout

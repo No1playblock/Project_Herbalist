@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 namespace Herbalist.GameUI
 {
-    [System.Serializable] public sealed class ControlHint { public string label; public InputActionReference action; }
+    [System.Serializable] public sealed class ControlHint { public string label; public InputActionReference action; public bool offlineTestOnly; }
     [CreateAssetMenu(menuName="Herbalist/Game UI Settings")]
     public sealed class GameUiSettings : ScriptableObject
     {

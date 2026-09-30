@@ -37,5 +37,15 @@ namespace Herbalist.Player
         [Range(0, 180)] public float headYawLimit = 75f;
         [Range(0, 90)] public float headPitchLimit = 40f;
         [Min(0)] public float headTurnSpeed = 240f;
+        [Tooltip("Body-relative view yaw where head tracking fades out, then returns to neutral.")]
+        public Vector2 headTrackingFadeAngles = new Vector2(75f, 90f);
+
+        public Quaternion ResolveHeadLook(float bodyYaw, float viewYaw, float viewPitch)
+        {
+            float yaw = Mathf.DeltaAngle(bodyYaw, viewYaw);
+            float weight = 1f - Mathf.InverseLerp(headTrackingFadeAngles.x, headTrackingFadeAngles.y, Mathf.Abs(yaw));
+            return Quaternion.Euler(Mathf.Clamp(viewPitch, -headPitchLimit, headPitchLimit) * weight,
+                Mathf.Clamp(yaw, -headYawLimit, headYawLimit) * weight, 0);
+        }
     }
 }

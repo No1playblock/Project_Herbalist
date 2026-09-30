@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8433986853921936818}
   - component: {fileID: 7193871413180450283}
   - component: {fileID: 4834226205778825853}
+  - component: {fileID: 3932595006156251709}
   m_Layer: 9
   m_Name: Pin
   m_TagString: Untagged
@@ -113,6 +114,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3932595006156251709
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2939564146218305527}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e00e87b51a36514790795618a89b368, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Interaction.OneWayPlatform
+  _surface: {fileID: 4834226205778825853}
+  _surfaceTolerance: 0.02
 --- !u!1 &2949246255317275750
 GameObject:
   m_ObjectHideFlags: 0
@@ -252,6 +267,7 @@ GameObject:
   - component: {fileID: 7668360281204221932}
   - component: {fileID: 1420145182987460381}
   - component: {fileID: 4089690820434942929}
+  - component: {fileID: 4222993460474144044}
   m_Layer: 9
   m_Name: Platform
   m_TagString: Untagged
@@ -352,6 +368,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &4222993460474144044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8058331831225634901}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e00e87b51a36514790795618a89b368, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Interaction.OneWayPlatform
+  _surface: {fileID: 4089690820434942929}
+  _surfaceTolerance: 0.02
 --- !u!1 &8765595694049607765
 GameObject:
   m_ObjectHideFlags: 0
