@@ -272,6 +272,16 @@
                     "interactions": "",
                     "initialStateCheck": false,
                     "priority": 0
+                },
+                {
+                    "name": "UnlockBothAbilities",
+                    "type": "Button",
+                    "id": "65e6890a-66cd-40ec-8e2f-c363382c7e40",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
                 }
             ],
             "bindings": [
@@ -283,6 +293,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "SwitchAbility",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "3490b611-8237-4c55-badc-dd41fa311189",
+                    "path": "<Keyboard>/t",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UnlockBothAbilities",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

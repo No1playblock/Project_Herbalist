@@ -92,13 +92,14 @@ namespace Herbalist.Editor
                 Require(Quaternion.Angle(config.ResolveHeadLook(0, 0, 35), Quaternion.Euler(35, 0, 0)) < .01f, "Rear camera keeps pitch");
                 Require(Quaternion.Angle(config.ResolveHeadLook(0, 45, 0), Quaternion.Euler(0, 45, 0)) < .01f, "Rear-side tracking");
                 var ui = AssetDatabase.LoadAssetAtPath<Herbalist.GameUI.GameUiSettings>("Assets/_Project/Data/UI/SO_GameUiSettings.asset");
-                bool switchFound = false, cycleFound = false;
+                bool unlockFound = false, switchFound = false, cycleFound = false;
                 foreach(var hint in ui.controls)
                 {
+                    if(hint.action.action.name == "UnlockBothAbilities") unlockFound = hint.offlineTestOnly && hint.action.action.bindings[0].effectivePath == "<Keyboard>/t";
                     if(hint.action.action.name == "SwitchAbility") switchFound = hint.offlineTestOnly && hint.action.action.bindings[0].effectivePath == "<Keyboard>/q";
                     if(hint.action.action.name == "Cycle") cycleFound = !hint.offlineTestOnly && hint.label == "능력 모드 / 제어 전환";
                 }
-                Require(switchFound && cycleFound, "Q/R help data");
+                Require(unlockFound && switchFound && cycleFound, "T/Q/R help data");
                 return "PASS: " + string.Join(", ", results) + "; short jumps, per-player pairs, recall, aim ray, head tracking, Q/R help.";
             }
             finally

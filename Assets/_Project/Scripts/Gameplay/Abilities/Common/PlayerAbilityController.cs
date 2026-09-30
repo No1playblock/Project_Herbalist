@@ -9,6 +9,7 @@ namespace Herbalist.Abilities
         [SerializeField] private PlayerAbilityKind prototypeOfflineAbility = PlayerAbilityKind.Leaf;
         private uint lastCycle, lastUse;
         private bool network, authority;
+        private bool _offlineBothUnlocked;
         private PlayerController player;
         public AbilityInputReader Input { get; private set; }
         public LeafThrowAbility Leaf { get; private set; }
@@ -33,9 +34,16 @@ namespace Herbalist.Abilities
         public bool UnlockSap() { if (!authority || Sap == null || (Unlocked && Kind != PlayerAbilityKind.Sap)) return false; Kind = PlayerAbilityKind.Sap; Unlocked = true; return true; }
         public void RevokeLeaf() { if (!authority) return; Unlocked = false; Mode = LeafMode.Off; Leaf.Clear(); if (Sap != null) Sap.Clear(); }
         // Temporary solo test hook. Existing deposits/leaves keep their normal lifecycle.
-        public bool TrySwitchOfflineAbility()
+        public bool TryUnlockBothOfflineAbilities()
         {
             if (network || !authority || !player.LocallyControlled || Sap == null || Herbalist.StageOne.StageOneFlow.Instance != null) return false;
+            _offlineBothUnlocked = true;
+            Unlocked = true;
+            return true;
+        }
+        public bool TrySwitchOfflineAbility()
+        {
+            if (network || !authority || !player.LocallyControlled || !_offlineBothUnlocked || Sap == null || Herbalist.StageOne.StageOneFlow.Instance != null) return false;
             Sap.Cancel();
             Kind = Kind == PlayerAbilityKind.Sap ? PlayerAbilityKind.Leaf : PlayerAbilityKind.Sap;
             Unlocked = true; Mode = LeafMode.Off;
