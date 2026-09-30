@@ -21,6 +21,7 @@ namespace Herbalist.GameUI
         private bool expanded;
         private string previousFeedback;
         private float feedbackTime;
+        private uint _abilityFeedback;
         private void Awake() { screen=FindFirstObjectByType<PlayScreenController>(); }
         private void OnEnable() { help=settings.helpAction.action.Clone(); help.performed+=_=>expanded=!expanded; help.Enable(); }
         private void Update()
@@ -42,11 +43,21 @@ namespace Herbalist.GameUI
                 helpText.text=lines.ToString();
             }
             var ability=view.GetComponent<PlayerAbilityController>();
-            reticle.SetActive(local&&ability!=null&&ability.Unlocked&&(ability.Kind==PlayerAbilityKind.Sap?ability.Sap.Controlling:ability.Mode!=LeafMode.Off));
-            abilityText.text=ability!=null&&ability.Unlocked?(ability.Kind==PlayerAbilityKind.Sap?settings.sapText:settings.leafText+" · "+settings.leafModes[(int)ability.Mode]):"";
+            var rules = Herbalist.Levels.StageLevel.Instance != null ? Herbalist.Levels.StageLevel.Instance.abilityRules : null;
+            reticle.SetActive(local&&ability!=null&&ability.Unlocked&&(rules != null || ability.Kind!=PlayerAbilityKind.Sap || ability.Sap.Controlling));
+            abilityText.text=ability!=null&&ability.Unlocked?(ability.Kind==PlayerAbilityKind.Sap?settings.sapText:settings.leafText):"";
+            if (rules != null && ability != null && ability.Unlocked) abilityText.text = ability.Kind == PlayerAbilityKind.Sap ? rules.sapInstructions : rules.leafInstructions;
             pocket.text="";
             var flow=StageOneFlow.Instance;
             var actor=view.GetComponent<StageActor>();
+            if (actor != null && actor.Feedback != previousFeedback) { previousFeedback = actor.Feedback; feedbackTime = settings.feedbackDuration; }
+            if (local && rules != null && ability != null && ability.Leaf.FeedbackSequence != _abilityFeedback)
+            {
+                _abilityFeedback = ability.Leaf.FeedbackSequence;
+                var messages = slot == 0 ? rules.duyeongRangeMessages : rules.sodamRangeMessages;
+                previousFeedback = ability.Leaf.RangeRejected && messages.Length > 0 ? messages[Random.Range(0, messages.Length)] : rules.invalidTargetMessage;
+                feedbackTime = settings.feedbackDuration;
+            }
             if(flow!=null&&actor!=null&&actor.Available)
             {
                 var item=flow.settings.Item(flow.Progress.Held[actor.Slot]); pocket.text=item!=null?item.displayName:settings.emptyPocket;
@@ -62,6 +73,7 @@ namespace Herbalist.GameUI
             }
             for(int i=0;i<markers.Length;i++)
             {
+                if (FindFirstObjectByType<Herbalist.Levels.DescendingMazeFlow>() != null) { markers[i].gameObject.SetActive(false); continue; }
                 var target=screen.ViewForSlot(i);
                 var a=target!=null?target.GetComponent<PlayerAbilityController>():null;
                 if(a==null||!a.Unlocked) { markers[i].gameObject.SetActive(false); continue; }

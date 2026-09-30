@@ -51,12 +51,15 @@ namespace Herbalist.Editor
         {
             if(Application.isPlaying||SceneManager.GetActiveScene().isDirty)
                 throw new Exception("Stop Play and save scene edits first.");
-            var scene=EditorSceneManager.OpenScene(StageFourBuilder.Path);
-            var flow=Object.FindFirstObjectByType<StageFourFlow>();
-            for(int i=0;i<flow.Mazes.Length;i++)
+            var scene=EditorSceneManager.OpenScene(CurrentStagePaths.Maze);
+            var flow=Object.FindFirstObjectByType<DescendingMazeFlow>();
+            if(flow==null)throw new Exception("Current descending maze flow not found.");
+            var mazes=new SerializedObject(flow).FindProperty("_mazes");
+            for(int i=0;i<mazes.arraySize;i++)
             {
-                ApplyDefinition(flow.Mazes[i].Definition,i);
-                ApplyBoard(flow.Mazes[i],i);
+                var board=(SapMazeBoard)mazes.GetArrayElementAtIndex(i).objectReferenceValue;
+                ApplyDefinition(board.Definition,i);
+                ApplyBoard(board,i);
             }
             Fusion.Editor.NetworkObjectPostprocessor.BakeScene(scene);
             EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene);AssetDatabase.SaveAssets();

@@ -8,8 +8,8 @@ namespace Herbalist.StageOne
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RPC_Command(StageCommand command)
         {
-            if (StageOneFlow.Instance == null || command < StageCommand.Interact || command > StageCommand.Drink) return;
-            string result = StageOneFlow.Instance.Execute(GetComponent<StageActor>(), command);
+            if (command < StageCommand.Interact || command > StageCommand.Drink) return;
+            string result = GetComponent<StageActor>().ExecuteCommand(command);
             RPC_Feedback(result);
         }
         [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]

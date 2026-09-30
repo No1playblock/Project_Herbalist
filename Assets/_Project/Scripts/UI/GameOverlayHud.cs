@@ -63,13 +63,11 @@ namespace Herbalist.GameUI
             if(flow!=null)objective.text=flow.Objective;
             else
             {
-                var exit = FindFirstObjectByType<Herbalist.Levels.CooperativeStageExit>();
-                var stageThree = FindFirstObjectByType<Herbalist.Levels.StageThreeProgress>();
-                var stageFour = FindFirstObjectByType<Herbalist.Levels.StageFourFlow>();
-                if (stageFour != null) objective.text = stageFour.Objective;
-                else if (stageThree != null) objective.text = stageThree.Objective;
-                else if (exit != null) objective.text = exit.Objective;
-                else if (FindFirstObjectByType<Herbalist.Levels.StageTwoGoal>() == null) objective.text = defaultObjective;
+                var maze = FindFirstObjectByType<Herbalist.Levels.DescendingMazeFlow>();
+                var altar = FindFirstObjectByType<Herbalist.Levels.RotatingAltar>();
+                if (maze != null) objective.text = maze.Objective;
+                else if (altar != null) objective.text = altar.Objective;
+                else objective.text = defaultObjective;
             }
             if(!paused)subtitleRemaining-=Time.unscaledDeltaTime;
             subtitle.gameObject.SetActive(subtitleRemaining>0&&!string.IsNullOrEmpty(subtitle.text));

@@ -36,16 +36,12 @@ MonoBehaviour:
   pausedText: "\uAC8C\uC784\uC744 \uC77C\uC2DC \uC815\uC9C0\uD558\uC600\uC2B5\uB2C8\uB2E4."
   partnerPausedText: "\uB2E4\uB978 \uD50C\uB808\uC774\uC5B4\uAC00 \uAC8C\uC784\uC744 \uC77C\uC2DC \uC815\uC9C0\uD558\uC600\uC2B5\uB2C8\uB2E4."
   leafText: "\uC78E"
-  sapText: "\uC561"
+  sapText: "\uBB3C"
   gatherText: "\uCC44\uC9D1"
   giveText: "\uC804\uB2EC"
   pauseHint: "\uC77C\uC2DC\uC815\uC9C0"
   helpHint: "\uD0A4 \uD655\uC778"
   emptyPocket: "\uBE48\uC190"
-  leafModes:
-  - "\uAEBC\uC9D0"
-  - "\uACE0\uC815"
-  - "\uBC1C\uD310"
   pauseAction: {fileID: 11400000, guid: 5b7edeeb78164d64fa1b204555605a92, type: 2}
   helpAction: {fileID: 11400000, guid: d555e369d4bedfb45bafdc525a3c53ee, type: 2}
   controls:
@@ -67,10 +63,10 @@ MonoBehaviour:
   - label: "\uB2A5\uB825 \uC804\uD658 (\uC194\uB85C \uD14C\uC2A4\uD2B8)"
     action: {fileID: 11400000, guid: 2f3895318fb57804baf216a7cb39e92e, type: 2}
     offlineTestOnly: 1
-  - label: "\uB2A5\uB825 \uBAA8\uB4DC / \uC81C\uC5B4 \uC804\uD658"
+  - label: "\uB2A5\uB825 \uC0AC\uC6A9 / \uBBF8\uB85C \uC81C\uC5B4 \uC804\uD658"
     action: {fileID: 11400000, guid: ead40294ab6cdf540a3eb1133fc66dd2, type: 2}
     offlineTestOnly: 0
-  - label: "\uB2A5\uB825 \uC0AC\uC6A9"
+  - label: "\uB098\uBB47\uC78E \uD68C\uC218"
     action: {fileID: 11400000, guid: 90c914f183676a846b010a5dc1f82c38, type: 2}
     offlineTestOnly: 0
   - label: "\uCC44\uC9D1 / \uC804\uB2EC"
@@ -82,6 +78,9 @@ MonoBehaviour:
   - label: "\uC57D\uC81C \uBCF5\uC6A9"
     action: {fileID: 11400000, guid: 989b6b4ec267f9047bb6de2ee72fa79c, type: 2}
     offlineTestOnly: 0
+  - label: "\uC194\uB85C \uD14C\uC2A4\uD2B8: \uB098\uBB47\uC78E\xB7\uC218\uC561 \uBAA8\uB450 \uD574\uAE08"
+    action: {fileID: 11400000, guid: 9ee627606ca3b0a4089084116887d214, type: 2}
+    offlineTestOnly: 1
   markerOffset: {x: -0.65, y: 1.9, z: 0}
   feedbackDuration: 4
   menuScene: Assets/_Project/Scenes/01_Title/MainMenu.unity

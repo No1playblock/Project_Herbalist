@@ -28,7 +28,7 @@ namespace Herbalist.Editor
             for(int i=0;i<3;i++)
             {
                 var d=AssetDatabase.LoadAssetAtPath<SapMazeDefinition>(
-                    "Assets/_Project/Data/Stages/Stage_04/SO_SapMaze_"+(i+1)+".asset");
+                    "Assets/_Project/Data/Stages/Revision_260928/SO_RevisionMaze_"+(i+1)+".asset");
                 if(!d.IsValid()||d.leakNodes.Length!=i+3)throw new Exception("Invalid reference maze "+i);
                 foreach(var edge in d.edges)
                 {
@@ -37,7 +37,7 @@ namespace Herbalist.Editor
                 }
                 var unreachable=Enumerable.Range(0,d.leakNodes.Length).Where(n=>!Reachable(d,d.leakNodes[n])).ToArray();
                 if(!unreachable.SequenceEqual(i==1?new[]{0}:new int[0]))throw new Exception("Unexpected unreachable leak");
-                var route=StageFourBuilder.FindRoute(d,d.startNode,d.goalNode);
+                var route=SapMazeRoute.Find(d,d.startNode,d.goalNode);
                 var state=SapMazeSimulation.Initial(d);int index=1,guard=0;
                 while(state.Phase==MazePhase.Running&&guard++<30000)
                 {

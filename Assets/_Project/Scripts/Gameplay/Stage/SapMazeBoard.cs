@@ -15,6 +15,7 @@ namespace Herbalist.Levels
         [SerializeField] private MazeLeakSocket[] _leaks;
         [SerializeField] private StageArrivalZone _controlArea;
         [SerializeField] private Transform _sapVisual;
+        [SerializeField, Min(1)] private float _dropElongation = 1;
         [SerializeField] private Transform _frontCamera;
         [SerializeField] private MazeControlView _controlView = MazeControlView.KeepPlayerCamera;
         [SerializeField] private TMPro.TMP_Text _status;
@@ -90,7 +91,6 @@ namespace Herbalist.Levels
             for(int i=0;i<_leaks.Length;i++)
             {
                 bool wet=SapMazeSimulation.AtLeak(_definition,_state,i);
-                _leaks[i].AuthorityLeak(wet);
                 if(wet&&!_leaks[i].Blocked)_leakMask|=1<<i;
             }
             Publish();RefreshAvailability();UpdateController();
@@ -180,6 +180,12 @@ namespace Herbalist.Levels
                 var p=_definition.Position(state);
                 _sapVisual.localPosition=new Vector3(p.x,p.y,_sapVisual.localPosition.z);
                 _sapVisual.localScale=_visualScale*Mathf.Pow(Mathf.Clamp01(state.Volume/_definition.initialVolume),1f/3);
+                var direction = _definition.nodes[state.To] - _definition.nodes[state.From];
+                if (direction.sqrMagnitude > .000001f)
+                {
+                    _sapVisual.localRotation = Quaternion.FromToRotation(Vector3.up, new Vector3(direction.x, direction.y, 0));
+                    _sapVisual.localScale = Vector3.Scale(_sapVisual.localScale, new Vector3(1, _dropElongation, 1));
+                }
             }
             for(int i=0;i<_leaks.Length;i++)
             {

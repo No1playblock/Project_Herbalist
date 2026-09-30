@@ -16,7 +16,6 @@ public static class SapHoseChecks
         {
             var source = AssetDatabase.LoadAssetAtPath<SapAbilitySettings>("Assets/_Project/Data/Abilities/Sap/SO_SapAbilitySettings.asset");
             var settings = UnityEngine.Object.Instantiate(source); objects.Add(settings);
-            settings.controlMode = SapControlMode.Hose;
             var root = new GameObject("HoseCheckTemporary"); objects.Add(root);
             Vector3 origin = new Vector3(10000, 10000, 10000);
             var wall = GameObject.CreatePrimitive(PrimitiveType.Cube); objects.Add(wall);
@@ -74,72 +73,33 @@ public static class SapHoseChecks
             var target = wall.AddComponent<LeafInstallTarget>();
             var targetData = new SerializedObject(target);
             targetData.FindProperty("targetId").intValue = 2000000000;
-            targetData.FindProperty("acceptsPin").boolValue = true;
             targetData.ApplyModifiedPropertiesWithoutUndo();
             var receiver = wall.AddComponent<SapReceiver>();
             var receiverData = new SerializedObject(receiver);
             receiverData.FindProperty("receiverId").intValue = 2000000000;
-            receiverData.FindProperty("leafTarget").objectReferenceValue = target;
             receiverData.ApplyModifiedPropertiesWithoutUndo();
             wall.SetActive(true); Physics.SyncTransforms();
             hose.Tick(held, new Ray(origin, Vector3.forward), true, 1, settings, create);
             Require(marks.Count == 3, "receiver mark");
-            var leafSettings = AssetDatabase.LoadAssetAtPath<LeafAbilitySettings>("Assets/_Project/Data/Abilities/Leaf/SO_LeafAbilitySettings.asset");
-            var bindingLeaf = UnityEngine.Object.Instantiate(leafSettings.offlinePrefab); objects.Add(bindingLeaf.gameObject);
-            bindingLeaf.Initialize(leafSettings, root.transform, LeafMode.Pin, origin, origin+Vector3.forward*10, _=>{}, true);
-            typeof(LeafProjectile).GetMethod("Install", BindingFlags.Instance|BindingFlags.NonPublic).Invoke(bindingLeaf,
-                new object[]{target, marks[2].transform.position, Vector3.back, Vector3.forward});
-            Require(marks[2].State == SapState.Bound && bindingLeaf.State == LeafState.Bound, "sap-first binding");
-            for (int i=0; i<10; i++)
-            {
-                marks[2].Tick(settings.hoseMarkLifetime * 10);
-                bindingLeaf.Tick(leafSettings.lifetime * 10);
-            }
-            Require(marks[2].State == SapState.Bound && bindingLeaf.State == LeafState.Bound, "bound sap and leaf persist beyond both lifetimes");
-            bindingLeaf.BeginReturn();
-            Require(marks[2].State == SapState.Complete && bindingLeaf.State == LeafState.Returning && !receiver.Supplied, "recall removes bound sap and drains receiver");
-
-            // A grown mark must bind a real projectile anywhere inside its visible footprint.
-            bindingLeaf.Finish();
-            wall.transform.localScale = new Vector3(10, 10, 1);
-            Physics.SyncTransforms();
-            Func<float, LeafProjectile> shoot = offset => {
-                var leaf = UnityEngine.Object.Instantiate(leafSettings.offlinePrefab); objects.Add(leaf.gameObject);
-                Vector3 start = origin + Vector3.right * offset;
-                leaf.Initialize(leafSettings, root.transform, LeafMode.Pin, start, start + Vector3.forward * 10, _=>{}, true);
-                for (int i=0; i<120 && leaf.State == LeafState.Flying; i++) leaf.Tick(1f/60);
-                Require(leaf.Installed, "physical leaf collision");
-                return leaf;
-            };
+            var leafSettings = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<LeafAbilitySettings>("Assets/_Project/Data/Abilities/Leaf/SO_LeafAbilitySettings.asset"));
+            objects.Add(leafSettings); leafSettings.permanentInstallation = true;
+            var leaf = UnityEngine.Object.Instantiate(leafSettings.offlinePrefab); objects.Add(leaf.gameObject);
+            leaf.Initialize(leafSettings, root.transform, origin, origin + Vector3.forward * 10, _ => {}, true);
+            typeof(LeafProjectile).GetMethod("Install", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(leaf,
+                new object[] { target, marks[2].transform.position, Vector3.back, Vector3.forward });
+            Require(leaf.Installed && marks[2].IsPlaced, "leaf and water install independently");
+            leaf.BeginReturn(); Require(marks[2].IsPlaced && receiver.Supplied, "leaf recall does not drain water");
+            marks[2].Tick(settings.hoseMarkLifetime + .1f);
+            Require(marks[2].State == SapState.Complete, "water expires independently after recall");
+            leaf.Finish();
             hose.Tick(held, new Ray(origin, Vector3.forward), true, 100, settings, create);
-            var grownMark = marks[marks.Count-1];
-            float visibleRadius = settings.surfaceMarkSize.x * settings.hoseMaxScale * .5f;
-            float edgeOffset = (settings.bindingRadius + visibleRadius) * .5f;
-            Require(edgeOffset > settings.bindingRadius && edgeOffset < visibleRadius, "edge fixture outside old radius");
-            var edgeLeaf = shoot(edgeOffset);
-            Require(edgeLeaf.State == LeafState.Bound && grownMark.State == SapState.Bound, "grown visible edge binds");
-            grownMark.Tick(settings.hoseMarkLifetime * 100);
-            edgeLeaf.Tick(leafSettings.lifetime * 100);
-            Require(grownMark.State == SapState.Bound && edgeLeaf.State == LeafState.Bound, "grown bound pair persists");
-            edgeLeaf.Finish();
-            Require(grownMark.State == SapState.Complete && !receiver.Supplied, "leaf removal cleans up grown bound sap");
-            Physics.SyncTransforms();
-
-            hose.Tick(held, new Ray(origin, Vector3.forward), true, 100, settings, create);
-            var outsideLeaf = shoot(visibleRadius + settings.bindingRadius);
-            Require(outsideLeaf.State == LeafState.Installed, "outside footprint does not bind");
-            outsideLeaf.Finish(); marks[marks.Count-1].Finish(); Physics.SyncTransforms();
-            var expiredLeaf = shoot(0);
-            Require(expiredLeaf.State == LeafState.Installed, "expired mark does not bind");
-            hose.Tick(held, new Ray(origin, Vector3.forward), true, 100, settings, create);
-            Require(expiredLeaf.State == LeafState.Installed, "leaf-first does not bind retroactively");
-            expiredLeaf.Finish(); marks[marks.Count-1].Finish(); Physics.SyncTransforms();
-
-            var legacy = create();
-            legacy.Place(receiver, origin+Vector3.forward*4.5f, Vector3.back);
-            Require(legacy.IsPlaced, "legacy placement");
-            legacy.Tick(settings.lifetime+.1f);
-            Require(legacy.State == SapState.Complete, "legacy expiry");
+            var water = marks[marks.Count - 1];
+            leaf.Initialize(leafSettings, root.transform, origin, origin + Vector3.forward * 10, _ => {}, true);
+            typeof(LeafProjectile).GetMethod("Install", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(leaf,
+                new object[] { target, water.transform.position, Vector3.back, Vector3.forward });
+            water.Tick(settings.hoseMarkLifetime + .1f); leaf.Tick(leafSettings.lifetime * 10);
+            Require(water.State == SapState.Complete && leaf.Installed, "water expiry does not remove permanent leaf");
+            leaf.Finish();
 
             var playerGo = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Characters/PF_Player.prefab"));
             objects.Add(playerGo);
@@ -157,20 +117,10 @@ public static class SapHoseChecks
             leafAbility.Configure(() => {
                 var leaf = UnityEngine.Object.Instantiate(leafAbility.Settings.offlinePrefab); objects.Add(leaf.gameObject); return leaf;
             }, _ => {}, true);
-            Require(leafAbility.TryThrow(LeafMode.Pin, new Ray(playerGo.transform.position + Vector3.up, Vector3.right)), "leaf fired");
+            Require(leafAbility.TryThrow(new Ray(playerGo.transform.position + Vector3.up, Vector3.right)), "leaf fired");
             Require(Mathf.Abs(Mathf.DeltaAngle(player.View.BodyYaw, 90)) < .01f, "leaf faces aim");
 
-            // The old single-deposit capacity must not stop hose hits at new positions.
-            var testSettings = UnityEngine.Object.Instantiate(settings); objects.Add(testSettings);
-            testSettings.capacity = 2;
-            var controlData = new SerializedObject(sap);
-            controlData.FindProperty("settings").objectReferenceValue = testSettings;
-            controlData.ApplyModifiedPropertiesWithoutUndo();
-            sap.Configure(create, _=>{}, true);
-            var createHoseMark = typeof(SapControlAbility).GetMethod("CreateHoseMark", BindingFlags.Instance|BindingFlags.NonPublic);
-            for (int i=0; i<3; i++)
-                Require(createHoseMark.Invoke(sap,null) != null, "hose ignores legacy placement capacity");
-            return "PASS: empty-space spray, advancing stream, wall hit, merge/growth/cap, release, refreshed 5s expiry, body-fixed chest hover, leaf-facing, bound persistence/recall cleanup, legacy placement, near-to-far spray, legacy capacity isolation, physical grown-edge binding, outside/expired rejection, leaf-first order";
+            return "PASS: empty-space spray, advancing stream, wall hit, merge/growth/cap, release, refreshed expiry, body-fixed chest hover, leaf-facing, independent water/leaf lifetimes, near-to-far spray";
         }
         finally
         {

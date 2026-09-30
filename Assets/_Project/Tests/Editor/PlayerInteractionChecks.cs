@@ -24,14 +24,14 @@ namespace Herbalist.Editor
                 floor.transform.localPosition = Vector3.down * .5f;
                 floor.transform.localScale = new Vector3(20, 1, 20);
                 var leafPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/InteractiveObjects/Abilities/PF_LeafProjectile.prefab");
-                foreach (LeafMode mode in new[] { LeafMode.Pin, LeafMode.Platform })
                 {
+                    const string leafLabel = "Leaf";
                     var leaf = UnityEngine.Object.Instantiate(leafPrefab, scope.transform).GetComponent<LeafProjectile>();
                     leaf.transform.localPosition = Vector3.up * .7f;
                     leaf.transform.localRotation = Quaternion.identity;
-                    leaf.ApplyReplica(mode, LeafState.Installed, 0);
+                    leaf.ApplyReplica(LeafState.Installed, 0);
                     var data = new SerializedObject(leaf);
-                    var surface = (Collider)data.FindProperty(mode == LeafMode.Pin ? "pinCollider" : "platformCollider").objectReferenceValue;
+                    var surface = (Collider)data.FindProperty("_surface").objectReferenceValue;
                     var player = new GameObject("TestMotor");
                     player.SetActive(false);
                     player.transform.SetParent(scope.transform, false);
@@ -61,16 +61,16 @@ namespace Herbalist.Editor
                             motor.Simulate(Vector3.zero, .02f);
                             peak = Mathf.Max(peak, player.transform.position.y);
                         }
-                        Require(peak > top + .1f, mode + " passes upward");
-                        Require(motor.IsGrounded && Mathf.Abs(player.transform.position.y - top) < .15f, mode + " lands above");
-                        results.Add(mode + (restoreEachTick ? " prediction restore" : " offline") + " passes and lands");
+                        Require(peak > top + .1f, leafLabel + " passes upward");
+                        Require(motor.IsGrounded && Mathf.Abs(player.transform.position.y - top) < .15f, leafLabel + " lands above");
+                        results.Add(leafLabel + (restoreEachTick ? " prediction restore" : " offline") + " passes and lands");
                     }
                     config.jumpHeight = .1f;
                     motor.Teleport(origin); Physics.SyncTransforms();
                     for (int i = 0; i < 10; i++) motor.Simulate(Vector3.zero, .02f);
                     Require(motor.TryJump(), "Short jump");
                     for (int i = 0; i < 100; i++) motor.Simulate(Vector3.zero, .02f);
-                    Require(player.transform.position.y < .15f && motor.IsGrounded, mode + " short jump returns below");
+                    Require(player.transform.position.y < .15f && motor.IsGrounded, leafLabel + " short jump returns below");
                     var other = new GameObject("OtherPlayer").AddComponent<CharacterController>();
                     other.transform.SetParent(scope.transform, false);
                     other.height = 1.8f; other.center = Vector3.up * .9f;
@@ -96,7 +96,7 @@ namespace Herbalist.Editor
                 foreach(var hint in ui.controls)
                 {
                     if(hint.action.action.name == "SwitchAbility") switchFound = hint.offlineTestOnly && hint.action.action.bindings[0].effectivePath == "<Keyboard>/q";
-                    if(hint.action.action.name == "Cycle") cycleFound = !hint.offlineTestOnly && hint.label == "능력 모드 / 제어 전환";
+                    if(hint.action.action.name == "Cycle") cycleFound = !hint.offlineTestOnly && hint.label == "능력 사용 / 미로 제어 전환";
                 }
                 Require(switchFound && cycleFound, "Q/R help data");
                 return "PASS: " + string.Join(", ", results) + "; short jumps, per-player pairs, recall, aim ray, head tracking, Q/R help.";

@@ -13,5 +13,9 @@ namespace Herbalist.Levels
         [Min(.01f)] public float standingTolerance = .3f;
         [Min(.05f)] public float presentationDuration = .65f;
         [Min(0)] public float presentationRise = 1.2f;
+        [Min(.01f)] public float eruptionRiseDuration = .2f;
+        [Min(.01f)] public float jumpWindow = .3f;
+        [Min(.1f)] public float jumpReach = 5;
+        [Min(.1f)] public float launchHeightMultiplier = 5;
     }
 }

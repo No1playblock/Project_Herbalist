@@ -37,7 +37,7 @@ namespace Herbalist.StageOne
         private void Update()
         {
             var flow = StageOneFlow.Instance;
-            bool active = Local && flow != null && !flow.Progress.Cleared;
+            bool active = Local && ((flow != null && !flow.Progress.Cleared) || (Herbalist.Levels.StageLevel.Instance != null && Herbalist.Levels.StageLevel.Instance.abilityRules != null));
             if (actions != null) foreach (var action in actions) { if (active && !action.enabled) action.Enable(); else if (!active && action.enabled) action.Disable(); }
             if (flow != null && Available && Slot >= 0 && Slot < flow.settings.slotRoles.Length)
             {
@@ -47,9 +47,16 @@ namespace Herbalist.StageOne
         }
         public void Request(StageCommand command)
         {
-            if (Herbalist.GameUI.GameplayPause.IsPaused || !Local || StageOneFlow.Instance == null || !Herbalist.Presentation.GameplayCursor.AllowsPointerInput) return;
+            if (Herbalist.GameUI.GameplayPause.IsPaused || !Local || !Herbalist.Presentation.GameplayCursor.AllowsPointerInput) return;
             if (adapter != null && adapter.Object != null && adapter.Object.IsValid) adapter.RPC_Command(command);
-            else SetFeedback(StageOneFlow.Instance.Execute(this, command));
+            else SetFeedback(ExecuteCommand(command));
+        }
+        public string ExecuteCommand(StageCommand command)
+        {
+            if (Herbalist.GameUI.GameplayPause.IsPaused || !Available) return string.Empty;
+            if (command == StageCommand.Interact && Herbalist.Levels.SoloPotionPickup.TryPickup(this, out var potionMessage)) return potionMessage;
+            if (command == StageCommand.Interact && Herbalist.Levels.HangingCloth.TryInteract(this, out var message)) return message;
+            return StageOneFlow.Instance != null ? StageOneFlow.Instance.Execute(this, command) : string.Empty;
         }
         public void SetFeedback(string text) { Feedback = text; }
         public string Binding(int index) => actions != null ? actions[index].GetBindingDisplayString() : string.Empty;

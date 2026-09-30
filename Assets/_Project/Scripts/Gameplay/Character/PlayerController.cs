@@ -49,14 +49,15 @@ namespace Herbalist.Player
             if (!ready || !locallyControlled || Herbalist.GameUI.GameplayPause.IsPaused) return;
             view.ApplyLook(input.Look);
             if (networkDriven) return;
-            if(_transportOwner!=null){lastJump=input.JumpSequence;motor.Teleport(_transportPosition);return;}
+            if(_transportOwner!=null){RouteMovement(input.Move);lastJump=input.JumpSequence;motor.Teleport(_transportPosition);return;}
             Vector2 movement = Vector2.ClampMagnitude(input.Move, 1);
             if(RouteMovement(movement))movement=Vector2.zero;
             Vector3 direction = view.PlanarRotation * new Vector3(movement.x, 0, movement.y);
             view.SetBodyYaw(tuning.ResolveBodyYaw(view.BodyYaw, view.Yaw, direction, motor.MovementLocked, Time.deltaTime));
-            if (lastJump != input.JumpSequence) { lastJump = input.JumpSequence; motor.TryJump(); }
+            if (lastJump != input.JumpSequence) { lastJump = input.JumpSequence; TryJump(); }
             motor.Simulate(direction * tuning.moveSpeed, Time.deltaTime);
         }
+        public bool TryJump() => motor.TryJump();
         private void LateUpdate() { if (ready) view.Present(Time.deltaTime, locallyControlled); }
         private void OnDisable()
         {

@@ -1,25 +1,26 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 namespace Herbalist.Abilities
 {
     // Authored targets opt into installation. Decorative geometry never accepts leaves.
     public sealed class LeafInstallTarget : MonoBehaviour
     {
         [SerializeField] private int targetId;
-        [SerializeField] private bool acceptsPlatform = true;
-        [SerializeField] private bool acceptsPin;
         [SerializeField] private Transform socket;
         [SerializeField] private bool _singleOccupant;
-        [SerializeField] private SapBindingSource sap;
-        [SerializeField] private UnityEvent onPinned = new UnityEvent();
+        [FormerlySerializedAs("onPinned"), SerializeField] private UnityEvent onInstalled = new UnityEvent();
         [SerializeField] private UnityEvent onReleased = new UnityEvent();
         private readonly HashSet<LeafProjectile> occupants = new();
         private static readonly Dictionary<int, LeafInstallTarget> targets = new();
         public int Id => targetId;
-        public bool ExactSocketPlacement => socket != null && _singleOccupant;
+        public bool HasSocket => socket != null;
+        public Vector3 SocketPosition => socket != null ? socket.position : transform.position;
+        public Quaternion SocketRotation => socket != null ? socket.rotation : transform.rotation;
+        public bool ExactSocketPlacement => socket != null;
         public LeafProjectile InstalledLeaf { get { foreach(var leaf in occupants) if(leaf != null && leaf.Installed) return leaf; return null; } }
-        public bool Pinned { get { foreach (var leaf in occupants) if (leaf != null && leaf.Mode == LeafMode.Pin) return true; return false; } }
+        public bool HasLeaf => InstalledLeaf != null;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)] private static void ResetStatics() => targets.Clear();
         private void OnEnable()
         {
@@ -28,29 +29,25 @@ namespace Herbalist.Abilities
         }
         private void OnDisable() { if (targets.TryGetValue(targetId, out var current) && current == this) targets.Remove(targetId); }
         public static LeafInstallTarget Find(int id) => targets.TryGetValue(id, out var target) ? target : null;
-        public bool Accepts(LeafMode mode) => isActiveAndEnabled && (!_singleOccupant || InstalledLeaf == null) && (mode == LeafMode.Platform ? acceptsPlatform : mode == LeafMode.Pin && acceptsPin);
+        public bool CanInstall => isActiveAndEnabled && (!_singleOccupant || !HasLeaf);
         public Vector3 Position(Vector3 hit, Vector3 normal, float offset) => socket != null ? socket.position : hit + normal * offset;
-        public Quaternion Rotation(LeafMode mode, Vector3 normal, Vector3 heading)
+        public Quaternion Rotation(Vector3 normal, Vector3 heading)
         {
-            if (socket != null && mode != LeafMode.Pin) return socket.rotation;
+            if (socket != null) return socket.rotation;
             Vector3 forward = Vector3.ProjectOnPlane(heading, Vector3.up);
             if (forward.sqrMagnitude < 0.001f) forward = Vector3.forward;
             Vector3 up = Mathf.Abs(Vector3.Dot(forward.normalized, Vector3.up)) > 0.99f ? Vector3.forward : Vector3.up;
             return Quaternion.LookRotation(forward, up);
         }
-        public bool TryBind(LeafProjectile leaf) => SapDeposit.TryBind(leaf) || (GetComponent<SapReceiver>() == null && sap != null && sap.TryBind(leaf));
-        public void Attach(LeafProjectile leaf, bool bound)
+        public void Attach(LeafProjectile leaf)
         {
-            bool before = Pinned; occupants.Add(leaf);
-            if (bound && GetComponent<SapReceiver>() == null && sap != null) sap.ShowBound(leaf);
-            if (!before && Pinned) onPinned.Invoke();
+            bool before = HasLeaf; occupants.Add(leaf);
+            if (!before && HasLeaf) onInstalled.Invoke();
         }
         public void Detach(LeafProjectile leaf)
         {
-            bool before = Pinned; occupants.Remove(leaf);
-            SapDeposit.Release(leaf);
-            if (sap != null) sap.Release(leaf);
-            if (before && !Pinned) onReleased.Invoke();
+            bool before = HasLeaf; occupants.Remove(leaf);
+            if (before && !HasLeaf) onReleased.Invoke();
         }
     }
 }

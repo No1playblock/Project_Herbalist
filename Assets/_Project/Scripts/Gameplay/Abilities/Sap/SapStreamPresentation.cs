@@ -17,7 +17,6 @@ namespace Herbalist.Abilities
         [Header("Blob motion")]
         [SerializeField, Min(0)] private float _hoverBob = 0.022f;
         [SerializeField, Min(0)] private float _hoverPulse = 0.035f;
-        [SerializeField, Range(1, 2)] private float _flightStretch = 1.28f;
         [Header("Release drips")]
         [SerializeField, Range(1, 8), Tooltip("Maximum simultaneous drops while the stream retracts.")] private int _releaseDripCount = 5;
         [SerializeField, Min(0.1f)] private float _releaseDripLifetime = 1.5f;
@@ -34,7 +33,6 @@ namespace Herbalist.Abilities
         private float flowTime;
         
         private Vector3[] _pathPoints;
-        private Vector3 _lastBlobPosition;
         private Transform _blobVisual;
         private MeshFilter _blobMeshFilter;
         private Vector3 _blobBaseLocalPosition;
@@ -68,24 +66,23 @@ private void LateUpdate()
             var settings = sap.Settings;
             UpdateBlobMotion(settings);
 
-            bool visible = sap.HasStream && (sap.State == SapState.Extracting || sap.State == SapState.Controlled || sap.State == SapState.Flying);
+            bool visible = sap.HasStream && (sap.State == SapState.Extracting || sap.State == SapState.Controlled);
             stream.enabled = visible && settings != null;
 
             if (visible && settings != null)
             {
                 Vector3 start = sap.StreamOrigin;
                 Vector3 end = sap.StreamDestination;
-                bool flying = sap.State == SapState.Flying;
                 float streamDiameter = GetHoverBlobDiameter(settings);
                 UpdateRetractionDrips(sap.HoseStream && sap.HoseRetracting && sap.HasStream, start, end, settings, paused ? 0f : Time.deltaTime);
-                BuildPath(start, end, flying);
+                BuildPath(start, end);
 
                 // One view-facing stream uses the hover blob's measured world-space diameter.
                 stream.useWorldSpace = true;
                 stream.positionCount = _pathPoints.Length;
                 stream.SetPositions(_pathPoints);
                 stream.widthMultiplier = streamDiameter * Mathf.Max(1f, _coreWidth);
-                UpdateBeads(start, end, settings.streamFlowSpeed, settings.streamBeadSize, settings.radius, flying);
+                UpdateBeads(start, end, settings.streamFlowSpeed, settings.streamBeadSize, settings.radius);
             }
             else
             {
@@ -118,24 +115,10 @@ private void ConfigureCoreLine()
             stream.widthMultiplier = 1f;
             stream.numCapVertices = 5;
             stream.numCornerVertices = 4;
-            var gradient = new Gradient();
-            gradient.SetKeys(
-                new[]
-                {
-                    new GradientColorKey(new Color(1f, 0.72f, 0.26f), 0f),
-                    new GradientColorKey(new Color(1f, 0.91f, 0.58f), 0.5f),
-                    new GradientColorKey(new Color(1f, 0.78f, 0.32f), 1f)
-                },
-                new[]
-                {
-                    new GradientAlphaKey(0.2f, 0f),
-                    new GradientAlphaKey(0.48f, 0.5f),
-                    new GradientAlphaKey(0.24f, 1f)
-                });
-            stream.colorGradient = gradient;
+            // Color and transparency come from the authored LineRenderer gradient.
         }
 
-        private void BuildPath(Vector3 start, Vector3 end, bool flying)
+        private void BuildPath(Vector3 start, Vector3 end)
         {
             Vector3 axis = end - start;
             float length = axis.magnitude;
@@ -145,7 +128,7 @@ private void ConfigureCoreLine()
             Vector3 reference = Mathf.Abs(Vector3.Dot(axis, Vector3.up)) > 0.94f ? Vector3.right : Vector3.up;
             Vector3 side = Vector3.Cross(reference, axis).normalized;
             Vector3 lift = Vector3.Cross(axis, side).normalized;
-            float sway = _pathSway * (flying ? 0.28f : 1f) * Mathf.Clamp(length, 0.3f, 1.4f);
+            float sway = _pathSway * Mathf.Clamp(length, 0.3f, 1.4f);
 
             for (int i = 0; i < _pathPoints.Length; i++)
             {
@@ -176,7 +159,7 @@ private float GetHoverBlobDiameter(SapAbilitySettings settings)
         }
 
 
-private void UpdateBeads(Vector3 start, Vector3 end, float speed, float size, float minimumLength, bool flying)
+private void UpdateBeads(Vector3 start, Vector3 end, float speed, float size, float minimumLength)
         {
             if (beads == null || beads.Length == 0) return;
             float length = Vector3.Distance(start, end);
@@ -197,7 +180,7 @@ private void UpdateBeads(Vector3 start, Vector3 end, float speed, float size, fl
                 beads[i].position = Vector3.Lerp(_pathPoints[index], _pathPoints[nextIndex], pathBlend);
                 if (direction.sqrMagnitude > 0.0001f) beads[i].rotation = Quaternion.LookRotation(direction);
                 float beadSize = size * 0.36f;
-                float elongation = flying ? 1.45f : 1.12f;
+                float elongation = 1.12f;
                 float pulse = 0.92f + 0.08f * Mathf.Sin(flowTime * 4f + i * 2.1f);
                 beads[i].localScale = new Vector3(beadSize * pulse, beadSize * pulse, beadSize * elongation * pulse);
             }
@@ -213,28 +196,17 @@ private void InitializeBlobMotion()
                 _blobBaseLocalPosition = _blobVisual.localPosition;
                 _blobBaseLocalRotation = _blobVisual.localRotation;
             }
-            _lastBlobPosition = sap.transform.position;
         }
 
         private void UpdateBlobMotion(SapAbilitySettings settings)
         {
             if (sap == null || settings == null || _blobVisual == null) return;
-            Vector3 currentPosition = sap.transform.position;
-            Vector3 velocity = (currentPosition - _lastBlobPosition) / Mathf.Max(Time.deltaTime, 0.0001f);
-            _lastBlobPosition = currentPosition;
-
             if (sap.State == SapState.Extracting || sap.State == SapState.Controlled)
             {
                 _blobVisual.localPosition = _blobBaseLocalPosition + Vector3.up * (Mathf.Sin(flowTime * 2.5f) * _hoverBob);
                 float pulse = 1f + Mathf.Sin(flowTime * 4f) * _hoverPulse;
                 _blobVisual.localScale = settings.controlledScale * pulse;
                 _blobVisual.localRotation = _blobBaseLocalRotation;
-            }
-            else if (sap.State == SapState.Flying)
-            {
-                _blobVisual.localPosition = _blobBaseLocalPosition;
-                if (velocity.sqrMagnitude > 0.05f) _blobVisual.rotation = Quaternion.LookRotation(velocity.normalized, Vector3.up);
-                _blobVisual.localScale = Vector3.Scale(settings.controlledScale, new Vector3(0.86f, 0.86f, _flightStretch));
             }
             else
             {

@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: SO_SapAbilitySettings
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapAbilitySettings
   offlinePrefab: {fileID: 2631380105216188163, guid: 199e67f748b08fb45b4ad00b8c86caac, type: 3}
-  controlMode: 1
   hoseHoverOffset: {x: 0.55, y: 1.15, z: 0.15}
   hoseExtendSpeed: 8
   hoseRetractSpeed: 24
@@ -25,14 +24,10 @@ MonoBehaviour:
   surfaceMarkSize: {x: 0.85, y: 0.85}
   surfaceMarkDepth: 0.45
   surfaceMarkDrawDistance: 50
-  surfaceMarkOpacity: 0.9
+  surfaceMarkOpacity: 1
   surfaceVolumeFootprintRatio: 0.72
   surfaceVolumeThickness: 0.09
-  hoverOffset: {x: 0.55, y: 1.5, z: 0.15}
   extractionSpeed: 4
-  flightSpeed: 12
-  flightTimeout: 5
-  sourceRefreshInterval: 0.1
   arrivalTolerance: 0.03
   streamWidth: 0.045
   streamFlowSpeed: 2
@@ -42,11 +37,6 @@ MonoBehaviour:
   controlRange: 14
   radius: 0.22
   surfaceOffset: 0.025
-  placementTolerance: 0.3
-  lifetime: 5
-  bindingRadius: 0.7
-  refreshRadius: 0.5
-  capacity: 8
   collisionMask:
     serializedVersion: 2
     m_Bits: 1

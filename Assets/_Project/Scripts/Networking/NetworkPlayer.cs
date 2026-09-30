@@ -13,6 +13,7 @@ namespace Herbalist.Networking
         public uint AbilityCycle;
         public uint AbilityUse;
         public NetworkBool AbilityHeld;
+        public NetworkBool AbilityCycleHeld;
     }
 
     [RequireComponent(typeof(NetworkObject), typeof(NetworkTransform))]
@@ -35,6 +36,7 @@ namespace Herbalist.Networking
         [Networked] public uint EnteredGateMask { get; set; }
         [Networked] public NetworkBool ExternalFlight { get; set; }
         [Networked] public float ExternalGravity { get; set; }
+        [Networked] public NetworkBool ExternalAirControl { get; set; }
         [Networked] public NetworkBool Transported { get; set; }
         [Networked] public Vector3 TransportPosition { get; set; }
         public void SetTransportAuthoritatively(bool active,Vector3 position)
@@ -75,7 +77,8 @@ namespace Herbalist.Networking
             JumpSequence = player.Input.JumpSequence,
             AbilityCycle = GetComponent<Herbalist.Abilities.AbilityInputReader>().CycleSequence,
             AbilityUse = GetComponent<Herbalist.Abilities.AbilityInputReader>().UseSequence,
-            AbilityHeld = GetComponent<Herbalist.Abilities.AbilityInputReader>().UseHeld
+            AbilityHeld = GetComponent<Herbalist.Abilities.AbilityInputReader>().UseHeld,
+            AbilityCycleHeld = GetComponent<Herbalist.Abilities.AbilityInputReader>().CycleHeld
         };
         public override void FixedUpdateNetwork()
         {
@@ -83,14 +86,14 @@ namespace Herbalist.Networking
             if (Herbalist.GameUI.GameplayPause.IsPaused) { if (GetInput(out PlayerNetworkInput pausedInput)) LastJumpSequence = pausedInput.JumpSequence; return; }
             if(Transported)
             {
-                if(GetInput(out PlayerNetworkInput ridingInput))LastJumpSequence=ridingInput.JumpSequence;
+                if(GetInput(out PlayerNetworkInput ridingInput)) { LastJumpSequence=ridingInput.JumpSequence; if(HasStateAuthority)player.RouteMovement(ridingInput.Move); }
                 player.Motor.Teleport(TransportPosition);SimulationPosition=TransportPosition;
                 SimulationVelocity=Vector3.zero;Grounded=false;return;
             }
             // All values needed for re-simulation come from Fusion's restored tick state.
             if (HasStateAuthority) MovementBlocked = player.Motor.HasMovementLockExcept(this);
             player.Motor.SetMovementLock(this, MovementBlocked);
-            player.Motor.RestoreState(new MotorState { Position = SimulationPosition, Velocity = SimulationVelocity, Grounded = Grounded, EnteredGateMask = EnteredGateMask, ExternalFlight = ExternalFlight, ExternalGravity = ExternalGravity });
+            player.Motor.RestoreState(new MotorState { Position = SimulationPosition, Velocity = SimulationVelocity, Grounded = Grounded, EnteredGateMask = EnteredGateMask, ExternalFlight = ExternalFlight, ExternalGravity = ExternalGravity, ExternalAirControl = ExternalAirControl });
             Vector3 direction = Vector3.zero;
             if (GetInput(out PlayerNetworkInput input))
             {
@@ -104,7 +107,7 @@ namespace Herbalist.Networking
                 if (LastJumpSequence != input.JumpSequence)
                 {
                     LastJumpSequence = input.JumpSequence;
-                    player.Motor.TryJump();
+                    player.TryJump();
                 }
             }
             player.Motor.Simulate(direction * player.Tuning.moveSpeed, Runner.DeltaTime);
@@ -112,13 +115,13 @@ namespace Herbalist.Networking
             var state = player.Motor.CaptureState();
             SimulationPosition = state.Position; SimulationVelocity = state.Velocity; Grounded = state.Grounded;
             EnteredGateMask = state.EnteredGateMask;
-            ExternalFlight = state.ExternalFlight; ExternalGravity = state.ExternalGravity;
+            ExternalFlight = state.ExternalFlight; ExternalGravity = state.ExternalGravity; ExternalAirControl = state.ExternalAirControl;
         }
-        public void LaunchAuthoritatively(Vector3 velocity, float gravity)
+        public void LaunchAuthoritatively(Vector3 velocity, float gravity, bool allowAirControl = false)
         {
             if (!HasStateAuthority) return;
-            SimulationVelocity = velocity; Grounded = false; ExternalFlight = true; ExternalGravity = gravity;
-            player.Motor.Launch(velocity, gravity);
+            ExternalAirControl = allowAirControl; SimulationVelocity = velocity; Grounded = false; ExternalFlight = true; ExternalGravity = gravity;
+            player.Motor.Launch(velocity, gravity, allowAirControl);
         }
         public void TeleportAuthoritatively(Vector3 position)
         {
