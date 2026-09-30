@@ -57,7 +57,7 @@ Boot와 Main 씬은 실제 기능이 분리될 때 추가합니다.
 | UI 이미지 | T_역할 | T_HomeBackground |
 | 독립 애니메이션 클립 | AN_캐릭터_동작 | AN_Sodam_Walk |
 | Animator Controller | AC_대상 | AC_SodamLocomotion |
-| 스테이지 씬 | Stage_번호_역할 | Stage_01_Exterior, Stage_02_Interior |
+| 스테이지 씬 | Stage_번호_역할 | Stage_01_Exterior_260928, Stage_02_Mazes |
 | 개발용 씬 | Sandbox_목적 | Sandbox_Abilities |
 | 그 외 씬 | 역할 | MainMenu |
 
@@ -148,8 +148,9 @@ Photon과 TextMesh Pro는 패키지 내부 경로 의존성을 보존하기 위�
 | 용도 | 경로 |
 |---|---|
 | 메인 메뉴 | Assets/_Project/Scenes/01_Title/MainMenu.unity |
-| 1스테이지 | Assets/_Project/Scenes/Stages/Stage_01/Stage_01_Exterior.unity |
-| 2스테이지 | Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Interior.unity |
+| 1스테이지 | Assets/_Project/Scenes/Stages/Stage_01/Stage_01_Exterior_260928.unity |
+| 2스테이지 | Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Mazes.unity |
+| 최종 제단 | Assets/_Project/Scenes/Stages/Stage_03/Stage_03_Altar.unity |
 | 솔로 능력 테스트 | Assets/_Project/Scenes/Development/Sandbox_Abilities.unity |
 
 ## 9. 작업 완료 전 확인
