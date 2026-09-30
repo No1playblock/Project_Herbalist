@@ -98,11 +98,6 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Cull: 2
-    - _FlowAmount: 0.16
-    - _FlowSpeed: 0.65
-    - _FresnelPower: 2.4
-    - _PatternScale: 8
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0
     - _AlphaToMask: 0
@@ -118,12 +113,16 @@ Material:
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnvironmentReflections: 1
+    - _FlowAmount: 0.16
+    - _FlowSpeed: 0.65
+    - _FresnelPower: 2.4
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005
+    - _PatternScale: 8
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _ScreenSpaceReflections: 1
@@ -138,8 +137,8 @@ Material:
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.9, g: 0.46, b: 0.06, a: 0.94}
-    - _CoreColor: {r: 1, g: 0.86, b: 0.54, a: 1}
-    - _RimColor: {r: 1, g: 0.64, b: 0.2, a: 0.85}
+    - _BaseColor: {r: 0.035, g: 0.32, b: 0.98, a: 0.94}
+    - _CoreColor: {r: 0.28, g: 0.72, b: 1, a: 1}
+    - _RimColor: {r: 0.05, g: 0.5, b: 1, a: 0.85}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

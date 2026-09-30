@@ -2,9 +2,9 @@ Shader "Herbalist/Sap Flow"
 {
     Properties
     {
-        _BaseColor ("Sap Color", Color) = (1, 0.48, 0.035, 0.88)
-        _CoreColor ("Flow Highlight", Color) = (1, 0.9, 0.48, 1)
-        _RimColor ("Wet Edge", Color) = (0.95, 0.65, 0.16, 0.8)
+        _BaseColor ("Water Color", Color) = (0.035, 0.32, 0.98, 0.88)
+        _CoreColor ("Flow Highlight", Color) = (0.28, 0.72, 1, 1)
+        _RimColor ("Wet Edge", Color) = (0.05, 0.5, 1, 0.8)
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 2
         _FlowSpeed ("Flow Speed", Float) = 2
         _FlowAmount ("Flow Pattern Strength", Range(0, 1)) = 1
