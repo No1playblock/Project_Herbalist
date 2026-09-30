@@ -18,7 +18,6 @@ namespace Herbalist.GameUI
         public string pausedText="게임을 일시 정지하였습니다.", partnerPausedText="다른 플레이어가 게임을 일시 정지하였습니다.";
         public string leafText="잎", sapText="액", gatherText="채집", giveText="전달";
         public string pauseHint="일시정지", helpHint="키 확인", emptyPocket="빈손";
-        public string[] leafModes={"꺼짐","고정","발판"};
         public InputActionReference pauseAction, helpAction;
         public ControlHint[] controls;
         public Vector3 markerOffset = new Vector3(-.65f, 1.9f, 0);

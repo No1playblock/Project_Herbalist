@@ -18,9 +18,10 @@ namespace Herbalist.Networking
         [Networked] private NetworkBool CanPlace { get; set; }
         [Networked] private NetworkBool Ready { get; set; }
         [Networked] private NetworkBool Unlocked { get; set; }
-        [Networked] private LeafMode Selected { get; set; }
         [Networked] private int Count { get; set; }
         [Networked] private NetworkBool Recovering { get; set; }
+        [Networked] private uint FeedbackSequence { get; set; }
+        [Networked] private NetworkBool RangeRejected { get; set; }
         private void Awake()
         {
             abilities = GetComponent<PlayerAbilityController>(); player = GetComponent<NetworkPlayer>();
@@ -54,14 +55,19 @@ namespace Herbalist.Networking
                 // Reconstruct aim from authoritative player position; never trust a client hit target.
                 var yaw = input.LookAngles.x; var pitch = input.LookAngles.y;
                 if (float.IsNaN(yaw) || float.IsInfinity(yaw) || float.IsNaN(pitch) || float.IsInfinity(pitch)) return;
-                abilities.Tick(input.AbilityCycle, input.AbilityUse, player.Player.View.GetAimRay(yaw, pitch), Runner.DeltaTime, input.AbilityHeld);
+                abilities.Tick(input.AbilityCycle, input.AbilityUse, player.Player.View.GetAimRay(yaw, pitch), Runner.DeltaTime, input.AbilityHeld, input.AbilityCycleHeld);
             }
             else if (abilities.Sap != null && abilities.Sap.Controlling)
                 abilities.Sap.Tick(player.Player.View.GetAimRay(player.LookAngles.x, player.LookAngles.y), false, Runner.DeltaTime);
             Publish();
         }
-        private void Publish() { Unlocked = abilities.Unlocked; Selected = abilities.Mode; Count = abilities.DisplayCount; Kind = abilities.Kind; Controlling = abilities.Sap != null && abilities.Sap.Controlling; CanPlace = abilities.Sap != null && abilities.Sap.CanPlace; Ready = abilities.Sap != null && abilities.Sap.Ready; Recovering = abilities.Leaf.Recovering; }
-        public override void Render() { if (!HasStateAuthority) abilities.ApplyReplica(Unlocked, Selected, Count, Recovering, Kind, Controlling, CanPlace, Ready); }
+        private void Publish() { Unlocked = abilities.Unlocked; Count = abilities.DisplayCount; Kind = abilities.Kind; Controlling = abilities.Sap != null && abilities.Sap.Controlling; CanPlace = abilities.Sap != null && abilities.Sap.CanPlace; Ready = abilities.Sap != null && abilities.Sap.Ready; Recovering = abilities.Leaf.Recovering; FeedbackSequence = abilities.Leaf.FeedbackSequence; RangeRejected = abilities.Leaf.RangeRejected; }
+        public override void Render()
+        {
+            if (HasStateAuthority) return;
+            abilities.ApplyReplica(Unlocked, Count, Recovering, Kind, Controlling, CanPlace, Ready);
+            abilities.Leaf.ApplyFeedback(FeedbackSequence, RangeRejected);
+        }
         private void SetShotFacing(float yaw) { if (HasStateAuthority) player.BodyYaw = yaw; }
         public override void Despawned(NetworkRunner runner, bool hasState)
         {

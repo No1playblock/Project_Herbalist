@@ -15,6 +15,8 @@ namespace Herbalist.StageOne
         public BoxCollider interior;
         public UnityEvent onEntranceOpened = new UnityEvent();
         public UnityEvent onCleared = new UnityEvent();
+        public MonoBehaviour entranceCondition;
+        public bool GateOpen => Progress != null && Progress.GateOpen && (!(entranceCondition is Herbalist.Levels.IStageExitCondition condition) || condition.CanExit);
         public StageProgress Progress { get; private set; }
         public StageActor[] Actors { get; private set; } = new StageActor[2];
         public int InsideCount { get; private set; }
@@ -33,7 +35,7 @@ namespace Herbalist.StageOne
             if (Authority && !Herbalist.GameUI.GameplayPause.IsPaused)
             {
                 bool a = IsInside(Actors[0]), b = IsInside(Actors[1]); InsideCount = (a ? 1 : 0) + (b ? 1 : 0);
-                Progress.CheckClear(a, b);
+                if (GateOpen) Progress.CheckClear(a, b);
             }
             Present();
         }
@@ -64,6 +66,7 @@ namespace Herbalist.StageOne
             point = default; transfer = false;
             if (actor == null || Progress == null || Progress.Cleared || actor.Slot < 0 || actor.Slot > 1) return false;
             int slot = actor.Slot;
+            if (Herbalist.Levels.SoloPotionPickup.TryHint(actor, out point)) return true;
             if (Progress.Held[slot] != 0)
             {
                 var other = Actors[1-slot];
@@ -133,11 +136,11 @@ namespace Herbalist.StageOne
         private void Present()
         {
             for (int i = 0; i < sources.Length; i++) if (sources[i] != null) sources[i].Present((Progress.Harvested & (1UL << i)) != 0);
-            if (entranceBlocker != null) entranceBlocker.SetActive(!Progress.GateOpen);
-            if (Progress.GateOpen && !openNotified) { openNotified = true; onEntranceOpened.Invoke(); }
+            if (entranceBlocker != null) entranceBlocker.SetActive(!GateOpen);
+            if (GateOpen && !openNotified) { openNotified = true; onEntranceOpened.Invoke(); }
             if (Progress.Cleared && !clearNotified) { clearNotified = true; onCleared.Invoke(); }
         }
-        public string Objective => Progress.Cleared ? settings.clearMessage : Progress.GateOpen ? settings.enterMessage : (Progress.Crafted & settings.RequiredMask) == settings.RequiredMask ? settings.drinkMessage : Progress.Harvested != 0 ? settings.craftMessage : settings.gatherMessage;
+        public string Objective => Progress.Cleared ? settings.clearMessage : GateOpen ? settings.enterMessage : Progress.GateOpen && entranceCondition is Herbalist.Levels.ExteriorStageFlow exterior ? exterior.Objective : (Progress.Crafted & settings.RequiredMask) == settings.RequiredMask ? settings.drinkMessage : Progress.Harvested != 0 ? settings.craftMessage : settings.gatherMessage;
         private void OnDestroy() { if (Instance == this) Instance = null; }
     }
 }
