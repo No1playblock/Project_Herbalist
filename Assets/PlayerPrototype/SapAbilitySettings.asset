@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5162bc0dab85d9f4c87c218732a99e96, type: 3}
+  m_Name: SapAbilitySettings
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapAbilitySettings
+  offlinePrefab: {fileID: 2631380105216188163, guid: 199e67f748b08fb45b4ad00b8c86caac, type: 3}
+  extractionRange: 3
+  controlRange: 18
+  freeAimDistance: 10
+  moveSpeed: 9
+  radius: 0.22
+  surfaceOffset: 0.025
+  placementTolerance: 0.3
+  lifetime: 5
+  bindingRadius: 0.7
+  refreshRadius: 0.5
+  capacity: 8
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: 1
+  attachedScale: {x: 0.85, y: 0.85, z: 0.12}
+  controlledScale: {x: 0.44, y: 0.44, z: 0.44}
