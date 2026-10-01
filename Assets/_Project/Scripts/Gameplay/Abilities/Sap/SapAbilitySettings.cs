@@ -13,6 +13,14 @@ namespace Herbalist.Abilities
         [Min(0.01f)] public float hoseExtendSpeed = 8f;
         [Tooltip("Stream length retraction speed after the hose button is released, in meters per second.")]
         [Min(0.01f)] public float hoseRetractSpeed = 12f;
+        [Tooltip("Initial speed of the water stream in meters per second.")]
+        [Min(0.01f)] public float hoseLaunchSpeed = 16f;
+        [Tooltip("Downward acceleration of the water stream in meters per second squared.")]
+        [Min(0.01f)] public float hoseGravity = 12f;
+        [Tooltip("Longest time water can travel before the stream ends in open air.")]
+        [Min(0.01f)] public float hoseMaxFlightTime = 3.5f;
+        [Tooltip("Maximum time between collision samples along the water arc.")]
+        [Range(0.01f, 0.1f)] public float hoseCollisionStep = 0.04f;
 
         [Min(0.01f)] public float hoseGrowthPerSecond = 0.5f;
         [Min(1)] public float hoseMaxScale = 3f;

@@ -78,7 +78,9 @@ namespace Herbalist.Editor
                 var collider = hole.AddComponent<BoxCollider>(); collider.size = new Vector3(1, 2, 1);
                 ports[i] = hole.AddComponent<SapInjectionPort>(); sockets[i] = hole.AddComponent<LeafInstallTarget>(); Target(sockets[i], 2500 + index * 2 + i, true);
                 centers[i] = Point(hole.transform, "LeafCenter", new Vector3(0, 3, 0)); Set(sockets[i], "socket", centers[i]);
-                jets[i] = Primitive(PrimitiveType.Cylinder, go.transform, "SapJet_" + i, new Vector3(i == 0 ? -2 : 2, 5, 0), new Vector3(.6f, 5, .6f), settings.portMaterial); jets[i].SetActive(false);
+                jets[i] = Primitive(PrimitiveType.Cylinder, go.transform, "SapJet_" + i, new Vector3(i == 0 ? -2 : 2, 5, 0), new Vector3(.6f, 5, .6f), settings.jetMaterial != null ? settings.jetMaterial : settings.portMaterial);
+                AddJetDroplets(jets[i], settings);
+                jets[i].SetActive(false);
             }
             Array(pad, "_ports", ports); Array(pad, "_sockets", sockets); Array(pad, "_leafCenters", centers); Array(pad, "_jets", jets);
             Label(go.transform, new Vector3(0, 1.7f, -1.5f), settings.padInstructions);
@@ -155,6 +157,7 @@ namespace Herbalist.Editor
             s.clothMaterial = Material("BlueCloth", new Color(.12f, .4f, 1));
             s.leafBridgeMaterial = Material("GreenLeafAttachment", new Color(.13f, .5f, .22f));
             s.portMaterial = Material("SapPort", new Color(.08f, .4f, .95f));
+            s.jetMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/Abilities/MAT_SapStream.mat");
             AssetDatabase.CreateAsset(s, SettingsPath); AssetDatabase.SaveAssets(); return s;
         }
         private static ExteriorBranchLayout Branch(string name, ExteriorBranchKind kind, float angle, float height) => new ExteriorBranchLayout { name = name, kind = kind, angle = angle, height = height };
@@ -169,6 +172,35 @@ namespace Herbalist.Editor
         private static GameObject Primitive(PrimitiveType type, Transform parent, string name, Vector3 local, Vector3 scale, Material material)
         {
             var go = GameObject.CreatePrimitive(type); go.name = name; go.transform.SetParent(parent, false); go.transform.localPosition = local; go.transform.localScale = scale; go.GetComponent<Renderer>().sharedMaterial = material; Object.DestroyImmediate(go.GetComponent<Collider>()); return go;
+        }
+        public static ParticleSystem AddJetDroplets(GameObject jet, ExteriorLayoutSettings settings)
+        {
+            var child = new GameObject("WaterDroplets"); child.transform.SetParent(jet.transform, false);
+            var particles = child.AddComponent<ParticleSystem>();
+            var main = particles.main;
+            main.loop = true; main.playOnAwake = true;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.scalingMode = ParticleSystemScalingMode.Shape;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(settings.jetDropletLifetime.x, settings.jetDropletLifetime.y);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(settings.jetDropletSpeed.x, settings.jetDropletSpeed.y);
+            main.startSize = new ParticleSystem.MinMaxCurve(settings.jetDropletSize.x, settings.jetDropletSize.y);
+            main.gravityModifier = settings.jetDropletGravity;
+            main.maxParticles = 256;
+            var emission = particles.emission; emission.rateOverTime = settings.jetDropletRate;
+            var shape = particles.shape;
+            shape.shapeType = ParticleSystemShapeType.MeshRenderer;
+            shape.meshRenderer = jet.GetComponent<MeshRenderer>();
+            shape.meshShapeType = ParticleSystemMeshShapeType.Triangle;
+            shape.normalOffset = .02f;
+            shape.randomDirectionAmount = .25f;
+            var size = particles.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, 0f));
+            var renderer = child.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Mesh;
+            renderer.mesh = Resources.GetBuiltinResource<Mesh>("Sphere.fbx");
+            renderer.sharedMaterial = settings.jetMaterial != null ? settings.jetMaterial : settings.portMaterial;
+            return particles;
         }
         private static Transform Point(Transform parent, string name, Vector3 local) { var go = new GameObject(name); go.transform.SetParent(parent, false); go.transform.localPosition = local; return go.transform; }
         private static void Checkpoint(GameObject go)

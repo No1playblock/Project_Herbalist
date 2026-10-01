@@ -39,6 +39,11 @@ namespace Herbalist.Networking
         [Networked] public NetworkBool ExternalAirControl { get; set; }
         [Networked] public NetworkBool Transported { get; set; }
         [Networked] public Vector3 TransportPosition { get; set; }
+        [Networked] public float LiftSpeed { get; set; }
+        public void SetLiftAuthoritatively(float speed)
+        {
+            if (HasStateAuthority) LiftSpeed = Mathf.Max(0, speed);
+        }
         public void SetTransportAuthoritatively(bool active,Vector3 position)
         {
             if(!HasStateAuthority)return;
@@ -94,6 +99,7 @@ namespace Herbalist.Networking
             if (HasStateAuthority) MovementBlocked = player.Motor.HasMovementLockExcept(this);
             player.Motor.SetMovementLock(this, MovementBlocked);
             player.Motor.RestoreState(new MotorState { Position = SimulationPosition, Velocity = SimulationVelocity, Grounded = Grounded, EnteredGateMask = EnteredGateMask, ExternalFlight = ExternalFlight, ExternalGravity = ExternalGravity, ExternalAirControl = ExternalAirControl });
+            player.Motor.SetLiftSpeed(LiftSpeed);
             Vector3 direction = Vector3.zero;
             if (GetInput(out PlayerNetworkInput input))
             {

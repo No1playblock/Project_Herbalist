@@ -33,8 +33,7 @@ namespace Herbalist.Abilities
         {
             if (Herbalist.GameUI.GameplayPause.IsPaused || settings == null || create == null) return;
             Vector3 origin = HoverPosition(aim);
-            if (!useHeld || !Physics.Raycast(aim, out var hit, settings.controlRange + Vector3.Distance(aim.origin, origin), settings.collisionMask, QueryTriggerInteraction.Ignore) ||
-                hit.collider.GetComponentInParent<SapInjectionPort>() == null || Vector3.Distance(origin, hit.point) > settings.controlRange)
+            if (!useHeld)
             { Cancel(); return; }
             if (held == null)
             {

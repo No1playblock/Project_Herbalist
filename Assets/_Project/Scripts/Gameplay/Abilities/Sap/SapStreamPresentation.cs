@@ -17,6 +17,13 @@ namespace Herbalist.Abilities
         [Header("Blob motion")]
         [SerializeField, Min(0)] private float _hoverBob = 0.022f;
         [SerializeField, Min(0)] private float _hoverPulse = 0.035f;
+        [Header("Spray droplets")]
+        [SerializeField] private ParticleSystem _sprayDroplets;
+        [SerializeField, Min(0)] private float _sprayDropsPerMeterPerSecond = 1.8f;
+        [SerializeField] private Vector2 _sprayDropSize = new Vector2(.035f, .085f);
+        [SerializeField] private Vector2 _spraySideSpeed = new Vector2(.45f, 1.25f);
+        [SerializeField, Min(0)] private float _sprayForwardSpeed = .6f;
+        [SerializeField, Range(1, 12)] private int _sprayMaxDropsPerFrame = 6;
         [Header("Release drips")]
         [SerializeField, Range(1, 8), Tooltip("Maximum simultaneous drops while the stream retracts.")] private int _releaseDripCount = 5;
         [SerializeField, Min(0.1f)] private float _releaseDripLifetime = 1.5f;
@@ -48,6 +55,7 @@ namespace Herbalist.Abilities
         private int[] _dropBounceCounts;
         private bool _wasRetracting;
         private float _retractDripTimer;
+        private float _sprayBudget;
 
 
 private void Awake()
@@ -83,9 +91,11 @@ private void LateUpdate()
                 stream.SetPositions(_pathPoints);
                 stream.widthMultiplier = streamDiameter * Mathf.Max(1f, _coreWidth);
                 UpdateBeads(start, end, settings.streamFlowSpeed, settings.streamBeadSize, settings.radius);
+                UpdateSprayDroplets(sap.HoseStream && !sap.HoseRetracting, paused ? 0f : Time.deltaTime);
             }
             else
             {
+                UpdateSprayDroplets(false, 0f);
                 _wasRetracting = false;
                 _retractDripTimer = 0f;
                 if (beads != null)
@@ -120,6 +130,19 @@ private void ConfigureCoreLine()
 
         private void BuildPath(Vector3 start, Vector3 end)
         {
+            if (sap.HoseStream)
+            {
+                Vector3 velocity = sap.HoseLaunchVelocity;
+                float duration = sap.HoseTravelTime;
+                float gravity = sap.Settings.hoseGravity;
+                for (int i = 0; i < _pathPoints.Length; i++)
+                {
+                    float time = duration * i / (_pathPoints.Length - 1);
+                    _pathPoints[i] = start + velocity * time + Vector3.down * (0.5f * gravity * time * time);
+                }
+                _pathPoints[_pathPoints.Length - 1] = end;
+                return;
+            }
             Vector3 axis = end - start;
             float length = axis.magnitude;
             if (length < 0.0001f) axis = Vector3.forward;
@@ -162,7 +185,9 @@ private float GetHoverBlobDiameter(SapAbilitySettings settings)
 private void UpdateBeads(Vector3 start, Vector3 end, float speed, float size, float minimumLength)
         {
             if (beads == null || beads.Length == 0) return;
-            float length = Vector3.Distance(start, end);
+            float length = 0f;
+            for (int i = 1; i < _pathPoints.Length; i++)
+                length += Vector3.Distance(_pathPoints[i - 1], _pathPoints[i]);
             int activeCount = Mathf.Clamp(Mathf.CeilToInt(length * 1.6f), 1, beads.Length);
             float denominator = Mathf.Max(length, minimumLength);
             for (int i = 0; i < beads.Length; i++)
@@ -183,6 +208,42 @@ private void UpdateBeads(Vector3 start, Vector3 end, float speed, float size, fl
                 float elongation = 1.12f;
                 float pulse = 0.92f + 0.08f * Mathf.Sin(flowTime * 4f + i * 2.1f);
                 beads[i].localScale = new Vector3(beadSize * pulse, beadSize * pulse, beadSize * elongation * pulse);
+            }
+        }
+
+        private void UpdateSprayDroplets(bool spraying, float deltaTime)
+        {
+            if (_sprayDroplets == null) return;
+            if (!spraying)
+            {
+                _sprayBudget = 0f;
+                if (_sprayDroplets.isPlaying) _sprayDroplets.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                return;
+            }
+            if (!_sprayDroplets.isPlaying) _sprayDroplets.Play();
+            if (deltaTime <= 0f) return;
+            float length = 0f;
+            for (int i = 1; i < _pathPoints.Length; i++)
+                length += Vector3.Distance(_pathPoints[i - 1], _pathPoints[i]);
+            _sprayBudget = Mathf.Min(_sprayMaxDropsPerFrame, _sprayBudget + length * _sprayDropsPerMeterPerSecond * deltaTime);
+            int count = Mathf.Min(_sprayMaxDropsPerFrame, Mathf.FloorToInt(_sprayBudget));
+            _sprayBudget -= count;
+            for (int i = 0; i < count; i++)
+            {
+                float pathPosition = Random.Range(.08f, .92f) * (_pathPoints.Length - 1);
+                int index = Mathf.Min(Mathf.FloorToInt(pathPosition), _pathPoints.Length - 2);
+                Vector3 tangent = (_pathPoints[index + 1] - _pathPoints[index]).normalized;
+                if (tangent.sqrMagnitude < .0001f) continue;
+                Vector3 side = Vector3.Cross(tangent, Vector3.up);
+                if (side.sqrMagnitude < .0001f) side = Vector3.Cross(tangent, Vector3.right);
+                side = Quaternion.AngleAxis(Random.Range(0f, 360f), tangent) * side.normalized;
+                var particle = new ParticleSystem.EmitParams
+                {
+                    position = Vector3.Lerp(_pathPoints[index], _pathPoints[index + 1], pathPosition - index),
+                    velocity = tangent * _sprayForwardSpeed + side * Random.Range(_spraySideSpeed.x, _spraySideSpeed.y),
+                    startSize = Random.Range(_sprayDropSize.x, _sprayDropSize.y)
+                };
+                _sprayDroplets.Emit(particle, 1);
             }
         }
 
@@ -388,6 +449,7 @@ private void RecycleDrip(int index)
 
 private void OnDisable()
         {
+            if (_sprayDroplets != null) _sprayDroplets.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             _wasRetracting = false;
             _retractDripTimer = 0f;
             if (_dropFalling == null) return;

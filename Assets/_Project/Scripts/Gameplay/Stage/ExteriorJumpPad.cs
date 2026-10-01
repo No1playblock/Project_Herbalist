@@ -29,7 +29,6 @@ namespace Herbalist.Levels
         private int _output;
         private uint _riders;
         private readonly StageActor[] _carriedActors = new StageActor[2];
-        private readonly Vector3[] _riderOffsets = new Vector3[2];
         private bool Online => Object != null && Object.IsValid;
         public bool Authority => Online ? HasStateAuthority : FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession;
         public float ChargeFraction => Mathf.Max(Online ? Charge0 : _charge[0], Online ? Charge1 : _charge[1]) / _settings.chargeUnits;
@@ -54,9 +53,15 @@ namespace Herbalist.Levels
         private Vector3 LaunchPoint(int side) => _leafCenters[side].parent.TransformPoint(_rest[side]);
         private float Rise(float flight)
         {
-            float elapsed = _settings.flightDuration - flight;
-            float fraction = elapsed <= AscentDuration ? elapsed / AscentDuration : 1 - Mathf.Clamp01((elapsed - AscentDuration) / (_settings.flightDuration - AscentDuration));
-            return Mathf.Max(0, _settings.presentationRise * fraction);
+            float elapsed = Mathf.Clamp(_settings.flightDuration - flight, 0, _settings.flightDuration);
+            float ascent = AscentDuration;
+            if (elapsed <= ascent)
+            {
+                float progress = elapsed / ascent;
+                return _settings.presentationRise * progress * (2f - progress);
+            }
+            float descent = Mathf.Clamp01((elapsed - ascent) / (_settings.flightDuration - ascent));
+            return _settings.presentationRise * (1f - descent * descent);
         }
         private void Present(float flight, int output)
         {
@@ -78,6 +83,7 @@ namespace Herbalist.Levels
         public void Tick(float dt)
         {
             if (!Authority || Herbalist.GameUI.GameplayPause.IsPaused) return;
+            float previousFlight = _flight;
             _flight = Mathf.Max(0, _flight - dt); _cooldown = Mathf.Max(0, _cooldown - dt);
             for (int i = 0; i < 2; i++)
             {
@@ -96,7 +102,6 @@ namespace Herbalist.Levels
                         {
                             _riders |= 1u << actor.Slot;
                             _carriedActors[actor.Slot] = actor;
-                            _riderOffsets[actor.Slot] = actor.transform.position - LaunchPoint(_output);
                             actor.Abilities.Sap?.Cancel();
                             actor.Abilities.SetInputLock(this, true);
                         }
@@ -105,22 +110,21 @@ namespace Herbalist.Levels
             }
             Present(_flight, _output);
             bool atTop = _settings.flightDuration - _flight >= AscentDuration;
-            CarryRiders(atTop ? _settings.presentationRise : Rise(_flight));
-            if (atTop) ReleaseRiders(true);
+            float previousRise = previousFlight > 0 ? Rise(previousFlight) : 0;
+            CarryRiders(Mathf.Max(0, Rise(_flight) - previousRise) / Mathf.Max(dt, Mathf.Epsilon));
+            if (atTop && _settings.flightDuration - previousFlight >= AscentDuration) ReleaseRiders(true);
             if (Online) { Charge0 = _charge[0]; Charge1 = _charge[1]; Flight = _flight; Output = _output; Riders = _riders; }
         }
-        private void CarryRiders(float rise)
+        private void CarryRiders(float liftSpeed)
         {
             for (int slot = 0; slot < _carriedActors.Length; slot++)
             {
                 var actor = _carriedActors[slot];
                 if (actor == null || !actor.Available) continue;
-                Vector3 point = LaunchPoint(_output) + Vector3.up * rise + _riderOffsets[slot];
                 var player = actor.GetComponent<PlayerController>();
-                player.Motor.SetMovementLock(this, true);
                 var net = actor.GetComponent<NetworkPlayer>();
-                if (net != null && net.Object != null && net.Object.IsValid) net.SetTransportAuthoritatively(true, point);
-                else { player.SetTransport(this, point); player.Motor.Teleport(point); }
+                if (net != null && net.Object != null && net.Object.IsValid) net.SetLiftAuthoritatively(liftSpeed);
+                else player.Motor.SetLiftSpeed(liftSpeed);
             }
         }
         private void ReleaseRiders(bool falling)
@@ -130,13 +134,12 @@ namespace Herbalist.Levels
                 var actor = _carriedActors[slot];
                 if (actor == null) continue;
                 var player = actor.GetComponent<PlayerController>();
-                player.ClearTransport(this);
-                player.Motor.SetMovementLock(this, false);
+                player.Motor.SetLiftSpeed(0);
                 actor.Abilities.SetInputLock(this, false);
                 var net = actor.GetComponent<NetworkPlayer>();
                 if (net != null && net.Object != null && net.Object.IsValid && net.HasStateAuthority)
                 {
-                    net.SetTransportAuthoritatively(false, actor.transform.position);
+                    net.SetLiftAuthoritatively(0);
                     if (falling) net.LaunchAuthoritatively(Vector3.zero, player.Tuning.gravity, true);
                 }
                 else if (!Online && falling) player.Motor.Launch(Vector3.zero, player.Tuning.gravity, true);

@@ -21,17 +21,18 @@ public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySett
             if (firing)
             {
                 Vector3 target = aim.GetPoint(settings.controlRange + Vector3.Distance(aim.origin, origin));
-                if (Physics.Raycast(aim, out var aimHit, settings.controlRange + Vector3.Distance(aim.origin, origin),
-                    settings.collisionMask, QueryTriggerInteraction.Ignore))
+                bool hasTarget = Physics.Raycast(aim, out var aimHit, settings.controlRange + Vector3.Distance(aim.origin, origin),
+                    settings.collisionMask, QueryTriggerInteraction.Ignore);
+                if (hasTarget)
                     target = aimHit.point;
 
                 Vector3 toTarget = target - origin;
                 if (toTarget.sqrMagnitude > 0.000001f)
-                    _lastDirection = toTarget.normalized;
+                    _lastDirection = hasTarget ? ResolveDirection(toTarget, settings.hoseLaunchSpeed, settings.hoseGravity) : toTarget.normalized;
                 else if (aim.direction.sqrMagnitude > 0.000001f)
                     _lastDirection = aim.direction.normalized;
 
-                _reach = Mathf.Min(settings.controlRange, _reach + settings.hoseExtendSpeed * deltaTime);
+                _reach = Mathf.Min(settings.hoseLaunchSpeed * settings.hoseMaxFlightTime, _reach + settings.hoseExtendSpeed * deltaTime);
             }
             else
             {
@@ -45,17 +46,45 @@ public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySett
                 return;
             }
 
-            Vector3 end = origin + _lastDirection * _reach;
-            if (Physics.Raycast(origin, _lastDirection, out var hit, _reach,
-                settings.collisionMask, QueryTriggerInteraction.Ignore))
+            Vector3 launchVelocity = _lastDirection * settings.hoseLaunchSpeed;
+            float travelTime = _reach / settings.hoseLaunchSpeed;
+            Vector3 end = Position(origin, launchVelocity, settings.hoseGravity, travelTime);
+            int segments = Mathf.CeilToInt(travelTime / settings.hoseCollisionStep);
+            Vector3 previous = origin;
+            for (int i = 1; i <= segments; i++)
             {
-                end = hit.point;
-                _reach = Mathf.Min(_reach, hit.distance);
-                if (firing)
-                    SapDeposit.ApplyHoseHit(hit, settings, deltaTime, createMark);
+                float nextTime = travelTime * i / segments;
+                Vector3 next = Position(origin, launchVelocity, settings.hoseGravity, nextTime);
+                Vector3 step = next - previous;
+                if (step.sqrMagnitude > 0.000001f && Physics.Raycast(previous, step.normalized, out var hit,
+                    step.magnitude, settings.collisionMask, QueryTriggerInteraction.Ignore))
+                {
+                    float previousTime = travelTime * (i - 1) / segments;
+                    travelTime = Mathf.Lerp(previousTime, nextTime, hit.distance / step.magnitude);
+                    end = hit.point;
+                    _reach = Mathf.Min(_reach, travelTime * settings.hoseLaunchSpeed);
+                    if (firing) SapDeposit.ApplyHoseHit(hit, settings, deltaTime, createMark);
+                    break;
+                }
+                previous = next;
             }
 
-            held.SetHoseStream(end, !firing);
+            held.SetHoseStream(end, !firing, launchVelocity, travelTime);
+        }
+
+        private static Vector3 Position(Vector3 origin, Vector3 velocity, float gravity, float time) =>
+            origin + velocity * time + Vector3.down * (0.5f * gravity * time * time);
+
+        private static Vector3 ResolveDirection(Vector3 toTarget, float speed, float gravity)
+        {
+            Vector3 planar = Vector3.ProjectOnPlane(toTarget, Vector3.up);
+            float distance = planar.magnitude;
+            if (distance < 0.001f) return toTarget.normalized;
+            float speedSquared = speed * speed;
+            float discriminant = speedSquared * speedSquared - gravity * (gravity * distance * distance + 2f * toTarget.y * speedSquared);
+            if (discriminant < 0f) return toTarget.normalized;
+            float tangent = (speedSquared - Mathf.Sqrt(discriminant)) / (gravity * distance);
+            return (planar.normalized + Vector3.up * tangent).normalized;
         }
     }
 }

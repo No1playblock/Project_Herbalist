@@ -19,23 +19,29 @@ namespace Herbalist.Abilities
         public float MarkScale => markScale;
         public bool IsHoseMark => hoseMark;
         public Vector3 StreamEnd { get; private set; }
+        public Vector3 HoseLaunchVelocity { get; private set; }
+        public float HoseTravelTime { get; private set; }
         public bool HoseStream { get; private set; }
         public bool HoseRetracting { get; private set; }
 
         public Vector3 StreamOrigin => HoseStream ? transform.position : StreamStart;
         public Vector3 StreamDestination => HoseStream ? StreamEnd : transform.position;
-public void SetHoseStream(Vector3 end, bool retracting = false)
+public void SetHoseStream(Vector3 end, bool retracting, Vector3 launchVelocity, float travelTime)
         {
             HoseStream = true;
             HoseRetracting = retracting;
             StreamEnd = end;
+            HoseLaunchVelocity = launchVelocity;
+            HoseTravelTime = travelTime;
             HasStream = true;
         }
-public void SetHoseReplica(bool hose, bool retracting, Vector3 end, float scale)
+public void SetHoseReplica(bool hose, bool retracting, Vector3 end, Vector3 launchVelocity, float travelTime, float scale)
         {
             HoseStream = hose;
             HoseRetracting = hose && retracting;
             StreamEnd = end;
+            HoseLaunchVelocity = launchVelocity;
+            HoseTravelTime = travelTime;
             markScale = scale;
             RefreshVisual();
         }
