@@ -7,6 +7,7 @@ namespace Herbalist.Levels
         public static StageLevel Instance { get; private set; }
         public string nextScenePath;
         public bool requireEarnedAbilities = true;
+        public StageAbilityRules abilityRules;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)] private static void ResetStatics() { Instance=null; }
         private void Awake() { Instance=this; }
         private void OnDestroy() { if(Instance==this)Instance=null; }

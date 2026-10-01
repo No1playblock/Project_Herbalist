@@ -331,85 +331,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 27432561}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &41649250
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 41649251}
-  - component: {fileID: 41649253}
-  - component: {fileID: 41649252}
-  m_Layer: 0
-  m_Name: Reticle
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!224 &41649251
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 41649250}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1559031791}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 48, y: 48}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &41649252
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 41649250}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_FontData:
-    m_Font: {fileID: 12800000, guid: 5b587a998c6994e4a9a7e724729f140e, type: 3}
-    m_FontSize: 24
-    m_FontStyle: 0
-    m_BestFit: 0
-    m_MinSize: 10
-    m_MaxSize: 40
-    m_Alignment: 4
-    m_AlignByGeometry: 0
-    m_RichText: 1
-    m_HorizontalOverflow: 0
-    m_VerticalOverflow: 0
-    m_LineSpacing: 1
-  m_Text: +
---- !u!222 &41649253
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 41649250}
-  m_CullTransparentMesh: 1
 --- !u!114 &51682002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -472,9 +393,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapReceiver
   receiverId: 1000
-  leafTarget: {fileID: 0}
-  inlet: {fileID: 1003556460}
-  inletRadius: 0.6
   onSupplied:
     m_PersistentCalls:
       m_Calls:
@@ -687,7 +605,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2139512248}
-  - {fileID: 629746501}
   - {fileID: 2130626441}
   m_Father: {fileID: 1958239172}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1155,150 +1072,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.InputActionReference
   m_Asset: {fileID: 931346244}
   m_ActionId: dad70c86-b58c-4b17-88ad-f5e53adf419e
---- !u!1 &624326165
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 624326166}
-  - component: {fileID: 624326168}
-  - component: {fileID: 624326167}
-  m_Layer: 0
-  m_Name: Status
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &624326166
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 624326165}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 629746501}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0}
-  m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 30}
-  m_SizeDelta: {x: 560, y: 32}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &624326167
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 624326165}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_FontData:
-    m_Font: {fileID: 12800000, guid: 5b587a998c6994e4a9a7e724729f140e, type: 3}
-    m_FontSize: 18
-    m_FontStyle: 0
-    m_BestFit: 0
-    m_MinSize: 10
-    m_MaxSize: 40
-    m_Alignment: 4
-    m_AlignByGeometry: 0
-    m_RichText: 1
-    m_HorizontalOverflow: 0
-    m_VerticalOverflow: 0
-    m_LineSpacing: 1
-  m_Text: LEAF OFF
---- !u!222 &624326168
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 624326165}
-  m_CullTransparentMesh: 1
---- !u!1 &629746500
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 629746501}
-  - component: {fileID: 629746502}
-  m_Layer: 0
-  m_Name: LeafHUD
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!224 &629746501
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 629746500}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 624326166}
-  - {fileID: 1600320931}
-  m_Father: {fileID: 92694191}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &629746502
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 629746500}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32675f927e95dd044b583a23a94a581b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Presentation.LeafAbilityHud
-  screen: {fileID: 17136197}
-  slot: 1
-  status: {fileID: 624326167}
-  reticle: {fileID: 1600320930}
-  lockedText: Leaf ability locked
-  modeLabels:
-  - OFF
-  - PIN
-  - PLATFORM
-  countFormat: LEAF  {0}   |   {1}/{2}
-  returningText: '  Returning...'
-  sapIdleText: 'SAP  |  Near tree: R to extract'
-  sapControlText: 'SAP  |  Aim to move  |  R: cancel'
-  sapPlaceText: 'SAP  |  LMB: attach / inject  |  R: cancel'
-  sapHoseText: 'SAP  |  Hold LMB: spray  |  R: cancel'
 --- !u!1 &729550147
 GameObject:
   m_ObjectHideFlags: 0
@@ -1485,6 +1258,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e016eb4c12ac62d47827cbbb2656ec0f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Networking.PlayerSpawnLayout
+  _entryId:
   playerPrefab: {fileID: 5855557322306971455, guid: 4739f7b562308c446b131aa482b66beb, type: 3}
   spawnPoints:
   - {fileID: 491622}
@@ -1711,7 +1485,6 @@ GameObject:
   - component: {fileID: 886693618}
   - component: {fileID: 886693617}
   - component: {fileID: 886693616}
-  - component: {fileID: 886693615}
   - component: {fileID: 886693620}
   m_Layer: 0
   m_Name: PinTarget
@@ -1735,20 +1508,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 209463047}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &886693615
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 886693613}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6e0e063782c83de4d8136ba2112b8965, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapBindingSource
-  lifetime: 5
-  visual: {fileID: 0}
 --- !u!114 &886693616
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1762,11 +1521,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.LeafInstallTarget
   targetId: 101
-  acceptsPlatform: 0
-  acceptsPin: 1
   socket: {fileID: 0}
-  sap: {fileID: 886693615}
-  onPinned:
+  _singleOccupant: 0
+  onInstalled:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 172782763}
@@ -1887,9 +1644,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapReceiver
   receiverId: 101
-  leafTarget: {fileID: 886693616}
-  inlet: {fileID: 0}
-  inletRadius: 0.6
   onSupplied:
     m_PersistentCalls:
       m_Calls: []
@@ -1923,7 +1677,6 @@ GameObject:
   - component: {fileID: 912406254}
   - component: {fileID: 912406253}
   - component: {fileID: 912406252}
-  - component: {fileID: 912406251}
   - component: {fileID: 912406256}
   m_Layer: 0
   m_Name: PlatformTarget
@@ -1947,20 +1700,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 209463047}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &912406251
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 912406249}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6e0e063782c83de4d8136ba2112b8965, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapBindingSource
-  lifetime: 5
-  visual: {fileID: 0}
 --- !u!114 &912406252
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1974,11 +1713,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.LeafInstallTarget
   targetId: 100
-  acceptsPlatform: 1
-  acceptsPin: 0
   socket: {fileID: 0}
-  sap: {fileID: 912406251}
-  onPinned:
+  _singleOccupant: 0
+  onInstalled:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1540062849}
@@ -2099,9 +1836,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapReceiver
   receiverId: 100
-  leafTarget: {fileID: 912406252}
-  inlet: {fileID: 0}
-  inletRadius: 0.6
   onSupplied:
     m_PersistentCalls:
       m_Calls: []
@@ -3007,7 +2741,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 869684127}
-  - {fileID: 1559031791}
   - {fileID: 1569836551}
   m_Father: {fileID: 1958239172}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3191,85 +2924,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1221505331}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1249685098
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1249685099}
-  - component: {fileID: 1249685101}
-  - component: {fileID: 1249685100}
-  m_Layer: 0
-  m_Name: Status
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1249685099
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1249685098}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1559031791}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0}
-  m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 30}
-  m_SizeDelta: {x: 560, y: 32}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1249685100
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1249685098}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_FontData:
-    m_Font: {fileID: 12800000, guid: 5b587a998c6994e4a9a7e724729f140e, type: 3}
-    m_FontSize: 18
-    m_FontStyle: 0
-    m_BestFit: 0
-    m_MinSize: 10
-    m_MaxSize: 40
-    m_Alignment: 4
-    m_AlignByGeometry: 0
-    m_RichText: 1
-    m_HorizontalOverflow: 0
-    m_VerticalOverflow: 0
-    m_LineSpacing: 1
-  m_Text: LEAF OFF
---- !u!222 &1249685101
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1249685098}
-  m_CullTransparentMesh: 1
 --- !u!1 &1288452840
 GameObject:
   m_ObjectHideFlags: 0
@@ -3283,7 +2937,6 @@ GameObject:
   - component: {fileID: 1288452845}
   - component: {fileID: 1288452844}
   - component: {fileID: 1288452843}
-  - component: {fileID: 1288452842}
   - component: {fileID: 1288452847}
   m_Layer: 0
   m_Name: PinTarget (2)
@@ -3307,20 +2960,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 209463047}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1288452842
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1288452840}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6e0e063782c83de4d8136ba2112b8965, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapBindingSource
-  lifetime: 5
-  visual: {fileID: 0}
 --- !u!114 &1288452843
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3334,11 +2973,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.LeafInstallTarget
   targetId: 103
-  acceptsPlatform: 0
-  acceptsPin: 1
   socket: {fileID: 0}
-  sap: {fileID: 1288452842}
-  onPinned:
+  _singleOccupant: 0
+  onInstalled:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 172782763}
@@ -3459,9 +3096,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapReceiver
   receiverId: 103
-  leafTarget: {fileID: 1288452843}
-  inlet: {fileID: 0}
-  inletRadius: 0.6
   onSupplied:
     m_PersistentCalls:
       m_Calls: []
@@ -3663,71 +3297,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1540062849}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1559031790
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1559031791}
-  - component: {fileID: 1559031792}
-  m_Layer: 0
-  m_Name: LeafHUD
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!224 &1559031791
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1559031790}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1249685099}
-  - {fileID: 41649251}
-  m_Father: {fileID: 955683865}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1559031792
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1559031790}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32675f927e95dd044b583a23a94a581b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Presentation.LeafAbilityHud
-  screen: {fileID: 17136197}
-  slot: 0
-  status: {fileID: 1249685100}
-  reticle: {fileID: 41649250}
-  lockedText: Leaf ability locked
-  modeLabels:
-  - OFF
-  - PIN
-  - PLATFORM
-  countFormat: LEAF  {0}   |   {1}/{2}
-  returningText: '  Returning...'
-  sapIdleText: 'SAP  |  Near tree: R to extract'
-  sapControlText: 'SAP  |  Aim to move  |  R: cancel'
-  sapPlaceText: 'SAP  |  LMB: attach / inject  |  R: cancel'
-  sapHoseText: 'SAP  |  Hold LMB: spray  |  R: cancel'
 --- !u!1001 &1569836550
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3880,85 +3449,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.InputActionReference
   m_Asset: {fileID: 931346244}
   m_ActionId: 15cef263-9014-4fd5-94d9-4e4a6234a6ef
---- !u!1 &1600320930
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1600320931}
-  - component: {fileID: 1600320933}
-  - component: {fileID: 1600320932}
-  m_Layer: 0
-  m_Name: Reticle
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!224 &1600320931
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1600320930}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 629746501}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 48, y: 48}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1600320932
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1600320930}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_FontData:
-    m_Font: {fileID: 12800000, guid: 5b587a998c6994e4a9a7e724729f140e, type: 3}
-    m_FontSize: 24
-    m_FontStyle: 0
-    m_BestFit: 0
-    m_MinSize: 10
-    m_MaxSize: 40
-    m_Alignment: 4
-    m_AlignByGeometry: 0
-    m_RichText: 1
-    m_HorizontalOverflow: 0
-    m_VerticalOverflow: 0
-    m_LineSpacing: 1
-  m_Text: +
---- !u!222 &1600320933
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1600320930}
-  m_CullTransparentMesh: 1
 --- !u!1 &1749920193
 GameObject:
   m_ObjectHideFlags: 0
@@ -4022,7 +3512,6 @@ GameObject:
   - component: {fileID: 1870560157}
   - component: {fileID: 1870560156}
   - component: {fileID: 1870560155}
-  - component: {fileID: 1870560154}
   - component: {fileID: 1870560159}
   m_Layer: 0
   m_Name: PinTarget (1)
@@ -4046,20 +3535,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 209463047}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1870560154
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1870560152}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6e0e063782c83de4d8136ba2112b8965, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapBindingSource
-  lifetime: 5
-  visual: {fileID: 0}
 --- !u!114 &1870560155
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4073,11 +3548,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.LeafInstallTarget
   targetId: 102
-  acceptsPlatform: 0
-  acceptsPin: 1
   socket: {fileID: 0}
-  sap: {fileID: 1870560154}
-  onPinned:
+  _singleOccupant: 0
+  onInstalled:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 172782763}
@@ -4198,9 +3671,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapReceiver
   receiverId: 102
-  leafTarget: {fileID: 1870560155}
-  inlet: {fileID: 0}
-  inletRadius: 0.6
   onSupplied:
     m_PersistentCalls:
       m_Calls: []

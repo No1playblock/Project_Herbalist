@@ -8,8 +8,10 @@ namespace Herbalist.Abilities
     public sealed class OfflineAbilitySwitcher : MonoBehaviour
     {
         [SerializeField] private InputActionReference switchAbility;
-        [SerializeField] private InputActionReference unlockBothAbilities;
-        private InputAction action, unlockAction;
+        [SerializeField] private InputActionReference _unlockBoth;
+        [SerializeField] private string _unlockMessage = "솔로 테스트: 나뭇잎·수액 해금 · {0}로 능력 전환";
+        private InputAction action;
+        private InputAction _unlockAction;
         private PlayerAbilityController abilities;
         private void Awake()
         {
@@ -17,30 +19,29 @@ namespace Herbalist.Abilities
             if (switchAbility == null) { enabled = false; return; }
             action = switchAbility.action.Clone();
             action.performed += OnSwitch;
-            if (unlockBothAbilities != null)
+            if (_unlockBoth != null)
             {
-                unlockAction = unlockBothAbilities.action.Clone();
-                unlockAction.performed += OnUnlock;
+                _unlockAction = _unlockBoth.action.Clone();
+                _unlockAction.performed += OnUnlockBoth;
             }
         }
-        private void OnEnable() { action?.Enable(); unlockAction?.Enable(); }
-        private void OnDisable() { action?.Disable(); unlockAction?.Disable(); }
+        private void OnEnable() { action?.Enable(); _unlockAction?.Enable(); }
+        private void OnDisable() { action?.Disable(); _unlockAction?.Disable(); }
+        private void OnUnlockBoth(InputAction.CallbackContext context)
+        {
+            if (GameplayCursor.AllowsPointerInput && abilities.TryUnlockBothOfflineAbilities())
+                GetComponent<Herbalist.StageOne.StageActor>()?.SetFeedback(string.Format(_unlockMessage, action.GetBindingDisplayString()));
+        }
         private void OnSwitch(InputAction.CallbackContext context)
         {
             if (GameplayCursor.AllowsPointerInput) abilities.TrySwitchOfflineAbility();
         }
-        private void OnUnlock(InputAction.CallbackContext context)
-        {
-            if (GameplayCursor.AllowsPointerInput) abilities.TryUnlockBothOfflineAbilities();
-        }
         private void OnDestroy()
         {
+            if (_unlockAction != null) { _unlockAction.performed -= OnUnlockBoth; _unlockAction.Dispose(); }
             if (action == null) return;
             action.performed -= OnSwitch;
             action.Dispose();
-            if (unlockAction == null) return;
-            unlockAction.performed -= OnUnlock;
-            unlockAction.Dispose();
         }
     }
 }

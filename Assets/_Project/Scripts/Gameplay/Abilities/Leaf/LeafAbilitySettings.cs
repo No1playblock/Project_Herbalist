@@ -1,13 +1,16 @@
 using UnityEngine;
 namespace Herbalist.Abilities
 {
-    public enum LeafMode { Off, Pin, Platform }
-    public enum LeafState { Flying, Installed, Bound, Returning, Complete }
+    public enum LeafState { Flying = 0, Installed = 1, Returning = 3, Complete = 4 }
     [CreateAssetMenu(menuName = "Herbalist/Abilities/Leaf Settings")]
     public sealed class LeafAbilitySettings : ScriptableObject
     {
         public LeafProjectile offlinePrefab;
         public bool faceAimOnThrow;
+        public bool permanentInstallation;
+        public bool installedCapacity;
+        public bool requireTarget;
+        [Min(0)] public float rangeHeightMultiplier;
         [Min(1)] public int capacity = 3;
         [Min(0.01f)] public float lifetime = 5;
         [Min(0.1f)] public float range = 18;

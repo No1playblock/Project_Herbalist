@@ -5,24 +5,86 @@ namespace Herbalist.Abilities
     // Host/offline gameplay. Presentation reads the held blob's replicated stream.
     public sealed class SapHoseSprayer
     {
-        private float reach;
-        public void Reset() => reach = 0;
-        public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySettings settings, Func<SapDeposit> createMark)
+        private float _reach;
+        private Vector3 _lastDirection = Vector3.forward;
+
+        public void Reset()
         {
-            if (!firing) { reach = 0; held.SetStream(held.transform.position, false); return; }
+            _reach = 0f;
+            _lastDirection = Vector3.forward;
+        }
+public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySettings settings, Func<SapDeposit> createMark)
+        {
             Vector3 origin = held.transform.position;
-            Vector3 target = aim.GetPoint(settings.controlRange + Vector3.Distance(aim.origin, origin));
-            if (Physics.Raycast(aim, out var aimHit, settings.controlRange + Vector3.Distance(aim.origin, origin),
-                settings.collisionMask, QueryTriggerInteraction.Ignore)) target = aimHit.point;
-            Vector3 direction = (target - origin).normalized;
-            reach = Mathf.Min(settings.controlRange, reach + settings.flightSpeed * dt);
-            Vector3 end = origin + direction * reach;
-            if (Physics.Raycast(origin, direction, out var hit, reach, settings.collisionMask, QueryTriggerInteraction.Ignore))
+            float deltaTime = Mathf.Max(0f, dt);
+
+            if (firing)
             {
-                end = hit.point;
-                SapDeposit.ApplyHoseHit(hit, settings, dt, createMark);
+                Vector3 target = aim.GetPoint(settings.controlRange + Vector3.Distance(aim.origin, origin));
+                bool hasTarget = Physics.Raycast(aim, out var aimHit, settings.controlRange + Vector3.Distance(aim.origin, origin),
+                    settings.collisionMask, QueryTriggerInteraction.Ignore);
+                if (hasTarget)
+                    target = aimHit.point;
+
+                Vector3 toTarget = target - origin;
+                if (toTarget.sqrMagnitude > 0.000001f)
+                    _lastDirection = hasTarget ? ResolveDirection(toTarget, settings.hoseLaunchSpeed, settings.hoseGravity) : toTarget.normalized;
+                else if (aim.direction.sqrMagnitude > 0.000001f)
+                    _lastDirection = aim.direction.normalized;
+
+                _reach = Mathf.Min(settings.hoseLaunchSpeed * settings.hoseMaxFlightTime, _reach + settings.hoseExtendSpeed * deltaTime);
             }
-            held.SetHoseStream(end);
+            else
+            {
+                _reach = Mathf.Max(0f, _reach - settings.hoseRetractSpeed * deltaTime);
+            }
+
+            if (_reach <= 0.01f)
+            {
+                _reach = 0f;
+                held.SetStream(origin, false);
+                return;
+            }
+
+            Vector3 launchVelocity = _lastDirection * settings.hoseLaunchSpeed;
+            float travelTime = _reach / settings.hoseLaunchSpeed;
+            Vector3 end = Position(origin, launchVelocity, settings.hoseGravity, travelTime);
+            int segments = Mathf.CeilToInt(travelTime / settings.hoseCollisionStep);
+            Vector3 previous = origin;
+            for (int i = 1; i <= segments; i++)
+            {
+                float nextTime = travelTime * i / segments;
+                Vector3 next = Position(origin, launchVelocity, settings.hoseGravity, nextTime);
+                Vector3 step = next - previous;
+                if (step.sqrMagnitude > 0.000001f && Physics.Raycast(previous, step.normalized, out var hit,
+                    step.magnitude, settings.collisionMask, QueryTriggerInteraction.Ignore))
+                {
+                    float previousTime = travelTime * (i - 1) / segments;
+                    travelTime = Mathf.Lerp(previousTime, nextTime, hit.distance / step.magnitude);
+                    end = hit.point;
+                    _reach = Mathf.Min(_reach, travelTime * settings.hoseLaunchSpeed);
+                    if (firing) SapDeposit.ApplyHoseHit(hit, settings, deltaTime, createMark);
+                    break;
+                }
+                previous = next;
+            }
+
+            held.SetHoseStream(end, !firing, launchVelocity, travelTime);
+        }
+
+        private static Vector3 Position(Vector3 origin, Vector3 velocity, float gravity, float time) =>
+            origin + velocity * time + Vector3.down * (0.5f * gravity * time * time);
+
+        private static Vector3 ResolveDirection(Vector3 toTarget, float speed, float gravity)
+        {
+            Vector3 planar = Vector3.ProjectOnPlane(toTarget, Vector3.up);
+            float distance = planar.magnitude;
+            if (distance < 0.001f) return toTarget.normalized;
+            float speedSquared = speed * speed;
+            float discriminant = speedSquared * speedSquared - gravity * (gravity * distance * distance + 2f * toTarget.y * speedSquared);
+            if (discriminant < 0f) return toTarget.normalized;
+            float tangent = (speedSquared - Mathf.Sqrt(discriminant)) / (gravity * distance);
+            return (planar.normalized + Vector3.up * tangent).normalized;
         }
     }
 }

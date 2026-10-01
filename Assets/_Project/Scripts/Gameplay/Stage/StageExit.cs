@@ -13,8 +13,8 @@ namespace Herbalist.Levels
         private void OnDisable() { flow.onCleared.RemoveListener(Advance); }
         private void Advance()
         {
-            if(!flow.Authority || level==null || FusionLobbySession.Instance==null) return;
-            FusionLobbySession.Instance.AdvanceStage(level.nextScenePath);
+            if(!flow.Authority || level==null) return;
+            StageTransition.Advance(level);
         }
     }
 }

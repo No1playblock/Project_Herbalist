@@ -15,7 +15,6 @@ namespace Herbalist.Abilities
         private SapSource source;
         private SapDeposit held;
         private bool externalTick, replicaReady;
-        private float sourceRefresh;
         private SapHoseSprayer hose;
         public SapAbilitySettings Settings => settings;
         public bool Controlling { get; private set; }
@@ -23,22 +22,39 @@ namespace Herbalist.Abilities
         public bool Ready => held != null ? held.State == SapState.Controlled : replicaReady;
         public int ActiveCount => deposits.Count;
         public SapDeposit Held => held;
-        private void Awake() { player = GetComponent<PlayerController>(); hose = new SapHoseSprayer(); }
+        private void Awake()
+        {
+            player = GetComponent<PlayerController>(); hose = new SapHoseSprayer();
+            var rules = Herbalist.Levels.StageLevel.Instance != null ? Herbalist.Levels.StageLevel.Instance.abilityRules : null;
+            if (rules != null && rules.sap != null) settings = rules.sap;
+        }
+        // New stage rules generate sap on demand at an eligible inlet. Legacy extraction stays available.
+        public void TickContextual(Ray aim, bool useHeld, float dt)
+        {
+            if (Herbalist.GameUI.GameplayPause.IsPaused || settings == null || create == null) return;
+            Vector3 origin = HoverPosition(aim);
+            if (!useHeld)
+            { Cancel(); return; }
+            if (held == null)
+            {
+                held = create(); if (held == null) return;
+                deposits.Add(held); held.Initialize(settings, origin, Remove, externalTick);
+                held.BeginExtraction(origin); held.SetHeld(); hose.Reset();
+            }
+            held.transform.position = origin;
+            Controlling = true; CanPlace = true;
+            hose.Tick(held, aim, true, dt, settings, CreateHoseMark);
+        }
         public void Configure(Func<SapDeposit> factory, Action<SapDeposit> release, bool network)
         { create = factory; destroy = release; externalTick = network; }
         public Vector3 HoverPosition(Ray aim)
         {
-            if (settings.controlMode == SapControlMode.Hose)
-                return transform.position + Quaternion.Euler(0, player.View.BodyYaw, 0) * settings.hoseHoverOffset;
-            var forward = Vector3.ProjectOnPlane(aim.direction, Vector3.up);
-            var rotation = forward.sqrMagnitude > 0.000001f ? Quaternion.LookRotation(forward) : player.View.PlanarRotation;
-            return transform.position + rotation * settings.hoverOffset;
+            return transform.position + Quaternion.Euler(0, player.View.BodyYaw, 0) * settings.hoseHoverOffset;
         }
         public void Toggle()
         {
             if (Controlling) { Cancel(); return; }
-            if (settings == null || create == null ||
-                (settings.controlMode == SapControlMode.Placement && deposits.Count >= settings.capacity)) return;
+            if (settings == null || create == null) return;
             source = SapSource.FindNearest(transform.position + settings.extractionProbeOffset, settings.extractionRange,
                 settings.radius + settings.surfaceOffset, out var origin);
             if (source == null || !source.TryExtract()) return;
@@ -46,25 +62,9 @@ namespace Herbalist.Abilities
             if (held == null) { source.Refund(); source = null; return; }
             deposits.Add(held); held.Initialize(settings, origin, Remove, externalTick);
             source.TryClosestSurface(origin, out var surface, out _);
-            held.BeginExtraction(surface); sourceRefresh = 0; hose.Reset();
-            if (settings.controlMode == SapControlMode.Hose) held.SetStream(surface, false);
+            held.BeginExtraction(surface); hose.Reset();
+            held.SetStream(surface, false);
             Controlling = true; player.Motor.SetMovementLock(this, true);
-        }
-        // Shared by the authoritative shot check and the owner's purely visual preview.
-        public bool TryPlacement(Ray aim, Vector3 origin, out SapReceiver receiver, out Vector3 placement, out Vector3 normal)
-        {
-            receiver = null; placement = normal = default;
-            float rayRange = settings.controlRange + Vector3.Distance(aim.origin, origin);
-            if (!Physics.Raycast(aim, out var hit, rayRange, settings.collisionMask, QueryTriggerInteraction.Ignore)) return false;
-            receiver = hit.collider.GetComponentInParent<SapReceiver>();
-            if (receiver == null || !receiver.TryPlacement(hit, settings.surfaceOffset, out placement, out normal)) return false;
-            Vector3 delta = placement - origin;
-            if (delta.magnitude > settings.controlRange) return false;
-            if (Physics.SphereCast(origin, settings.radius, delta.normalized, out var block, delta.magnitude,
-                settings.collisionMask, QueryTriggerInteraction.Ignore))
-                return block.collider.GetComponentInParent<SapReceiver>() == receiver &&
-                    Vector3.Distance(block.point, placement) <= settings.radius + settings.placementTolerance;
-            return true;
         }
         public void Tick(Ray aim, bool use, float dt)
         {
@@ -83,26 +83,8 @@ namespace Herbalist.Abilities
             { Cancel(); return; }
             held.transform.position = next;
             if (Vector3.Distance(next, hover) <= settings.arrivalTolerance) held.SetHeld();
-            if (settings.controlMode == SapControlMode.Hose)
-            {
-                CanPlace = Ready;
-                hose.Tick(held, aim, Ready && use, dt, settings, CreateHoseMark);
-                return;
-            }
-            sourceRefresh -= dt;
-            if (sourceRefresh <= 0)
-            {
-                sourceRefresh = settings.sourceRefreshInterval;
-                if (!source.TryClosestSurface(next, out var surface, out _) ||
-                    Vector3.Distance(surface, transform.position + settings.extractionProbeOffset) > settings.controlRange)
-                { Cancel(); return; }
-                held.SetStream(surface, true);
-            }
-            CanPlace = Ready && TryPlacement(aim, next, out _, out _, out _);
-            if (!use || !CanPlace || !TryPlacement(aim, next, out var receiver, out var placement, out var normal)) return;
-            var launched = held; held = null;
-            launched.Launch(receiver, placement, normal);
-            EndControl();
+            CanPlace = Ready;
+            hose.Tick(held, aim, Ready && use, dt, settings, CreateHoseMark);
         }
         private SapDeposit CreateHoseMark()
         {

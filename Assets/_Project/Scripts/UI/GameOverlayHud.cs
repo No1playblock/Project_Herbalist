@@ -44,7 +44,8 @@ namespace Herbalist.GameUI
             if(FusionLobbySession.Instance!=null)await FusionLobbySession.Instance.LeaveAsync();
             else { GameplayPause.SetOffline(false); UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(settings.menuScene); }
         }
-        public void ShowSubtitle(string text) { subtitle.text=text; subtitleRemaining=settings.feedbackDuration; }
+        public void ShowSubtitle(string text) => ShowSubtitle(text,settings.feedbackDuration);
+        public void ShowSubtitle(string text,float duration) { subtitle.text=text; subtitleRemaining=duration; }
         private void Update()
         {
             bool paused=GameplayPause.IsPaused;
@@ -62,9 +63,11 @@ namespace Herbalist.GameUI
             if(flow!=null)objective.text=flow.Objective;
             else
             {
-                var exit = FindFirstObjectByType<Herbalist.Levels.CooperativeStageExit>();
-                if (exit != null) objective.text = exit.Objective;
-                else if (FindFirstObjectByType<Herbalist.Levels.StageTwoGoal>() == null) objective.text = defaultObjective;
+                var maze = FindFirstObjectByType<Herbalist.Levels.DescendingMazeFlow>();
+                var altar = FindFirstObjectByType<Herbalist.Levels.RotatingAltar>();
+                if (maze != null) objective.text = maze.Objective;
+                else if (altar != null) objective.text = altar.Objective;
+                else objective.text = defaultObjective;
             }
             if(!paused)subtitleRemaining-=Time.unscaledDeltaTime;
             subtitle.gameObject.SetActive(subtitleRemaining>0&&!string.IsNullOrEmpty(subtitle.text));
