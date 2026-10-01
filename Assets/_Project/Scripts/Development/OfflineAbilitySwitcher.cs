@@ -1,6 +1,7 @@
 using Herbalist.Presentation;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 namespace Herbalist.Abilities
 {
     // Authored on the offline prefab only. Remove/disable this component after testing.
@@ -8,6 +9,7 @@ namespace Herbalist.Abilities
     public sealed class OfflineAbilitySwitcher : MonoBehaviour
     {
         [SerializeField] private InputActionReference switchAbility;
+        [FormerlySerializedAs("unlockBothAbilities")]
         [SerializeField] private InputActionReference _unlockBoth;
         [SerializeField] private string _unlockMessage = "솔로 테스트: 나뭇잎·수액 해금 · {0}로 능력 전환";
         private InputAction action;
