@@ -1,9 +1,0 @@
-# 2026-09-30 legacy cleanup
-
-The approved B cleanup removes old playable stage scenes and their exclusive code. The current route is `MainMenu` → `Stage_01_Exterior_260928` → `Stage_02_Mazes` → `Stage_03_Altar`; `Sandbox_Abilities` and the main-menu solo entry remain for testing. Build Settings contains these five scenes.
-
-Removed: `Sandbox_Rendering`, old `Stage_01_Exterior`, `Stage_02_Interior`, `Stage_02_BGModel`, `Stage_03_Prototype`, `Stage_04_Arrival`, `Stage_05_Arrival`; their dedicated runtime/editor/test scripts, inactive legacy MainMenuCanvas and scene HUD roots, player placement-preview objects, Sap Placement flight/preview/inventory logic, and unused serialized settings. `SapSource` extraction and the continuous blue Hose remain. Current PDF maze layout authoring and current stage scripts remain.
-
-Local backups: `.local-backups/LegacyCleanupScenes_20260930.zip` (pre-cleanup old scenes/build settings plus current revision scenes), `.local-backups/LegacyCodeBackup_20260930.zip` (pre-cleanup code, tests, UI and data), and `.local-backups/LegacyPlayerPrefabBackup_20260930.zip` (three pre-cleanup player prefabs). The original scene archive in `Temp` was removed by Unity's batch startup, so the surviving scene archive was reconstructed from Git HEAD and the intact revision scenes. `.local-backups` is ignored by Git. Restore assets with their `.meta` files to preserve GUIDs.
-
-Verification completed in Unity batch Editor: five scenes have no missing scripts; the current three stage layouts, PDF maze routes, leaf permanence, independent water expiry, leak blockage, socket poses and Hose behavior pass their Editor checks. The refreshed generated C# projects also build with zero errors. Direct solo play and two-peer Fusion transition still require interactive verification.
