@@ -123,6 +123,10 @@ MonoBehaviour:
   - {x: -7, y: 0.7, z: -3}
   summitHeight: 41
   clothDriveAcceleration: 120
+  clothPumpImpulseSeconds: 0.15
+  clothBendMaxAngle: 30
+  clothBendProbeRadius: 0.08
+  clothMinBendSegmentLength: 1
   summitDeckSize: {x: 6, y: 0.6, z: 6}
   jumpBranchMaterial: {fileID: 2100000, guid: 8396a86cadca7a742b6ccba9e837deb1, type: 2}
   normalBranchMaterial: {fileID: 2100000, guid: 801811ef3d5f40a459b3b711f0f5fe98, type: 2}
@@ -137,5 +141,5 @@ MonoBehaviour:
   jetDropletGravity: 1.6
   jumpPadSettings: {fileID: 11400000, guid: a8bd24194b0211a49b5dd2c1658a0d1d, type: 2}
   padInstructions: "\uB098\uBB47\uC78E \uC704 \uD0D1\uC2B9 \xB7 \uBC18\uB300 \uAD6C\uBA4D\uC5D0 R\uB85C \uC218\uC561 \xB7 \uC790\uB3D9 \uC0C1\uC2B9 \uD6C4 WASD \uCC29\uC9C0"
-  clothInstructions: "E: \uB9E4\uB4ED \uC7A1\uAE30/\uB193\uAE30 \xB7 WASD: \uD754\uB4E4\uAE30"
+  clothInstructions: "E: \uB9E4\uB4ED \uC7A1\uAE30/\uB193\uAE30 \xB7 WASD \uBC88\uAC08\uC544 \uB20C\uB7EC \uD798 \uC8FC\uAE30"
   bridgeInstructions: "\uB098\uBB47\uC78E \uB2E4\uB9AC \uAD6C\uAC04 \xB7 \uBCBD\uC5D0 R\uB85C \uB098\uBB47\uC78E\uC744 \uC124\uCE58\uD574 \uC62C\uB77C\uAC00\uC138\uC694"

@@ -39,6 +39,8 @@ namespace Herbalist.Editor
                     Check(layout != null, "PDF layout settings");
                     Check(Object.FindObjectsByType<ExteriorJumpPad>(FindObjectsSortMode.None).Length == layout.branches.Count(x => x.kind == ExteriorBranchKind.JumpPad), "PDF jump branches");
                     Check(Object.FindObjectsByType<HangingCloth>(FindObjectsSortMode.None).Length == layout.cloths.Length, "PDF interactive blue cloths");
+                    Check(Object.FindObjectsByType<HangingCloth>(FindObjectsSortMode.None).All(x => Read<Transform>(x, "_lowerCloth") != null), "each cloth has an authored lower bend segment");
+                    Check(Object.FindObjectsByType<ClothBendSurface>(FindObjectsSortMode.None).Length >= layout.branches.Length + 1, "branches and sacred tree can bend cloth");
                     Check(Object.FindObjectsByType<LandingCheckpoint>(FindObjectsSortMode.None).Length >= layout.branches.Length, "branch landing checkpoints");
                     var gaps = GameObject.Find("PdfExteriorLayout").transform.Cast<Transform>().Where(x => x.name.StartsWith("LeafBridge_")).ToArray();
                     Check(gaps.Length == layout.leafBridges.Length && gaps.All(x => x.GetComponentsInChildren<Collider>().All(c => c.bounds.size.y > c.bounds.size.z || c.bounds.size.y > c.bounds.size.x)), "green gaps contain walls, no prebuilt bridge floor");
@@ -153,6 +155,24 @@ namespace Herbalist.Editor
                 var expectedSwing = Quaternion.Euler(0, player.View.Yaw, 0) * Vector3.right;
                 cloth.ReceiveMovement(player, Vector2.right); cloth.Tick(.1f);
                 Check(Vector3.Dot(knot.position - beforeKnot, expectedSwing) > 0, "cloth moves in camera-relative input direction");
+                cloth.ReceiveMovement(player, Vector2.right);
+                Check(Read<Vector2>(cloth, "_drive") == Vector2.zero, "holding a direction does not add another swing impulse");
+                cloth.ReceiveMovement(player, Vector2.left);
+                Check(Read<Vector2>(cloth, "_drive") != Vector2.zero, "pressing the opposite direction adds a new swing impulse");
+                var testBranch = new GameObject("TestClothBendBranch");
+                try
+                {
+                    testBranch.transform.position = Vector3.Lerp(cloth.transform.position, knot.position, .5f);
+                    testBranch.AddComponent<BoxCollider>().size = Vector3.one * .5f;
+                    testBranch.AddComponent<ClothBendSurface>();
+                    Physics.SyncTransforms();
+                    cloth.Tick(.02f);
+                    Check(Read<bool>(cloth, "_bendActive"), "branch contact creates a second cloth pivot");
+                    var bentKnot = knot.position;
+                    cloth.ReceiveMovement(player, Vector2.right); cloth.Tick(.02f);
+                    Check(Read<Vector2>(cloth, "_bendAngles").magnitude <= 30.001f && (knot.position - bentKnot).sqrMagnitude > .0001f, "lower cloth swings within 30 degrees around branch");
+                }
+                finally { Object.Destroy(testBranch); }
                 Check(player.Motor.MovementLocked && partner.GetComponent<PlayerController>().Motor.MovementLocked, "cloth movement locked");
                 Check(HangingCloth.TryInteract(actor, out _) && !player.Motor.MovementLocked, "release clears only cloth locks");
                 HangingCloth.TryInteract(partner, out _);

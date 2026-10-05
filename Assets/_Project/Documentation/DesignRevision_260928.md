@@ -44,7 +44,7 @@ R을 누르면 단일 나뭇잎을 던진다. 벽에서는 긴 축의 끝을 얕
 
 - `ExteriorJumpPad`: 두 포트/두 소켓, 주입량, 분출 및 탑승 운반. `SO_ExteriorJumpPad`의 chargeUnits, presentationRise, eruptionRiseDuration, flightDuration으로 조정한다.
   - 나뭇잎은 구멍 부모의 스케일과 무관한 월드 높이로 솟는다. `eruptionRiseDuration`(현재 1.25초) 동안 위로 갈수록 감속해 `presentationRise`(현재 14m)의 최고점에 도달한다. 수액 기둥도 같은 높이로 뻗고, 최고점 이후에는 정지 상태에서 점차 빨라지며 함께 내려온다. 전체 분출 시간 `flightDuration`은 현재 2.5초다. Host가 분출 시작 시 탑승자를 판정하고 상승 속도를 플레이어 모터에 전달한다. 플레이어는 상승과 하강 모두 WASD로 이동한다. 최고점에서는 상승 속도를 해제하고 일반 중력으로 전환한다. 중력과 공중 가속은 PlayerTuning을 사용한다. `jumpWindow`, `jumpReach`, `launchHeightMultiplier`는 새 ExteriorJumpPad에서는 사용하지 않는다.
-- `HangingCloth`: 매듭·천 외형·범위·진자 운동·탑승자. Host가 실제 탑승·충돌을 검증한다.
+- `HangingCloth`: 매듭·천 외형·범위·진자 운동·탑승자. 먼저 잡은 플레이어가 WASD를 새로 누를 때마다 한 번씩 힘을 주며, 계속 누르고 있어도 가속이 쌓이지 않는다. 다른 가지나 신목 가지에 천이 닿으면 그 접점을 두 번째 회전축으로 고정하고 아래 구간과 탑승자가 추가 30도 이내로 흔들린다. Host가 접점·각도·탑승·충돌을 검증하고 동기화한다. 힘의 크기와 접점 판정은 `SO_ExteriorLayout_260928`에서 조정한다.
 - `LandingCheckpoint` / `ExteriorStageFlow`: 일반 표면 착지와 슬롯별 복구, 상단 도착/주입. 복구는 설치물을 지우지 않는다.
 - `DescendingMazeFlow`: 두 뗏목과 정차 높이 배열, 진입/하강/미로/완료. 기존 `SapMazeBoard`가 입력·누수·현재 미로 재시도를 담당한다.
 - `AltarRing` / `RotatingAltar` / `FinalStageExit`: 석판별 속도·목표 각도·허용 오차·계단 목적지와 전체 진행 조건.
