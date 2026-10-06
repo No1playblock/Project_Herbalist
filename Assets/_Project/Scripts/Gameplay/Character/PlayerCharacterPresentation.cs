@@ -11,6 +11,8 @@ namespace Herbalist.Player
         [SerializeField] private Transform lookPivot;
         [SerializeField] private GameObject characterRoot;
         [SerializeField] private Animator animator;
+        [SerializeField] private GameObject _duyeongRoot;
+        [SerializeField] private Animator _duyeongAnimator;
         [SerializeField] private Renderer[] prototypeRenderers;
         [SerializeField] private bool showOffline = true;
         [SerializeField] private int[] visibleSlots;
@@ -31,6 +33,8 @@ namespace Herbalist.Player
         private bool network;
         private bool grounded;
         private int speedId, groundedId, playbackId;
+        private GameObject _activeRoot;
+        private Animator _activeAnimator;
 
         private void Awake()
         {
@@ -39,24 +43,31 @@ namespace Herbalist.Player
             groundedId = Animator.StringToHash(groundedParameter);
             playbackId = Animator.StringToHash(playbackParameter);
             lookRest = Quaternion.Inverse(body.rotation) * lookPivot.rotation;
-            ApplyVisibility(showOffline);
+            ApplyRole(showOffline ? characterRoot : null, showOffline ? animator : null);
         }
         private void OnEnable() => previousPosition = transform.position;
         public void SetNetworkSlot(int slot)
         {
             network = true;
-            ApplyVisibility(System.Array.IndexOf(visibleSlots, slot) >= 0);
+            bool isSodam = System.Array.IndexOf(visibleSlots, slot) >= 0;
+            ApplyRole(isSodam ? characterRoot : _duyeongRoot, isSodam ? animator : _duyeongAnimator);
         }
         public void SetNetworkGrounded(bool value) => grounded = value;
-        private void ApplyVisibility(bool visible)
+        private void ApplyRole(GameObject root, Animator selectedAnimator)
         {
-            characterRoot.SetActive(visible);
+            if (headModified && head != null) head.localRotation = animatedHead;
+            headModified = false;
+            characterRoot.SetActive(root == characterRoot);
+            if (_duyeongRoot != null) _duyeongRoot.SetActive(root == _duyeongRoot);
+            _activeRoot = root;
+            _activeAnimator = selectedAnimator;
             foreach (var renderer in prototypeRenderers)
-                if (renderer != null) renderer.enabled = !visible;
-            if (visible)
+                if (renderer != null) renderer.enabled = root == null;
+            head = null;
+            if (_activeAnimator != null)
             {
-                animator.applyRootMotion = false;
-                head = animator.GetBoneTransform(HumanBodyBones.Head);
+                _activeAnimator.applyRootMotion = false;
+                head = _activeAnimator.GetBoneTransform(HumanBodyBones.Head);
             }
             previousPosition = transform.position;
         }
@@ -68,19 +79,19 @@ namespace Herbalist.Player
         }
         private void LateUpdate()
         {
-            animator.speed = Herbalist.GameUI.GameplayPause.IsPaused ? 0 : 1;
             Vector3 delta = transform.position - previousPosition;
             previousPosition = transform.position;
-            if (!characterRoot.activeInHierarchy || Time.deltaTime <= 0) return;
+            if (_activeRoot == null || _activeAnimator == null || !_activeRoot.activeInHierarchy || Time.deltaTime <= 0) return;
+            _activeAnimator.speed = Herbalist.GameUI.GameplayPause.IsPaused ? 0 : 1;
             float speed = delta.magnitude > teleportDistance ? 0 : Vector3.ProjectOnPlane(delta, Vector3.up).magnitude / Time.deltaTime;
             // Use a shorter blend when stopping without snapping the current speed to zero.
             bool stopping = speed <= stoppedSpeedThreshold;
-            animator.SetFloat(speedId, stopping ? 0 : speed, stopping ? stopDamping : speedDamping, Time.deltaTime);
+            _activeAnimator.SetFloat(speedId, stopping ? 0 : speed, stopping ? stopDamping : speedDamping, Time.deltaTime);
             Vector3 planar = Vector3.ProjectOnPlane(delta, Vector3.up);
             bool backpedaling = player != null && player.Tuning.facingMode == PlayerFacingMode.CameraAligned
                 && Vector3.Dot(planar.normalized, body.forward) < -backwardThreshold;
-            animator.SetFloat(playbackId, backpedaling ? -1f : 1f);
-            animator.SetBool(groundedId, network ? grounded : motor.IsGrounded);
+            _activeAnimator.SetFloat(playbackId, backpedaling ? -1f : 1f);
+            _activeAnimator.SetBool(groundedId, network ? grounded : motor.IsGrounded);
             if (head == null) return;
             animatedHead = head.localRotation;
             Quaternion look = Quaternion.Inverse(body.rotation) * lookPivot.rotation * Quaternion.Inverse(lookRest);
