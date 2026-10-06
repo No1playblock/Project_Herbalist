@@ -41,6 +41,12 @@ namespace Herbalist.Levels
         public Vector3 summitDeckSize = new Vector3(6, .6f, 6);
         public Material jumpBranchMaterial, normalBranchMaterial, clothMaterial, leafBridgeMaterial, portMaterial;
         public Material jetMaterial;
+        [Header("Mushroom platforms")]
+        [Min(1)] public float jumpCapWidth = 5.8f;
+        [Min(.1f)] public float jumpCapHeight = .9f;
+        [Min(1)] public float normalCapWidth = 3.2f;
+        [Min(.1f)] public float normalCapHeight = .35f;
+        [Min(.1f)] public float stalkWidth = .75f;
         [Header("Water droplets around the jump pad jet")]
         [Min(0)] public float jetDropletRate = 42f;
         public Vector2 jetDropletLifetime = new Vector2(.45f, .85f);

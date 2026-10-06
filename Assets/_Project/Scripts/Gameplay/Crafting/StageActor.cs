@@ -56,6 +56,7 @@ namespace Herbalist.StageOne
             if (Herbalist.GameUI.GameplayPause.IsPaused || !Available) return string.Empty;
             if (command == StageCommand.Interact && Herbalist.Levels.SoloPotionPickup.TryPickup(this, out var potionMessage)) return potionMessage;
             if (command == StageCommand.Interact && Herbalist.Levels.HangingCloth.TryInteract(this, out var message)) return message;
+            if (command == StageCommand.Interact && Herbalist.Levels.BranchRideFlow.TryBoard(this, out var rideMessage)) return rideMessage;
             return StageOneFlow.Instance != null ? StageOneFlow.Instance.Execute(this, command) : string.Empty;
         }
         public void SetFeedback(string text) { Feedback = text; }
