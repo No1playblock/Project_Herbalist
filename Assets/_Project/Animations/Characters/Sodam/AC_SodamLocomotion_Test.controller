@@ -50,7 +50,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: e956ebc2610e8284abffef07e9987911, type: 2}
+  m_Motion: {fileID: -203655887218126122, guid: 7feedcfa0fecf604686238dcb03f40bd, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -98,10 +98,10 @@ AnimatorStateMachine:
     m_Position: {x: 230, y: -40, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 990854821883818942}
-    m_Position: {x: 530, y: -30, z: 0}
+    m_Position: {x: 235, y: 65, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 5086843929349864157}
-    m_Position: {x: 330, y: 150, z: 0}
+    m_Position: {x: 270, y: 130, z: 0}
   m_ChildStateMachines: []
   m_AnyStateTransitions: []
   m_EntryTransitions: []
@@ -118,7 +118,7 @@ AnimatorController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: AC_SodamLocomotion_Ch36
+  m_Name: AC_SodamLocomotion_Test
   serializedVersion: 6
   m_AnimatorParameters:
   - m_Name: Speed
@@ -173,9 +173,9 @@ AnimatorStateTransition:
   m_Mute: 0
   m_IsExit: 0
   serializedVersion: 3
-  m_TransitionDuration: 0.1992433
+  m_TransitionDuration: 0.12
   m_TransitionOffset: 0
-  m_ExitTime: 0.74999994
+  m_ExitTime: 0.75
   m_HasExitTime: 0
   m_HasFixedDuration: 1
   m_InterruptionSource: 0
@@ -203,7 +203,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: -203655887218126122, guid: 543c6cf0457303a4ebbeb694a5404de4, type: 3}
+  m_Motion: {fileID: -203655887218126122, guid: 7feedcfa0fecf604686238dcb03f40bd, type: 3}
   m_Tag: 
   m_SpeedParameter: PlaybackDirection
   m_MirrorParameter: 
@@ -229,9 +229,9 @@ AnimatorStateTransition:
   m_Mute: 0
   m_IsExit: 0
   serializedVersion: 3
-  m_TransitionDuration: 0.16295359
-  m_TransitionOffset: 0.006997528
-  m_ExitTime: 0.66690403
+  m_TransitionDuration: 0.12
+  m_TransitionOffset: 0
+  m_ExitTime: 0.75
   m_HasExitTime: 0
   m_HasFixedDuration: 1
   m_InterruptionSource: 0

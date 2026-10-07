@@ -16,7 +16,7 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
+  m_CustomRenderQueue: 2989
   stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
@@ -38,9 +38,20 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _CrownColorBlend: 0
+    - _CrownDeformStrength: 1.48
+    - _CrownFresnelPower: 1.76
+    - _CrownNoiseCenter: 0.259
+    - _CrownNoiseDetail: 7.91
+    - _CrownOpacity: 0.99
     - _QueueControl: 0
-    - _QueueOffset: 0
-    m_Colors: []
+    - _QueueOffset: -11
+    m_Colors:
+    - _CrownFlowSpeed: {r: 0.12, g: 0.08, b: 0, a: 0}
+    - _CrownFoamColor: {r: 0.57409215, g: 0.8044989, b: 0.9150943, a: 1}
+    - _CrownNoiseTiling: {r: 1, g: 1, b: 0, a: 0}
+    - _CrownRimColor: {r: 0.9304467, g: 0.953419, b: 0.9716981, a: 1}
+    - _CrownWaterColor: {r: 0.19579917, g: 0.4770137, b: 0.75471693, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &3004436016507528870
