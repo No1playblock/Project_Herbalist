@@ -52,6 +52,17 @@ namespace Herbalist.Player
             bool isSodam = System.Array.IndexOf(visibleSlots, slot) >= 0;
             ApplyRole(isSodam ? characterRoot : _duyeongRoot, isSodam ? animator : _duyeongAnimator);
         }
+
+public bool TryToggleOfflineAppearance()
+        {
+            if (network || !showOffline || characterRoot == null || _duyeongRoot == null) return false;
+
+            GameObject nextRoot = _activeRoot == characterRoot ? _duyeongRoot : characterRoot;
+            Animator nextAnimator = nextRoot == characterRoot ? animator : _duyeongAnimator;
+            ApplyRole(nextRoot, nextAnimator);
+            return true;
+        }
+
         public void SetNetworkGrounded(bool value) => grounded = value;
         private void ApplyRole(GameObject root, Animator selectedAnimator)
         {

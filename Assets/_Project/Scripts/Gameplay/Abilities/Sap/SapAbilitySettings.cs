@@ -22,13 +22,14 @@ namespace Herbalist.Abilities
         [Tooltip("Maximum time between collision samples along the water arc.")]
         [Range(0.01f, 0.1f)] public float hoseCollisionStep = 0.04f;
 
-        [Min(0.01f)] public float hoseGrowthPerSecond = 0.5f;
+        [Tooltip("Mark growth per second while water keeps hitting it. Set to 0 for a fixed footprint.")]
+        [Min(0f)] public float hoseGrowthPerSecond = 0f;
         [Min(1)] public float hoseMaxScale = 3f;
         [Range(-1, 1)] public float hoseMergeNormalDot = 0.85f;
         [Min(0.1f)] public float hoseMarkLifetime = 5f;
-        [Tooltip("Hits within this distance grow the existing mark instead of creating another.")]
+        [Tooltip("Hits within this distance refresh the existing mark instead of creating another.")]
         [Min(0.01f)] public float hoseMarkSpacing = 1f;
-        [Tooltip("World-space footprint of an attached sap decal before hose growth is applied.")]
+        [Tooltip("World-space footprint of an attached sap decal at its initial size.")]
         public Vector2 surfaceMarkSize = new Vector2(0.85f, 0.85f);
         [Tooltip("Projection depth used to wrap the sap decal over uneven receiver meshes.")]
         [Min(0.01f)] public float surfaceMarkDepth = 0.45f;

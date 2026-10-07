@@ -16,6 +16,7 @@ namespace Herbalist.Abilities
         [Min(0.1f)] public float range = 18;
         [Min(0.1f)] public float flightSpeed = 16;
         [Min(0.1f)] public float returnSpeed = 22;
+        [Range(0.01f, 1f)] public float flyingVisualScaleMultiplier = 0.5f;
         [Min(0)] public float curveWidth = 0f;
         [Min(0)] public float collisionRadius = 0.08f;
         [Min(0)] public float surfaceOffset = 0.12f;

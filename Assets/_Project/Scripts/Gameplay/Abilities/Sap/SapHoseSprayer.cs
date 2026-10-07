@@ -6,11 +6,13 @@ namespace Herbalist.Abilities
     public sealed class SapHoseSprayer
     {
         private float _reach;
+        private float _retractedLength;
         private Vector3 _lastDirection = Vector3.forward;
 
         public void Reset()
         {
             _reach = 0f;
+            _retractedLength = 0f;
             _lastDirection = Vector3.forward;
         }
 public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySettings settings, Func<SapDeposit> createMark)
@@ -20,6 +22,7 @@ public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySett
 
             if (firing)
             {
+                _retractedLength = 0f;
                 Vector3 target = aim.GetPoint(settings.controlRange + Vector3.Distance(aim.origin, origin));
                 bool hasTarget = Physics.Raycast(aim, out var aimHit, settings.controlRange + Vector3.Distance(aim.origin, origin),
                     settings.collisionMask, QueryTriggerInteraction.Ignore);
@@ -36,12 +39,15 @@ public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySett
             }
             else
             {
-                _reach = Mathf.Max(0f, _reach - settings.hoseRetractSpeed * deltaTime);
+                // Stop emitting at the orb. The existing stream drains from its origin
+                // toward the last tip instead of pulling the tip back toward the orb.
+                _retractedLength = Mathf.Min(_reach, _retractedLength + settings.hoseRetractSpeed * deltaTime);
             }
 
-            if (_reach <= 0.01f)
+            if (_reach <= 0.01f || _retractedLength >= _reach)
             {
                 _reach = 0f;
+                _retractedLength = 0f;
                 held.SetStream(origin, false);
                 return;
             }
@@ -49,6 +55,8 @@ public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySett
             Vector3 launchVelocity = _lastDirection * settings.hoseLaunchSpeed;
             float travelTime = _reach / settings.hoseLaunchSpeed;
             Vector3 end = Position(origin, launchVelocity, settings.hoseGravity, travelTime);
+            bool impact = false;
+            Vector3 impactNormal = Vector3.up;
             int segments = Mathf.CeilToInt(travelTime / settings.hoseCollisionStep);
             Vector3 previous = origin;
             for (int i = 1; i <= segments; i++)
@@ -62,6 +70,8 @@ public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySett
                     float previousTime = travelTime * (i - 1) / segments;
                     travelTime = Mathf.Lerp(previousTime, nextTime, hit.distance / step.magnitude);
                     end = hit.point;
+                    impact = hit.collider.GetComponentInParent<Herbalist.Levels.ExteriorJumpPad>() == null;
+                    impactNormal = hit.normal;
                     _reach = Mathf.Min(_reach, travelTime * settings.hoseLaunchSpeed);
                     if (firing) SapDeposit.ApplyHoseHit(hit, settings, deltaTime, createMark);
                     break;
@@ -69,7 +79,8 @@ public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySett
                 previous = next;
             }
 
-            held.SetHoseStream(end, !firing, launchVelocity, travelTime);
+            held.SetHoseStream(end, !firing, launchVelocity, travelTime,
+                _retractedLength / settings.hoseLaunchSpeed, impact, impactNormal);
         }
 
         private static Vector3 Position(Vector3 origin, Vector3 velocity, float gravity, float time) =>

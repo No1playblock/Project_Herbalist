@@ -21,27 +21,36 @@ namespace Herbalist.Abilities
         public Vector3 StreamEnd { get; private set; }
         public Vector3 HoseLaunchVelocity { get; private set; }
         public float HoseTravelTime { get; private set; }
+        public float HoseStartTime { get; private set; }
         public bool HoseStream { get; private set; }
         public bool HoseRetracting { get; private set; }
+        public bool HoseImpact { get; private set; }
+        public Vector3 HoseImpactNormal { get; private set; }
 
         public Vector3 StreamOrigin => HoseStream ? transform.position : StreamStart;
         public Vector3 StreamDestination => HoseStream ? StreamEnd : transform.position;
-public void SetHoseStream(Vector3 end, bool retracting, Vector3 launchVelocity, float travelTime)
+public void SetHoseStream(Vector3 end, bool retracting, Vector3 launchVelocity, float travelTime, float startTime, bool impact, Vector3 impactNormal)
         {
             HoseStream = true;
             HoseRetracting = retracting;
+            HoseImpact = impact;
+            HoseImpactNormal = impactNormal;
             StreamEnd = end;
             HoseLaunchVelocity = launchVelocity;
             HoseTravelTime = travelTime;
+            HoseStartTime = startTime;
             HasStream = true;
         }
-public void SetHoseReplica(bool hose, bool retracting, Vector3 end, Vector3 launchVelocity, float travelTime, float scale)
+public void SetHoseReplica(bool hose, bool retracting, Vector3 end, Vector3 launchVelocity, float travelTime, float startTime, bool impact, Vector3 impactNormal, float scale)
         {
             HoseStream = hose;
             HoseRetracting = hose && retracting;
+            HoseImpact = hose && impact;
+            HoseImpactNormal = impactNormal;
             StreamEnd = end;
             HoseLaunchVelocity = launchVelocity;
             HoseTravelTime = travelTime;
+            HoseStartTime = startTime;
             markScale = scale;
             RefreshVisual();
         }
@@ -57,6 +66,8 @@ public void SetStream(Vector3 start, bool active)
             HasStream = active;
             HoseStream = false;
             HoseRetracting = false;
+            HoseImpact = false;
+            HoseStartTime = 0f;
         }
         public void BeginExtraction(Vector3 sourcePoint) { State = SapState.Extracting; SetStream(sourcePoint, true); RefreshVisual(); }
         public void SetHeld() { if (State == SapState.Extracting) State = SapState.Controlled; }

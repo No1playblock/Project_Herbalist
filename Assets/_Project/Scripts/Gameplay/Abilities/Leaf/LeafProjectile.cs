@@ -8,6 +8,7 @@ namespace Herbalist.Abilities
         [FormerlySerializedAs("pinVisual"), SerializeField] private GameObject _visual;
         [FormerlySerializedAs("pinCollider"), SerializeField] private Collider _surface;
         [FormerlySerializedAs("pinAttachmentTip"), SerializeField] private Transform _attachmentTip;
+        [SerializeField] private LeafAbilitySettings _replicaSettings;
         private LeafAbilitySettings settings;
         private Transform owner;
         private Action<LeafProjectile> release;
@@ -15,6 +16,8 @@ namespace Herbalist.Abilities
         private Quaternion localRotation;
         private float progress, duration, remaining;
         private bool initialized, externalTick;
+        private Vector3 _installedVisualScale;
+        private bool _visualScaleCaptured;
         public LeafState State { get; private set; } = LeafState.Complete;
         public LeafInstallTarget Target { get; private set; }
         public float InstalledAt { get; private set; }
@@ -88,6 +91,7 @@ namespace Herbalist.Abilities
             Target = target;
             localContactPoint = target.transform.InverseTransformPoint(hit);
             transform.SetPositionAndRotation(hit, target.Rotation(normal, heading));
+            SetVisualScale(1f);
             transform.position = target.Position(hit, normal, 0) + (target.ExactSocketPlacement ? Vector3.zero : TipPlacementOffset(normal));
             localPosition = target.transform.InverseTransformPoint(transform.position);
             localRotation = Quaternion.Inverse(target.transform.rotation) * transform.rotation;
@@ -98,7 +102,7 @@ namespace Herbalist.Abilities
         private Vector3 TipPlacementOffset(Vector3 normal)
         {
             var visual = _visual;
-            var filter = visual != null ? visual.GetComponent<MeshFilter>() : null;
+            var filter = visual != null ? visual.GetComponentInChildren<MeshFilter>() : null;
             if (filter == null || filter.sharedMesh == null) return normal * settings.surfaceOffset;
             var mesh = filter.sharedMesh;
             Vector3[] points;
@@ -142,6 +146,13 @@ namespace Herbalist.Abilities
         private void Detach() { if (Target != null) Target.Detach(this); Target = null; }
         public void ApplyReplica(LeafState state, int targetId)
         {
+            if (settings == null)
+            {
+                var rules = Herbalist.Levels.StageLevel.Instance != null
+                    ? Herbalist.Levels.StageLevel.Instance.abilityRules
+                    : null;
+                settings = rules != null && rules.leaf != null ? rules.leaf : _replicaSettings;
+            }
             var target = LeafInstallTarget.Find(targetId);
             if (Target != target || State != state) Detach();
             State = state; Target = target;
@@ -157,7 +168,19 @@ namespace Herbalist.Abilities
                 foreach (var renderer in GetComponentsInChildren<Renderer>(true)) renderer.gameObject.layer = layer;
             }
             if (_visual != null) _visual.SetActive(State != LeafState.Complete);
+            if (_visual != null && settings != null)
+                SetVisualScale(Installed ? 1f : settings.flyingVisualScaleMultiplier);
             if (_surface != null) _surface.enabled = Installed;
+        }
+        private void SetVisualScale(float multiplier)
+        {
+            if (_visual == null) return;
+            if (!_visualScaleCaptured)
+            {
+                _installedVisualScale = _visual.transform.localScale;
+                _visualScaleCaptured = true;
+            }
+            _visual.transform.localScale = _installedVisualScale * multiplier;
         }
         // Leaves stay flat even when their trajectory rises, falls or curves.
         private Quaternion HorizontalRotation(Vector3 direction)

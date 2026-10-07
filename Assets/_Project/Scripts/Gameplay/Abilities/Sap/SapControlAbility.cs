@@ -34,7 +34,13 @@ namespace Herbalist.Abilities
             if (Herbalist.GameUI.GameplayPause.IsPaused || settings == null || create == null) return;
             Vector3 origin = HoverPosition(aim);
             if (!useHeld)
-            { Cancel(); return; }
+            {
+                if (held == null) return;
+                held.transform.position = origin;
+                hose.Tick(held, aim, false, dt, settings, CreateHoseMark);
+                if (!held.HasStream) Cancel();
+                return;
+            }
             if (held == null)
             {
                 held = create(); if (held == null) return;

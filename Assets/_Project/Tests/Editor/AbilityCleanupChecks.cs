@@ -58,8 +58,12 @@ namespace Herbalist.Editor
                 ((UnityEngine.Events.UnityEvent)typeof(LeafInstallTarget).GetField("onInstalled", flags).GetValue(target)).AddListener(() => installedEvents++);
                 ((UnityEngine.Events.UnityEvent)typeof(LeafInstallTarget).GetField("onReleased", flags).GetValue(target)).AddListener(() => removedEvents++);
                 var leaf = Object.Instantiate(leafSettings.offlinePrefab, root.transform);
+                var leafVisual = (GameObject)new SerializedObject(leaf).FindProperty("_visual").objectReferenceValue;
+                Vector3 installedVisualScale = leafVisual.transform.localScale;
                 leaf.Initialize(leafSettings, root.transform, root.transform.position - Vector3.forward * 3, root.transform.position, _ => { }, true);
+                Check(Vector3.Distance(leafVisual.transform.localScale, installedVisualScale * .5f) < .0001f, "Flying leaf is half-size");
                 Install(leaf, target, target.transform.position);
+                Check(Vector3.Distance(leafVisual.transform.localScale, installedVisualScale) < .0001f, "Installed leaf reaches full size");
                 Check(target.HasLeaf && installedEvents == 1, "Installation event");
                 var leak = surface.AddComponent<Herbalist.Levels.MazeLeakSocket>(); Field(leak, "_target", target);
                 var wet = new GameObject("WetSurface"); wet.transform.SetParent(surface.transform, false); Field(leak, "_wetSurface", wet);
@@ -74,6 +78,7 @@ namespace Herbalist.Editor
                 leafCollider.enabled = true;
                 Check(water.IsPlaced && receiver.Supplied, "Hose creates receiver mark");
                 leaf.BeginReturn(); Check(water.IsPlaced && receiver.Supplied && removedEvents == 1, "Recall leaves water intact and releases target");
+                Check(Vector3.Distance(leafVisual.transform.localScale, installedVisualScale * .5f) < .0001f, "Returning leaf is half-size");
                 leak.Present(true); Check(!leak.Blocked && wet.activeSelf, "Recall reopens leak even while water remains");
                 Install(leaf, target, target.transform.position);
                 water.Tick(.3f); Check(water.State == SapState.Complete && leaf.Installed, "Water expiry leaves leaf intact");
