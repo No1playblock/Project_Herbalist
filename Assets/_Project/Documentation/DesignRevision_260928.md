@@ -14,7 +14,7 @@
 
 ## 구현 및 실행
 
-- 로비 시작: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_Exterior_260928.unity`
+- 현재 로비 시작 맵: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference.unity` (기존 외부 스테이지 구현은 `Stage_01_Exterior_260928.unity`에 유지)
 - 미로: `Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Mazes.unity`
 - 제단: `Assets/_Project/Scenes/Stages/Stage_03/Stage_03_Altar.unity`
 - 새 설정: `Assets/_Project/Data/Stages/Revision_260928/SO_StageAbilityRules.asset`. 나뭇잎/수액/UGUI 설정은 기존 에셋의 복사본을 사용한다.
@@ -75,7 +75,7 @@ Fusion의 Client 씬 오브젝트 등록 중 비활성화/재활성화에도 개
 
 `SoloPotionPickup`은 Editor/Development 오프라인에서만 동작하며 Photon 세션과 릴리즈에서는 물약 오브젝트를 숨긴다. 제조/두 명 입장 조건을 우회하지 않는다. 임시 물약을 제거하려면 `SoloTest_Potions` 루트를 삭제/비활성화하면 된다. 재사용 프리팹은 `Assets/_Project/Prefabs/InteractiveObjects/SoloTests`에 있다.
 
-솔로에서 물약 선택 없이 두 능력을 시험하려면 **T**(`Player/OfflineUnlockBoth`)를 누른다. 그 뒤 **Q**(`OfflineAbilitySwitch`)로 나뭇잎/수액을 전환하며 R은 선택한 능력 사용으로 유지된다. 1스테이지에서도 T로 해금한 경우 Q 전환을 허용한다. 입력은 `OfflineAbilitySwitcher`의 직렬화 참조이며 H 도움말에 표시된다. 이 임시 해금 상태는 오프라인 씬 전환 시 보존하고 새 Play에서는 초기화한다. Photon 플레이어와 릴리즈에서 T 해금은 거부된다. 제조 기록이나 협동 입장 조건은 우회하지 않는다.
+솔로에서 물약 선택 없이 두 능력을 시험하려면 **T**(`Player/OfflineUnlockBoth`)를 누른다. 그 뒤 **Q**(`OfflineAbilitySwitch`)로 나뭇잎/수액을 전환하며 R은 선택한 능력 사용으로 유지된다. 1스테이지에서도 T로 해금한 경우 Q 전환을 허용한다. 입력은 `OfflineAbilitySwitcher`의 직렬화 참조이며 H 도움말에 표시된다. 이 임시 해금 상태는 오프라인 씬 전환 시 보존하고 새 Play에서는 초기화한다. 일반 릴리즈 빌드의 솔로 테스트에서도 T 해금을 허용하되 Photon 플레이어에서는 거부한다. 제조 기록이나 협동 입장 조건은 우회하지 않는다.
 
 이전 스테이지와 물 Placement 분기는 2026-09-30 정리에서 삭제했다. 복원이 필요하면 변경 전 Git 이력 또는 `Temp/LegacyCleanupBackup_20260930.zip`, `Temp/LegacyCodeBackup_20260930.zip`을 사용한다. 입력 액션 이름과 GUID는 유지했다.
 

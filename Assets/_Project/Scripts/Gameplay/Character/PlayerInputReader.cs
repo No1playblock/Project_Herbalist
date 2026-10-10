@@ -11,6 +11,8 @@ namespace Herbalist.Player
         [SerializeField] private InputActionReference jump;
         [SerializeField] private bool requireOrbitButton = false;
         private InputAction moveAction, lookAction, orbitAction, jumpAction;
+        private Vector2 _previousMove;
+        public event System.Action<Vector2> MovePerformed;
         public uint JumpSequence { get; private set; }
         private bool active;
         public Vector2 Move => active && !Herbalist.GameUI.GameplayPause.IsPaused ? moveAction.ReadValue<Vector2>() : Vector2.zero;
@@ -26,6 +28,13 @@ namespace Herbalist.Player
             }
             // Private actions: disabling a remote player must not disable the local player's input.
             moveAction = move.action.Clone();
+            moveAction.performed += context =>
+            {
+                Vector2 current = context.ReadValue<Vector2>();
+                if (_previousMove.sqrMagnitude < .25f && current.sqrMagnitude >= .25f) MovePerformed?.Invoke(current);
+                _previousMove = current;
+            };
+            moveAction.canceled += _ => _previousMove = Vector2.zero;
             lookAction = look.action.Clone();
             orbitAction = orbit.action.Clone();
             jumpAction = jump.action.Clone();
@@ -37,6 +46,7 @@ namespace Herbalist.Player
         {
             if (!Initialize()) return;
             active = value;
+            if (!active) _previousMove = Vector2.zero;
             if (active) { moveAction.Enable(); lookAction.Enable(); orbitAction.Enable(); jumpAction.Enable(); }
             else { moveAction.Disable(); lookAction.Disable(); orbitAction.Disable(); jumpAction.Disable(); }
         }

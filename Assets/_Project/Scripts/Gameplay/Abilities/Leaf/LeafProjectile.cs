@@ -91,7 +91,7 @@ namespace Herbalist.Abilities
             Target = target;
             localContactPoint = target.transform.InverseTransformPoint(hit);
             transform.SetPositionAndRotation(hit, target.Rotation(normal, heading));
-            SetVisualScale(1f);
+            SetVisualScale(settings.installedScaleMultiplier);
             transform.position = target.Position(hit, normal, 0) + (target.ExactSocketPlacement ? Vector3.zero : TipPlacementOffset(normal));
             localPosition = target.transform.InverseTransformPoint(transform.position);
             localRotation = Quaternion.Inverse(target.transform.rotation) * transform.rotation;
@@ -146,13 +146,10 @@ namespace Herbalist.Abilities
         private void Detach() { if (Target != null) Target.Detach(this); Target = null; }
         public void ApplyReplica(LeafState state, int targetId)
         {
-            if (settings == null)
-            {
-                var rules = Herbalist.Levels.StageLevel.Instance != null
-                    ? Herbalist.Levels.StageLevel.Instance.abilityRules
-                    : null;
-                settings = rules != null && rules.leaf != null ? rules.leaf : _replicaSettings;
-            }
+            var rules = Herbalist.Levels.StageLevel.Instance != null
+                ? Herbalist.Levels.StageLevel.Instance.abilityRules
+                : null;
+            settings = rules != null && rules.leaf != null ? rules.leaf : _replicaSettings;
             var target = LeafInstallTarget.Find(targetId);
             if (Target != target || State != state) Detach();
             State = state; Target = target;
@@ -169,7 +166,7 @@ namespace Herbalist.Abilities
             }
             if (_visual != null) _visual.SetActive(State != LeafState.Complete);
             if (_visual != null && settings != null)
-                SetVisualScale(Installed ? 1f : settings.flyingVisualScaleMultiplier);
+                SetVisualScale((Installed ? 1f : settings.flyingVisualScaleMultiplier) * settings.installedScaleMultiplier);
             if (_surface != null) _surface.enabled = Installed;
         }
         private void SetVisualScale(float multiplier)

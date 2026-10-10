@@ -42,15 +42,15 @@ namespace Herbalist.Abilities
         // Temporary solo test hook. Existing deposits/leaves keep their normal lifecycle.
         public bool TryUnlockBothOfflineAbilities()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (network || !authority || !player.LocallyControlled || Sap == null || Herbalist.GameUI.GameplayPause.IsPaused) return false;
+            var soloSwitcher = GetComponent<OfflineAbilitySwitcher>();
+            if (network || !authority || !player.LocallyControlled || Sap == null ||
+                soloSwitcher == null || !soloSwitcher.isActiveAndEnabled ||
+                Herbalist.Networking.FusionLobbySession.Instance is { HasNetworkSession: true } ||
+                Herbalist.GameUI.GameplayPause.IsPaused) return false;
             _offlineBothUnlocked = true;
             Unlocked = true;
             lastCycle = Input.CycleSequence; lastUse = Input.UseSequence;
             return true;
-#else
-            return false;
-#endif
         }
         public bool TrySwitchOfflineAbility()
         {

@@ -16,7 +16,7 @@ namespace Herbalist.GameUI
         public string roomFormat="방 코드  {0}", connectingText="연결 중…", loadingText="숲으로 향하는 중…";
         public string createText="방 만들기", joinText="방 참가하기";
         public string pausedText="게임을 일시 정지하였습니다.", partnerPausedText="다른 플레이어가 게임을 일시 정지하였습니다.";
-        public string leafText="잎", sapText="액", gatherText="채집", giveText="전달";
+        public string leafText="잎", sapText="액", gatherText="채집", giveText="전달", craftText="약제 제조";
         public string pauseHint="일시정지", helpHint="키 확인", emptyPocket="빈손";
         public InputActionReference pauseAction, helpAction;
         public ControlHint[] controls;

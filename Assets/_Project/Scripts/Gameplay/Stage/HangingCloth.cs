@@ -12,12 +12,14 @@ namespace Herbalist.Levels
         [SerializeField] private Transform _knot;
         [SerializeField] private Transform _cloth;
         [SerializeField] private Transform _lowerCloth;
+        [SerializeField] private Transform _authoredVisual;
         [SerializeField] private Vector3[] _gripOffsets = { new(-.45f, -1, 0), new(.45f, -1, 0) };
         [SerializeField, Min(.1f)] private float _length = 7;
         [SerializeField, Range(0, 60)] private float _maxAngle = 30;
         [SerializeField, Min(.1f)] private float _grabRange = 2.5f;
         [SerializeField, Min(0)] private float _driveAcceleration = 65;
         [SerializeField, Min(0)] private float _pumpImpulseSeconds = .15f;
+        [SerializeField, Min(0)] private float _heldForceMultiplier = .15f;
         [SerializeField, Min(0)] private float _spring = 4;
         [SerializeField, Min(0)] private float _damping = 1.2f;
         [SerializeField, Min(0)] private float _releaseSpeed = 1;
@@ -25,7 +27,7 @@ namespace Herbalist.Levels
         [SerializeField, Min(.01f)] private float _bendProbeRadius = .08f;
         [SerializeField, Min(.1f)] private float _minBendSegmentLength = 1f;
         [SerializeField] private LayerMask _obstructionMask = 1;
-        [SerializeField] private string _grabText = "천의 매듭을 잡았습니다 · 먼저 잡은 플레이어가 WASD를 번갈아 눌러 힘 주기 · E: 놓기";
+        [SerializeField] private string _grabText = "천의 매듭을 잡았습니다 · WASD로 흔들림에 맞춰 힘 주기 · E: 놓기";
         [SerializeField] private string _releaseText = "천을 놓았습니다.";
         [SerializeField] private string _fullText = "매듭에 두 명이 매달려 있습니다.";
         [Networked] private Vector2 Angles { get; set; }
@@ -35,7 +37,7 @@ namespace Herbalist.Levels
         [Networked] private Vector2 BendAngles { get; set; }
         [Networked] private int Rider0 { get; set; }
         [Networked] private int Rider1 { get; set; }
-        private Vector2 _angles, _velocity, _drive, _heldInput;
+        private Vector2 _angles, _velocity, _drive, _heldInput, _heldDrive;
         private Vector2 _bendAngles, _bendVelocity, _clothSize;
         private Vector3 _bendPoint;
         private float _bendLength;
@@ -43,10 +45,22 @@ namespace Herbalist.Levels
         private readonly RaycastHit[] _bendProbeHits = new RaycastHit[32];
         private readonly StageActor[] _riders = new StageActor[2];
         private readonly Vector3[] _lastPoints = new Vector3[2];
+        private Vector3 _authoredRestPosition;
+        private Quaternion _authoredRestRotation;
+        private Vector3 _authoredPivot;
         private static readonly HashSet<HangingCloth> Cloths = new();
         private bool Online => Object != null && Object.IsValid;
         public bool Authority => Online ? HasStateAuthority : FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession;
-        private void Awake() { if (_cloth != null) _clothSize = new Vector2(_cloth.localScale.x, _cloth.localScale.z); }
+        private void Awake()
+        {
+            if (_cloth != null) _clothSize = new Vector2(_cloth.localScale.x, _cloth.localScale.z);
+            if (_authoredVisual != null)
+            {
+                _authoredRestPosition = _authoredVisual.position;
+                _authoredRestRotation = _authoredVisual.rotation;
+                _authoredPivot = transform.position;
+            }
+        }
         private void OnEnable() => Cloths.Add(this);
         public override void Spawned() { if (HasStateAuthority) { Rider0 = Rider1 = -1; Angles = Vector2.zero; BendActive = false; BendPoint = Vector3.zero; BendLength = 0; BendAngles = Vector2.zero; } }
         public override void FixedUpdateNetwork() { if (HasStateAuthority) Tick(Runner.DeltaTime); }
@@ -69,6 +83,7 @@ namespace Herbalist.Levels
                 {
                     nearest._riders[i] = actor;
                     nearest._lastPoints[i] = actor.transform.position;
+                    if (i == 0) { nearest._heldInput = Vector2.zero; nearest._heldDrive = Vector2.zero; nearest._drive = Vector2.zero; }
                     player.SetMovementReceiver(nearest); player.Motor.SetMovementLock(nearest, true);
                     actor.Abilities.Sap?.Cancel(); actor.Abilities.SetInputLock(nearest, true);
                     nearest.Publish(); feedback = nearest._grabText; return true;
@@ -83,16 +98,21 @@ namespace Herbalist.Levels
             Vector2 pressed = new(held.x != 0 && held.x != _heldInput.x ? held.x : 0,
                                   held.y != 0 && held.y != _heldInput.y ? held.y : 0);
             _heldInput = held;
-            if (pressed == Vector2.zero) return;
-            Vector3 world = Quaternion.Euler(0, player.View.Yaw, 0) * new Vector3(pressed.x, 0, pressed.y);
+            Quaternion facing = Quaternion.Euler(0, player.View.Yaw, 0);
+            Vector3 world = facing * new Vector3(pressed.x, 0, pressed.y);
+            Vector3 heldWorld = facing * new Vector3(held.x, 0, held.y);
             // Positive X rotation moves a hanging point toward -Z; positive Z toward +X.
             _drive += Vector2.ClampMagnitude(new Vector2(-world.z, world.x), 1);
+            _heldDrive = Vector2.ClampMagnitude(new Vector2(-heldWorld.z, heldWorld.x), 1);
         }
         public void Tick(float dt)
         {
             if (!Authority || Herbalist.GameUI.GameplayPause.IsPaused || dt <= 0) return;
             for (int i = 0; i < 2; i++) if (_riders[i] != null && !_riders[i].Available) Detach(i);
-            Vector2 impulse = _drive * (_driveAcceleration * _pumpImpulseSeconds);
+            // Keys always push in their own direction. The spring reverses the swing naturally;
+            // a well-timed opposite key then adds speed instead of cancelling the current motion.
+            Vector2 impulse = _drive * (_driveAcceleration * _pumpImpulseSeconds)
+                + _heldDrive * (_driveAcceleration * _heldForceMultiplier * dt);
             _drive = Vector2.zero;
             if (_bendActive)
             {
@@ -161,8 +181,9 @@ namespace Herbalist.Levels
                 var cc = _riders[i].GetComponent<CharacterController>();
                 Vector3 delta = to - from;
                 if (delta.sqrMagnitude <= .000001f) continue;
-                Vector3 probe = from + cc.center;
-                foreach (var hit in Physics.SphereCastAll(probe, cc.radius, delta.normalized, delta.magnitude, _obstructionMask, QueryTriggerInteraction.Ignore))
+                Vector3 probe = from + cc.transform.TransformVector(cc.center);
+                float radius = cc.radius * Mathf.Max(Mathf.Abs(cc.transform.lossyScale.x), Mathf.Abs(cc.transform.lossyScale.z));
+                foreach (var hit in Physics.SphereCastAll(probe, radius, delta.normalized, delta.magnitude, _obstructionMask, QueryTriggerInteraction.Ignore))
                     if (hit.collider.GetComponentInParent<StageActor>() == null && !hit.collider.transform.IsChildOf(transform)) return true;
             }
             return false;
@@ -180,7 +201,11 @@ namespace Herbalist.Levels
             Vector3 knot = bent ? point + Quaternion.Euler(secondary.x, 0, secondary.y) * baseRotation * (Vector3.down * lowerLength)
                                  : transform.position + baseRotation * (Vector3.down * _length);
             _knot.position = knot;
-            SetSegment(_cloth, transform.position, bent ? point : knot);
+            if (_authoredVisual != null)
+                _authoredVisual.SetPositionAndRotation(
+                    transform.position + baseRotation * (_authoredRestPosition - _authoredPivot),
+                    baseRotation * _authoredRestRotation);
+            else if (_cloth != null) SetSegment(_cloth, transform.position, bent ? point : knot);
             if (_lowerCloth == null) return;
             if (_lowerCloth.gameObject.activeSelf != bent) _lowerCloth.gameObject.SetActive(bent);
             if (bent) SetSegment(_lowerCloth, point, knot);
@@ -204,10 +229,15 @@ namespace Herbalist.Levels
             else if (!Online) player.Motor.Launch(velocity, player.Tuning.gravity, true);
             _riders[side] = null;
             if (side == 0 && _riders[1] != null) { _riders[0] = _riders[1]; _riders[1] = null; }
-            if (side == 0) { _heldInput = Vector2.zero; _drive = Vector2.zero; }
+            if (side == 0) { _heldInput = Vector2.zero; _heldDrive = Vector2.zero; _drive = Vector2.zero; }
             Publish();
         }
         private void Update() { if (!Online && Authority) Tick(Time.deltaTime); else if (Online && !HasStateAuthority) Present(Angles, BendActive, BendPoint, BendLength, BendAngles); }
-        private void OnDisable() { Cloths.Remove(this); if (Authority) { Detach(1); Detach(0); } }
+        private void OnDisable()
+        {
+            Cloths.Remove(this);
+            if (Authority) { Detach(1); Detach(0); }
+            if (_authoredVisual != null) _authoredVisual.SetPositionAndRotation(_authoredRestPosition, _authoredRestRotation);
+        }
     }
 }

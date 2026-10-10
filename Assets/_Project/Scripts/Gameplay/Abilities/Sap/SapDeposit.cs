@@ -75,6 +75,12 @@ public void SetStream(Vector3 start, bool active)
         public SapReceiver Receiver { get; private set; }
         public bool IsPlaced => State == SapState.Attached;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)] private static void ResetStatics() => all.Clear();
+        private void Awake()
+        {
+            var stage = Herbalist.Levels.StageLevel.Instance;
+            if (stage != null && stage.abilityRules != null && stage.abilityRules.sap != null)
+                settings = stage.abilityRules.sap;
+        }
         private void OnEnable() => all.Add(this);
         private void OnDisable() { all.Remove(this); Detach(); }
         public void Initialize(SapAbilitySettings config, Vector3 origin, Action<SapDeposit> release, bool network)

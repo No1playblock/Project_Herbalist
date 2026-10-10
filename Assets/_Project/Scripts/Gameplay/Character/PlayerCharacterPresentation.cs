@@ -53,11 +53,10 @@ namespace Herbalist.Player
             ApplyRole(isSodam ? characterRoot : _duyeongRoot, isSodam ? animator : _duyeongAnimator);
         }
 
-public bool TryToggleOfflineAppearance()
+        public bool SetOfflineRole(Herbalist.Presentation.CharacterRole role)
         {
             if (network || !showOffline || characterRoot == null || _duyeongRoot == null) return false;
-
-            GameObject nextRoot = _activeRoot == characterRoot ? _duyeongRoot : characterRoot;
+            GameObject nextRoot = role == Herbalist.Presentation.CharacterRole.Sodam ? characterRoot : _duyeongRoot;
             Animator nextAnimator = nextRoot == characterRoot ? animator : _duyeongAnimator;
             ApplyRole(nextRoot, nextAnimator);
             return true;

@@ -10,10 +10,15 @@ namespace Herbalist.Networking
         [SerializeField] private NetworkObject playerPrefab;
         [SerializeField] private Transform[] spawnPoints;
         [SerializeField] private GameObject offlinePlayer;
+        [SerializeField] private GameObject[] additionalOfflinePlayers;
         private void Awake()
         {
             // Preserve direct offline testing without leaving an extra player in network sessions.
-            offlinePlayer.SetActive(FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession);
+            bool offline = FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession;
+            if (offlinePlayer != null) offlinePlayer.SetActive(offline);
+            if (additionalOfflinePlayers != null)
+                foreach (var player in additionalOfflinePlayers)
+                    if (player != null) player.SetActive(offline);
         }
         public void SpawnPlayers(NetworkRunner runner)
         {

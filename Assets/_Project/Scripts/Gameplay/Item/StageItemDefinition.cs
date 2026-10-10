@@ -10,5 +10,9 @@ namespace Herbalist.StageOne
         public StageItemType type;
         public PlayerAbilityKind ability;
         public Color color = Color.green;
+        [Header("Herb identification")]
+        [TextArea] public string appearance;
+        [TextArea] public string harvestingMethod;
+        public StageDirection[] harvestingSteps;
     }
 }

@@ -5,6 +5,7 @@ using Herbalist.Abilities;
 using Herbalist.Presentation;
 namespace Herbalist.StageOne
 {
+    public enum StageMinigameKind { None, Gathering, Crafting }
     [DefaultExecutionOrder(-500)]
     public sealed class StageOneFlow : MonoBehaviour
     {
@@ -20,6 +21,20 @@ namespace Herbalist.StageOne
         public StageProgress Progress { get; private set; }
         public StageActor[] Actors { get; private set; } = new StageActor[2];
         public int InsideCount { get; private set; }
+        public StageMinigameKind Minigame { get; private set; }
+        public int MinigameItemId { get; private set; }
+        public int MinigameSteps { get; private set; }
+        public float Temperature { get; private set; }
+        public float StableTime { get; private set; }
+        public float MinigameTime { get; private set; }
+        public bool FanHeld { get; private set; }
+        public uint MinigameResultSequence { get; private set; }
+        public bool MinigameSucceeded { get; private set; }
+        public int TransferPendingSlot { get; private set; } = -1;
+        public float TransferRemaining { get; private set; }
+        private int _sourceIndex = -1;
+        private int _recipeIndex = -1;
+        private StageActor _soloGatherActor;
         private NetworkStageState adapter;
         private bool openNotified, clearNotified;
         public bool Authority => adapter != null && adapter.Object != null && adapter.Object.IsValid ? adapter.HasStateAuthority : FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession;
@@ -32,18 +47,97 @@ namespace Herbalist.StageOne
         private void Update()
         {
             RefreshActors();
+            if (Authority && Herbalist.GameUI.GameplayPause.IsPaused) FanHeld = false;
             if (Authority && !Herbalist.GameUI.GameplayPause.IsPaused)
             {
+                TickMinigame(Time.deltaTime);
+                if (TransferRemaining > 0 && (TransferRemaining -= Time.deltaTime) <= 0) TransferPendingSlot = -1;
                 bool a = IsInside(Actors[0]), b = IsInside(Actors[1]); InsideCount = (a ? 1 : 0) + (b ? 1 : 0);
                 if (GateOpen) Progress.CheckClear(a, b);
             }
+            ApplyMinigameLocks();
             Present();
+        }
+        private void ApplyMinigameLocks()
+        {
+            foreach (var actor in Actors)
+            {
+                if (actor == null) continue;
+                var player = actor.GetComponent<Herbalist.Player.PlayerController>();
+                player.Motor.SetMovementLock(this, Minigame != StageMinigameKind.None);
+                actor.Abilities?.SetInputLock(this, Minigame != StageMinigameKind.None);
+            }
+        }
+        private void TickMinigame(float dt)
+        {
+            if (Minigame == StageMinigameKind.None) return;
+            if (Actors[0] == null || Actors[1] == null)
+            {
+                if (Minigame != StageMinigameKind.Gathering || _soloGatherActor == null ||
+                    !IsSoloRoleTest(_soloGatherActor) || Actors[_soloGatherActor.Slot] != _soloGatherActor)
+                { EndMinigame(); return; }
+            }
+            if (Minigame != StageMinigameKind.Crafting) return;
+            var recipe = settings.recipes[_recipeIndex];
+            MinigameTime += dt;
+            Temperature = Mathf.Max(0, Temperature + (FanHeld ? recipe.fanHeatPerSecond : -recipe.passiveCoolingPerSecond) * dt);
+            StableTime = Temperature >= recipe.targetMin && Temperature <= recipe.targetMax ? StableTime + dt : 0;
+            if (StableTime >= recipe.holdSeconds)
+            {
+                bool crafted = Progress.Craft(settings.SlotForRole(CharacterRole.Sodam));
+                if (crafted) { Present(); adapter?.Publish(); }
+                EndMinigame(crafted);
+            }
+            else if (Temperature >= recipe.overheatTemperature || MinigameTime >= recipe.timeLimit) EndMinigame();
+        }
+        private void StartGathering(StageActor actor, int sourceIndex)
+        {
+            _sourceIndex = sourceIndex; _recipeIndex = -1;
+            _soloGatherActor = Actors[0] == null || Actors[1] == null ? actor : null;
+            MinigameItemId = settings.ItemId(sources[sourceIndex].item);
+            MinigameSteps = 0; MinigameTime = 0; Minigame = StageMinigameKind.Gathering;
+            adapter?.Publish();
+        }
+        private void StartCrafting(int recipeIndex)
+        {
+            _recipeIndex = recipeIndex; _sourceIndex = -1;
+            var recipe = settings.recipes[recipeIndex];
+            MinigameItemId = settings.ItemId(recipe.ingredient);
+            Temperature = recipe.initialTemperature; StableTime = 0; MinigameTime = 0; FanHeld = false;
+            Minigame = StageMinigameKind.Crafting;
+            adapter?.Publish();
+        }
+        private void EndMinigame(bool success = false)
+        {
+            if (Minigame != StageMinigameKind.None) { MinigameSucceeded = success; MinigameResultSequence++; }
+            Minigame = StageMinigameKind.None; MinigameItemId = 0; MinigameSteps = 0;
+            Temperature = StableTime = MinigameTime = 0; FanHeld = false;
+            _sourceIndex = _recipeIndex = -1;
+            _soloGatherActor = null;
+            ApplyMinigameLocks(); adapter?.Publish();
+        }
+        private bool TryHerbTransferPair(int slot, out int donor)
+        {
+            donor = settings.SlotForRole(CharacterRole.Duyeong);
+            int receiver = settings.SlotForRole(CharacterRole.Sodam);
+            if (slot != donor && slot != receiver) return false;
+            var held = settings.Item(Progress.Held[donor]);
+            if (held == null || held.type != StageItemType.Herb || Progress.Held[receiver] != 0 || Actors[donor] == null || Actors[receiver] == null) return false;
+            return Reach(Actors[donor], Actors[receiver].transform.position + settings.interactionOffset);
         }
         public void RefreshActors()
         {
             Actors[0] = Actors[1] = null;
             foreach (var actor in StageActor.All)
                 if (actor.Available && actor.Slot >= 0 && actor.Slot < Actors.Length) Actors[actor.Slot] = actor;
+        }
+        private static bool IsSoloRoleTest(StageActor actor) =>
+            actor != null && (FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession) &&
+            actor.GetComponent<OfflineAbilitySwitcher>() is { isActiveAndEnabled: true };
+        public CharacterRole RoleFor(StageActor actor)
+        {
+            if (actor == null) return CharacterRole.Duyeong;
+            return IsSoloRoleTest(actor) ? actor.GetComponent<OfflineAbilitySwitcher>().Role : settings.slotRoles[actor.Slot];
         }
         private bool IsInside(StageActor actor)
         {
@@ -64,17 +158,25 @@ namespace Herbalist.StageOne
         public bool TryInteractionHint(StageActor actor, out Vector3 point, out bool transfer)
         {
             point = default; transfer = false;
-            if (actor == null || Progress == null || Progress.Cleared || actor.Slot < 0 || actor.Slot > 1) return false;
+            if (actor == null || Progress == null || Progress.Cleared || Minigame != StageMinigameKind.None || actor.Slot < 0 || actor.Slot > 1) return false;
             int slot = actor.Slot;
             if (Herbalist.Levels.SoloPotionPickup.TryHint(actor, out point)) return true;
             if (Progress.Held[slot] != 0)
             {
+                if (settings.slotRoles[slot] == CharacterRole.Sodam && settings.Item(Progress.Held[slot])?.type == StageItemType.Herb &&
+                    settings.RecipeIndexForIngredient(Progress.Held[slot]) >= 0)
+                { point = actor.transform.position + settings.interactionOffset; return true; }
                 var other = Actors[1-slot];
                 if (other == null || Progress.Held[1-slot] != 0) return false;
                 point = other.transform.position + settings.interactionOffset;
                 transfer = true; return Reach(actor, point);
             }
-            if (settings.slotRoles[slot] != CharacterRole.Duyeong) return false;
+            if (TryHerbTransferPair(slot, out _) && settings.slotRoles[slot] == CharacterRole.Sodam)
+            {
+                point = Actors[settings.SlotForRole(CharacterRole.Duyeong)].transform.position + settings.interactionOffset;
+                transfer = true; return true;
+            }
+            if (RoleFor(actor) != CharacterRole.Duyeong) return false;
             float best = float.PositiveInfinity; bool found = false;
             for (int i=0;i<sources.Length;i++)
             {
@@ -85,16 +187,60 @@ namespace Herbalist.StageOne
             }
             return found;
         }
+        public bool IsCraftHint(StageActor actor) => actor != null && Progress != null && actor.Slot >= 0 && actor.Slot < 2 &&
+            settings.slotRoles[actor.Slot] == CharacterRole.Sodam && settings.Item(Progress.Held[actor.Slot])?.type == StageItemType.Herb;
         public string Execute(StageActor actor, StageCommand command)
         {
             if (Herbalist.GameUI.GameplayPause.IsPaused || !Authority || actor == null || !actor.Available || Progress.Cleared) return settings.waitingMessage;
             RefreshActors(); int slot = actor.Slot;
             if (slot < 0 || slot >= Actors.Length || Actors[slot] != actor) return settings.waitingMessage;
+            if (Minigame != StageMinigameKind.None)
+            {
+                if (Minigame == StageMinigameKind.Gathering && command >= StageCommand.Up && command <= StageCommand.Right && RoleFor(actor) == CharacterRole.Duyeong)
+                {
+                    var steps = settings.Item(MinigameItemId)?.harvestingSteps;
+                    if (steps == null || MinigameSteps >= steps.Length || (StageDirection)((int)command - (int)StageCommand.Up) != steps[MinigameSteps])
+                    { EndMinigame(); return settings.minigameFailedMessage; }
+                    MinigameSteps++;
+                    if (MinigameSteps == steps.Length)
+                    {
+                        bool gathered = Progress.Gather(slot, _sourceIndex, MinigameItemId, RoleFor(actor));
+                        EndMinigame(gathered); Present(); adapter?.Publish();
+                        return gathered ? settings.successMessage : settings.invalidItemMessage;
+                    }
+                    adapter?.Publish(); return string.Empty;
+                }
+                if (Minigame == StageMinigameKind.Crafting && settings.slotRoles[slot] == CharacterRole.Sodam)
+                {
+                    if (command == StageCommand.Craft) { FanHeld = true; adapter?.Publish(); return string.Empty; }
+                    if (command == StageCommand.FanEnd) { FanHeld = false; adapter?.Publish(); return string.Empty; }
+                }
+                return settings.waitingMessage;
+            }
             bool done = false;
             if (command == StageCommand.Interact)
             {
+                if (TryHerbTransferPair(slot, out int donor))
+                {
+                    if (TransferPendingSlot == 1 - slot && TransferRemaining > 0)
+                    {
+                        TransferPendingSlot = -1; TransferRemaining = 0;
+                        done = Progress.Give(donor, 1 - donor);
+                        if (done) { Present(); adapter?.Publish(); }
+                        return done ? settings.successMessage : settings.invalidItemMessage;
+                    }
+                    TransferPendingSlot = slot; TransferRemaining = settings.transferConfirmSeconds;
+                    adapter?.Publish(); return settings.transferRequestedMessage;
+                }
                 if (Progress.Held[slot] != 0)
                 {
+                    if (settings.slotRoles[slot] == CharacterRole.Sodam && settings.Item(Progress.Held[slot])?.type == StageItemType.Herb)
+                    {
+                        int recipeIndex = settings.RecipeIndexForIngredient(Progress.Held[slot]);
+                        if (recipeIndex < 0) return settings.invalidItemMessage;
+                        if (Actors[0] == null || Actors[1] == null) return settings.waitingMessage;
+                        StartCrafting(recipeIndex); return settings.minigameStartedMessage;
+                    }
                     int other = 1 - slot;
                     if (Actors[other] == null || !Reach(actor, Actors[other].transform.position + settings.interactionOffset)) return settings.rangeMessage;
                     if (Progress.Held[other] != 0) return settings.fullMessage;
@@ -102,7 +248,7 @@ namespace Herbalist.StageOne
                 }
                 else
                 {
-                    if (settings.slotRoles[slot] != CharacterRole.Duyeong) return settings.roleMessage;
+                    if (RoleFor(actor) != CharacterRole.Duyeong) return settings.roleMessage;
                     int best = -1; float distance = float.PositiveInfinity;
                     for (int i = 0; i < sources.Length; i++)
                     {
@@ -111,13 +257,17 @@ namespace Herbalist.StageOne
                         if (d < distance) { best = i; distance = d; }
                     }
                     if (best < 0) return settings.rangeMessage;
-                    done = Progress.Gather(slot, best, settings.ItemId(sources[best].item));
+                    if ((Actors[0] == null || Actors[1] == null) && !IsSoloRoleTest(actor)) return settings.waitingMessage;
+                    StartGathering(actor, best); return settings.minigameStartedMessage;
                 }
             }
             else if (command == StageCommand.Craft)
             {
                 if (settings.slotRoles[slot] != CharacterRole.Sodam) return settings.roleMessage;
-                done = Progress.Craft(slot);
+                int recipeIndex = settings.RecipeIndexForIngredient(Progress.Held[slot]);
+                if (recipeIndex < 0) return settings.invalidItemMessage;
+                if (Actors[0] == null || Actors[1] == null) return settings.waitingMessage;
+                StartCrafting(recipeIndex); return settings.minigameStartedMessage;
             }
             else if (command == StageCommand.Drink)
             {
@@ -127,11 +277,17 @@ namespace Herbalist.StageOne
             if (done) { Present(); if (adapter != null) adapter.Publish(); }
             return done ? settings.successMessage : settings.invalidItemMessage;
         }
-        public void SetReplica(ulong harvested, uint crafted, int held0, int held1, int consumed0, int consumed1, bool cleared, int inside)
+        public void SetReplica(ulong harvested, uint crafted, int held0, int held1, int consumed0, int consumed1, bool cleared, int inside,
+            StageMinigameKind minigame, int minigameItemId, int steps, float temperature, float stableTime, float minigameTime, bool fanHeld,
+            int transferPendingSlot, float transferRemaining, uint minigameResultSequence, bool minigameSucceeded)
         {
             if (Authority || Progress == null) return;
             Progress.Harvested = harvested; Progress.Crafted = crafted; Progress.Held[0] = held0; Progress.Held[1] = held1;
             Progress.Consumed[0] = consumed0; Progress.Consumed[1] = consumed1; Progress.Cleared = cleared; InsideCount = inside;
+            Minigame = minigame; MinigameItemId = minigameItemId; MinigameSteps = steps;
+            Temperature = temperature; StableTime = stableTime; MinigameTime = minigameTime; FanHeld = fanHeld;
+            TransferPendingSlot = transferPendingSlot; TransferRemaining = transferRemaining;
+            MinigameResultSequence = minigameResultSequence; MinigameSucceeded = minigameSucceeded;
         }
         private void Present()
         {
@@ -142,5 +298,6 @@ namespace Herbalist.StageOne
         }
         public string Objective => Progress.Cleared ? settings.clearMessage : GateOpen ? settings.enterMessage : Progress.GateOpen && entranceCondition is Herbalist.Levels.ExteriorStageFlow exterior ? exterior.Objective : (Progress.Crafted & settings.RequiredMask) == settings.RequiredMask ? settings.drinkMessage : Progress.Harvested != 0 ? settings.craftMessage : settings.gatherMessage;
         private void OnDestroy() { if (Instance == this) Instance = null; }
+        private void OnDisable() { Minigame = StageMinigameKind.None; ApplyMinigameLocks(); }
     }
 }

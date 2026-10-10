@@ -14,3 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.StageOne.StageRecipe
   ingredient: {fileID: 11400000, guid: 6a22309cf7e8e5e43b1901c2638626d9, type: 2}
   result: {fileID: 11400000, guid: 24f5ffdecd6a9da4a8fb24ed46d92da4, type: 2}
+  initialTemperature: 20
+  targetMin: 60
+  targetMax: 75
+  overheatTemperature: 90
+  holdSeconds: 4
+  timeLimit: 30
+  fanHeatPerSecond: 22
+  passiveCoolingPerSecond: 8

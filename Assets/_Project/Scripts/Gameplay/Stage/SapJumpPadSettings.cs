@@ -17,5 +17,14 @@ namespace Herbalist.Levels
         [Min(.01f)] public float jumpWindow = .3f;
         [Min(.1f)] public float jumpReach = 5;
         [Min(.1f)] public float launchHeightMultiplier = 5;
+        [Header("Water jet presentation")]
+        [Min(.01f)] public float waterStreamWidth = .44f;
+        [Range(6, 32)] public int waterStreamSegments = 22;
+        [Min(0)] public float waterStreamSway = .018f;
+        [Min(0)] public float waterSprayDropsPerMeterPerSecond = 1.8f;
+        public Vector2 waterSprayDropSize = new Vector2(.035f, .085f);
+        public Vector2 waterSpraySideSpeed = new Vector2(.45f, 1.25f);
+        [Min(0)] public float waterSprayForwardSpeed = .6f;
+        [Range(1, 12)] public int waterSprayMaxDropsPerFrame = 6;
     }
 }

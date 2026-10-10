@@ -12,6 +12,10 @@ namespace Herbalist.Editor
             var s=AssetDatabase.LoadAssetAtPath<StageOneSettings>("Assets/_Project/Data/Stages/Stage_01/SO_StageOneSettings.asset");
             Check(s.Valid(out var error),error);
             int duyeong=Array.IndexOf(s.slotRoles,CharacterRole.Duyeong), sodam=1-duyeong;
+            var solo=new StageProgress(s);
+            int soloHerb=s.ItemId(s.recipes[0].ingredient);
+            Check(!solo.Gather(duyeong,0,soloHerb,CharacterRole.Sodam),"Sodam state must not gather in solo test");
+            Check(solo.Gather(duyeong,0,soloHerb,CharacterRole.Duyeong),"Duyeong state can gather in solo test");
             for(int first=0;first<s.recipes.Length;first++)
             {
                 var p=new StageProgress(s); int second=1-first;
@@ -37,7 +41,7 @@ namespace Herbalist.Editor
                 Check(p.CheckClear(true,true)&&!p.CheckClear(true,true),"Clear exactly once");
                 Check(p.Consumed[sodam]==s.ItemId(s.recipes[first].result),"Choice independent of character");
             }
-            return "PASS: both potion assignments, role restrictions, capacity, duplicate collection/crafting, failed unlock, repeated consumption, transfer, gate prerequisites, simultaneous two-player entry and one-shot clear.";
+            return "PASS: both potion assignments, role restrictions including solo state, capacity, duplicate collection/crafting, failed unlock, repeated consumption, transfer, gate prerequisites, simultaneous two-player entry and one-shot clear.";
         }
     }
 }

@@ -12,6 +12,7 @@ namespace Herbalist.StageOne
         public Vector3 interactionOffset = new Vector3(0, 1, 0);
         public LayerMask obstructionMask = 1;
         [Range(0,31)] public int herbGlowLayer = 30;
+        [Min(0.1f)] public float transferConfirmSeconds = 5f;
         public string gatherMessage = "Find herbs. Duyeong gathers; Sodam crafts.";
         public string craftMessage = "Deliver the herbs to Sodam and craft both potions.";
         public string drinkMessage = "Drink one potion each. Abilities are not tied to characters.";
@@ -28,9 +29,18 @@ namespace Herbalist.StageOne
         public string invalidItemMessage = "Hold the required herb or potion first.";
         public string successMessage = "Done.";
         public string waitingMessage = "Waiting for both players.";
+        public string minigameStartedMessage = "Cooperative minigame started.";
+        public string minigameFailedMessage = "Attempt failed. Try again.";
+        public string transferRequestedMessage = "Ask your partner to press Interact to receive the herb.";
         public string clearedFormat = "{0} / {1} players inside";
         public int ItemId(StageItemDefinition item) => System.Array.IndexOf(items, item) + 1;
         public StageItemDefinition Item(int id) => id > 0 && id <= items.Length ? items[id - 1] : null;
+        public int SlotForRole(CharacterRole role) => System.Array.IndexOf(slotRoles, role);
+        public int RecipeIndexForIngredient(int itemId)
+        {
+            for (int i = 0; i < recipes.Length; i++) if (ItemId(recipes[i].ingredient) == itemId) return i;
+            return -1;
+        }
         public uint RequiredMask => recipes.Length == 32 ? uint.MaxValue : (1u << recipes.Length) - 1;
         public bool Valid(out string error)
         {
@@ -44,6 +54,10 @@ namespace Herbalist.StageOne
                 foreach (var r in recipes)
                     if (r == null || r.ingredient == null || r.result == null || r.ingredient.type != StageItemType.Herb || r.result.type != StageItemType.Potion || ItemId(r.ingredient) <= 0 || ItemId(r.result) <= 0 || !ingredients.Add(r.ingredient) || !outputs.Add(r.result))
                     { error = "Recipes require unique catalog herbs and potion outputs."; break; }
+                    else if (r.ingredient.harvestingSteps == null || r.ingredient.harvestingSteps.Length != 10 ||
+                        r.targetMin > r.targetMax || r.targetMax >= r.overheatTemperature || r.initialTemperature >= r.overheatTemperature ||
+                        r.holdSeconds <= 0 || r.timeLimit < r.holdSeconds)
+                    { error = "Herbs need 10 steps, and brewing thresholds must be ordered."; break; }
             }
             return error == null;
         }

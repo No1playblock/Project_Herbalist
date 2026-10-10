@@ -5,7 +5,7 @@ using Herbalist.Abilities;
 using Herbalist.Networking;
 namespace Herbalist.StageOne
 {
-    public enum StageCommand { Interact, Craft, Drink }
+    public enum StageCommand { Interact, Craft, Drink, Up, Left, Down, Right, FanEnd }
     [RequireComponent(typeof(PlayerController))]
     public sealed class StageActor : MonoBehaviour
     {
@@ -33,6 +33,16 @@ namespace Herbalist.StageOne
             if (interact == null || craft == null || drink == null) { enabled = false; return; }
             actions = new[] { interact.action.Clone(), craft.action.Clone(), drink.action.Clone() };
             for (int i = 0; i < actions.Length; i++) { int index = i; actions[i].performed += _ => Request((StageCommand)index); }
+            actions[1].canceled += _ => { if (StageOneFlow.Instance != null && StageOneFlow.Instance.Minigame == StageMinigameKind.Crafting) Request(StageCommand.FanEnd); };
+            player.Input.MovePerformed += OnMovePerformed;
+        }
+        private void OnMovePerformed(Vector2 move)
+        {
+            if (StageOneFlow.Instance == null || StageOneFlow.Instance.Minigame != StageMinigameKind.Gathering || !Local) return;
+            if (StageOneFlow.Instance.RoleFor(this) != Herbalist.Presentation.CharacterRole.Duyeong) return;
+            if (Mathf.Abs(move.x) < .5f && Mathf.Abs(move.y) < .5f) return;
+            if (Mathf.Abs(move.x) > .5f && Mathf.Abs(move.y) > .5f) return;
+            Request(Mathf.Abs(move.y) > .5f ? move.y > 0 ? StageCommand.Up : StageCommand.Down : move.x > 0 ? StageCommand.Right : StageCommand.Left);
         }
         private void Update()
         {
@@ -42,12 +52,14 @@ namespace Herbalist.StageOne
             if (flow != null && Available && Slot >= 0 && Slot < flow.settings.slotRoles.Length)
             {
                 int bit = 1 << flow.settings.herbGlowLayer;
-                Camera.cullingMask = flow.settings.slotRoles[Slot] == Herbalist.Presentation.CharacterRole.Duyeong ? originalMask | bit : originalMask & ~bit;
+                Camera.cullingMask = flow.RoleFor(this) == Herbalist.Presentation.CharacterRole.Duyeong ? originalMask | bit : originalMask & ~bit;
             }
         }
         public void Request(StageCommand command)
         {
-            if (Herbalist.GameUI.GameplayPause.IsPaused || !Local || !Herbalist.Presentation.GameplayCursor.AllowsPointerInput) return;
+            if (Herbalist.GameUI.GameplayPause.IsPaused || !Local || (command != StageCommand.FanEnd && !Herbalist.Presentation.GameplayCursor.AllowsPointerInput)) return;
+            // Space is also Jump. E starts brewing; Space only fans while the minigame is active.
+            if (command == StageCommand.Craft && StageOneFlow.Instance?.Minigame != StageMinigameKind.Crafting) return;
             if (adapter != null && adapter.Object != null && adapter.Object.IsValid) adapter.RPC_Command(command);
             else SetFeedback(ExecuteCommand(command));
         }
@@ -62,6 +74,6 @@ namespace Herbalist.StageOne
         public void SetFeedback(string text) { Feedback = text; }
         public string Binding(int index) => actions != null ? actions[index].GetBindingDisplayString() : string.Empty;
         private void OnDisable() { All.Remove(this); if (actions != null) foreach (var a in actions) a.Disable(); if (player != null && Camera != null) Camera.cullingMask = originalMask; }
-        private void OnDestroy() { if (actions != null) foreach (var a in actions) a.Dispose(); }
+        private void OnDestroy() { if (player != null && player.Input != null) player.Input.MovePerformed -= OnMovePerformed; if (actions != null) foreach (var a in actions) a.Dispose(); }
     }
 }
