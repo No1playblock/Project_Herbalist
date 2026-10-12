@@ -76,7 +76,8 @@ else
 fi
 
 release_id="$(jq -er '.id' <<<"${release_json}")"
-upload_url="$(jq -er '.upload_url | split("{")[0]' <<<"${release_json}")"
+[[ "${release_id}" =~ ^[0-9]+$ ]] || { echo "GitHub returned an invalid release ID." >&2; exit 1; }
+upload_url="https://uploads.github.com/repos/${repository}/releases/${release_id}/assets?name=${asset_name}"
 
 if ! jq -e --arg name "${asset_name}" \
     '[.assets[]? | select(.name == $name and .state == "uploaded")] | length > 0' \
@@ -84,7 +85,7 @@ if ! jq -e --arg name "${asset_name}" \
     upload_json="$(github_curl --request POST \
         --header 'Content-Type: application/zip' \
         --data-binary "@${archive}" \
-        "${upload_url}?name=${asset_name}")"
+        --url "${upload_url}")"
     jq -e '.state == "uploaded"' <<<"${upload_json}" >/dev/null
 fi
 
