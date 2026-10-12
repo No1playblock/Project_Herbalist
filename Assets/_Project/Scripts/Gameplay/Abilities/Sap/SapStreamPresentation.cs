@@ -246,7 +246,8 @@ private void UpdateBeads(Vector3 start, Vector3 end, float speed, float size, fl
             if (normal.sqrMagnitude < 0.0001f) normal = Vector3.up;
             normal.Normalize();
             bool ground = normal.y >= _groundCrownNormalThreshold;
-            _impactCrown.localScale = Vector3.Scale(_impactCrownBaseScale,
+            float effectScale = sap.Settings != null ? sap.Settings.hoseEffectScale : 1f;
+            _impactCrown.localScale = Vector3.Scale(_impactCrownBaseScale * effectScale,
                 new Vector3(1f, ground ? _groundCrownHeightScale : 1f, 1f));
             _impactCrown.SetPositionAndRotation(sap.StreamDestination - normal * (ground ? _groundCrownInset : 0f),
                 Quaternion.FromToRotation(Vector3.up, normal));
@@ -282,7 +283,8 @@ private void UpdateBeads(Vector3 start, Vector3 end, float speed, float size, fl
                 {
                     position = Vector3.Lerp(_pathPoints[index], _pathPoints[index + 1], pathPosition - index),
                     velocity = tangent * _sprayForwardSpeed + side * Random.Range(_spraySideSpeed.x, _spraySideSpeed.y),
-                    startSize = Random.Range(_sprayDropSize.x, _sprayDropSize.y)
+                    startSize = Random.Range(_sprayDropSize.x, _sprayDropSize.y) *
+                        (sap.Settings != null ? sap.Settings.hoseEffectScale : 1f)
                 };
                 _sprayDroplets.Emit(particle, 1);
             }

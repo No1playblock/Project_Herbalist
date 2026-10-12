@@ -70,7 +70,7 @@ public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySett
                     float previousTime = travelTime * (i - 1) / segments;
                     travelTime = Mathf.Lerp(previousTime, nextTime, hit.distance / step.magnitude);
                     end = hit.point;
-                    impact = hit.collider.GetComponentInParent<Herbalist.Levels.ExteriorJumpPad>() == null;
+                    impact = hit.collider.GetComponentInParent<SapInjectionPort>() == null;
                     impactNormal = hit.normal;
                     _reach = Mathf.Min(_reach, travelTime * settings.hoseLaunchSpeed);
                     if (firing) SapDeposit.ApplyHoseHit(hit, settings, deltaTime, createMark);
