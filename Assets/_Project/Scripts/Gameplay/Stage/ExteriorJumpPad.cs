@@ -86,13 +86,8 @@ namespace Herbalist.Levels
                 if (amount > 0) { _charge[i] += amount; _grace[i] = _settings.injectionGrace; }
                 else { _grace[i] -= dt; if (_grace[i] <= 0) _charge[i] = 0; }
                 if (_charge[i] < _settings.chargeUnits) continue;
-                // A single inlet launches its own leaf; paired pads retain opposite-side output.
+                // A single inlet erupts on its own side; paired pads retain opposite-side output.
                 _output = _ports.Length == 1 ? 0 : 1 - i;
-                if (_ports.Length == 1 && _sockets[_output].InstalledLeaf == null)
-                {
-                    _charge[i] = 0;
-                    break;
-                }
                 _flight = _settings.flightDuration; _cooldown = _settings.cooldown;
                 ReleaseRiders(false);
                 _riders = 0;
