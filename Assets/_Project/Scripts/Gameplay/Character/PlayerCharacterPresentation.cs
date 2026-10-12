@@ -35,6 +35,7 @@ namespace Herbalist.Player
         private int speedId, groundedId, playbackId;
         private GameObject _activeRoot;
         private Animator _activeAnimator;
+        public Animator ActiveAnimator => _activeAnimator;
 
         private void Awake()
         {
@@ -71,6 +72,8 @@ namespace Herbalist.Player
             if (_duyeongRoot != null) _duyeongRoot.SetActive(root == _duyeongRoot);
             _activeRoot = root;
             _activeAnimator = selectedAnimator;
+            if (player != null && root != null)
+                player.View.SetZoomRole(root == characterRoot ? Herbalist.Presentation.CharacterRole.Sodam : Herbalist.Presentation.CharacterRole.Duyeong);
             foreach (var renderer in prototypeRenderers)
                 if (renderer != null) renderer.enabled = root == null;
             head = null;

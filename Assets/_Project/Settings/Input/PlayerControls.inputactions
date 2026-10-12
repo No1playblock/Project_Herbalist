@@ -27,6 +27,16 @@
                     "priority": 0
                 },
                 {
+                    "name": "Zoom",
+                    "type": "Value",
+                    "id": "bc03e8b1-28ab-4a8b-a5fb-63ac13b1b4d4",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
                     "name": "Orbit",
                     "type": "Button",
                     "id": "327955f4-cb64-481d-bdb5-aac973c523f6",
@@ -121,6 +131,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Look",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "6f26628d-2340-41fc-a99c-bf58773eff8c",
+                    "path": "<Mouse>/scroll",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Zoom",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

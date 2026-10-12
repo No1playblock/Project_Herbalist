@@ -58,6 +58,7 @@ namespace Herbalist.Player
                 return;
             }
             view.ApplyLook(input.Look);
+            view.ApplyZoom(input.Zoom);
             if (networkDriven) return;
             if(_transportOwner!=null){RouteMovement(input.Move);lastJump=input.JumpSequence;motor.Teleport(_transportPosition);return;}
             Vector2 movement = Vector2.ClampMagnitude(input.Move, 1);
