@@ -12,20 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07991bc58431ce24e9b82ca096b06157, type: 3}
   m_Name: SO_Stage01ModelingPlayerTuning
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Player.PlayerTuning
-  moveSpeed: 18
+  moveSpeed: 20
   gravity: 88
   terminalSpeed: 140
   groundStickSpeed: 8
   bodyTurnSpeed: 540
   facingMode: 1
-  jumpHeight: 6
-  airAcceleration: 64
-  cameraDistance: 24
+  jumpHeight: 6.6
+  airAcceleration: 70.4
+  cameraDistance: 19.2
+  cameraZoomMinMultiplier: 0.5
+  cameraZoomMaxMultiplier: 1.5
+  cameraZoomStep: 5
   initialPitch: 30
   pitchLimits: {x: -90, y: 90}
   mouseSensitivity: 0.15
-  cameraProbeRadius: 0.8
-  cameraWallPadding: 0.4
+  cameraProbeRadius: 0.64
+  cameraWallPadding: 0.32
   cameraObstacles:
     serializedVersion: 2
     m_Bits: 1
