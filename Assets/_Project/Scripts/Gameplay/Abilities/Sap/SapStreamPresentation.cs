@@ -26,12 +26,13 @@ namespace Herbalist.Abilities
         [SerializeField, Range(1, 12)] private int _sprayMaxDropsPerFrame = 6;
         [Header("Water impact")]
         [SerializeField] private Transform _impactCrown;
+        [SerializeField] private Transform _wallCrownVisual;
+        [SerializeField] private Transform _groundCrownVisual;
         [SerializeField] private Transform _groundCrownRim;
         [SerializeField, Range(0f, 1f)] private float _groundCrownNormalThreshold = 0.7f;
         [SerializeField, Range(0.1f, 4f)] private float _groundCrownHeightScale = 2.9f;
-        [SerializeField, Range(0.5f, 2f)] private float _groundCrownWidthScale = 1.18f;
-        [SerializeField, Min(0f)] private float _groundCrownInset = 0.09f;
-        [SerializeField, Range(0f, 3f)] private float _groundCrownDeformStrength = 1.48f;
+        [SerializeField, Range(0.5f, 2f)] private float _groundCrownWidthScale = 1.32f;
+        [SerializeField, Min(0f)] private float _groundCrownInset;
         [Header("Release drips")]
         [SerializeField, Range(1, 8), Tooltip("Maximum simultaneous drops while the stream retracts.")] private int _releaseDripCount = 5;
         [SerializeField, Min(0.1f)] private float _releaseDripLifetime = 1.5f;
@@ -65,26 +66,11 @@ namespace Herbalist.Abilities
         private float _retractDripTimer;
         private float _sprayBudget;
         private Vector3 _impactCrownBaseScale;
-        private MeshRenderer _impactCrownRenderer;
-        private MaterialPropertyBlock _impactCrownPropertyBlock;
-        private float _impactCrownDefaultDeformStrength;
-        private bool? _lastCrownGround;
-        private static readonly int CrownDeformStrengthId = Shader.PropertyToID("_CrownDeformStrength");
 
 
 private void Awake()
         {
-            if (_impactCrown != null)
-            {
-                _impactCrownBaseScale = _impactCrown.localScale;
-                _impactCrownRenderer = _impactCrown.GetComponentInChildren<MeshRenderer>(true);
-                if (_impactCrownRenderer != null && _impactCrownRenderer.sharedMaterial != null &&
-                    _impactCrownRenderer.sharedMaterial.HasProperty(CrownDeformStrengthId))
-                {
-                    _impactCrownDefaultDeformStrength = _impactCrownRenderer.sharedMaterial.GetFloat(CrownDeformStrengthId);
-                    _impactCrownPropertyBlock = new MaterialPropertyBlock();
-                }
-            }
+            if (_impactCrown != null) _impactCrownBaseScale = _impactCrown.localScale;
             InitializeStream();
             InitializeBlobMotion();
             InitializeDropPool();
@@ -264,16 +250,12 @@ private void UpdateBeads(Vector3 start, Vector3 end, float speed, float size, fl
             if (normal.sqrMagnitude < 0.0001f) normal = Vector3.up;
             normal.Normalize();
             bool ground = normal.y >= _groundCrownNormalThreshold;
+            if (_wallCrownVisual != null && _wallCrownVisual.gameObject.activeSelf == ground)
+                _wallCrownVisual.gameObject.SetActive(!ground);
+            if (_groundCrownVisual != null && _groundCrownVisual.gameObject.activeSelf != ground)
+                _groundCrownVisual.gameObject.SetActive(ground);
             if (_groundCrownRim != null && _groundCrownRim.gameObject.activeSelf != ground)
                 _groundCrownRim.gameObject.SetActive(ground);
-            if (_impactCrownPropertyBlock != null && _lastCrownGround != ground)
-            {
-                _impactCrownRenderer.GetPropertyBlock(_impactCrownPropertyBlock);
-                _impactCrownPropertyBlock.SetFloat(CrownDeformStrengthId,
-                    ground ? _groundCrownDeformStrength : _impactCrownDefaultDeformStrength);
-                _impactCrownRenderer.SetPropertyBlock(_impactCrownPropertyBlock);
-                _lastCrownGround = ground;
-            }
             float effectScale = sap.Settings != null ? sap.Settings.hoseEffectScale * sap.Settings.impactCrownScale : 1f;
             _impactCrown.localScale = Vector3.Scale(_impactCrownBaseScale * effectScale,
                 new Vector3(ground ? _groundCrownWidthScale : 1f,
