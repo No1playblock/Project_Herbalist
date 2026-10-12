@@ -72,9 +72,9 @@ namespace Herbalist.Abilities
         {
             if (!authority) return;
             if (Herbalist.GameUI.GameplayPause.IsPaused) { lastCycle = cycle; lastUse = use; return; }
-            Leaf.Tick(dt);
+            Leaf.Tick(dt, aim);
             uint steps = unchecked(cycle - lastCycle); lastCycle = cycle;
-            bool fire = use != lastUse; lastUse = use;
+            lastUse = use;
             if(_cycleReceiver!=null && _cycleReceiver.ReceiveAbilityCycle(this,steps))return;
             if(_inputLocks.Count>0)return;
             var rules = Herbalist.Levels.StageLevel.Instance != null ? Herbalist.Levels.StageLevel.Instance.abilityRules : null;
@@ -84,7 +84,6 @@ namespace Herbalist.Abilities
                 else if (Unlocked)
                 {
                     if (steps != 0) Leaf.TryThrowAtTarget(aim);
-                    if (fire) Leaf.RecallOldest();
                 }
                 DisplayCount = Kind == PlayerAbilityKind.Sap && Sap != null ? Sap.ActiveCount : Leaf.ActiveCount;
                 DisplayRecovering = Leaf.Recovering;
@@ -98,7 +97,6 @@ namespace Herbalist.Abilities
             else if (Unlocked)
             {
                 if (steps != 0) Leaf.TryThrowAtTarget(aim);
-                if (fire) Leaf.RecallOldest();
             }
             DisplayCount = Kind == PlayerAbilityKind.Sap && Sap != null ? Sap.ActiveCount : Leaf.ActiveCount; DisplayRecovering = Leaf.Recovering;
         }

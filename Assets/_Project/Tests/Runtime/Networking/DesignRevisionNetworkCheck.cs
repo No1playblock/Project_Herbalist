@@ -78,7 +78,7 @@ namespace Herbalist.Tests
                 if (host)
                 {
                     await Task.Delay(2000);
-                    Check(StageOneFlow.Instance.Actors[1].Abilities.Leaf.RecallOldest(), "single leaf recall");
+                    installedLeaf.BeginReturn();
                 }
                 await Wait(() => !socket.HasLeaf, "single leaf recall replicated");
                 Debug.Log("[DesignRevisionNetworkCheck] SingleLeaf PASS " + (host ? "host" : "client"));

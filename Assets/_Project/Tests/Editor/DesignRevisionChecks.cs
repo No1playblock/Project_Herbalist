@@ -90,11 +90,30 @@ namespace Herbalist.Editor
                 player.Motor.Teleport(fourth.transform.position + new Vector3(0, .2f, -2)); Physics.SyncTransforms();
                 var ray = new Ray(fourth.transform.position + Vector3.up * 3, Vector3.down);
                 actor.Abilities.Tick(actor.Abilities.Input.CycleSequence + 1, actor.Abilities.Input.UseSequence, ray, .3f, false, true);
-                Check(leaves[0].State == LeafState.Returning && actor.Abilities.Leaf.ActiveCount == 3, "oldest recalled, slot reserved for new flight");
-                player.Motor.Teleport(fourth.transform.position + Vector3.back * 30);
-                Check(!actor.Abilities.Leaf.TryThrowAtTarget(ray) && actor.Abilities.Leaf.RangeRejected, "player-relative range rejects without consuming");
+                Check(leaves[0].State == LeafState.Returning && actor.Abilities.Leaf.ActiveCount == 3 && actor.Abilities.Leaf.Recovering,
+                    "oldest leaf returns before the fourth leaf launches");
+                var leafSettings = actor.Abilities.Leaf.Settings;
+                player.Motor.Teleport(fourth.transform.position + Vector3.back * (leafSettings.range + 10f));
+                actor.Abilities.Leaf.Tick(.3f, ray);
+                Check(Read<List<LeafProjectile>>(actor.Abilities.Leaf, "leaves").Count == 3,
+                    "queued shot does not create a fourth leaf before recovery finishes");
+                leaves[0].Tick(20f);
+                Check(!actor.Abilities.Leaf.Recovering && actor.Abilities.Leaf.ActiveCount == 3,
+                    "queued shot launches only after the first leaf reaches the player");
+                var thrownLeaf = Read<List<LeafProjectile>>(actor.Abilities.Leaf, "leaves").Last();
+                Check((Read<Vector3>(thrownLeaf, "destination") - Read<Vector3>(thrownLeaf, "start")).magnitude <= leafSettings.range + .001f,
+                    "leaf destination is capped at the configured flight distance");
+                var launchFrame = Read<Transform>(actor.Abilities.Leaf, "launchFrame");
+                Check(Vector3.Distance(Read<Vector3>(thrownLeaf, "start"), launchFrame.TransformPoint(leafSettings.launchOffset)) < .001f,
+                    "new leaf launches from the scaled body offset");
                 actor.Abilities.Tick(actor.Abilities.Input.CycleSequence + 1, actor.Abilities.Input.UseSequence + 1, ray, .1f);
-                Check(leaves[1].State == LeafState.Returning, "left click recalls oldest installed leaf without a mode");
+                Check(leaves[1].Installed, "left click does not manually recall an installed leaf");
+                actor.Abilities.Tick(actor.Abilities.Input.CycleSequence + 2, actor.Abilities.Input.UseSequence + 1, ray, .3f);
+                Check(leaves[1].State == LeafState.Returning && leaves[2].Installed && actor.Abilities.Leaf.Recovering,
+                    "the next throw automatically recalls the next leaf in throw order");
+                leaves[1].Tick(20f);
+                Check(!actor.Abilities.Leaf.Recovering && actor.Abilities.Leaf.ActiveCount == 3,
+                    "fifth leaf launches after the second leaf reaches the player");
                 actor.Abilities.Leaf.Clear(); leaves.Clear();
                 var pad = pads[0]; var socket = Read<LeafInstallTarget[]>(pad, "_sockets")[0]; var inlet = Read<SapInjectionPort[]>(pad, "_ports")[1];
                 var installed = Install(actor.Abilities.Leaf.Settings, actor.transform, socket); leaves.Add(installed);
