@@ -49,6 +49,8 @@ namespace Herbalist.Abilities
         [Min(0)] public float streamBeadSize = 0.075f;
         [Tooltip("Scale of hose spray droplets and impact crown relative to the shared water prefab.")]
         [Min(0.01f)] public float hoseEffectScale = 1f;
+        [Tooltip("Additional impact crown size multiplier; does not change spray droplets.")]
+        [Min(0.01f)] public float impactCrownScale = 1f;
         public Vector3 extractionProbeOffset = new Vector3(0, 1.3f, 0);
         [Min(0.1f)] public float extractionRange = 3;
         [Min(0.1f)] public float controlRange = 18;
