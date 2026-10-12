@@ -33,7 +33,6 @@ namespace Herbalist.StageOne
             if (interact == null || craft == null || drink == null) { enabled = false; return; }
             actions = new[] { interact.action.Clone(), craft.action.Clone(), drink.action.Clone() };
             for (int i = 0; i < actions.Length; i++) { int index = i; actions[i].performed += _ => Request((StageCommand)index); }
-            actions[1].canceled += _ => { if (StageOneFlow.Instance != null && StageOneFlow.Instance.Minigame == StageMinigameKind.Crafting) Request(StageCommand.FanEnd); };
             player.Input.MovePerformed += OnMovePerformed;
         }
         private void OnMovePerformed(Vector2 move)
@@ -57,8 +56,8 @@ namespace Herbalist.StageOne
         }
         public void Request(StageCommand command)
         {
-            if (Herbalist.GameUI.GameplayPause.IsPaused || !Local || (command != StageCommand.FanEnd && !Herbalist.Presentation.GameplayCursor.AllowsPointerInput)) return;
-            // Space is also Jump. E starts brewing; Space only fans while the minigame is active.
+            if (Herbalist.GameUI.GameplayPause.IsPaused || !Local || !Herbalist.Presentation.GameplayCursor.AllowsPointerInput) return;
+            // Space is also Jump. E starts brewing; each Space press fans while crafting.
             if (command == StageCommand.Craft && StageOneFlow.Instance?.Minigame != StageMinigameKind.Crafting) return;
             if (adapter != null && adapter.Object != null && adapter.Object.IsValid) adapter.RPC_Command(command);
             else SetFeedback(ExecuteCommand(command));

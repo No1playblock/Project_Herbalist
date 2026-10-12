@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using System.Collections.Generic;
 using Herbalist.Networking;
 using Herbalist.Abilities;
 using Herbalist.Presentation;
@@ -25,29 +26,39 @@ namespace Herbalist.StageOne
         public int MinigameItemId { get; private set; }
         public int MinigameSteps { get; private set; }
         public float Temperature { get; private set; }
-        public float StableTime { get; private set; }
+        public float CraftingGauge { get; private set; }
         public float MinigameTime { get; private set; }
-        public bool FanHeld { get; private set; }
+        public int FanPressCount { get; private set; }
         public uint MinigameResultSequence { get; private set; }
         public bool MinigameSucceeded { get; private set; }
         public int TransferPendingSlot { get; private set; } = -1;
         public float TransferRemaining { get; private set; }
         private int _sourceIndex = -1;
         private int _recipeIndex = -1;
+        private readonly Queue<float> _fanPressTimes = new();
         private StageActor _soloGatherActor;
         private NetworkStageState adapter;
         private bool openNotified, clearNotified;
         public bool Authority => adapter != null && adapter.Object != null && adapter.Object.IsValid ? adapter.HasStateAuthority : FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)] private static void ResetStatics() { Instance = null; }
-        private void Awake()
+        private bool EnsureInitialized()
         {
-            if (settings == null || !settings.Valid(out _) || sources == null || sources.Length > 64 || interior == null) { Debug.LogError("Stage One configuration is incomplete.", this); enabled = false; return; }
+            if (Progress != null) return true;
+            string error = null;
+            if (settings == null || !settings.Valid(out error) || sources == null || sources.Length > 64 || interior == null)
+            {
+                Debug.LogError("Stage One configuration is incomplete. " + error, this);
+                enabled = false;
+                return false;
+            }
             Instance = this; Progress = new StageProgress(settings); adapter = GetComponent<NetworkStageState>();
+            return true;
         }
+        private void Awake() => EnsureInitialized();
         private void Update()
         {
+            if (!EnsureInitialized()) return;
             RefreshActors();
-            if (Authority && Herbalist.GameUI.GameplayPause.IsPaused) FanHeld = false;
             if (Authority && !Herbalist.GameUI.GameplayPause.IsPaused)
             {
                 TickMinigame(Time.deltaTime);
@@ -80,15 +91,24 @@ namespace Herbalist.StageOne
             if (Minigame != StageMinigameKind.Crafting) return;
             var recipe = settings.recipes[_recipeIndex];
             MinigameTime += dt;
-            Temperature = Mathf.Max(0, Temperature + (FanHeld ? recipe.fanHeatPerSecond : -recipe.passiveCoolingPerSecond) * dt);
-            StableTime = Temperature >= recipe.targetMin && Temperature <= recipe.targetMax ? StableTime + dt : 0;
-            if (StableTime >= recipe.holdSeconds)
+            TrimFanPresses();
+            float temperature = Temperature, gauge = CraftingGauge;
+            StageBrewingRules.Advance(settings, recipe, FanPressCount, dt, ref temperature, ref gauge);
+            Temperature = temperature; CraftingGauge = gauge;
+            if (Temperature >= settings.maximumTemperature) EndMinigame();
+            else if (CraftingGauge >= 100f)
             {
                 bool crafted = Progress.Craft(settings.SlotForRole(CharacterRole.Sodam));
                 if (crafted) { Present(); adapter?.Publish(); }
                 EndMinigame(crafted);
             }
-            else if (Temperature >= recipe.overheatTemperature || MinigameTime >= recipe.timeLimit) EndMinigame();
+            else if (MinigameTime >= recipe.timeLimit) EndMinigame();
+        }
+        private void TrimFanPresses()
+        {
+            while (_fanPressTimes.Count > 0 && MinigameTime - _fanPressTimes.Peek() >= settings.fanCountWindowSeconds)
+                _fanPressTimes.Dequeue();
+            FanPressCount = _fanPressTimes.Count;
         }
         private void StartGathering(StageActor actor, int sourceIndex)
         {
@@ -103,7 +123,8 @@ namespace Herbalist.StageOne
             _recipeIndex = recipeIndex; _sourceIndex = -1;
             var recipe = settings.recipes[recipeIndex];
             MinigameItemId = settings.ItemId(recipe.ingredient);
-            Temperature = recipe.initialTemperature; StableTime = 0; MinigameTime = 0; FanHeld = false;
+            Temperature = recipe.initialTemperature; CraftingGauge = 0; MinigameTime = 0;
+            _fanPressTimes.Clear(); FanPressCount = 0;
             Minigame = StageMinigameKind.Crafting;
             adapter?.Publish();
         }
@@ -111,7 +132,8 @@ namespace Herbalist.StageOne
         {
             if (Minigame != StageMinigameKind.None) { MinigameSucceeded = success; MinigameResultSequence++; }
             Minigame = StageMinigameKind.None; MinigameItemId = 0; MinigameSteps = 0;
-            Temperature = StableTime = MinigameTime = 0; FanHeld = false;
+            Temperature = CraftingGauge = MinigameTime = 0;
+            _fanPressTimes.Clear(); FanPressCount = 0;
             _sourceIndex = _recipeIndex = -1;
             _soloGatherActor = null;
             ApplyMinigameLocks(); adapter?.Publish();
@@ -212,8 +234,11 @@ namespace Herbalist.StageOne
                 }
                 if (Minigame == StageMinigameKind.Crafting && settings.slotRoles[slot] == CharacterRole.Sodam)
                 {
-                    if (command == StageCommand.Craft) { FanHeld = true; adapter?.Publish(); return string.Empty; }
-                    if (command == StageCommand.FanEnd) { FanHeld = false; adapter?.Publish(); return string.Empty; }
+                    if (command == StageCommand.Craft)
+                    {
+                        TrimFanPresses(); _fanPressTimes.Enqueue(MinigameTime); FanPressCount = _fanPressTimes.Count;
+                        adapter?.Publish(); return string.Empty;
+                    }
                 }
                 return settings.waitingMessage;
             }
@@ -278,14 +303,14 @@ namespace Herbalist.StageOne
             return done ? settings.successMessage : settings.invalidItemMessage;
         }
         public void SetReplica(ulong harvested, uint crafted, int held0, int held1, int consumed0, int consumed1, bool cleared, int inside,
-            StageMinigameKind minigame, int minigameItemId, int steps, float temperature, float stableTime, float minigameTime, bool fanHeld,
+            StageMinigameKind minigame, int minigameItemId, int steps, float temperature, float craftingGauge, float minigameTime, int fanPressCount,
             int transferPendingSlot, float transferRemaining, uint minigameResultSequence, bool minigameSucceeded)
         {
             if (Authority || Progress == null) return;
             Progress.Harvested = harvested; Progress.Crafted = crafted; Progress.Held[0] = held0; Progress.Held[1] = held1;
             Progress.Consumed[0] = consumed0; Progress.Consumed[1] = consumed1; Progress.Cleared = cleared; InsideCount = inside;
             Minigame = minigame; MinigameItemId = minigameItemId; MinigameSteps = steps;
-            Temperature = temperature; StableTime = stableTime; MinigameTime = minigameTime; FanHeld = fanHeld;
+            Temperature = temperature; CraftingGauge = craftingGauge; MinigameTime = minigameTime; FanPressCount = fanPressCount;
             TransferPendingSlot = transferPendingSlot; TransferRemaining = transferRemaining;
             MinigameResultSequence = minigameResultSequence; MinigameSucceeded = minigameSucceeded;
         }

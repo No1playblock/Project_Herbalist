@@ -69,11 +69,6 @@ namespace Herbalist.Abilities
             if (_controlled == null || Herbalist.GameUI.GameplayPause.IsPaused || !GameplayCursor.AllowsPointerInput)
                 return false;
 
-            // Releasing Sodam's input while fanning must also release the authoritative fan state.
-            if (_controlled == _sodam && StageOneFlow.Instance != null &&
-                StageOneFlow.Instance.Minigame == StageMinigameKind.Crafting)
-                _sodamActor.Request(StageCommand.FanEnd);
-
             _controlled = _controlled == _duyeong ? _sodam : _duyeong;
             ApplyControl();
             return true;

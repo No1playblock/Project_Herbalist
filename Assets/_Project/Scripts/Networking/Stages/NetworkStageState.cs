@@ -17,9 +17,9 @@ namespace Herbalist.StageOne
         [Networked] private int MinigameItemId { get; set; }
         [Networked] private int MinigameSteps { get; set; }
         [Networked] private float Temperature { get; set; }
-        [Networked] private float StableTime { get; set; }
+        [Networked] private float CraftingGauge { get; set; }
         [Networked] private float MinigameTime { get; set; }
-        [Networked] private NetworkBool FanHeld { get; set; }
+        [Networked] private int FanPressCount { get; set; }
         [Networked] private int TransferPendingSlot { get; set; }
         [Networked] private float TransferRemaining { get; set; }
         [Networked] private uint MinigameResultSequence { get; set; }
@@ -34,13 +34,13 @@ namespace Herbalist.StageOne
             Harvested = p.Harvested; Crafted = p.Crafted; Held0 = p.Held[0]; Held1 = p.Held[1];
             Consumed0 = p.Consumed[0]; Consumed1 = p.Consumed[1]; Cleared = p.Cleared; Inside = flow.InsideCount;
             Minigame = flow.Minigame; MinigameItemId = flow.MinigameItemId; MinigameSteps = flow.MinigameSteps;
-            Temperature = flow.Temperature; StableTime = flow.StableTime; MinigameTime = flow.MinigameTime; FanHeld = flow.FanHeld;
+            Temperature = flow.Temperature; CraftingGauge = flow.CraftingGauge; MinigameTime = flow.MinigameTime; FanPressCount = flow.FanPressCount;
             TransferPendingSlot = flow.TransferPendingSlot; TransferRemaining = flow.TransferRemaining;
             MinigameResultSequence = flow.MinigameResultSequence; MinigameSucceeded = flow.MinigameSucceeded;
         }
         public override void FixedUpdateNetwork() { Publish(); }
         public override void Render() { if (!HasStateAuthority) flow.SetReplica(Harvested, Crafted, Held0, Held1, Consumed0, Consumed1, Cleared, Inside,
-            Minigame, MinigameItemId, MinigameSteps, Temperature, StableTime, MinigameTime, FanHeld, TransferPendingSlot, TransferRemaining,
+            Minigame, MinigameItemId, MinigameSteps, Temperature, CraftingGauge, MinigameTime, FanPressCount, TransferPendingSlot, TransferRemaining,
             MinigameResultSequence, MinigameSucceeded); }
     }
 }
