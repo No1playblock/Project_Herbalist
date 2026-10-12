@@ -8,15 +8,18 @@ repository="No1playblock/Project_Herbalist"
 api="https://api.github.com/repos/${repository}"
 
 : "${GITHUB_RELEASE_TOKEN:?Set GITHUB_RELEASE_TOKEN in the UBA build target environment variables.}"
-: "${BUILD_NUMBER:?UBA did not provide BUILD_NUMBER.}"
-: "${GIT_COMMIT:?UBA did not provide GIT_COMMIT.}"
-: "${GIT_BRANCH:?UBA did not provide GIT_BRANCH.}"
+build_number="${UCB_BUILD_NUMBER:-${BUILD_NUMBER:-}}"
+commit="${BUILD_REVISION:-${GIT_COMMIT:-}}"
+branch="${SCM_BRANCH:-${GIT_BRANCH:-}}"
+: "${build_number:?UBA did not provide a build number.}"
+: "${commit:?UBA did not provide the source revision.}"
+: "${branch:?UBA did not provide the source branch.}"
 : "${UNITY_PLAYER_PATH:?UBA did not provide UNITY_PLAYER_PATH.}"
 
 echo "::mask-value::${GITHUB_RELEASE_TOKEN}"
 
-if [[ "${GIT_BRANCH#refs/heads/}" != "develop" ]]; then
-    echo "Skipping GitHub Release for branch ${GIT_BRANCH}."
+if [[ "${branch#refs/heads/}" != "develop" ]]; then
+    echo "Skipping GitHub Release for branch ${branch}."
     exit 0
 fi
 
@@ -44,7 +47,7 @@ github_curl() {
             --header 'X-GitHub-Api-Version: 2022-11-28' "$@"
 }
 
-tag="uba-develop-${BUILD_NUMBER}-${GIT_COMMIT:0:8}"
+tag="uba-develop-${build_number}-${commit:0:8}"
 asset_name="Project_Herbalist-Windows-${tag}.zip"
 temp_dir="$(mktemp -d)"
 trap 'rm -rf -- "${temp_dir}"' EXIT
@@ -65,8 +68,8 @@ if release_json="$(github_curl "${release_url}" 2>/dev/null)"; then
 else
     payload="$(jq -n \
         --arg tag "${tag}" \
-        --arg commit "${GIT_COMMIT}" \
-        --arg number "${BUILD_NUMBER}" \
+        --arg commit "${commit}" \
+        --arg number "${build_number}" \
         '{tag_name:$tag,target_commitish:$commit,name:("Windows build " + $number),body:("Unity Build Automation Windows build\nCommit: " + $commit),draft:true,prerelease:true,generate_release_notes:false}')"
     release_json="$(github_curl --request POST --header 'Content-Type: application/json' \
         --data "${payload}" "${api}/releases")"
