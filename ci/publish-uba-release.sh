@@ -76,6 +76,8 @@ else
 fi
 
 release_id="$(jq -er '.id' <<<"${release_json}")"
+# Windows jq may emit CRLF; command substitution removes LF but retains CR.
+release_id="${release_id//$'\r'/}"
 [[ "${release_id}" =~ ^[0-9]+$ ]] || { echo "GitHub returned an invalid release ID." >&2; exit 1; }
 upload_url="https://uploads.github.com/repos/${repository}/releases/${release_id}/assets?name=${asset_name}"
 
