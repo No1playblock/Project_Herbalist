@@ -13,7 +13,7 @@ Use the `Project_Herbalist` Unity Cloud project in the `playblock` organization 
 5. Add a build-target environment variable named `GITHUB_RELEASE_TOKEN` containing that token, or a separate repository-scoped token with **Contents: Read and write**. Create and enter tokens directly in GitHub and Unity Cloud; never commit them or paste them into build logs.
 6. Save the target configuration and push this CI change to `develop`. The first successful build should create a prerelease with a tag like `uba-develop-123-abcdef12` and a `Project_Herbalist-Windows-*.zip` asset. Unzip it before running the `.exe` so its `_Data` directory and DLLs remain alongside the executable.
 
-The post-build script requires UBA's Windows builder, `UNITY_PLAYER_PATH`, `BUILD_NUMBER`, `GIT_BRANCH`, `GIT_COMMIT`, and the installed Cygwin `jq` and 7-Zip tools. Unity documents these tools as present on its Windows builders. It publishes only from `develop`. A GitHub Release asset must be under 2 GiB; if the ZIP reaches that limit, split the upload or choose another artifact store.
+The post-build script requires UBA's Windows builder, `UNITY_PLAYER_PATH`, `UCB_BUILD_NUMBER`, `SCM_BRANCH`, `BUILD_REVISION`, and the installed Cygwin `jq` and 7-Zip tools. Unity documents these tools as present on its Windows builders. It publishes only from `develop`. A GitHub Release asset must be under 2 GiB; if the ZIP reaches that limit, split the upload or choose another artifact store.
 
 ## Verification
 
