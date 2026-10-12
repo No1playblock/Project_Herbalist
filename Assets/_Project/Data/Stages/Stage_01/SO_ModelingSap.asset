@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5162bc0dab85d9f4c87c218732a99e96, type: 3}
+  m_Name: SO_ModelingSap
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapAbilitySettings
+  offlinePrefab: {fileID: 2631380105216188163, guid: 199e67f748b08fb45b4ad00b8c86caac, type: 3}
+  hoseHoverOffset: {x: 1.76, y: 3.68, z: 0.48}
+  hoseExtendSpeed: 128
+  hoseRetractSpeed: 144
+  hoseLaunchSpeed: 64
+  hoseGravity: 48
+  hoseMaxFlightTime: 3.5
+  hoseCollisionStep: 0.04
+  hoseGrowthPerSecond: 0
+  hoseMaxScale: 2.4
+  hoseMergeNormalDot: 0.85
+  hoseMarkLifetime: 5
+  hoseMarkSpacing: 0.8
+  surfaceMarkSize: {x: 1.8, y: 1.8}
+  surfaceMarkDepth: 0.36
+  surfaceMarkDrawDistance: 50
+  surfaceMarkOpacity: 1
+  surfaceVolumeFootprintRatio: 0.72
+  surfaceVolumeThickness: 0.072
+  extractionSpeed: 4
+  arrivalTolerance: 0.03
+  streamWidth: 0.036
+  streamFlowSpeed: 2
+  streamBeadSize: 0.24
+  hoseEffectScale: 0.8
+  impactCrownScale: 1.6
+  extractionProbeOffset: {x: 0, y: 1.04, z: 0}
+  extractionRange: 3
+  controlRange: 80
+  radius: 0.704
+  surfaceOffset: 0.02
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: 1
+  attachedScale: {x: 0.68, y: 0.68, z: 0.096}
+  controlledScale: {x: 1.408, y: 1.408, z: 1.408}

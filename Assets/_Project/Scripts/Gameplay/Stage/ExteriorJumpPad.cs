@@ -22,25 +22,23 @@ namespace Herbalist.Levels
         private readonly float[] _charge = new float[2];
         private readonly float[] _grace = new float[2];
         private readonly Vector3[] _rest = new Vector3[2];
-        private readonly Vector3[] _jetBottoms = new Vector3[2];
-        private readonly Vector3[] _jetScales = new Vector3[2];
-        private readonly float[] _jetHeights = new float[2];
+        private readonly Vector3[] _jetOrigins = new Vector3[2];
+        private readonly MushroomWaterJetPresentation[] _waterJets = new MushroomWaterJetPresentation[2];
         private float _flight, _cooldown;
         private int _output;
         private uint _riders;
         private readonly StageActor[] _carriedActors = new StageActor[2];
-        private readonly Vector3[] _riderOffsets = new Vector3[2];
         private bool Online => Object != null && Object.IsValid;
         public bool Authority => Online ? HasStateAuthority : FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession;
         public float ChargeFraction => Mathf.Max(Online ? Charge0 : _charge[0], Online ? Charge1 : _charge[1]) / _settings.chargeUnits;
         private void Awake()
         {
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < _leafCenters.Length; i++)
             {
                 _rest[i] = _leafCenters[i].localPosition;
-                _jetScales[i] = _jets[i].transform.localScale;
-                _jetHeights[i] = _jets[i].GetComponent<Renderer>().bounds.size.y;
-                _jetBottoms[i] = _jets[i].transform.parent.InverseTransformPoint(_jets[i].transform.position - Vector3.up * _jetHeights[i] * .5f);
+                _jetOrigins[i] = _jets[i].transform.position;
+                _waterJets[i] = _jets[i].GetComponent<MushroomWaterJetPresentation>();
+                if (_waterJets[i] != null) _waterJets[i].Initialize(_settings);
             }
         }
         private void OnDisable() { if (Authority) ReleaseRiders(false); }
@@ -54,39 +52,43 @@ namespace Herbalist.Levels
         private Vector3 LaunchPoint(int side) => _leafCenters[side].parent.TransformPoint(_rest[side]);
         private float Rise(float flight)
         {
-            float elapsed = _settings.flightDuration - flight;
-            float fraction = elapsed <= AscentDuration ? elapsed / AscentDuration : 1 - Mathf.Clamp01((elapsed - AscentDuration) / (_settings.flightDuration - AscentDuration));
-            return Mathf.Max(0, _settings.presentationRise * fraction);
+            float elapsed = Mathf.Clamp(_settings.flightDuration - flight, 0, _settings.flightDuration);
+            float ascent = AscentDuration;
+            if (elapsed <= ascent)
+            {
+                float progress = elapsed / ascent;
+                return _settings.presentationRise * progress * (2f - progress);
+            }
+            float descent = Mathf.Clamp01((elapsed - ascent) / (_settings.flightDuration - ascent));
+            return _settings.presentationRise * (1f - descent * descent);
         }
         private void Present(float flight, int output)
         {
             float rise = Rise(flight);
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < _leafCenters.Length; i++)
             {
                 bool erupting = flight > 0 && i == output;
                 _leafCenters[i].position = LaunchPoint(i) + (erupting ? Vector3.up * rise : Vector3.zero);
-                if (erupting)
-                {
-                    _jets[i].transform.position = _jets[i].transform.parent.TransformPoint(_jetBottoms[i]) + Vector3.up * rise * .5f;
-                    var scale = _jetScales[i];
-                    scale.y *= rise / Mathf.Max(_jetHeights[i], Mathf.Epsilon);
-                    _jets[i].transform.localScale = scale;
-                }
                 _jets[i].SetActive(erupting);
+                if (erupting && _waterJets[i] != null)
+                    _waterJets[i].Present(_jetOrigins[i], _leafCenters[i].position);
             }
         }
         public void Tick(float dt)
         {
             if (!Authority || Herbalist.GameUI.GameplayPause.IsPaused) return;
+            float previousFlight = _flight;
             _flight = Mathf.Max(0, _flight - dt); _cooldown = Mathf.Max(0, _cooldown - dt);
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < _ports.Length; i++)
             {
                 float amount = _ports[i].Consume();
                 if (_cooldown > 0) { _charge[i] = 0; continue; }
                 if (amount > 0) { _charge[i] += amount; _grace[i] = _settings.injectionGrace; }
                 else { _grace[i] -= dt; if (_grace[i] <= 0) _charge[i] = 0; }
                 if (_charge[i] < _settings.chargeUnits) continue;
-                _output = 1 - i; _flight = _settings.flightDuration; _cooldown = _settings.cooldown;
+                // A single inlet erupts on its own side; paired pads retain opposite-side output.
+                _output = _ports.Length == 1 ? 0 : 1 - i;
+                _flight = _settings.flightDuration; _cooldown = _settings.cooldown;
                 ReleaseRiders(false);
                 _riders = 0;
                 var leaf = _sockets[_output].InstalledLeaf;
@@ -96,31 +98,28 @@ namespace Herbalist.Levels
                         {
                             _riders |= 1u << actor.Slot;
                             _carriedActors[actor.Slot] = actor;
-                            _riderOffsets[actor.Slot] = actor.transform.position - LaunchPoint(_output);
                             actor.Abilities.Sap?.Cancel();
                             actor.Abilities.SetInputLock(this, true);
                         }
                 _charge[0] = _charge[1] = 0;
                 break;
             }
-            Present(_flight, _output);
             bool atTop = _settings.flightDuration - _flight >= AscentDuration;
-            CarryRiders(atTop ? _settings.presentationRise : Rise(_flight));
-            if (atTop) ReleaseRiders(true);
+            float previousRise = previousFlight > 0 ? Rise(previousFlight) : 0;
+            CarryRiders(Mathf.Max(0, Rise(_flight) - previousRise) / Mathf.Max(dt, Mathf.Epsilon));
+            if (atTop && _settings.flightDuration - previousFlight >= AscentDuration) ReleaseRiders(true);
             if (Online) { Charge0 = _charge[0]; Charge1 = _charge[1]; Flight = _flight; Output = _output; Riders = _riders; }
         }
-        private void CarryRiders(float rise)
+        private void CarryRiders(float liftSpeed)
         {
             for (int slot = 0; slot < _carriedActors.Length; slot++)
             {
                 var actor = _carriedActors[slot];
                 if (actor == null || !actor.Available) continue;
-                Vector3 point = LaunchPoint(_output) + Vector3.up * rise + _riderOffsets[slot];
                 var player = actor.GetComponent<PlayerController>();
-                player.Motor.SetMovementLock(this, true);
                 var net = actor.GetComponent<NetworkPlayer>();
-                if (net != null && net.Object != null && net.Object.IsValid) net.SetTransportAuthoritatively(true, point);
-                else { player.SetTransport(this, point); player.Motor.Teleport(point); }
+                if (net != null && net.Object != null && net.Object.IsValid) net.SetLiftAuthoritatively(liftSpeed);
+                else player.Motor.SetLiftSpeed(liftSpeed);
             }
         }
         private void ReleaseRiders(bool falling)
@@ -130,13 +129,12 @@ namespace Herbalist.Levels
                 var actor = _carriedActors[slot];
                 if (actor == null) continue;
                 var player = actor.GetComponent<PlayerController>();
-                player.ClearTransport(this);
-                player.Motor.SetMovementLock(this, false);
+                player.Motor.SetLiftSpeed(0);
                 actor.Abilities.SetInputLock(this, false);
                 var net = actor.GetComponent<NetworkPlayer>();
                 if (net != null && net.Object != null && net.Object.IsValid && net.HasStateAuthority)
                 {
-                    net.SetTransportAuthoritatively(false, actor.transform.position);
+                    net.SetLiftAuthoritatively(0);
                     if (falling) net.LaunchAuthoritatively(Vector3.zero, player.Tuning.gravity, true);
                 }
                 else if (!Online && falling) player.Motor.Launch(Vector3.zero, player.Tuning.gravity, true);

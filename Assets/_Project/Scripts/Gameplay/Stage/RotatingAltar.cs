@@ -13,7 +13,7 @@ namespace Herbalist.Levels
         [SerializeField, Min(.01f)] private float _stairDuration = 3;
         [SerializeField] private GameObject _solvedGlow;
         [SerializeField] private string _startText = "제단 상단에 R로 수액을 주입해 석판을 회전시키세요.";
-        [SerializeField] private string _rotateText = "동·서·남·북과 사신 문양을 맞추세요 · R: 나뭇잎으로 정지 · 좌클릭: 회수하여 다시 회전";
+        [SerializeField] private string _rotateText = "동·서·남·북과 사신 문양을 맞추세요 · R: 나뭇잎 설치 · 4번째 R: 오래된 잎 자동 회수";
         [SerializeField] private string _exitText = "문양이 맞춰졌습니다 · 변형된 계단을 올라 두 명 모두 탈출하세요.";
         [Networked] private int Phase { get; set; }
         [Networked] private float Progress { get; set; }

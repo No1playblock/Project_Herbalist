@@ -27,6 +27,14 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   herbGlowLayer: 30
+  transferConfirmSeconds: 5
+  fanCountWindowSeconds: 1
+  lowFireMaxPresses: 1
+  mediumFireMaxPresses: 3
+  temperatureChangePerSecond: 6
+  gaugeGainPerSecond: 8
+  gaugeLossPerSecond: 12
+  maximumTemperature: 100
   gatherMessage: "\uB450\uC601\uC740 \uC57D\uCD08\uB97C \uCC3E\uACE0, \uC18C\uB2F4\uC740 \uC57D\uC81C\uB97C \uB9CC\uB4ED\uB2C8\uB2E4"
   craftMessage: "\uC57D\uCD08\uB97C \uC18C\uB2F4\uC5D0\uAC8C \uC804\uB2EC\uD574 \uB450 \uC57D\uC81C\uB97C \uC644\uC131\uD558\uC138\uC694"
   drinkMessage: "\uAC01\uC790 \uD558\uB098\uC758 \uC57D\uC81C\uB97C \uBCF5\uC6A9\uD558\uC138\uC694"
@@ -43,4 +51,7 @@ MonoBehaviour:
   invalidItemMessage: "\uD544\uC694\uD55C \uC57D\uCD08\uB098 \uC57D\uC81C\uB97C \uBA3C\uC800 \uB4E4\uC5B4 \uC8FC\uC138\uC694"
   successMessage: "\uC644\uB8CC\uD588\uC2B5\uB2C8\uB2E4"
   waitingMessage: "\uB450 \uD50C\uB808\uC774\uC5B4\uB97C \uAE30\uB2E4\uB9AC\uACE0 \uC788\uC2B5\uB2C8\uB2E4"
+  minigameStartedMessage: "\uD611\uB3D9 \uBBF8\uB2C8\uAC8C\uC784\uC744 \uC2DC\uC791\uD569\uB2C8\uB2E4"
+  minigameFailedMessage: "\uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD558\uC138\uC694"
+  transferRequestedMessage: "\uB3D9\uB8CC\uC5D0\uAC8C E\uB97C \uB20C\uB7EC \uC57D\uCD08\uB97C \uBC1B\uC544 \uB2EC\uB77C\uACE0 \uD558\uC138\uC694"
   clearedFormat: '{0} / {1} players inside'

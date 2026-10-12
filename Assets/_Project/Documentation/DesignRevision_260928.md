@@ -14,7 +14,7 @@
 
 ## 구현 및 실행
 
-- 로비 시작: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_Exterior_260928.unity`
+- 현재 로비 시작 맵: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference.unity` (기존 외부 스테이지 구현은 `Stage_01_Exterior_260928.unity`에 유지)
 - 미로: `Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Mazes.unity`
 - 제단: `Assets/_Project/Scenes/Stages/Stage_03/Stage_03_Altar.unity`
 - 새 설정: `Assets/_Project/Data/Stages/Revision_260928/SO_StageAbilityRules.asset`. 나뭇잎/수액/UGUI 설정은 기존 에셋의 복사본을 사용한다.
@@ -26,7 +26,7 @@ R을 누르면 단일 나뭇잎을 던진다. 벽에서는 긴 축의 끝을 얕
 
 외부는 PDF 20~23쪽의 한 나무를 여러 방향에서 본 도면을 기준으로 다시 배치했다. 노란 점프대 가지 4개, 주황 일반 가지 3개, 파란 천 3개와 초록 나뭇잎 다리 구간 4개가 있다. 파란색은 사용자의 색상 설명을 따른다. 기존 네 방향 반복 경로를 제거했다. 초록 구간에는 나뭇잎을 붙일 수 있는 수직 벽만 있으며 고정 다리 바닥이나 사전 설치 나뭇잎은 없다. 플레이어가 설치와 회수를 반복해 올라간다. 두 약초는 나무의 서로 다른 쪽에 있으며 시작점, 솔로 물약과 멀티 스폰도 새 경로에 맞췄다.
 
-점프대는 반대 구멍으로 3초 주입 후 분출하며, 나뭇잎 위에 서 있던 플레이어를 자동으로 함께 운반한다. 최고점에서는 운반/입력 잠금을 풀고 위쪽 발사 속도 없이 일반 중력 낙하로 전환한다. 낙하 중 WASD로 착지 방향을 결정한다. Space는 일반 점프만 담당한다. 반대 구멍에 나뭇잎이 없어도 분출한다. 상승 칼럼 위의 나무/최상층 바닥/입구 지붕이 겹치지 않도록 가지와 상단 입구를 배치했다.
+점프대는 반대 구멍으로 3초 주입 후 분출하며, 나뭇잎 위에 서 있던 플레이어에게 분수대의 상승 속도를 더한다. 상승 중에도 WASD로 이동할 수 있다. 최고점에서는 상승력을 없애고 위쪽 발사 속도 없이 일반 중력 낙하로 전환한다. 낙하 중에도 WASD로 착지 방향을 결정한다. Space는 일반 점프만 담당한다. 반대 구멍에 나뭇잎이 없어도 분출한다. 상승 칼럼 위의 나무/최상층 바닥/입구 지붕이 겹치지 않도록 가지와 상단 입구를 배치했다.
 
 도면에는 미터 단위 치수가 없으므로 현재 Sacred_Tree 크기에 맞춘 블록아웃이다. 가지 높이는 6/8/16/21/25/30/35m이며 천 매듭은 8/21/31m다. 높이 순서와 연결 방식은 도면을 따르고, 각도와 간격은 실제 나무 충돌 및 도달 거리에 맞춰 조정했다. 설정은 `SO_ExteriorLayout_260928.asset`의 branches/cloths/leafBridges/spawnOffsets/herbOffsets에서 바꾼 뒤 `Herbalist/Stages/Apply PDF Exterior Pages 20-23` 메뉴로 현재 외부 씬에 반영한다. 메뉴는 Edit 모드에서만 동작하고 런타임 UI를 만들지 않는다. 최초값은 에디터 빌더에서 생성하고 이후 저장된 설정 에셋을 사용한다. 전체 등반 난이도는 두 명의 실제 플레이로 추가 조정해야 한다.
 
@@ -43,8 +43,8 @@ R을 누르면 단일 나뭇잎을 던진다. 벽에서는 긴 축의 끝을 얕
 20~23쪽 재배치 검증: 씬의 참조/고유 나뭇잎 ID/사전 배치 UGUI와 외부 기믹 검사를 통과했다. 모든 점프대 두 구멍 위 15.5m 운반 경로를 플레이어 크기의 SphereCast로 검사해 막는 비트리거 콜라이더가 없음을 확인했다. CharacterController 시뮬레이션으로 첫 점프대→두 번째 가지 착지, 두 번째/세 번째 점프대→중간/상단 매듭의 E 범위 진입을 확인했다. 중간 천을 흔들고 놓아 일반 가지에 착지했으며 상단 천도 다음 가지의 접근 범위에 도달한다. 상단 천에서 놓았을 때는 원본 Sacred_Tree의 가지 표면에도 착지한다. 천의 카메라 기준 WASD 흔들기 방향이 반대였던 문제를 수정했고, 재발 검사를 추가했다. 이 검증은 두 명이 시작부터 정상까지 전체 경로를 직접 플레이한 결과는 아니다. 새 배치는 기존 개발 빌드에 아직 포함되지 않았다.
 
 - `ExteriorJumpPad`: 두 포트/두 소켓, 주입량, 분출 및 탑승 운반. `SO_ExteriorJumpPad`의 chargeUnits, presentationRise, eruptionRiseDuration, flightDuration으로 조정한다.
-  - 나뭇잎은 구멍 부모의 스케일과 무관한 월드 높이로 솟는다. `eruptionRiseDuration`(현재 0.2초) 안에 `presentationRise`(현재 14m)에 도달하고 남은 분출 시간 동안 내려온다. 수액 기둥도 같은 높이로 뻗는다. Host가 분출 시작 시 탑승자를 판정하고 기존 CharacterController 운반 상태로 상승시킨 뒤 최고점에서 해제한다. 중력과 공중 가속은 PlayerTuning을 사용한다. `jumpWindow`, `jumpReach`, `launchHeightMultiplier`는 새 ExteriorJumpPad에서는 사용하지 않는다.
-- `HangingCloth`: 매듭·천 외형·범위·진자 운동·탑승자. Host가 실제 탑승·충돌을 검증한다.
+  - 나뭇잎은 구멍 부모의 스케일과 무관한 월드 높이로 솟는다. `eruptionRiseDuration`(현재 1.25초) 동안 위로 갈수록 감속해 `presentationRise`(현재 14m)의 최고점에 도달한다. 수액 기둥도 같은 높이로 뻗고, 최고점 이후에는 정지 상태에서 점차 빨라지며 함께 내려온다. 전체 분출 시간 `flightDuration`은 현재 2.5초다. Host가 분출 시작 시 탑승자를 판정하고 상승 속도를 플레이어 모터에 전달한다. 플레이어는 상승과 하강 모두 WASD로 이동한다. 최고점에서는 상승 속도를 해제하고 일반 중력으로 전환한다. 중력과 공중 가속은 PlayerTuning을 사용한다. `jumpWindow`, `jumpReach`, `launchHeightMultiplier`는 새 ExteriorJumpPad에서는 사용하지 않는다.
+- `HangingCloth`: 매듭·천 외형·범위·진자 운동·탑승자. 먼저 잡은 플레이어가 WASD를 새로 누를 때마다 한 번씩 힘을 주며, 계속 누르고 있어도 가속이 쌓이지 않는다. 다른 가지나 신목 가지에 천이 닿으면 그 접점을 두 번째 회전축으로 고정하고 아래 구간과 탑승자가 추가 30도 이내로 흔들린다. Host가 접점·각도·탑승·충돌을 검증하고 동기화한다. 힘의 크기와 접점 판정은 `SO_ExteriorLayout_260928`에서 조정한다.
 - `LandingCheckpoint` / `ExteriorStageFlow`: 일반 표면 착지와 슬롯별 복구, 상단 도착/주입. 복구는 설치물을 지우지 않는다.
 - `DescendingMazeFlow`: 두 뗏목과 정차 높이 배열, 진입/하강/미로/완료. 기존 `SapMazeBoard`가 입력·누수·현재 미로 재시도를 담당한다.
 - `AltarRing` / `RotatingAltar` / `FinalStageExit`: 석판별 속도·목표 각도·허용 오차·계단 목적지와 전체 진행 조건.
@@ -75,7 +75,7 @@ Fusion의 Client 씬 오브젝트 등록 중 비활성화/재활성화에도 개
 
 `SoloPotionPickup`은 Editor/Development 오프라인에서만 동작하며 Photon 세션과 릴리즈에서는 물약 오브젝트를 숨긴다. 제조/두 명 입장 조건을 우회하지 않는다. 임시 물약을 제거하려면 `SoloTest_Potions` 루트를 삭제/비활성화하면 된다. 재사용 프리팹은 `Assets/_Project/Prefabs/InteractiveObjects/SoloTests`에 있다.
 
-솔로에서 물약 선택 없이 두 능력을 시험하려면 **T**(`Player/OfflineUnlockBoth`)를 누른다. 그 뒤 **Q**(`OfflineAbilitySwitch`)로 나뭇잎/수액을 전환하며 R은 선택한 능력 사용으로 유지된다. 1스테이지에서도 T로 해금한 경우 Q 전환을 허용한다. 입력은 `OfflineAbilitySwitcher`의 직렬화 참조이며 H 도움말에 표시된다. 이 임시 해금 상태는 오프라인 씬 전환 시 보존하고 새 Play에서는 초기화한다. Photon 플레이어와 릴리즈에서 T 해금은 거부된다. 제조 기록이나 협동 입장 조건은 우회하지 않는다.
+솔로에서 물약 선택 없이 두 능력을 시험하려면 **T**(`Player/OfflineUnlockBoth`)를 누른다. 그 뒤 **Q**(`OfflineAbilitySwitch`)로 나뭇잎/수액을 전환하며 R은 선택한 능력 사용으로 유지된다. 1스테이지에서도 T로 해금한 경우 Q 전환을 허용한다. 입력은 `OfflineAbilitySwitcher`의 직렬화 참조이며 H 도움말에 표시된다. 이 임시 해금 상태는 오프라인 씬 전환 시 보존하고 새 Play에서는 초기화한다. 일반 릴리즈 빌드의 솔로 테스트에서도 T 해금을 허용하되 Photon 플레이어에서는 거부한다. 제조 기록이나 협동 입장 조건은 우회하지 않는다.
 
 이전 스테이지와 물 Placement 분기는 2026-09-30 정리에서 삭제했다. 복원이 필요하면 변경 전 Git 이력 또는 `Temp/LegacyCleanupBackup_20260930.zip`, `Temp/LegacyCodeBackup_20260930.zip`을 사용한다. 입력 액션 이름과 GUID는 유지했다.
 
@@ -96,7 +96,9 @@ Fusion의 Client 씬 오브젝트 등록 중 비활성화/재활성화에도 개
 | 미로 화면 | 일반 카메라·화면 전환 가능 | 개인 화면 고정, 앞/뒤 정보 구분, 전환 제한 |
 | 제단 | 도착 플레이스홀더 | 고정 상단과 회전 석판 3개, 수액 시작·나뭇잎 정지, 정렬 후 계단 |
 
-미로 도면 세 개는 기존 도면과 이미지가 동일하다. 도면/그래프 데이터는 재사용하고 진행·카메라·뗏목을 변경한다.
+미로 세 개의 경로·누수·시작/목표 그래프 데이터는 기존 배치를 유지한다. 2026-10-05 시각 수정에서는 도면 이미지가 붙은 앞면을 제거하고 단색 바닥과 갈색 돌출 큐브 벽으로 다시 제작했다. 큐브는 보드별로 하나의 메쉬로 결합해 렌더링하며 `MazeFront` 레이어에만 배치한다. `Herbalist/Stages/Rebuild Stage Two Block Mazes` 메뉴로 이 시각 배치를 다시 생성할 수 있다.
+
+조종 수액의 경로는 Host가 순서대로 기록해 Client에 동기화한다. 시작점에서는 기존 `MazeSap` 구체가 전체 수량을 나타내고, WASD로 이동하면 같은 수량이 구체와 물길에 나뉘어 표시된다. 시각 기준량은 `SO_MazeTrailVisual`의 500ml이며, 한도에 닿으면 앞쪽이 늘어나는 만큼 물길의 시작 부분이 사라진다. 미로 누수로 `Volume`이 감소하면 전체 표시 길이와 두께도 줄어든다. 시각 기준량·최소 구체량·단위 길이당 수량·샘플 간격·물길 폭은 해당 설정 에셋에서 조정하며, 기존 미로별 게임플레이 수량 12/16/20은 유지한다.
 
 ## 선택 항목
 

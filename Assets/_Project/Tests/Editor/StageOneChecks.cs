@@ -11,7 +11,30 @@ namespace Herbalist.Editor
         {
             var s=AssetDatabase.LoadAssetAtPath<StageOneSettings>("Assets/_Project/Data/Stages/Stage_01/SO_StageOneSettings.asset");
             Check(s.Valid(out var error),error);
+            Check(StageBrewingRules.FireStrength(0,s)==StageFireStrength.Low &&
+                  StageBrewingRules.FireStrength(1,s)==StageFireStrength.Low &&
+                  StageBrewingRules.FireStrength(2,s)==StageFireStrength.Medium &&
+                  StageBrewingRules.FireStrength(3,s)==StageFireStrength.Medium &&
+                  StageBrewingRules.FireStrength(4,s)==StageFireStrength.High,"Fan rates must use the document's 0-1/2-3/4+ bands");
+            var brewingRecipe=s.recipes[0];
+            float temp=brewingRecipe.targetMin, gauge=0;
+            StageBrewingRules.Advance(s,brewingRecipe,2,1f,ref temp,ref gauge);
+            Check(temp==brewingRecipe.targetMin && gauge==8f,"Medium fire holds temperature and gains 8 gauge per second");
+            StageBrewingRules.Advance(s,brewingRecipe,4,1f,ref temp,ref gauge);
+            Check(temp==brewingRecipe.targetMin+6f && gauge==16f,"High fire heats by 6 per second");
+            StageBrewingRules.Advance(s,brewingRecipe,0,1f,ref temp,ref gauge);
+            Check(temp==brewingRecipe.targetMin && gauge==24f,"Low fire cools by 6 per second");
+            temp=0; gauge=5;
+            StageBrewingRules.Advance(s,brewingRecipe,0,1f,ref temp,ref gauge);
+            Check(temp==0 && gauge==0,"Temperature and gauge clamp at zero, and out-of-range gauge loses 12 per second");
+            temp=brewingRecipe.targetMin; gauge=99;
+            StageBrewingRules.Advance(s,brewingRecipe,2,1f,ref temp,ref gauge);
+            Check(gauge==100,"Gauge clamps at 100");
             int duyeong=Array.IndexOf(s.slotRoles,CharacterRole.Duyeong), sodam=1-duyeong;
+            var solo=new StageProgress(s);
+            int soloHerb=s.ItemId(s.recipes[0].ingredient);
+            Check(!solo.Gather(duyeong,0,soloHerb,CharacterRole.Sodam),"Sodam state must not gather in solo test");
+            Check(solo.Gather(duyeong,0,soloHerb,CharacterRole.Duyeong),"Duyeong state can gather in solo test");
             for(int first=0;first<s.recipes.Length;first++)
             {
                 var p=new StageProgress(s); int second=1-first;
@@ -37,7 +60,7 @@ namespace Herbalist.Editor
                 Check(p.CheckClear(true,true)&&!p.CheckClear(true,true),"Clear exactly once");
                 Check(p.Consumed[sodam]==s.ItemId(s.recipes[first].result),"Choice independent of character");
             }
-            return "PASS: both potion assignments, role restrictions, capacity, duplicate collection/crafting, failed unlock, repeated consumption, transfer, gate prerequisites, simultaneous two-player entry and one-shot clear.";
+            return "PASS: shared fan-rate/temperature/gauge rules, both potion assignments, role restrictions including solo state, capacity, duplicate collection/crafting, failed unlock, repeated consumption, transfer, gate prerequisites, simultaneous two-player entry and one-shot clear.";
         }
     }
 }

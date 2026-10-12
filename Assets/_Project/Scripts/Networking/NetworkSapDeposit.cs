@@ -12,8 +12,13 @@ namespace Herbalist.Networking
         [Networked] private NetworkBool HasStream { get; set; }
         [Networked] private NetworkBool HoseStream { get; set; }
         [Networked] private NetworkBool HoseRetracting { get; set; }
+        [Networked] private NetworkBool HoseImpact { get; set; }
+        [Networked] private UnityEngine.Vector3 HoseImpactNormal { get; set; }
 
         [Networked] private UnityEngine.Vector3 StreamEnd { get; set; }
+        [Networked] private UnityEngine.Vector3 HoseLaunchVelocity { get; set; }
+        [Networked] private float HoseTravelTime { get; set; }
+        [Networked] private float HoseStartTime { get; set; }
         [Networked] private float MarkScale { get; set; }
         [Networked] private NetworkBool HoseMark { get; set; }
         private void Awake() => sap = GetComponent<SapDeposit>();
@@ -22,7 +27,11 @@ namespace Herbalist.Networking
             if (!HasStateAuthority) return;
             sap.Tick(Runner.DeltaTime);
             if (Object == null || !Object.IsValid) return;
-            HoseStream = sap.HoseStream; HoseRetracting = sap.HoseRetracting; StreamEnd = sap.StreamEnd; MarkScale = sap.MarkScale; HoseMark = sap.IsHoseMark;
+            HoseStream = sap.HoseStream; HoseRetracting = sap.HoseRetracting; StreamEnd = sap.StreamEnd;
+            HoseImpact = sap.HoseImpact; HoseImpactNormal = sap.HoseImpactNormal;
+            HoseLaunchVelocity = sap.HoseLaunchVelocity; HoseTravelTime = sap.HoseTravelTime;
+            HoseStartTime = sap.HoseStartTime;
+            MarkScale = sap.MarkScale; HoseMark = sap.IsHoseMark;
             StreamStart = sap.StreamStart; HasStream = sap.HasStream;
             State = sap.State; ReceiverId = sap.Receiver != null ? sap.Receiver.Id : 0;
         }
@@ -31,7 +40,8 @@ public override void Render()
             if (HasStateAuthority) return;
             sap.ApplyReplica(State, ReceiverId, HoseMark, MarkScale);
             sap.SetStream(StreamStart, HasStream);
-            sap.SetHoseReplica(HoseStream, HoseRetracting, StreamEnd, MarkScale);
+            sap.SetHoseReplica(HoseStream, HoseRetracting, StreamEnd, HoseLaunchVelocity, HoseTravelTime, HoseStartTime,
+                HoseImpact, HoseImpactNormal, MarkScale);
         }
         public override void Despawned(NetworkRunner runner, bool hasState) => sap.ApplyReplica(SapState.Complete, 0);
     }

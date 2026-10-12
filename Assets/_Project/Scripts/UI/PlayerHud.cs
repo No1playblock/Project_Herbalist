@@ -22,6 +22,7 @@ namespace Herbalist.GameUI
         private string previousFeedback;
         private float feedbackTime;
         private uint _abilityFeedback;
+        private uint _minigameResult;
         private void Awake() { screen=FindFirstObjectByType<PlayScreenController>(); }
         private void OnEnable() { help=settings.helpAction.action.Clone(); help.performed+=_=>expanded=!expanded; help.Enable(); }
         private void Update()
@@ -63,12 +64,18 @@ namespace Herbalist.GameUI
                 var item=flow.settings.Item(flow.Progress.Held[actor.Slot]); pocket.text=item!=null?item.displayName:settings.emptyPocket;
                 if(actor.Feedback!=previousFeedback) { previousFeedback=actor.Feedback; feedbackTime=settings.feedbackDuration; }
             }
+            if (local && flow != null && flow.MinigameResultSequence != _minigameResult)
+            {
+                _minigameResult = flow.MinigameResultSequence;
+                previousFeedback = flow.MinigameSucceeded ? flow.settings.successMessage : flow.settings.minigameFailedMessage;
+                feedbackTime = settings.feedbackDuration;
+            }
             if(!GameplayPause.IsPaused)feedbackTime-=Time.unscaledDeltaTime;
             feedback.text=local&&feedbackTime>0?previousFeedback:"";
             prompt.SetActive(false);
             if(local&&flow!=null&&actor!=null&&flow.TryInteractionHint(actor,out var point,out bool transfer))
             {
-                promptText.text=actor.Binding(0)+"  "+(transfer?settings.giveText:settings.gatherText);
+                promptText.text=actor.Binding(0)+"  "+(flow.IsCraftHint(actor)?settings.craftText:transfer?settings.giveText:settings.gatherText);
                 Position(prompt.GetComponent<RectTransform>(),view.Camera,point+promptOffset);
             }
             for(int i=0;i<markers.Length;i++)

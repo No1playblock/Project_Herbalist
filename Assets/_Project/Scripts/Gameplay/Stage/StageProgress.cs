@@ -12,9 +12,11 @@ namespace Herbalist.StageOne
         public bool Cleared;
         private readonly StageOneSettings settings;
         public StageProgress(StageOneSettings settings) { this.settings = settings; }
-        public bool Gather(int slot, int sourceIndex, int item)
+        public bool Gather(int slot, int sourceIndex, int item) =>
+            Gather(slot, sourceIndex, item, Slot(slot) ? settings.slotRoles[slot] : CharacterRole.Sodam);
+        public bool Gather(int slot, int sourceIndex, int item, CharacterRole role)
         {
-            if (!Slot(slot) || sourceIndex < 0 || sourceIndex >= 64 || Held[slot] != 0 || settings.slotRoles[slot] != CharacterRole.Duyeong || settings.Item(item)?.type != StageItemType.Herb || (Harvested & (1UL << sourceIndex)) != 0) return false;
+            if (!Slot(slot) || sourceIndex < 0 || sourceIndex >= 64 || Held[slot] != 0 || role != CharacterRole.Duyeong || settings.Item(item)?.type != StageItemType.Herb || (Harvested & (1UL << sourceIndex)) != 0) return false;
             Held[slot] = item; Harvested |= 1UL << sourceIndex; return true;
         }
         public bool Give(int from, int to)

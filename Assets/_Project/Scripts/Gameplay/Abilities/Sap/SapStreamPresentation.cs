@@ -17,6 +17,21 @@ namespace Herbalist.Abilities
         [Header("Blob motion")]
         [SerializeField, Min(0)] private float _hoverBob = 0.022f;
         [SerializeField, Min(0)] private float _hoverPulse = 0.035f;
+        [Header("Spray droplets")]
+        [SerializeField] private ParticleSystem _sprayDroplets;
+        [SerializeField, Min(0)] private float _sprayDropsPerMeterPerSecond = 1.8f;
+        [SerializeField] private Vector2 _sprayDropSize = new Vector2(.035f, .085f);
+        [SerializeField] private Vector2 _spraySideSpeed = new Vector2(.45f, 1.25f);
+        [SerializeField, Min(0)] private float _sprayForwardSpeed = .6f;
+        [SerializeField, Range(1, 12)] private int _sprayMaxDropsPerFrame = 6;
+        [Header("Water impact")]
+        [SerializeField] private Transform _impactCrown;
+        [SerializeField] private Transform _groundCrownRim;
+        [SerializeField, Range(0f, 1f)] private float _groundCrownNormalThreshold = 0.7f;
+        [SerializeField, Range(0.1f, 4f)] private float _groundCrownHeightScale = 2.9f;
+        [SerializeField, Range(0.5f, 2f)] private float _groundCrownWidthScale = 1.18f;
+        [SerializeField, Min(0f)] private float _groundCrownInset = 0.09f;
+        [SerializeField, Range(0f, 3f)] private float _groundCrownDeformStrength = 1.48f;
         [Header("Release drips")]
         [SerializeField, Range(1, 8), Tooltip("Maximum simultaneous drops while the stream retracts.")] private int _releaseDripCount = 5;
         [SerializeField, Min(0.1f)] private float _releaseDripLifetime = 1.5f;
@@ -48,10 +63,28 @@ namespace Herbalist.Abilities
         private int[] _dropBounceCounts;
         private bool _wasRetracting;
         private float _retractDripTimer;
+        private float _sprayBudget;
+        private Vector3 _impactCrownBaseScale;
+        private MeshRenderer _impactCrownRenderer;
+        private MaterialPropertyBlock _impactCrownPropertyBlock;
+        private float _impactCrownDefaultDeformStrength;
+        private bool? _lastCrownGround;
+        private static readonly int CrownDeformStrengthId = Shader.PropertyToID("_CrownDeformStrength");
 
 
 private void Awake()
         {
+            if (_impactCrown != null)
+            {
+                _impactCrownBaseScale = _impactCrown.localScale;
+                _impactCrownRenderer = _impactCrown.GetComponentInChildren<MeshRenderer>(true);
+                if (_impactCrownRenderer != null && _impactCrownRenderer.sharedMaterial != null &&
+                    _impactCrownRenderer.sharedMaterial.HasProperty(CrownDeformStrengthId))
+                {
+                    _impactCrownDefaultDeformStrength = _impactCrownRenderer.sharedMaterial.GetFloat(CrownDeformStrengthId);
+                    _impactCrownPropertyBlock = new MaterialPropertyBlock();
+                }
+            }
             InitializeStream();
             InitializeBlobMotion();
             InitializeDropPool();
@@ -68,14 +101,16 @@ private void LateUpdate()
 
             bool visible = sap.HasStream && (sap.State == SapState.Extracting || sap.State == SapState.Controlled);
             stream.enabled = visible && settings != null;
+            UpdateImpactCrown(visible && sap.HoseStream && !sap.HoseRetracting && sap.HoseImpact);
 
             if (visible && settings != null)
             {
                 Vector3 start = sap.StreamOrigin;
                 Vector3 end = sap.StreamDestination;
                 float streamDiameter = GetHoverBlobDiameter(settings);
-                UpdateRetractionDrips(sap.HoseStream && sap.HoseRetracting && sap.HasStream, start, end, settings, paused ? 0f : Time.deltaTime);
                 BuildPath(start, end);
+                UpdateRetractionDrips(sap.HoseStream && sap.HoseRetracting && sap.HasStream,
+                    _pathPoints[0], end, settings, paused ? 0f : Time.deltaTime);
 
                 // One view-facing stream uses the hover blob's measured world-space diameter.
                 stream.useWorldSpace = true;
@@ -83,9 +118,11 @@ private void LateUpdate()
                 stream.SetPositions(_pathPoints);
                 stream.widthMultiplier = streamDiameter * Mathf.Max(1f, _coreWidth);
                 UpdateBeads(start, end, settings.streamFlowSpeed, settings.streamBeadSize, settings.radius);
+                UpdateSprayDroplets(sap.HoseStream && !sap.HoseRetracting, paused ? 0f : Time.deltaTime);
             }
             else
             {
+                UpdateSprayDroplets(false, 0f);
                 _wasRetracting = false;
                 _retractDripTimer = 0f;
                 if (beads != null)
@@ -115,11 +152,40 @@ private void ConfigureCoreLine()
             stream.widthMultiplier = 1f;
             stream.numCapVertices = 5;
             stream.numCornerVertices = 4;
-            // Color and transparency come from the authored LineRenderer gradient.
+            // The WaterTest beam shader supplies its own colour and transparency.
+            // Keep renderer vertex colours neutral so the old blue gradient does not tint it.
+            stream.colorGradient = new Gradient
+            {
+                colorKeys = new[]
+                {
+                    new GradientColorKey(Color.white, 0f),
+                    new GradientColorKey(Color.white, 1f)
+                },
+                alphaKeys = new[]
+                {
+                    new GradientAlphaKey(1f, 0f),
+                    new GradientAlphaKey(1f, 1f)
+                }
+            };
+            // Colour and transparency come from the assigned water material.
         }
 
         private void BuildPath(Vector3 start, Vector3 end)
         {
+            if (sap.HoseStream)
+            {
+                Vector3 velocity = sap.HoseLaunchVelocity;
+                float duration = sap.HoseTravelTime;
+                float startTime = Mathf.Clamp(sap.HoseStartTime, 0f, duration);
+                float gravity = sap.Settings.hoseGravity;
+                for (int i = 0; i < _pathPoints.Length; i++)
+                {
+                    float time = Mathf.Lerp(startTime, duration, (float)i / (_pathPoints.Length - 1));
+                    _pathPoints[i] = start + velocity * time + Vector3.down * (0.5f * gravity * time * time);
+                }
+                _pathPoints[_pathPoints.Length - 1] = end;
+                return;
+            }
             Vector3 axis = end - start;
             float length = axis.magnitude;
             if (length < 0.0001f) axis = Vector3.forward;
@@ -162,7 +228,9 @@ private float GetHoverBlobDiameter(SapAbilitySettings settings)
 private void UpdateBeads(Vector3 start, Vector3 end, float speed, float size, float minimumLength)
         {
             if (beads == null || beads.Length == 0) return;
-            float length = Vector3.Distance(start, end);
+            float length = 0f;
+            for (int i = 1; i < _pathPoints.Length; i++)
+                length += Vector3.Distance(_pathPoints[i - 1], _pathPoints[i]);
             int activeCount = Mathf.Clamp(Mathf.CeilToInt(length * 1.6f), 1, beads.Length);
             float denominator = Mathf.Max(length, minimumLength);
             for (int i = 0; i < beads.Length; i++)
@@ -183,6 +251,72 @@ private void UpdateBeads(Vector3 start, Vector3 end, float speed, float size, fl
                 float elongation = 1.12f;
                 float pulse = 0.92f + 0.08f * Mathf.Sin(flowTime * 4f + i * 2.1f);
                 beads[i].localScale = new Vector3(beadSize * pulse, beadSize * pulse, beadSize * elongation * pulse);
+            }
+        }
+
+        private void UpdateImpactCrown(bool visible)
+        {
+            if (_impactCrown == null) return;
+            if (_impactCrown.gameObject.activeSelf != visible) _impactCrown.gameObject.SetActive(visible);
+            if (!visible) return;
+
+            Vector3 normal = sap.HoseImpactNormal;
+            if (normal.sqrMagnitude < 0.0001f) normal = Vector3.up;
+            normal.Normalize();
+            bool ground = normal.y >= _groundCrownNormalThreshold;
+            if (_groundCrownRim != null && _groundCrownRim.gameObject.activeSelf != ground)
+                _groundCrownRim.gameObject.SetActive(ground);
+            if (_impactCrownPropertyBlock != null && _lastCrownGround != ground)
+            {
+                _impactCrownRenderer.GetPropertyBlock(_impactCrownPropertyBlock);
+                _impactCrownPropertyBlock.SetFloat(CrownDeformStrengthId,
+                    ground ? _groundCrownDeformStrength : _impactCrownDefaultDeformStrength);
+                _impactCrownRenderer.SetPropertyBlock(_impactCrownPropertyBlock);
+                _lastCrownGround = ground;
+            }
+            float effectScale = sap.Settings != null ? sap.Settings.hoseEffectScale * sap.Settings.impactCrownScale : 1f;
+            _impactCrown.localScale = Vector3.Scale(_impactCrownBaseScale * effectScale,
+                new Vector3(ground ? _groundCrownWidthScale : 1f,
+                    ground ? _groundCrownHeightScale : 1f,
+                    ground ? _groundCrownWidthScale : 1f));
+            _impactCrown.SetPositionAndRotation(sap.StreamDestination - normal * (ground ? _groundCrownInset : 0f),
+                Quaternion.FromToRotation(Vector3.up, normal));
+        }
+
+        private void UpdateSprayDroplets(bool spraying, float deltaTime)
+        {
+            if (_sprayDroplets == null) return;
+            if (!spraying)
+            {
+                _sprayBudget = 0f;
+                if (_sprayDroplets.isPlaying) _sprayDroplets.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                return;
+            }
+            if (!_sprayDroplets.isPlaying) _sprayDroplets.Play();
+            if (deltaTime <= 0f) return;
+            float length = 0f;
+            for (int i = 1; i < _pathPoints.Length; i++)
+                length += Vector3.Distance(_pathPoints[i - 1], _pathPoints[i]);
+            _sprayBudget = Mathf.Min(_sprayMaxDropsPerFrame, _sprayBudget + length * _sprayDropsPerMeterPerSecond * deltaTime);
+            int count = Mathf.Min(_sprayMaxDropsPerFrame, Mathf.FloorToInt(_sprayBudget));
+            _sprayBudget -= count;
+            for (int i = 0; i < count; i++)
+            {
+                float pathPosition = Random.Range(.08f, .92f) * (_pathPoints.Length - 1);
+                int index = Mathf.Min(Mathf.FloorToInt(pathPosition), _pathPoints.Length - 2);
+                Vector3 tangent = (_pathPoints[index + 1] - _pathPoints[index]).normalized;
+                if (tangent.sqrMagnitude < .0001f) continue;
+                Vector3 side = Vector3.Cross(tangent, Vector3.up);
+                if (side.sqrMagnitude < .0001f) side = Vector3.Cross(tangent, Vector3.right);
+                side = Quaternion.AngleAxis(Random.Range(0f, 360f), tangent) * side.normalized;
+                var particle = new ParticleSystem.EmitParams
+                {
+                    position = Vector3.Lerp(_pathPoints[index], _pathPoints[index + 1], pathPosition - index),
+                    velocity = tangent * _sprayForwardSpeed + side * Random.Range(_spraySideSpeed.x, _spraySideSpeed.y),
+                    startSize = Random.Range(_sprayDropSize.x, _sprayDropSize.y) *
+                        (sap.Settings != null ? sap.Settings.hoseEffectScale : 1f)
+                };
+                _sprayDroplets.Emit(particle, 1);
             }
         }
 
@@ -388,6 +522,7 @@ private void RecycleDrip(int index)
 
 private void OnDisable()
         {
+            if (_sprayDroplets != null) _sprayDroplets.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             _wasRetracting = false;
             _retractDripTimer = 0f;
             if (_dropFalling == null) return;

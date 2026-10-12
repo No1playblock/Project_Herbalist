@@ -35,19 +35,30 @@ namespace Herbalist.Player
             if (!ready) { Debug.LogError("Player prefab references are incomplete.", this); enabled = false; }
         }
         private void OnEnable() { if (ready) SetLocalControl(locallyControlled); }
-        public void SetLocalControl(bool value)
+        public void SetLocalControl(bool value, bool preserveMotion = false)
         {
             locallyControlled = value;
             if (!ready) return;
             input.SetInputActive(value && isActiveAndEnabled);
             view.SetLocalView(value && isActiveAndEnabled);
             lastJump = input.JumpSequence;
-            motor.ResetMotion();
+            if (!preserveMotion) motor.ResetMotion();
         }
         private void Update()
         {
-            if (!ready || !locallyControlled || Herbalist.GameUI.GameplayPause.IsPaused) return;
+            if (!ready || Herbalist.GameUI.GameplayPause.IsPaused) return;
+            if (!locallyControlled)
+            {
+                // An unpossessed offline actor still falls and lands normally.
+                if (!networkDriven)
+                {
+                    if (_transportOwner != null) motor.Teleport(_transportPosition);
+                    else motor.Simulate(Vector3.zero, Time.deltaTime);
+                }
+                return;
+            }
             view.ApplyLook(input.Look);
+            view.ApplyZoom(input.Zoom);
             if (networkDriven) return;
             if(_transportOwner!=null){RouteMovement(input.Move);lastJump=input.JumpSequence;motor.Teleport(_transportPosition);return;}
             Vector2 movement = Vector2.ClampMagnitude(input.Move, 1);

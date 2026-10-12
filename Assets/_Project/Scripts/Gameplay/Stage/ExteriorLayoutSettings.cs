@@ -34,11 +34,28 @@ namespace Herbalist.Levels
         public Vector3[] herbOffsets;
         public float summitHeight = 41;
         public float clothDriveAcceleration = 120;
+        [Min(0)] public float clothPumpImpulseSeconds = .15f;
+        [Range(0, 30)] public float clothBendMaxAngle = 30;
+        [Min(.01f)] public float clothBendProbeRadius = .08f;
+        [Min(.1f)] public float clothMinBendSegmentLength = 1f;
         public Vector3 summitDeckSize = new Vector3(6, .6f, 6);
         public Material jumpBranchMaterial, normalBranchMaterial, clothMaterial, leafBridgeMaterial, portMaterial;
+        public Material jetMaterial;
+        [Header("Mushroom platforms")]
+        [Min(1)] public float jumpCapWidth = 5.8f;
+        [Min(.1f)] public float jumpCapHeight = .9f;
+        [Min(1)] public float normalCapWidth = 3.2f;
+        [Min(.1f)] public float normalCapHeight = .35f;
+        [Min(.1f)] public float stalkWidth = .75f;
+        [Header("Water droplets around the jump pad jet")]
+        [Min(0)] public float jetDropletRate = 42f;
+        public Vector2 jetDropletLifetime = new Vector2(.45f, .85f);
+        public Vector2 jetDropletSpeed = new Vector2(.8f, 2.4f);
+        public Vector2 jetDropletSize = new Vector2(.045f, .13f);
+        [Min(0)] public float jetDropletGravity = 1.6f;
         public SapJumpPadSettings jumpPadSettings;
         public string padInstructions = "나뭇잎 위 탑승 · 반대 구멍에 R로 수액 · 자동 상승 후 WASD 착지";
-        public string clothInstructions = "E: 매듭 잡기/놓기 · WASD: 흔들기";
+        public string clothInstructions = "E: 매듭 잡기/놓기 · WASD 번갈아 눌러 힘 주기";
         public string bridgeInstructions = "나뭇잎 다리 구간 · 벽에 R로 나뭇잎을 설치해 올라가세요";
     }
 }

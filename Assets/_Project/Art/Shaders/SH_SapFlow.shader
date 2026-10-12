@@ -10,6 +10,10 @@ Shader "Herbalist/Sap Flow"
         _FlowAmount ("Flow Pattern Strength", Range(0, 1)) = 1
         _FresnelPower ("Edge Falloff", Range(0.5, 8)) = 3
         _PatternScale ("Flow Pattern Scale", Float) = 18
+        _FoamColor ("Foam Color", Color) = (0.88, 0.96, 1, 1)
+        _FoamAmount ("Foam Strength", Range(0, 1)) = 0
+        _FoamCoverage ("Foam Coverage", Range(0, 1)) = 0.5
+        _FoamScale ("Foam Pattern Scale", Range(1, 40)) = 12
     }
 
     SubShader
@@ -42,6 +46,10 @@ Shader "Herbalist/Sap Flow"
                 float _FlowAmount;
                 float _FresnelPower;
                 float _PatternScale;
+                float4 _FoamColor;
+                float _FoamAmount;
+                float _FoamCoverage;
+                float _FoamScale;
             CBUFFER_END
 
             struct Attributes
@@ -83,7 +91,21 @@ Shader "Herbalist/Sap Flow"
 
                 float3 color = lerp(_BaseColor.rgb * 0.76, _CoreColor.rgb, highlight * 0.34);
                 color += _RimColor.rgb * fresnel * 0.4;
-                float alpha = saturate(_BaseColor.a * (0.78 + highlight * 0.12 + fresnel * 0.1));
+                float2 foamUV = input.uv * _FoamScale;
+                float foamTime = _Time.y * _FlowSpeed;
+                float swirl = sin(foamUV.x * 1.7 - foamTime * 1.2
+                    + sin(foamUV.y * 2.3 + foamTime * 0.4) * 1.3);
+                float brokenFlow = sin(foamUV.y * 1.2 + foamTime * 0.75
+                    + sin(foamUV.x * 0.73) * 1.1);
+                float flecks = sin(foamUV.x * 2.9 + foamUV.y * 1.8 - foamTime * 1.6);
+                float turbulence = (swirl * brokenFlow * 0.5 + 0.5) * 0.7
+                    + (flecks * 0.5 + 0.5) * 0.3;
+                float foamThreshold = lerp(0.88, 0.55, _FoamCoverage);
+                float foam = smoothstep(foamThreshold, foamThreshold + 0.12, turbulence) * _FoamAmount
+                    * (0.65 + fresnel * 0.35);
+                color = lerp(color, _FoamColor.rgb, foam * _FoamColor.a);
+                float alpha = saturate(_BaseColor.a * (0.78 + highlight * 0.12 + fresnel * 0.1)
+                    + foam * 0.08);
                 return half4(color, alpha);
             }
             ENDHLSL

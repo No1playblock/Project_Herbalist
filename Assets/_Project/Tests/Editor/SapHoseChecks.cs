@@ -33,6 +33,18 @@ public static class SapHoseChecks
             hose.Tick(held, new Ray(origin, Vector3.up), true, 1, settings, create);
             Require(held.HasStream && held.HoseStream && marks.Count == 0, "empty-space spray");
             Require(Vector3.Distance(held.StreamDestination, origin) > 1, "advancing stream");
+            hose.Tick(held, new Ray(origin, Vector3.up), true, 10, settings, create);
+            Require(held.HoseTravelTime >= settings.hoseMaxFlightTime - .001f && held.StreamDestination.y < origin.y,
+                "open-air water rises then falls under gravity");
+            var presentation = held.GetComponent<SapStreamPresentation>();
+            Require(presentation != null, "authored water stream presentation");
+            var privateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
+            typeof(SapStreamPresentation).GetMethod("InitializeStream", privateInstance).Invoke(presentation, null);
+            typeof(SapStreamPresentation).GetMethod("BuildPath", privateInstance).Invoke(presentation,
+                new object[] { origin, held.StreamDestination });
+            var arc = (Vector3[])typeof(SapStreamPresentation).GetField("_pathPoints", privateInstance).GetValue(presentation);
+            Require(arc[arc.Length / 2].y > origin.y && arc[arc.Length - 1].y < origin.y,
+                "rendered hose follows the same rise and fall");
             hose.Reset();
             hose.Tick(held, new Ray(origin, Vector3.forward), true, 1, settings, create);
             Require(marks.Count == 1 && marks[0].IsPlaced, "wall mark");
@@ -107,6 +119,13 @@ public static class SapHoseChecks
             player.View.Initialize();
             var sap = playerGo.GetComponent<SapControlAbility>();
             typeof(SapControlAbility).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(sap, null);
+            sap.Configure(() => {
+                var shot = UnityEngine.Object.Instantiate(settings.offlinePrefab); objects.Add(shot.gameObject); return shot;
+            }, _ => {}, true);
+            sap.TickContextual(new Ray(playerGo.transform.position + Vector3.up, Vector3.up), true, .1f);
+            Require(sap.Held != null && sap.Held.HoseStream, "contextual water fires into open air");
+            sap.TickContextual(new Ray(playerGo.transform.position + Vector3.up, Vector3.up), false, .1f);
+            Require(sap.Held == null, "contextual water stops on release");
             player.View.SetBodyYaw(30);
             var hoverA = sap.HoverPosition(new Ray(origin, Vector3.forward));
             var hoverB = sap.HoverPosition(new Ray(origin, Vector3.right));
@@ -120,7 +139,32 @@ public static class SapHoseChecks
             Require(leafAbility.TryThrow(new Ray(playerGo.transform.position + Vector3.up, Vector3.right)), "leaf fired");
             Require(Mathf.Abs(Mathf.DeltaAngle(player.View.BodyYaw, 90)) < .01f, "leaf faces aim");
 
-            return "PASS: empty-space spray, advancing stream, wall hit, merge/growth/cap, release, refreshed expiry, body-fixed chest hover, leaf-facing, independent water/leaf lifetimes, near-to-far spray";
+            var fallingHeld = UnityEngine.Object.Instantiate(settings.offlinePrefab); objects.Add(fallingHeld.gameObject);
+            Vector3 fallingOrigin = origin + Vector3.right * 50;
+            fallingHeld.Initialize(settings, fallingOrigin, _ => {}, true);
+            var floor = GameObject.CreatePrimitive(PrimitiveType.Cube); objects.Add(floor);
+            floor.transform.position = fallingOrigin + Vector3.forward * 10 + Vector3.down * 2;
+            floor.transform.localScale = new Vector3(20, 1, 20);
+            Physics.SyncTransforms();
+            int beforeFallMarks = marks.Count;
+            new SapHoseSprayer().Tick(fallingHeld, new Ray(fallingOrigin, Vector3.forward), true, 10, settings, create);
+            Require(marks.Count == beforeFallMarks + 1 && fallingHeld.StreamDestination.y < fallingOrigin.y,
+                "horizontal open-air shot falls and marks the floor");
+
+            var portHeld = UnityEngine.Object.Instantiate(settings.offlinePrefab); objects.Add(portHeld.gameObject);
+            Vector3 portOrigin = origin + Vector3.right * 100;
+            portHeld.Initialize(settings, portOrigin, _ => {}, true);
+            var portObject = GameObject.CreatePrimitive(PrimitiveType.Cube); objects.Add(portObject);
+            portObject.transform.position = portOrigin + Vector3.forward * 5;
+            portObject.transform.localScale = new Vector3(2, 2, .5f);
+            var port = portObject.AddComponent<SapInjectionPort>();
+            Physics.SyncTransforms();
+            int beforePortMarks = marks.Count;
+            new SapHoseSprayer().Tick(portHeld, new Ray(portOrigin, Vector3.forward), true, 1, settings, create);
+            Require(port.Consume() > 0 && marks.Count == beforePortMarks,
+                "aimed ballistic stream feeds the actual port hit");
+
+            return "PASS: contextual air fire, ballistic rise/fall, floor and port hits, wall hit, merge/growth/cap, release, refreshed expiry, body-fixed chest hover, leaf-facing, independent water/leaf lifetimes, near-to-far spray";
         }
         finally
         {

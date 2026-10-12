@@ -148,7 +148,7 @@ Photon과 TextMesh Pro는 패키지 내부 경로 의존성을 보존하기 위�
 | 용도 | 경로 |
 |---|---|
 | 메인 메뉴 | Assets/_Project/Scenes/01_Title/MainMenu.unity |
-| 1스테이지 | Assets/_Project/Scenes/Stages/Stage_01/Stage_01_Exterior_260928.unity |
+| 1스테이지 맵 (현재 플레이 경로) | Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference.unity |
 | 2스테이지 | Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Mazes.unity |
 | 최종 제단 | Assets/_Project/Scenes/Stages/Stage_03/Stage_03_Altar.unity |
 | 솔로 능력 테스트 | Assets/_Project/Scenes/Development/Sandbox_Abilities.unity |

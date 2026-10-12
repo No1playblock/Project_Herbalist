@@ -23,6 +23,7 @@ namespace Herbalist.Player
         public abstract void ResetMotion();
         public abstract bool TryJump();
         public abstract void Launch(Vector3 velocity, float gravity, bool allowAirControl = false);
+        public abstract void SetLiftSpeed(float speed);
         public abstract MotorState CaptureState();
         public abstract void RestoreState(MotorState state);
     }

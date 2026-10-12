@@ -27,6 +27,9 @@ namespace Herbalist.Player
         [Min(0)] public float airAcceleration = 16f;
         [Header("Orbit camera")]
         [Min(0.1f)] public float cameraDistance = 6f;
+        [Min(0.1f)] public float cameraZoomMinMultiplier = 0.5f;
+        [Min(0.1f)] public float cameraZoomMaxMultiplier = 1.5f;
+        [Min(0.01f)] public float cameraZoomStep = 0.1f;
         public float initialPitch = 35f;
         public Vector2 pitchLimits = new Vector2(15f, 65f);
         [Min(0)] public float mouseSensitivity = 0.15f;

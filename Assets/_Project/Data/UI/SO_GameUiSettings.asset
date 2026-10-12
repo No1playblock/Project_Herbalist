@@ -39,6 +39,7 @@ MonoBehaviour:
   sapText: "\uBB3C"
   gatherText: "\uCC44\uC9D1"
   giveText: "\uC804\uB2EC"
+  craftText: "\uC57D\uC81C \uC81C\uC870"
   pauseHint: "\uC77C\uC2DC\uC815\uC9C0"
   helpHint: "\uD0A4 \uD655\uC778"
   emptyPocket: "\uBE48\uC190"
@@ -81,7 +82,10 @@ MonoBehaviour:
   - label: "\uC194\uB85C \uD14C\uC2A4\uD2B8: \uB098\uBB47\uC78E\xB7\uC218\uC561 \uBAA8\uB450 \uD574\uAE08"
     action: {fileID: 11400000, guid: 9ee627606ca3b0a4089084116887d214, type: 2}
     offlineTestOnly: 1
+  - label: "\uCE90\uB9AD\uD130 \uBE59\uC758 (\uC194\uB85C \uD14C\uC2A4\uD2B8)"
+    action: {fileID: 11400000, guid: 3a5e82eb6b1478648968182d514f392b, type: 2}
+    offlineTestOnly: 1
   markerOffset: {x: -0.65, y: 1.9, z: 0}
   feedbackDuration: 4
   menuScene: Assets/_Project/Scenes/01_Title/MainMenu.unity
-  soloScene: Assets/_Project/Scenes/Development/Sandbox_Abilities.unity
+  soloScene: Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference.unity
