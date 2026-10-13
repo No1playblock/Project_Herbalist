@@ -9,7 +9,7 @@ using Object=UnityEngine.Object;
 
 namespace Herbalist.Editor
 {
-    // Editor-only reference authoring. Runtime consumes the existing graph assets and scene objects.
+    // Editor-only maze authoring. Runtime consumes the existing graph assets and scene objects.
     public static class StageFourMazeLayout
     {
         private const string DataRoot="Assets/_Project/Data/Stages/Stage_04/";
@@ -46,7 +46,7 @@ namespace Herbalist.Editor
             if(!definition.IsValid())throw new Exception("Invalid traced maze "+index);
             EditorUtility.SetDirty(definition);
         }
-        [MenuItem("Herbalist/Stages/Apply PDF Stage Four Maze Layouts")]
+        [MenuItem("Herbalist/Stages/Rebuild Stage Two Block Mazes")]
         public static void Apply()
         {
             if(Application.isPlaying||SceneManager.GetActiveScene().isDirty)
@@ -68,41 +68,9 @@ namespace Herbalist.Editor
         {
             var layout=Read(index);var root=board.transform;var d=board.Definition;
             foreach(Transform t in root.Cast<Transform>().ToArray())
-                if(t.name.StartsWith("Channel_")||t.name=="Start"||t.name=="Goal"||t.name=="ReferenceFace"||t.name=="ReferenceWalls")
+                if(t.name.StartsWith("Channel_")||t.name=="Start"||t.name=="Goal")
                     Object.DestroyImmediate(t.gameObject);
-            var texturePath=ArtRoot+"Textures/TEX_SapMaze_"+(index+1)+".jpeg";
-            var texture=AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath);
-            if(texture==null)
-            {
-                texturePath=ArtRoot+"Textures/TEX_SapMaze_"+(index+1)+".jpg";
-                texture=AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath);
-            }
-            if(texture==null)throw new Exception("Missing source image "+index);
-            var importer=(TextureImporter)AssetImporter.GetAtPath(texturePath);
-            importer.mipmapEnabled=false;importer.maxTextureSize=2048;importer.textureCompression=TextureImporterCompression.Uncompressed;
-            importer.filterMode=FilterMode.Bilinear;importer.wrapMode=TextureWrapMode.Clamp;importer.SaveAndReimport();
-            var faceMat=Material("Reference_"+(index+1),Color.white);
-            faceMat.SetTexture("_BaseMap",texture);EditorUtility.SetDirty(faceMat);
-            var face=GameObject.CreatePrimitive(PrimitiveType.Quad);face.name="ReferenceFace";
-            face.transform.SetParent(root,false);face.transform.localPosition=new Vector3(0,layout.bottom+layout.boardHeight*.5f,-.315f);
-            face.transform.localScale=new Vector3(layout.boardWidth,layout.boardHeight,1);
-            face.GetComponent<Renderer>().sharedMaterial=faceMat;Object.DestroyImmediate(face.GetComponent<Collider>());
-            var wallMat=Material("ReferenceWall",Color.black);
-            var primitive=GameObject.CreatePrimitive(PrimitiveType.Cube);
-            var cube=primitive.GetComponent<MeshFilter>().sharedMesh;Object.DestroyImmediate(primitive);
-            var combine=layout.wallRects.Select(r=>{
-                Vector2 p=Position(layout,r.x+r.width*.5f,r.y+r.height*.5f);
-                return new CombineInstance{mesh=cube,transform=Matrix4x4.TRS(new Vector3(p.x,p.y,-.38f),Quaternion.identity,
-                    new Vector3(r.width/layout.width*layout.boardWidth,r.height/layout.height*layout.boardHeight,.12f))};
-            }).ToArray();
-            var meshPath=ArtRoot+"Meshes/MESH_SapMazeWalls_"+(index+1)+".asset";
-            EnsureFolder(ArtRoot+"Meshes");
-            var mesh=AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
-            if(mesh==null){mesh=new Mesh();AssetDatabase.CreateAsset(mesh,meshPath);}else mesh.Clear();
-            mesh.name="SapMazeWalls_"+(index+1);mesh.CombineMeshes(combine,true,true);EditorUtility.SetDirty(mesh);
-            var walls=new GameObject("ReferenceWalls",typeof(MeshFilter),typeof(MeshRenderer),typeof(MeshCollider));
-            walls.transform.SetParent(root,false);walls.GetComponent<MeshFilter>().sharedMesh=mesh;
-            walls.GetComponent<MeshRenderer>().sharedMaterial=wallMat;walls.GetComponent<MeshCollider>().sharedMesh=mesh;
+            RebuildBoardVisuals(board,index);
             var sap=root.Find("MazeSap");
             var start=d.nodes[d.startNode];sap.localPosition=new Vector3(start.x,start.y,-.53f);
             sap.localScale=Vector3.one*(18f*layout.boardWidth/layout.width);
@@ -118,16 +86,49 @@ namespace Herbalist.Editor
             }
             EditorUtility.SetDirty(board);
         }
+        public static void RebuildBoardVisuals(SapMazeBoard board,int index)
+        {
+            var layout=Read(index);var root=board.transform;
+            foreach(Transform t in root.Cast<Transform>().ToArray())
+                if(t.name=="ReferenceFace"||t.name=="ReferenceWalls"||t.name=="MazeFloor"||t.name=="MazeWalls")
+                    Object.DestroyImmediate(t.gameObject);
+            var frontLayer=LayerMask.NameToLayer("MazeFront");
+            if(frontLayer<0)throw new Exception("MazeFront layer is missing");
+            var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.name="MazeFloor";floor.layer=frontLayer;
+            floor.transform.SetParent(root,false);
+            floor.transform.localPosition=new Vector3(0,layout.bottom+layout.boardHeight*.5f,-.315f);
+            floor.transform.localScale=new Vector3(layout.boardWidth,layout.boardHeight,.06f);
+            floor.GetComponent<Renderer>().sharedMaterial=Material("Floor",new Color(.35f,.27f,.19f));
+            Object.DestroyImmediate(floor.GetComponent<Collider>());
+            var wallMat=Material("BlockWall",new Color(.53f,.28f,.12f));
+            var primitive=GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var cube=primitive.GetComponent<MeshFilter>().sharedMesh;Object.DestroyImmediate(primitive);
+            var combine=layout.wallRects.Select(r=>{
+                Vector2 p=Position(layout,r.x+r.width*.5f,r.y+r.height*.5f);
+                return new CombineInstance{mesh=cube,transform=Matrix4x4.TRS(new Vector3(p.x,p.y,-.54f),Quaternion.identity,
+                    new Vector3(r.width/layout.width*layout.boardWidth,r.height/layout.height*layout.boardHeight,.4f))};
+            }).ToArray();
+            var meshPath=ArtRoot+"Meshes/MESH_SapMazeWalls_"+(index+1)+".asset";
+            EnsureFolder(ArtRoot+"Meshes");
+            var mesh=AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
+            if(mesh==null){mesh=new Mesh();AssetDatabase.CreateAsset(mesh,meshPath);}else mesh.Clear();
+            mesh.name="SapMazeWalls_"+(index+1);mesh.CombineMeshes(combine,true,true);EditorUtility.SetDirty(mesh);
+            var walls=new GameObject("MazeWalls",typeof(MeshFilter),typeof(MeshRenderer),typeof(MeshCollider));
+            walls.layer=frontLayer;walls.transform.SetParent(root,false);walls.GetComponent<MeshFilter>().sharedMesh=mesh;
+            walls.GetComponent<MeshRenderer>().sharedMaterial=wallMat;walls.GetComponent<MeshCollider>().sharedMesh=mesh;
+        }
         private static Material Material(string name,Color color)
         {
             var path=MaterialRoot+"MAT_Maze"+name+".mat";
             var material=AssetDatabase.LoadAssetAtPath<Material>(path);
             if(material==null)
             {
-                material=new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+                material=new Material(Shader.Find("Universal Render Pipeline/Lit"));
                 AssetDatabase.CreateAsset(material,path);
             }
-            material.SetColor("_BaseColor",color);EditorUtility.SetDirty(material);return material;
+            material.SetColor("_BaseColor",color);
+            material.SetFloat("_Metallic",0);material.SetFloat("_Smoothness",.08f);
+            EditorUtility.SetDirty(material);return material;
         }
         private static void EnsureFolder(string path)
         {

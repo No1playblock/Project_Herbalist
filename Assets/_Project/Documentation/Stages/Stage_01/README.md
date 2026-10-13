@@ -1,3 +1,5 @@
-# Exterior stage
+# Stage 1 map
 
-Current scene: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_Exterior_260928.unity`. Multiplayer enters from MainMenu and exits to `Stage_02_Mazes` after the authored gathering, potion, climb, sap injection and paired entrance conditions. The independent solo test entry and direct Editor testing remain. Stage and ability details are in `Documentation/DesignRevision_260928.md`; the former `Stage_01_Exterior.unity` prototype was removed on 2026-09-30.
+Current Stage 1 player scene: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference.unity`. The Main Menu solo route and multiplayer lobby both load this map. It uses the existing `PF_Player` offline player, including its `StageActor` and held-item presentation, plus `PlayerSpawnLayout` with `PF_StageNetworkPlayer` and two spawn points for Fusion sessions. It also has the shared game overlay, the two slot-specific player HUDs, the play-screen controller, cursor capture/release behavior, and the Input System UI event module. The `StageLevel` points to `Stage_02_Mazes`.
+
+`Stage_01_Exterior_260928.unity` remains available as the earlier authored exterior gameplay scene. The new modeling map now includes two herb sources and the cooperative gathering and brewing flow near the spawn points. Its climb, sap injection and paired entrance layout has not been moved onto the new modeling map. The cooperative minigame setup is documented in `HerbPotionMinigames.md`; the approved exterior design remains in `Documentation/DesignRevision_260928.md`.

@@ -29,6 +29,7 @@ namespace Herbalist.Editor
                 if (child.name.StartsWith("Branch_") || child.name.StartsWith("Route_") || child.name.StartsWith("TwinJumpPad_") || child.name.StartsWith("WhiteCloth_") || child.name.StartsWith("SwingLanding_") || child.name.StartsWith("SummitApproach_") || child.name == "PdfExteriorLayout") Object.DestroyImmediate(child.gameObject);
             var layout = new GameObject("PdfExteriorLayout").transform; layout.SetParent(root, false);
             var tree = GameObject.Find("Sacred_Tree_1.0");
+            if (tree.GetComponent<ClothBendSurface>() == null) tree.AddComponent<ClothBendSurface>();
             Vector3 center = tree.transform.position; center.y = 0;
             int targetId = 2200, padIndex = 0;
             var routes = new System.Collections.Generic.List<Transform>();
@@ -38,9 +39,14 @@ namespace Herbalist.Editor
                 Vector3 top = center + direction * (definition.innerRadius + definition.length * .5f) + Vector3.up * definition.height;
                 var branch = new GameObject(definition.name); branch.SetActive(false); branch.transform.SetParent(layout, false);
                 branch.transform.SetPositionAndRotation(top, Quaternion.LookRotation(direction));
-                var visual = Primitive(PrimitiveType.Cylinder, branch.transform, "BranchMesh", new Vector3(0, -definition.width * .5f, 0), new Vector3(definition.width, definition.length * .5f, definition.width), definition.kind == ExteriorBranchKind.JumpPad ? settings.jumpBranchMaterial : settings.normalBranchMaterial);
-                visual.transform.localRotation = Quaternion.Euler(90, 0, 0);
-                var collider = branch.AddComponent<BoxCollider>(); collider.center = new Vector3(0, -.2f, 0); collider.size = new Vector3(definition.width, .4f, definition.length);
+                bool jump = definition.kind == ExteriorBranchKind.JumpPad;
+                float capWidth = jump ? settings.jumpCapWidth : settings.normalCapWidth;
+                float capHeight = jump ? settings.jumpCapHeight : settings.normalCapHeight;
+                var stalk = Primitive(PrimitiveType.Cylinder, branch.transform, "MushroomStalk", new Vector3(0, -1.1f, 0), new Vector3(settings.stalkWidth, definition.length * .5f, settings.stalkWidth), settings.normalBranchMaterial);
+                stalk.transform.localRotation = Quaternion.Euler(90, 0, 0);
+                Primitive(PrimitiveType.Sphere, branch.transform, jump ? "JumpMushroomCap" : "FlatMushroomCap", new Vector3(0, -capHeight * .5f, 0), new Vector3(capWidth, capHeight, definition.length + .5f), jump ? settings.jumpBranchMaterial : settings.normalBranchMaterial);
+                var collider = branch.AddComponent<BoxCollider>(); collider.center = new Vector3(0, -.2f, 0); collider.size = new Vector3(capWidth, .4f, definition.length);
+                branch.AddComponent<ClothBendSurface>();
                 var target = branch.AddComponent<LeafInstallTarget>(); Target(target, ++targetId, false);
                 Checkpoint(branch);
                 routes.Add(branch.transform);
@@ -89,12 +95,16 @@ namespace Herbalist.Editor
         private static void Cloth(Transform parent, Vector3 center, ExteriorClothLayout definition, ExteriorLayoutSettings settings)
         {
             var root = new GameObject(definition.name); root.SetActive(false); root.transform.SetParent(parent, false); root.transform.position = center + Direction(definition.angle) * definition.radius + Vector3.up * definition.anchorHeight;
-            var component = root.AddComponent<HangingCloth>(); Float(component, "_length", definition.length); Float(component, "_driveAcceleration", settings.clothDriveAcceleration);
+            var component = root.AddComponent<HangingCloth>(); Float(component, "_length", definition.length); Float(component, "_driveAcceleration", settings.clothDriveAcceleration); Float(component, "_pumpImpulseSeconds", settings.clothPumpImpulseSeconds);
+            Float(component, "_bendMaxAngle", settings.clothBendMaxAngle); Float(component, "_bendProbeRadius", settings.clothBendProbeRadius); Float(component, "_minBendSegmentLength", settings.clothMinBendSegmentLength);
             var cloth = Primitive(PrimitiveType.Cube, root.transform, "ClothMesh", Vector3.down * definition.length * .5f, new Vector3(.55f, definition.length, .08f), settings.clothMaterial);
+            var lowerCloth = Primitive(PrimitiveType.Cube, root.transform, "LowerClothMesh", Vector3.down * definition.length * .5f, new Vector3(.55f, definition.length, .08f), settings.clothMaterial);
+            Object.DestroyImmediate(lowerCloth.GetComponent<Collider>());
+            lowerCloth.SetActive(false);
             var knot = Primitive(PrimitiveType.Sphere, root.transform, "InteractableBottomKnot", Vector3.down * definition.length, Vector3.one * .45f, settings.clothMaterial);
             var beam = Primitive(PrimitiveType.Cylinder, root.transform, "ClothAnchorArm", -Direction(definition.angle) * definition.radius * .5f, new Vector3(.4f, definition.radius * .5f, .4f), settings.clothMaterial);
             beam.transform.rotation = Quaternion.FromToRotation(Vector3.up, Direction(definition.angle));
-            Set(component, "_knot", knot.transform); Set(component, "_cloth", cloth.transform);
+            Set(component, "_knot", knot.transform); Set(component, "_cloth", cloth.transform); Set(component, "_lowerCloth", lowerCloth.transform);
             Label(root.transform, Vector3.down * definition.length + Vector3.up * 1.2f, settings.clothInstructions);
             root.SetActive(true);
         }

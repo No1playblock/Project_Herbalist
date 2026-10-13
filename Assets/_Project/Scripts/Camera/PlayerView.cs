@@ -1,4 +1,5 @@
 using UnityEngine;
+using Herbalist.Presentation;
 
 namespace Herbalist.Player
 {
@@ -14,9 +15,13 @@ namespace Herbalist.Player
         private bool initialized;
         private object _cameraOwner;
         private Transform _cameraOverride;
+        private CharacterRole _zoomRole = CharacterRole.Sodam;
+        private float _zoomMultiplier = 1f;
+        private const string ZoomPreferencePrefix = "Herbalist.Camera.Zoom.";
         public void SetCameraOverride(object owner,Transform anchor) { _cameraOwner=owner;_cameraOverride=anchor; }
         public void ClearCameraOverride(object owner) { if(ReferenceEquals(owner,_cameraOwner)){_cameraOverride=null;_cameraOwner=null;} }
         public Camera Camera => playerCamera;
+        public float ZoomMultiplier => _zoomMultiplier;
         public float Yaw { get; private set; }
         public float Pitch { get; private set; }
         public float BodyYaw => body.eulerAngles.y;
@@ -34,6 +39,7 @@ namespace Herbalist.Player
             headRest = headPivot.localRotation;
             Yaw = body.eulerAngles.y;
             Pitch = tuning.initialPitch;
+            LoadZoom();
             initialized = true;
             return true;
         }
@@ -59,6 +65,40 @@ namespace Herbalist.Player
             if (tuning.facingMode == PlayerFacingMode.CameraAligned) SetBodyYaw(Yaw);
         }
 
+        public void SetZoomRole(CharacterRole role)
+        {
+            if (_zoomRole == role) return;
+            _zoomRole = role;
+            if (initialized) LoadZoom();
+        }
+
+        public void ApplyZoom(float scroll)
+        {
+            if (_cameraOverride != null || Mathf.Abs(scroll) < 0.01f) return;
+            float minimum = Mathf.Max(0.1f, tuning.cameraZoomMinMultiplier);
+            float maximum = Mathf.Max(minimum, tuning.cameraZoomMaxMultiplier);
+            float next = Mathf.Clamp(_zoomMultiplier - scroll / 120f * tuning.cameraZoomStep, minimum, maximum);
+            if (Mathf.Approximately(next, _zoomMultiplier)) return;
+            _zoomMultiplier = next;
+            PlayerPrefs.SetFloat(ZoomPreferencePrefix + _zoomRole, _zoomMultiplier);
+            PlayerPrefs.Save();
+        }
+
+        public void SetRemoteZoom(float multiplier)
+        {
+            float minimum = Mathf.Max(0.1f, tuning.cameraZoomMinMultiplier);
+            float maximum = Mathf.Max(minimum, tuning.cameraZoomMaxMultiplier);
+            if (!float.IsNaN(multiplier) && !float.IsInfinity(multiplier))
+                _zoomMultiplier = Mathf.Clamp(multiplier, minimum, maximum);
+        }
+
+        private void LoadZoom()
+        {
+            float minimum = Mathf.Max(0.1f, tuning.cameraZoomMinMultiplier);
+            float maximum = Mathf.Max(minimum, tuning.cameraZoomMaxMultiplier);
+            _zoomMultiplier = Mathf.Clamp(PlayerPrefs.GetFloat(ZoomPreferencePrefix + _zoomRole, 1f), minimum, maximum);
+        }
+
         // Network presentation can use this without reading local input.
         public void SetLookAngles(float yaw, float pitch)
         {
@@ -77,7 +117,7 @@ namespace Herbalist.Player
             if(_cameraOverride!=null){playerCamera.transform.SetPositionAndRotation(_cameraOverride.position,_cameraOverride.rotation);return;}
             Quaternion rotation = Quaternion.Euler(Pitch, Yaw, 0);
             Vector3 backward = rotation * Vector3.back;
-            float distance = tuning.cameraDistance;
+            float distance = tuning.cameraDistance * _zoomMultiplier;
             if (Physics.SphereCast(cameraTarget.position, tuning.cameraProbeRadius, backward, out RaycastHit hit,
                 distance, tuning.cameraObstacles, QueryTriggerInteraction.Ignore))
                 distance = Mathf.Max(0, hit.distance - tuning.cameraWallPadding);
@@ -90,7 +130,7 @@ namespace Herbalist.Player
             pitch = Mathf.Clamp(pitch, tuning.pitchLimits.x, tuning.pitchLimits.y);
             Quaternion rotation = Quaternion.Euler(pitch, yaw, 0);
             Vector3 backward = rotation * Vector3.back;
-            float distance = tuning.cameraDistance;
+            float distance = tuning.cameraDistance * _zoomMultiplier;
             if (Physics.SphereCast(cameraTarget.position, tuning.cameraProbeRadius, backward, out RaycastHit hit,
                 distance, tuning.cameraObstacles, QueryTriggerInteraction.Ignore))
                 distance = Mathf.Max(0, hit.distance - tuning.cameraWallPadding);

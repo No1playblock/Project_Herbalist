@@ -8,22 +8,31 @@ namespace Herbalist.Abilities
         [FormerlySerializedAs("pinVisual"), SerializeField] private GameObject _visual;
         [FormerlySerializedAs("pinCollider"), SerializeField] private Collider _surface;
         [FormerlySerializedAs("pinAttachmentTip"), SerializeField] private Transform _attachmentTip;
+        [SerializeField] private LeafAbilitySettings _replicaSettings;
         private LeafAbilitySettings settings;
         private Transform owner;
+        private Transform _returnFrame;
         private Action<LeafProjectile> release;
         private Vector3 start, destination, curveRight, localPosition, localContactPoint;
         private Quaternion localRotation;
         private float progress, duration, remaining;
+        private Vector3 _turnStart, _turnForward, _turnSide;
+        private float _turnProgress, _turnDuration;
+        private bool _turningAfterMiss;
         private bool initialized, externalTick;
+        private Vector3 _installedVisualScale;
+        private bool _visualScaleCaptured;
         public LeafState State { get; private set; } = LeafState.Complete;
         public LeafInstallTarget Target { get; private set; }
         public float InstalledAt { get; private set; }
         public Vector3 ContactPoint => Target != null ? Target.transform.TransformPoint(localContactPoint) : transform.position;
         public bool Installed => State == LeafState.Installed;
-        public void Initialize(LeafAbilitySettings config, Transform returningOwner, Vector3 origin, Vector3 aim, Action<LeafProjectile> onRelease, bool network)
+        public void Initialize(LeafAbilitySettings config, Transform returningOwner, Vector3 origin, Vector3 aim, Action<LeafProjectile> onRelease, bool network, Transform returnFrame = null)
         {
             settings = config; owner = returningOwner; start = origin; destination = aim;
+            _returnFrame = returnFrame != null ? returnFrame : returningOwner;
             release = onRelease; externalTick = network; initialized = true; State = LeafState.Flying;
+            _turningAfterMiss = false;
             transform.position = origin;
             var direction = destination - start;
             transform.rotation = HorizontalRotation(direction);
@@ -37,7 +46,7 @@ namespace Herbalist.Abilities
         {
             if (Herbalist.GameUI.GameplayPause.IsPaused) return;
             if (!initialized || State == LeafState.Complete) return;
-            if (owner == null) { Finish(); return; }
+            if (owner == null || _returnFrame == null) { Finish(); return; }
             if (State == LeafState.Flying)
             {
                 progress = Mathf.Min(1, progress + dt / duration);
@@ -47,13 +56,13 @@ namespace Herbalist.Abilities
                 {
                     var target = hit.collider.GetComponentInParent<LeafInstallTarget>();
                     if (target != null && target.CanInstall) Install(target, hit.point, hit.normal, delta);
-                    else BeginReturn();
+                    else BeginMissReturn(hit.normal);
                 }
                 else
                 {
                     transform.position = next;
                     if (delta.sqrMagnitude > 0.000001f) transform.rotation = HorizontalRotation(delta);
-                    if (progress >= 1) BeginReturn();
+                    if (progress >= 1) BeginMissReturn();
                 }
             }
             else if (Installed)
@@ -68,8 +77,29 @@ namespace Herbalist.Abilities
             }
             else if (State == LeafState.Returning)
             {
-                Vector3 catchPoint = owner.position + Vector3.up * settings.launchOffset.y;
-                transform.position = Vector3.MoveTowards(transform.position, catchPoint, settings.returnSpeed * dt);
+                if (_turningAfterMiss)
+                {
+                    float radius = settings.missTurnRadius;
+                    _turnProgress = Mathf.Min(1f, _turnProgress + dt / _turnDuration);
+                    float t = _turnProgress;
+                    float inverse = 1f - t;
+                    Vector3 control1 = _turnStart + _turnForward * radius;
+                    Vector3 control2 = control1 + _turnSide * (2f * radius);
+                    Vector3 end = _turnStart + _turnSide * (2f * radius);
+                    Vector3 turnNext = inverse * inverse * inverse * _turnStart +
+                                   3f * inverse * inverse * t * control1 +
+                                   3f * inverse * t * t * control2 + t * t * t * end;
+                    Vector3 turnDelta = turnNext - transform.position;
+                    transform.position = turnNext;
+                    if (turnDelta.sqrMagnitude > 0.000001f) transform.rotation = HorizontalRotation(turnDelta);
+                    if (_turnProgress >= 1f) _turningAfterMiss = false;
+                    return;
+                }
+                Vector3 catchPoint = _returnFrame.TransformPoint(settings.launchOffset);
+                Vector3 next = Vector3.MoveTowards(transform.position, catchPoint, settings.returnSpeed * dt);
+                Vector3 delta = next - transform.position;
+                transform.position = next;
+                if (delta.sqrMagnitude > 0.000001f) transform.rotation = HorizontalRotation(delta);
                 if (Vector3.Distance(transform.position, catchPoint) <= settings.catchDistance) Finish();
             }
         }
@@ -88,6 +118,7 @@ namespace Herbalist.Abilities
             Target = target;
             localContactPoint = target.transform.InverseTransformPoint(hit);
             transform.SetPositionAndRotation(hit, target.Rotation(normal, heading));
+            SetVisualScale(settings.installedScaleMultiplier);
             transform.position = target.Position(hit, normal, 0) + (target.ExactSocketPlacement ? Vector3.zero : TipPlacementOffset(normal));
             localPosition = target.transform.InverseTransformPoint(transform.position);
             localRotation = Quaternion.Inverse(target.transform.rotation) * transform.rotation;
@@ -98,7 +129,7 @@ namespace Herbalist.Abilities
         private Vector3 TipPlacementOffset(Vector3 normal)
         {
             var visual = _visual;
-            var filter = visual != null ? visual.GetComponent<MeshFilter>() : null;
+            var filter = visual != null ? visual.GetComponentInChildren<MeshFilter>() : null;
             if (filter == null || filter.sharedMesh == null) return normal * settings.surfaceOffset;
             var mesh = filter.sharedMesh;
             Vector3[] points;
@@ -132,7 +163,26 @@ namespace Herbalist.Abilities
         public void BeginReturn()
         {
             if (State == LeafState.Returning || State == LeafState.Complete) return;
+            _turningAfterMiss = false;
             Detach(); State = LeafState.Returning; RefreshVisuals();
+        }
+        private void BeginMissReturn(Vector3 obstacleNormal = default)
+        {
+            Vector3 forward = Vector3.ProjectOnPlane(destination - start, Vector3.up);
+            Vector3 awayFromObstacle = Vector3.ProjectOnPlane(obstacleNormal, Vector3.up);
+            if (awayFromObstacle.sqrMagnitude > 0.000001f) forward = awayFromObstacle;
+            if (forward.sqrMagnitude < 0.000001f) forward = transform.forward;
+            forward.Normalize();
+            Vector3 side = Vector3.Cross(Vector3.up, forward);
+            Vector3 toOwner = Vector3.ProjectOnPlane(owner.position - transform.position, Vector3.up);
+            if (Vector3.Dot(side, toOwner) < 0f) side = -side;
+            BeginReturn();
+            _turnStart = transform.position;
+            _turnForward = forward;
+            _turnSide = side.normalized;
+            _turnProgress = 0f;
+            _turnDuration = Mathf.Max(0.01f, 3.6f * settings.missTurnRadius / settings.returnSpeed);
+            _turningAfterMiss = true;
         }
         public void Finish()
         {
@@ -142,6 +192,10 @@ namespace Herbalist.Abilities
         private void Detach() { if (Target != null) Target.Detach(this); Target = null; }
         public void ApplyReplica(LeafState state, int targetId)
         {
+            var rules = Herbalist.Levels.StageLevel.Instance != null
+                ? Herbalist.Levels.StageLevel.Instance.abilityRules
+                : null;
+            settings = rules != null && rules.leaf != null ? rules.leaf : _replicaSettings;
             var target = LeafInstallTarget.Find(targetId);
             if (Target != target || State != state) Detach();
             State = state; Target = target;
@@ -157,7 +211,19 @@ namespace Herbalist.Abilities
                 foreach (var renderer in GetComponentsInChildren<Renderer>(true)) renderer.gameObject.layer = layer;
             }
             if (_visual != null) _visual.SetActive(State != LeafState.Complete);
+            if (_visual != null && settings != null)
+                SetVisualScale((Installed ? 1f : settings.flyingVisualScaleMultiplier) * settings.installedScaleMultiplier);
             if (_surface != null) _surface.enabled = Installed;
+        }
+        private void SetVisualScale(float multiplier)
+        {
+            if (_visual == null) return;
+            if (!_visualScaleCaptured)
+            {
+                _installedVisualScale = _visual.transform.localScale;
+                _visualScaleCaptured = true;
+            }
+            _visual.transform.localScale = _installedVisualScale * multiplier;
         }
         // Leaves stay flat even when their trajectory rises, falls or curves.
         private Quaternion HorizontalRotation(Vector3 direction)

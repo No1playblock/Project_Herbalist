@@ -39,6 +39,8 @@ namespace Herbalist.Editor
                     Check(layout != null, "PDF layout settings");
                     Check(Object.FindObjectsByType<ExteriorJumpPad>(FindObjectsSortMode.None).Length == layout.branches.Count(x => x.kind == ExteriorBranchKind.JumpPad), "PDF jump branches");
                     Check(Object.FindObjectsByType<HangingCloth>(FindObjectsSortMode.None).Length == layout.cloths.Length, "PDF interactive blue cloths");
+                    Check(Object.FindObjectsByType<HangingCloth>(FindObjectsSortMode.None).All(x => Read<Transform>(x, "_lowerCloth") != null), "each cloth has an authored lower bend segment");
+                    Check(Object.FindObjectsByType<ClothBendSurface>(FindObjectsSortMode.None).Length >= layout.branches.Length + 1, "branches and sacred tree can bend cloth");
                     Check(Object.FindObjectsByType<LandingCheckpoint>(FindObjectsSortMode.None).Length >= layout.branches.Length, "branch landing checkpoints");
                     var gaps = GameObject.Find("PdfExteriorLayout").transform.Cast<Transform>().Where(x => x.name.StartsWith("LeafBridge_")).ToArray();
                     Check(gaps.Length == layout.leafBridges.Length && gaps.All(x => x.GetComponentsInChildren<Collider>().All(c => c.bounds.size.y > c.bounds.size.z || c.bounds.size.y > c.bounds.size.x)), "green gaps contain walls, no prebuilt bridge floor");
@@ -88,11 +90,30 @@ namespace Herbalist.Editor
                 player.Motor.Teleport(fourth.transform.position + new Vector3(0, .2f, -2)); Physics.SyncTransforms();
                 var ray = new Ray(fourth.transform.position + Vector3.up * 3, Vector3.down);
                 actor.Abilities.Tick(actor.Abilities.Input.CycleSequence + 1, actor.Abilities.Input.UseSequence, ray, .3f, false, true);
-                Check(leaves[0].State == LeafState.Returning && actor.Abilities.Leaf.ActiveCount == 3, "oldest recalled, slot reserved for new flight");
-                player.Motor.Teleport(fourth.transform.position + Vector3.back * 30);
-                Check(!actor.Abilities.Leaf.TryThrowAtTarget(ray) && actor.Abilities.Leaf.RangeRejected, "player-relative range rejects without consuming");
+                Check(leaves[0].State == LeafState.Returning && actor.Abilities.Leaf.ActiveCount == 3 && actor.Abilities.Leaf.Recovering,
+                    "oldest leaf returns before the fourth leaf launches");
+                var leafSettings = actor.Abilities.Leaf.Settings;
+                player.Motor.Teleport(fourth.transform.position + Vector3.back * (leafSettings.range + 10f));
+                actor.Abilities.Leaf.Tick(.3f, ray);
+                Check(Read<List<LeafProjectile>>(actor.Abilities.Leaf, "leaves").Count == 3,
+                    "queued shot does not create a fourth leaf before recovery finishes");
+                leaves[0].Tick(20f);
+                Check(!actor.Abilities.Leaf.Recovering && actor.Abilities.Leaf.ActiveCount == 3,
+                    "queued shot launches only after the first leaf reaches the player");
+                var thrownLeaf = Read<List<LeafProjectile>>(actor.Abilities.Leaf, "leaves").Last();
+                Check((Read<Vector3>(thrownLeaf, "destination") - Read<Vector3>(thrownLeaf, "start")).magnitude <= leafSettings.range + .001f,
+                    "leaf destination is capped at the configured flight distance");
+                var launchFrame = Read<Transform>(actor.Abilities.Leaf, "launchFrame");
+                Check(Vector3.Distance(Read<Vector3>(thrownLeaf, "start"), launchFrame.TransformPoint(leafSettings.launchOffset)) < .001f,
+                    "new leaf launches from the scaled body offset");
                 actor.Abilities.Tick(actor.Abilities.Input.CycleSequence + 1, actor.Abilities.Input.UseSequence + 1, ray, .1f);
-                Check(leaves[1].State == LeafState.Returning, "left click recalls oldest installed leaf without a mode");
+                Check(leaves[1].Installed, "left click does not manually recall an installed leaf");
+                actor.Abilities.Tick(actor.Abilities.Input.CycleSequence + 2, actor.Abilities.Input.UseSequence + 1, ray, .3f);
+                Check(leaves[1].State == LeafState.Returning && leaves[2].Installed && actor.Abilities.Leaf.Recovering,
+                    "the next throw automatically recalls the next leaf in throw order");
+                leaves[1].Tick(20f);
+                Check(!actor.Abilities.Leaf.Recovering && actor.Abilities.Leaf.ActiveCount == 3,
+                    "fifth leaf launches after the second leaf reaches the player");
                 actor.Abilities.Leaf.Clear(); leaves.Clear();
                 var pad = pads[0]; var socket = Read<LeafInstallTarget[]>(pad, "_sockets")[0]; var inlet = Read<SapInjectionPort[]>(pad, "_ports")[1];
                 var installed = Install(actor.Abilities.Leaf.Settings, actor.transform, socket); leaves.Add(installed);
@@ -153,6 +174,24 @@ namespace Herbalist.Editor
                 var expectedSwing = Quaternion.Euler(0, player.View.Yaw, 0) * Vector3.right;
                 cloth.ReceiveMovement(player, Vector2.right); cloth.Tick(.1f);
                 Check(Vector3.Dot(knot.position - beforeKnot, expectedSwing) > 0, "cloth moves in camera-relative input direction");
+                cloth.ReceiveMovement(player, Vector2.right);
+                Check(Read<Vector2>(cloth, "_drive") == Vector2.zero, "holding a direction does not add another swing impulse");
+                cloth.ReceiveMovement(player, Vector2.left);
+                Check(Read<Vector2>(cloth, "_drive") != Vector2.zero, "pressing the opposite direction adds a new swing impulse");
+                var testBranch = new GameObject("TestClothBendBranch");
+                try
+                {
+                    testBranch.transform.position = Vector3.Lerp(cloth.transform.position, knot.position, .5f);
+                    testBranch.AddComponent<BoxCollider>().size = Vector3.one * .5f;
+                    testBranch.AddComponent<ClothBendSurface>();
+                    Physics.SyncTransforms();
+                    cloth.Tick(.02f);
+                    Check(Read<bool>(cloth, "_bendActive"), "branch contact creates a second cloth pivot");
+                    var bentKnot = knot.position;
+                    cloth.ReceiveMovement(player, Vector2.right); cloth.Tick(.02f);
+                    Check(Read<Vector2>(cloth, "_bendAngles").magnitude <= 30.001f && (knot.position - bentKnot).sqrMagnitude > .0001f, "lower cloth swings within 30 degrees around branch");
+                }
+                finally { Object.Destroy(testBranch); }
                 Check(player.Motor.MovementLocked && partner.GetComponent<PlayerController>().Motor.MovementLocked, "cloth movement locked");
                 Check(HangingCloth.TryInteract(actor, out _) && !player.Motor.MovementLocked, "release clears only cloth locks");
                 HangingCloth.TryInteract(partner, out _);

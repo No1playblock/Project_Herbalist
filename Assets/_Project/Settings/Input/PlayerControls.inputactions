@@ -27,6 +27,16 @@
                     "priority": 0
                 },
                 {
+                    "name": "Zoom",
+                    "type": "Value",
+                    "id": "bc03e8b1-28ab-4a8b-a5fb-63ac13b1b4d4",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
                     "name": "Orbit",
                     "type": "Button",
                     "id": "327955f4-cb64-481d-bdb5-aac973c523f6",
@@ -126,6 +136,17 @@
                 },
                 {
                     "name": "",
+                    "id": "6f26628d-2340-41fc-a99c-bf58773eff8c",
+                    "path": "<Mouse>/scroll",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Zoom",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "31b2730e-7979-41f9-b83e-60a8ba45a8db",
                     "path": "<Mouse>/rightButton",
                     "interactions": "",
@@ -174,6 +195,16 @@
                     "priority": 0
                 },
                 {
+                    "name": "ToggleAppearance",
+                    "type": "Button",
+                    "id": "cf9ed8fd-4c77-4a79-9e75-e19112ccbc4f",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
                     "name": "ReleaseCursor",
                     "type": "Button",
                     "id": "75937d20-99d2-4960-83b5-f47871e5e140",
@@ -203,6 +234,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "ToggleScreen",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "40a0dfe9-fae0-4054-8b9c-159aa25f72f4",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleAppearance",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

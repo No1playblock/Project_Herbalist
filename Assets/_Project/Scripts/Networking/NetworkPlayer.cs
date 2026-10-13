@@ -9,6 +9,7 @@ namespace Herbalist.Networking
     {
         public Vector2 Move;
         public Vector2 LookAngles;
+        public float ZoomMultiplier;
         public uint JumpSequence;
         public uint AbilityCycle;
         public uint AbilityUse;
@@ -30,6 +31,7 @@ namespace Herbalist.Networking
         [Networked] public NetworkBool Grounded { get; set; }
         [Networked] public float BodyYaw { get; set; }
         [Networked] public Vector2 LookAngles { get; set; }
+        [Networked] public float CameraZoomMultiplier { get; set; }
         [Networked] public uint LastJumpSequence { get; set; }
         [Networked] public NetworkBool MovementBlocked { get; set; }
         [Networked] public int Slot { get; set; }
@@ -67,6 +69,7 @@ namespace Herbalist.Networking
                 Grounded = false;
                 BodyYaw = transform.eulerAngles.y;
                 LookAngles = new Vector2(BodyYaw, player.Tuning.initialPitch);
+                CameraZoomMultiplier = 1f;
             }
             screen = FindFirstObjectByType<PlayScreenController>();
             if (screen != null) screen.Register(player.View, Slot, HasInputAuthority);
@@ -79,6 +82,7 @@ namespace Herbalist.Networking
         {
             Move = player.Input.Move,
             LookAngles = new Vector2(player.View.Yaw, player.View.Pitch),
+            ZoomMultiplier = player.View.ZoomMultiplier,
             JumpSequence = player.Input.JumpSequence,
             AbilityCycle = GetComponent<Herbalist.Abilities.AbilityInputReader>().CycleSequence,
             AbilityUse = GetComponent<Herbalist.Abilities.AbilityInputReader>().UseSequence,
@@ -105,6 +109,11 @@ namespace Herbalist.Networking
             {
                 if (Finite(input.Move.x) && Finite(input.Move.y) && Finite(input.LookAngles.x) && Finite(input.LookAngles.y))
                 {
+                    if (Finite(input.ZoomMultiplier) && input.ZoomMultiplier > 0f)
+                    {
+                        CameraZoomMultiplier = input.ZoomMultiplier;
+                        if (!HasInputAuthority) player.View.SetRemoteZoom(input.ZoomMultiplier);
+                    }
                     var movement = Vector2.ClampMagnitude(input.Move, 1);
                     if(HasStateAuthority && player.RouteMovement(movement))movement=Vector2.zero;
                     LookAngles = new Vector2(Mathf.Repeat(input.LookAngles.x, 360), Mathf.Clamp(input.LookAngles.y, player.Tuning.pitchLimits.x, player.Tuning.pitchLimits.y));
@@ -141,6 +150,7 @@ namespace Herbalist.Networking
         {
             if (characterPresentation != null) characterPresentation.SetNetworkGrounded(Grounded);
             if (!HasInputAuthority) player.View.SetLookAngles(LookAngles.x, LookAngles.y);
+            if (!HasInputAuthority) player.View.SetRemoteZoom(CameraZoomMultiplier);
             player.View.SetBodyYaw(player.Tuning.facingMode == PlayerFacingMode.CameraAligned && HasInputAuthority
                 ? player.View.Yaw : BodyYaw);
         }
