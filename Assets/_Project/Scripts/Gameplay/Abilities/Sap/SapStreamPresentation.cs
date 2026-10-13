@@ -7,8 +7,10 @@ namespace Herbalist.Abilities
     {
         [SerializeField] private SapDeposit sap;
         [SerializeField] private LineRenderer stream;
+        [SerializeField] private MeshFilter _tubeFilter;
+        [SerializeField] private MeshRenderer _tubeRenderer;
         [SerializeField] private Transform[] beads;
-        [Header("Liquid ribbon")]
+        [Header("Water stream tube")]
         [SerializeField, Range(6, 32)] private int _pathSegments = 22;
         [SerializeField, Range(6, 16)] private int _radialSegments = 12;
         [SerializeField, Min(0)] private float _pathSway = 0.018f;
@@ -49,6 +51,11 @@ namespace Herbalist.Abilities
         private float flowTime;
         
         private Vector3[] _pathPoints;
+        private Mesh _tubeMesh;
+        private Vector3[] _tubeVertices;
+        private Vector3[] _tubeNormals;
+        private Vector2[] _tubeUvs;
+        private int[] _tubeTriangles;
         private Transform _blobVisual;
         private MeshFilter _blobMeshFilter;
         private Vector3 _blobBaseLocalPosition;
@@ -86,7 +93,11 @@ private void LateUpdate()
             UpdateBlobMotion(settings);
 
             bool visible = sap.HasStream && (sap.State == SapState.Extracting || sap.State == SapState.Controlled);
-            stream.enabled = visible && settings != null;
+            bool showStream = visible && settings != null;
+            bool hasTube = _tubeRenderer != null && _tubeFilter != null;
+            bool showTube = showStream && sap.HoseStream && hasTube;
+            stream.enabled = showStream && !showTube;
+            if (_tubeRenderer != null) _tubeRenderer.enabled = showTube;
             UpdateImpactCrown(visible && sap.HoseStream && !sap.HoseRetracting && sap.HoseImpact);
 
             if (visible && settings != null)
@@ -98,11 +109,15 @@ private void LateUpdate()
                 UpdateRetractionDrips(sap.HoseStream && sap.HoseRetracting && sap.HasStream,
                     _pathPoints[0], end, settings, paused ? 0f : Time.deltaTime);
 
-                // One view-facing stream uses the hover blob's measured world-space diameter.
-                stream.useWorldSpace = true;
-                stream.positionCount = _pathPoints.Length;
-                stream.SetPositions(_pathPoints);
-                stream.widthMultiplier = streamDiameter * Mathf.Max(1f, _coreWidth);
+                if (showTube)
+                    UpdateTube(streamDiameter * _coreWidth);
+                else
+                {
+                    stream.useWorldSpace = true;
+                    stream.positionCount = _pathPoints.Length;
+                    stream.SetPositions(_pathPoints);
+                    stream.widthMultiplier = streamDiameter * Mathf.Max(1f, _coreWidth);
+                }
                 UpdateBeads(start, end, settings.streamFlowSpeed, settings.streamBeadSize, settings.radius);
                 UpdateSprayDroplets(sap.HoseStream && !sap.HoseRetracting, paused ? 0f : Time.deltaTime);
             }
@@ -127,6 +142,80 @@ private void InitializeStream()
             if (stream == null) return;
             _pathPoints = new Vector3[Mathf.Max(4, _pathSegments) + 1];
             ConfigureCoreLine();
+            InitializeTube();
+        }
+
+        private void InitializeTube()
+        {
+            if (_tubeFilter == null || _tubeRenderer == null) return;
+            int sides = Mathf.Max(6, _radialSegments);
+            int ringSize = sides + 1;
+            int vertexCount = _pathPoints.Length * ringSize;
+            _tubeVertices = new Vector3[vertexCount];
+            _tubeNormals = new Vector3[vertexCount];
+            _tubeUvs = new Vector2[vertexCount];
+            _tubeTriangles = new int[(_pathPoints.Length - 1) * sides * 6];
+            for (int ring = 0; ring < _pathPoints.Length; ring++)
+                for (int side = 0; side <= sides; side++)
+                    _tubeUvs[ring * ringSize + side] = new Vector2(ring / (float)(_pathPoints.Length - 1), side / (float)sides);
+            for (int ring = 0; ring < _pathPoints.Length - 1; ring++)
+                for (int side = 0; side < sides; side++)
+                {
+                    int first = ring * ringSize + side;
+                    int next = first + ringSize;
+                    int index = (ring * sides + side) * 6;
+                    _tubeTriangles[index] = first;
+                    _tubeTriangles[index + 1] = first + 1;
+                    _tubeTriangles[index + 2] = next;
+                    _tubeTriangles[index + 3] = first + 1;
+                    _tubeTriangles[index + 4] = next + 1;
+                    _tubeTriangles[index + 5] = next;
+                }
+            _tubeMesh = new Mesh { name = "Sap Stream Tube" };
+            _tubeMesh.MarkDynamic();
+            _tubeMesh.vertices = _tubeVertices;
+            _tubeMesh.uv = _tubeUvs;
+            _tubeMesh.triangles = _tubeTriangles;
+            _tubeFilter.sharedMesh = _tubeMesh;
+            _tubeRenderer.enabled = false;
+            stream.enabled = false;
+        }
+
+        private void UpdateTube(float diameter)
+        {
+            if (_tubeMesh == null) return;
+            int sides = Mathf.Max(6, _radialSegments);
+            int ringSize = sides + 1;
+            Vector3 previousSide = Vector3.zero;
+            Transform tubeTransform = _tubeFilter.transform;
+            for (int ring = 0; ring < _pathPoints.Length; ring++)
+            {
+                int before = Mathf.Max(0, ring - 1);
+                int after = Mathf.Min(_pathPoints.Length - 1, ring + 1);
+                Vector3 tangent = (_pathPoints[after] - _pathPoints[before]).normalized;
+                if (tangent.sqrMagnitude < .0001f) tangent = Vector3.forward;
+                Vector3 sideAxis = ring == 0 ? Vector3.Cross(tangent, Vector3.up) : Vector3.ProjectOnPlane(previousSide, tangent);
+                if (sideAxis.sqrMagnitude < .0001f) sideAxis = Vector3.Cross(tangent, Vector3.right);
+                sideAxis.Normalize();
+                Vector3 upAxis = Vector3.Cross(tangent, sideAxis).normalized;
+                previousSide = sideAxis;
+                float t = ring / (float)(_pathPoints.Length - 1);
+                float taper = Mathf.Lerp(.82f, 1f, Mathf.SmoothStep(0f, 1f, t / .12f)) *
+                    Mathf.Lerp(1f, .28f, Mathf.SmoothStep(0f, 1f, (t - .82f) / .18f));
+                for (int segment = 0; segment <= sides; segment++)
+                {
+                    float angle = segment * Mathf.PI * 2f / sides;
+                    Vector3 radial = sideAxis * Mathf.Cos(angle) + upAxis * Mathf.Sin(angle);
+                    float pulse = 1f + _surfacePulse * Mathf.Sin(t * 24f - flowTime * 7f + angle * 3f);
+                    int index = ring * ringSize + segment;
+                    Vector3 worldPoint = _pathPoints[ring] + radial * (diameter * .5f * taper * pulse);
+                    _tubeVertices[index] = tubeTransform.InverseTransformPoint(worldPoint);
+                    _tubeNormals[index] = tubeTransform.InverseTransformDirection(radial).normalized;
+                }
+            }
+            _tubeMesh.vertices = _tubeVertices;
+            _tubeMesh.normals = _tubeNormals;
+            _tubeMesh.RecalculateBounds();
         }
 
 private void ConfigureCoreLine()
@@ -333,6 +422,12 @@ private void InitializeBlobMotion()
 
 private void OnDestroy()
         {
+            if (_tubeMesh != null)
+            {
+                if (_tubeFilter != null) _tubeFilter.sharedMesh = null;
+                if (Application.isPlaying) Destroy(_tubeMesh);
+                else DestroyImmediate(_tubeMesh);
+            }
             if (beads == null || _dropFalling == null) return;
             for (int i = 0; i < beads.Length; i++)
             {
