@@ -31,25 +31,36 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _BeamMask:
+        m_Texture: {fileID: 2800000, guid: e6e6690846fbce94e8a3214453857087, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BeamPattern:
+        m_Texture: {fileID: 2800000, guid: 54b541950f65b994ea864fbfe5862a39, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Cull: 0
-    - _FlowAmount: 0.8
-    - _FlowSpeed: 2
-    - _FoamAmount: 0.55
+    - _BeamPatternStrength: 1
+    - _BeamPatternTiling: 8
+    - _Cull: 2
+    - _FlowAmount: 0.544
+    - _FlowSpeed: 1
+    - _FoamAmount: 0.12
     - _FoamCoverage: 0.42
     - _FoamScale: 12
     - _FresnelPower: 3
+    - _GlowStrength: 1.16
     - _PatternScale: 18
     m_Colors:
-    - _BaseColor: {r: 0.035, g: 0.32, b: 0.98, a: 0.72}
-    - _CoreColor: {r: 0.28, g: 0.72, b: 1, a: 1}
-    - _FoamColor: {r: 0.88, g: 0.96, b: 1, a: 0.7}
-    - _RimColor: {r: 0.05, g: 0.5, b: 1, a: 0.72}
+    - _BaseColor: {r: 0.255, g: 0.47, b: 0.95, a: 0.94}
+    - _CoreColor: {r: 0.6396227, g: 0.786026, b: 1, a: 1}
+    - _FoamColor: {r: 0.88, g: 0.96, b: 1, a: 0.72156864}
+    - _RimColor: {r: 0.16, g: 0.4, b: 0.85, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &810512311406462748

@@ -20,6 +20,7 @@ namespace Herbalist.Networking
         [Networked] private float HoseTravelTime { get; set; }
         [Networked] private float HoseStartTime { get; set; }
         [Networked] private float MarkScale { get; set; }
+        [Networked] private float AbsorptionProgress { get; set; }
         [Networked] private NetworkBool HoseMark { get; set; }
         private void Awake() => sap = GetComponent<SapDeposit>();
         public override void FixedUpdateNetwork()
@@ -31,14 +32,14 @@ namespace Herbalist.Networking
             HoseImpact = sap.HoseImpact; HoseImpactNormal = sap.HoseImpactNormal;
             HoseLaunchVelocity = sap.HoseLaunchVelocity; HoseTravelTime = sap.HoseTravelTime;
             HoseStartTime = sap.HoseStartTime;
-            MarkScale = sap.MarkScale; HoseMark = sap.IsHoseMark;
+            MarkScale = sap.MarkScale; AbsorptionProgress = sap.AbsorptionProgress; HoseMark = sap.IsHoseMark;
             StreamStart = sap.StreamStart; HasStream = sap.HasStream;
             State = sap.State; ReceiverId = sap.Receiver != null ? sap.Receiver.Id : 0;
         }
 public override void Render()
         {
             if (HasStateAuthority) return;
-            sap.ApplyReplica(State, ReceiverId, HoseMark, MarkScale);
+            sap.ApplyReplica(State, ReceiverId, HoseMark, MarkScale, AbsorptionProgress);
             sap.SetStream(StreamStart, HasStream);
             sap.SetHoseReplica(HoseStream, HoseRetracting, StreamEnd, HoseLaunchVelocity, HoseTravelTime, HoseStartTime,
                 HoseImpact, HoseImpactNormal, MarkScale);
