@@ -17,11 +17,10 @@ namespace Herbalist.Levels
         [SerializeField, Min(.1f)] private float _length = 7;
         [SerializeField, Range(0, 60)] private float _maxAngle = 30;
         [SerializeField, Min(.1f)] private float _grabRange = 2.5f;
-        [SerializeField, Min(0)] private float _driveAcceleration = 65;
-        [SerializeField, Min(0)] private float _pumpImpulseSeconds = .15f;
-        [SerializeField, Min(0)] private float _heldForceMultiplier = .15f;
+        [SerializeField, Min(0)] private float _driveAcceleration = 90;
+        [SerializeField, Min(0)] private float _pumpImpulseSeconds = .2f;
         [SerializeField, Min(0)] private float _spring = 4;
-        [SerializeField, Min(0)] private float _damping = 1.2f;
+        [SerializeField, Min(0)] private float _damping = .55f;
         [SerializeField, Min(0)] private float _releaseSpeed = 1;
         [SerializeField, Range(0, 30)] private float _bendMaxAngle = 30;
         [SerializeField, Min(.01f)] private float _bendProbeRadius = .08f;
@@ -37,7 +36,7 @@ namespace Herbalist.Levels
         [Networked] private Vector2 BendAngles { get; set; }
         [Networked] private int Rider0 { get; set; }
         [Networked] private int Rider1 { get; set; }
-        private Vector2 _angles, _velocity, _drive, _heldInput, _heldDrive;
+        private Vector2 _angles, _velocity, _drive, _heldInput;
         private Vector2 _bendAngles, _bendVelocity, _clothSize;
         private Vector3 _bendPoint;
         private float _bendLength;
@@ -68,11 +67,14 @@ namespace Herbalist.Levels
         {
             feedback = null;
             HangingCloth nearest = null; float distance = float.PositiveInfinity;
+            var controller = actor.GetComponent<CharacterController>();
+            Vector3 grabPosition = controller != null ? controller.bounds.center : actor.transform.position + Vector3.up;
             foreach (var cloth in Cloths)
             {
                 if (!cloth.Authority) continue;
                 for (int i = 0; i < 2; i++) if (cloth._riders[i] == actor) { cloth.Detach(i); feedback = cloth._releaseText; return true; }
-                float d = Vector3.Distance(actor.transform.position + Vector3.up, cloth._knot.position);
+                if (cloth._knot == null) continue;
+                float d = Vector3.Distance(grabPosition, cloth._knot.position);
                 if (d <= cloth._grabRange && d < distance) { nearest = cloth; distance = d; }
             }
             if (nearest == null) return false;
@@ -83,7 +85,7 @@ namespace Herbalist.Levels
                 {
                     nearest._riders[i] = actor;
                     nearest._lastPoints[i] = actor.transform.position;
-                    if (i == 0) { nearest._heldInput = Vector2.zero; nearest._heldDrive = Vector2.zero; nearest._drive = Vector2.zero; }
+                    if (i == 0) { nearest._heldInput = Vector2.zero; nearest._drive = Vector2.zero; }
                     player.SetMovementReceiver(nearest); player.Motor.SetMovementLock(nearest, true);
                     actor.Abilities.Sap?.Cancel(); actor.Abilities.SetInputLock(nearest, true);
                     nearest.Publish(); feedback = nearest._grabText; return true;
@@ -100,10 +102,8 @@ namespace Herbalist.Levels
             _heldInput = held;
             Quaternion facing = Quaternion.Euler(0, player.View.Yaw, 0);
             Vector3 world = facing * new Vector3(pressed.x, 0, pressed.y);
-            Vector3 heldWorld = facing * new Vector3(held.x, 0, held.y);
             // Positive X rotation moves a hanging point toward -Z; positive Z toward +X.
             _drive += Vector2.ClampMagnitude(new Vector2(-world.z, world.x), 1);
-            _heldDrive = Vector2.ClampMagnitude(new Vector2(-heldWorld.z, heldWorld.x), 1);
         }
         public void Tick(float dt)
         {
@@ -111,8 +111,7 @@ namespace Herbalist.Levels
             for (int i = 0; i < 2; i++) if (_riders[i] != null && !_riders[i].Available) Detach(i);
             // Keys always push in their own direction. The spring reverses the swing naturally;
             // a well-timed opposite key then adds speed instead of cancelling the current motion.
-            Vector2 impulse = _drive * (_driveAcceleration * _pumpImpulseSeconds)
-                + _heldDrive * (_driveAcceleration * _heldForceMultiplier * dt);
+            Vector2 impulse = _drive * (_driveAcceleration * _pumpImpulseSeconds);
             _drive = Vector2.zero;
             if (_bendActive)
             {
@@ -229,7 +228,7 @@ namespace Herbalist.Levels
             else if (!Online) player.Motor.Launch(velocity, player.Tuning.gravity, true);
             _riders[side] = null;
             if (side == 0 && _riders[1] != null) { _riders[0] = _riders[1]; _riders[1] = null; }
-            if (side == 0) { _heldInput = Vector2.zero; _heldDrive = Vector2.zero; _drive = Vector2.zero; }
+            if (side == 0) { _heldInput = Vector2.zero; _drive = Vector2.zero; }
             Publish();
         }
         private void Update() { if (!Online && Authority) Tick(Time.deltaTime); else if (Online && !HasStateAuthority) Present(Angles, BendActive, BendPoint, BendLength, BendAngles); }

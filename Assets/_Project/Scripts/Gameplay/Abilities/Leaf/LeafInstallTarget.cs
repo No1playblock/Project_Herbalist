@@ -10,6 +10,7 @@ namespace Herbalist.Abilities
         [SerializeField] private int targetId;
         [SerializeField] private Transform socket;
         [SerializeField] private bool _singleOccupant;
+        [FormerlySerializedAs("_uprightOnInstall"), SerializeField] private bool _perpendicularToSurfaceOnInstall;
         [FormerlySerializedAs("onPinned"), SerializeField] private UnityEvent onInstalled = new UnityEvent();
         [SerializeField] private UnityEvent onReleased = new UnityEvent();
         private readonly HashSet<LeafProjectile> occupants = new();
@@ -19,6 +20,7 @@ namespace Herbalist.Abilities
         public Vector3 SocketPosition => socket != null ? socket.position : transform.position;
         public Quaternion SocketRotation => socket != null ? socket.rotation : transform.rotation;
         public bool ExactSocketPlacement => socket != null;
+        public bool PerpendicularToSurfaceOnInstall => _perpendicularToSurfaceOnInstall && socket == null;
         public LeafProjectile InstalledLeaf { get { foreach(var leaf in occupants) if(leaf != null && leaf.Installed) return leaf; return null; } }
         public bool HasLeaf => InstalledLeaf != null;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)] private static void ResetStatics() => targets.Clear();
@@ -34,6 +36,14 @@ namespace Herbalist.Abilities
         public Quaternion Rotation(Vector3 normal, Vector3 heading)
         {
             if (socket != null) return socket.rotation;
+            if (_perpendicularToSurfaceOnInstall)
+            {
+                Vector3 outward = Vector3.ProjectOnPlane(normal, Vector3.up);
+                if (outward.sqrMagnitude < 0.001f) outward = -Vector3.ProjectOnPlane(heading, Vector3.up);
+                if (outward.sqrMagnitude < 0.001f) outward = -Vector3.forward;
+                // The leaf lies flat; its long-axis tip points into the tree.
+                return Quaternion.LookRotation(-outward.normalized, Vector3.up);
+            }
             Vector3 forward = Vector3.ProjectOnPlane(heading, Vector3.up);
             if (forward.sqrMagnitude < 0.001f) forward = Vector3.forward;
             Vector3 up = Mathf.Abs(Vector3.Dot(forward.normalized, Vector3.up)) > 0.99f ? Vector3.forward : Vector3.up;

@@ -5,7 +5,7 @@ using Herbalist.Abilities;
 using Herbalist.Networking;
 namespace Herbalist.StageOne
 {
-    public enum StageCommand { Interact, Craft, Drink, Up, Left, Down, Right, FanEnd }
+    public enum StageCommand { Interact, Craft, Drink, Up, Left, Down, Right, FanEnd, CancelMinigame }
     [RequireComponent(typeof(PlayerController))]
     public sealed class StageActor : MonoBehaviour
     {
@@ -56,7 +56,8 @@ namespace Herbalist.StageOne
         }
         public void Request(StageCommand command)
         {
-            if (Herbalist.GameUI.GameplayPause.IsPaused || !Local || !Herbalist.Presentation.GameplayCursor.AllowsPointerInput) return;
+            if (Herbalist.GameUI.GameplayPause.IsPaused || !Local ||
+                (command != StageCommand.CancelMinigame && !Herbalist.Presentation.GameplayCursor.AllowsPointerInput)) return;
             // Space is also Jump. E starts brewing; each Space press fans while crafting.
             if (command == StageCommand.Craft && StageOneFlow.Instance?.Minigame != StageMinigameKind.Crafting) return;
             if (adapter != null && adapter.Object != null && adapter.Object.IsValid) adapter.RPC_Command(command);
