@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 using TMPro;
 using Herbalist.Networking;
 using Herbalist.Presentation;
+using Herbalist.StageOne;
 namespace Herbalist.GameUI
 {
     [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "Herbalist.GameUI", sourceAssembly: "Assembly-CSharp", sourceClassName: "GameOverlayUI")]
@@ -16,6 +17,7 @@ namespace Herbalist.GameUI
         public string title, defaultObjective;
         private InputAction pause;
         private bool lastPaused;
+        private bool recaptureAfterMinigame;
         private int pauseFrame;
         private float subtitleRemaining;
         private void OnEnable()
@@ -31,8 +33,25 @@ namespace Herbalist.GameUI
         private void TogglePause()
         {
             if(options.activeSelf) { options.SetActive(false); return; }
+            if (!GameplayPause.IsPaused && TryCloseMinigame())
+            {
+                recaptureAfterMinigame = true;
+                return;
+            }
             if(!GameplayPause.IsPaused)SetPause(true);
             else if(RoomControl.Instance==null||!FusionLobbySession.Instance.HasNetworkSession||RoomControl.Instance.OwnsPause)SetPause(false);
+        }
+        private static bool TryCloseMinigame()
+        {
+            var flow = StageOneFlow.Instance;
+            if (flow == null || flow.Minigame == StageMinigameKind.None) return false;
+            foreach (var actor in StageActor.All)
+            {
+                if (!actor.Local || !flow.CanCancelMinigame(actor)) continue;
+                actor.Request(StageCommand.CancelMinigame);
+                return true;
+            }
+            return false;
         }
         private void SetPause(bool value)
         {
@@ -72,8 +91,19 @@ namespace Herbalist.GameUI
             if(!paused)subtitleRemaining-=Time.unscaledDeltaTime;
             subtitle.gameObject.SetActive(subtitleRemaining>0&&!string.IsNullOrEmpty(subtitle.text));
         }
+        private void LateUpdate()
+        {
+            if (!recaptureAfterMinigame) return;
+            if (GameplayPause.IsPaused) { recaptureAfterMinigame = false; return; }
+            if (StageOneFlow.Instance != null && StageOneFlow.Instance.Minigame != StageMinigameKind.None) return;
+            var cursor = GameplayCursor.Instance;
+            if (cursor == null) { recaptureAfterMinigame = false; return; }
+            cursor.Capture();
+            if (Cursor.lockState == CursorLockMode.Locked) recaptureAfterMinigame = false;
+        }
         private void OnDisable()
         {
+            recaptureAfterMinigame = false;
             pause?.Dispose();
             GameplayCursor.Instance?.SetUiMode(this,false);
             GameplayPause.SetOffline(false);
