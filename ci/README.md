@@ -4,7 +4,7 @@ The `develop` branch is the source for Windows builds. Unity Build Automation (U
 
 ## One-time Unity Cloud configuration
 
-Use the `Project_Herbalist` Unity Cloud project in the `playblock` organization (organization ID `14568548209401`, project ID `b7a34ccf-f18e-475e-9d4e-6e65bebaa37e`). The local `ProjectSettings.asset` still records a different historical organization/project link; update it separately in Unity Editor if Unity Services in the player are needed. In the Unity Dashboard:
+Use the `Project_Herbalist` Unity Cloud project in the `playblock2000` organization (organization ID `14569754047186`, project ID `d9bb9af2-97f1-43ab-a58d-18a464708f57`). These IDs match the local `ProjectSettings.asset`. In the Unity Dashboard:
 
 1. In Build Automation > Settings > Source control, select GitHub and connect `No1playblock/Project_Herbalist`. A fine-grained GitHub token restricted to this repository needs **Contents: Read and write** for Release publishing and **Webhooks: Read and write** for auto-build. Unity's documented source-control minimum is Contents read-only plus Webhooks read/write; the publishing script also needs Contents write. The connection must be able to read Git LFS objects.
 2. Create a build target for **Windows desktop 64-bit**, branch `develop`, Unity **6000.6.0f1** (or auto-detect from `ProjectSettings/ProjectVersion.txt`). Use the project root as the project path and the enabled scenes from `ProjectSettings/EditorBuildSettings.asset`.
