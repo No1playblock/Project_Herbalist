@@ -95,7 +95,14 @@ namespace Herbalist.Networking
             if (Herbalist.GameUI.GameplayPause.IsPaused) { if (GetInput(out PlayerNetworkInput pausedInput)) LastJumpSequence = pausedInput.JumpSequence; return; }
             if(Transported)
             {
-                if(GetInput(out PlayerNetworkInput ridingInput)) { LastJumpSequence=ridingInput.JumpSequence; if(HasStateAuthority)player.RouteMovement(ridingInput.Move); }
+                if(GetInput(out PlayerNetworkInput ridingInput))
+                {
+                    LastJumpSequence=ridingInput.JumpSequence;
+                    if(Finite(ridingInput.LookAngles.x) && Finite(ridingInput.LookAngles.y))
+                        LookAngles=new Vector2(Mathf.Repeat(ridingInput.LookAngles.x,360),Mathf.Clamp(ridingInput.LookAngles.y,player.Tuning.pitchLimits.x,player.Tuning.pitchLimits.y));
+                    if(HasStateAuthority && Finite(ridingInput.Move.x) && Finite(ridingInput.Move.y))
+                        player.RouteMovement(ridingInput.Move);
+                }
                 player.Motor.Teleport(TransportPosition);SimulationPosition=TransportPosition;
                 SimulationVelocity=Vector3.zero;Grounded=false;return;
             }
@@ -114,9 +121,9 @@ namespace Herbalist.Networking
                         CameraZoomMultiplier = input.ZoomMultiplier;
                         if (!HasInputAuthority) player.View.SetRemoteZoom(input.ZoomMultiplier);
                     }
+                    LookAngles = new Vector2(Mathf.Repeat(input.LookAngles.x, 360), Mathf.Clamp(input.LookAngles.y, player.Tuning.pitchLimits.x, player.Tuning.pitchLimits.y));
                     var movement = Vector2.ClampMagnitude(input.Move, 1);
                     if(HasStateAuthority && player.RouteMovement(movement))movement=Vector2.zero;
-                    LookAngles = new Vector2(Mathf.Repeat(input.LookAngles.x, 360), Mathf.Clamp(input.LookAngles.y, player.Tuning.pitchLimits.x, player.Tuning.pitchLimits.y));
                     direction = Quaternion.Euler(0, LookAngles.x, 0) * new Vector3(movement.x, 0, movement.y);
                 }
                 if (LastJumpSequence != input.JumpSequence)

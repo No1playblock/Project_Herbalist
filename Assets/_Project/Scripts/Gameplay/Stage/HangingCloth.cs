@@ -18,9 +18,10 @@ namespace Herbalist.Levels
         [SerializeField, Range(0, 60)] private float _maxAngle = 30;
         [SerializeField, Min(.1f)] private float _grabRange = 2.5f;
         [SerializeField, Min(0)] private float _driveAcceleration = 90;
-        [SerializeField, Min(0)] private float _pumpImpulseSeconds = .2f;
+        [SerializeField, Min(0)] private float _pumpImpulseSeconds = .4f;
+        [SerializeField, Min(0)] private float _reversalInputWindow = .45f;
         [SerializeField, Min(0)] private float _spring = 4;
-        [SerializeField, Min(0)] private float _damping = .55f;
+        [SerializeField, Min(0)] private float _damping = .22f;
         [SerializeField, Min(0)] private float _releaseSpeed = 1;
         [SerializeField, Range(0, 30)] private float _bendMaxAngle = 30;
         [SerializeField, Min(.01f)] private float _bendProbeRadius = .08f;
@@ -37,6 +38,7 @@ namespace Herbalist.Levels
         [Networked] private int Rider0 { get; set; }
         [Networked] private int Rider1 { get; set; }
         private Vector2 _angles, _velocity, _drive, _heldInput;
+        private Vector2 _pendingDrive, _pendingDriveTime;
         private Vector2 _bendAngles, _bendVelocity, _clothSize;
         private Vector3 _bendPoint;
         private float _bendLength;
@@ -85,7 +87,7 @@ namespace Herbalist.Levels
                 {
                     nearest._riders[i] = actor;
                     nearest._lastPoints[i] = actor.transform.position;
-                    if (i == 0) { nearest._heldInput = Vector2.zero; nearest._drive = Vector2.zero; }
+                    if (i == 0) { nearest._heldInput = Vector2.zero; nearest._drive = Vector2.zero; nearest._pendingDrive = Vector2.zero; nearest._pendingDriveTime = Vector2.zero; }
                     player.SetMovementReceiver(nearest); player.Motor.SetMovementLock(nearest, true);
                     actor.Abilities.Sap?.Cancel(); actor.Abilities.SetInputLock(nearest, true);
                     nearest.Publish(); feedback = nearest._grabText; return true;
@@ -100,18 +102,28 @@ namespace Herbalist.Levels
             Vector2 pressed = new(held.x != 0 && held.x != _heldInput.x ? held.x : 0,
                                   held.y != 0 && held.y != _heldInput.y ? held.y : 0);
             _heldInput = held;
-            Quaternion facing = Quaternion.Euler(0, player.View.Yaw, 0);
-            Vector3 world = facing * new Vector3(pressed.x, 0, pressed.y);
+            float cameraYaw = player.View.Yaw;
+            var networkPlayer = player.GetComponent<NetworkPlayer>();
+            if (networkPlayer != null && networkPlayer.Object != null && networkPlayer.Object.IsValid)
+                cameraYaw = networkPlayer.LookAngles.x;
+            _drive += CameraRelativeDrive(pressed, cameraYaw);
+        }
+        private static Vector2 CameraRelativeDrive(Vector2 pressed, float cameraYaw)
+        {
+            Vector3 world = Quaternion.Euler(0, cameraYaw, 0) * new Vector3(pressed.x, 0, pressed.y);
             // Positive X rotation moves a hanging point toward -Z; positive Z toward +X.
-            _drive += Vector2.ClampMagnitude(new Vector2(-world.z, world.x), 1);
+            return Vector2.ClampMagnitude(new Vector2(-world.z, world.x), 1);
         }
         public void Tick(float dt)
         {
             if (!Authority || Herbalist.GameUI.GameplayPause.IsPaused || dt <= 0) return;
             for (int i = 0; i < 2; i++) if (_riders[i] != null && !_riders[i].Available) Detach(i);
-            // Keys always push in their own direction. The spring reverses the swing naturally;
-            // a well-timed opposite key then adds speed instead of cancelling the current motion.
-            Vector2 impulse = _drive * (_driveAcceleration * _pumpImpulseSeconds);
+            Vector2 angles = _bendActive ? _bendAngles : _angles;
+            Vector2 velocityAtInput = _bendActive ? _bendVelocity : _velocity;
+            Vector2 pump = new(
+                ResolvePump(_drive.x, angles.x, velocityAtInput.x, ref _pendingDrive.x, ref _pendingDriveTime.x, dt),
+                ResolvePump(_drive.y, angles.y, velocityAtInput.y, ref _pendingDrive.y, ref _pendingDriveTime.y, dt));
+            Vector2 impulse = pump * (_driveAcceleration * _pumpImpulseSeconds);
             _drive = Vector2.zero;
             if (_bendActive)
             {
@@ -145,6 +157,40 @@ namespace Herbalist.Levels
             Publish();
         }
         private bool HasRider => _riders[0] != null || _riders[1] != null;
+        private float ResolvePump(float pressed, float angle, float angularVelocity, ref float pending, ref float remaining, float dt)
+        {
+            if (remaining > 0 && (remaining -= dt) <= 0) pending = 0;
+            float impulse = 0;
+            if (Mathf.Abs(pressed) > .01f)
+            {
+                // An opposite press just before the turning point should power the return trip,
+                // rather than brake the last part of the outgoing trip.
+                float frequency = Mathf.Sqrt(_spring);
+                float timeToTurn = frequency > .001f
+                    ? Mathf.Atan2(Mathf.Abs(angularVelocity), frequency * Mathf.Abs(angle)) / frequency
+                    : float.PositiveInfinity;
+                bool approachingTurn = angle * angularVelocity > 0 && angle * pressed < 0 &&
+                                       angularVelocity * pressed < 0 && timeToTurn <= _reversalInputWindow;
+                if (approachingTurn)
+                {
+                    pending += pressed;
+                    remaining = _reversalInputWindow + .2f;
+                }
+                else
+                {
+                    pending = 0;
+                    remaining = 0;
+                    impulse = pressed;
+                }
+            }
+            if (Mathf.Abs(pending) > .01f && angularVelocity * pending >= -.01f)
+            {
+                impulse += pending;
+                pending = 0;
+                remaining = 0;
+            }
+            return impulse;
+        }
         private Vector2 Step(Vector2 angles, ref Vector2 velocity, Vector2 impulse, float dt, float maxAngle)
         {
             velocity += impulse;
@@ -228,7 +274,7 @@ namespace Herbalist.Levels
             else if (!Online) player.Motor.Launch(velocity, player.Tuning.gravity, true);
             _riders[side] = null;
             if (side == 0 && _riders[1] != null) { _riders[0] = _riders[1]; _riders[1] = null; }
-            if (side == 0) { _heldInput = Vector2.zero; _drive = Vector2.zero; }
+            if (side == 0) { _heldInput = Vector2.zero; _drive = Vector2.zero; _pendingDrive = Vector2.zero; _pendingDriveTime = Vector2.zero; }
             Publish();
         }
         private void Update() { if (!Online && Authority) Tick(Time.deltaTime); else if (Online && !HasStateAuthority) Present(Angles, BendActive, BendPoint, BendLength, BendAngles); }
@@ -238,5 +284,15 @@ namespace Herbalist.Levels
             if (Authority) { Detach(1); Detach(0); }
             if (_authoredVisual != null) _authoredVisual.SetPositionAndRotation(_authoredRestPosition, _authoredRestRotation);
         }
+#if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
+        {
+            if (_knot == null) return;
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(transform.position, _knot.position);
+            Gizmos.DrawWireSphere(_knot.position, 0.6f);
+            UnityEditor.Handles.Label(_knot.position + Vector3.up, "GripPoint / E");
+        }
+#endif
     }
 }
