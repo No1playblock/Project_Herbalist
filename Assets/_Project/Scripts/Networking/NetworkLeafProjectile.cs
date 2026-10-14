@@ -17,7 +17,14 @@ namespace Herbalist.Networking
             if (Object == null || !Object.IsValid) return;
             State = leaf.State; TargetId = leaf.Target != null ? leaf.Target.Id : 0;
         }
-        public override void Render() { if (!HasStateAuthority) leaf.ApplyReplica(State, TargetId); }
+        public override void Render()
+        {
+            if (!HasStateAuthority)
+            {
+                leaf.ApplyReplica(State, TargetId);
+                leaf.AdvanceSpinVisual(Time.deltaTime);
+            }
+        }
         public override void Despawned(NetworkRunner runner, bool hasState) => leaf.ApplyReplica(LeafState.Complete, 0);
     }
 }
