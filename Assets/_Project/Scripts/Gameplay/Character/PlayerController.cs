@@ -12,6 +12,8 @@ namespace Herbalist.Player
         [SerializeField] private bool locallyControlled = true;
         private bool ready;
         private bool networkDriven;
+        private Vector3 _baseLocalScale;
+        private float _appliedScaleMultiplier;
         private uint lastJump;
         private IPlayerMovementReceiver _movementReceiver;
         private object _transportOwner;
@@ -30,11 +32,21 @@ namespace Herbalist.Player
 
         private void Awake()
         {
+            _baseLocalScale = transform.localScale;
+            ApplyCharacterScale();
             ready = motor != null && input != null && view != null && tuning != null;
             if (ready) ready = input.Initialize() && view.Initialize();
             if (!ready) { Debug.LogError("Player prefab references are incomplete.", this); enabled = false; }
         }
-        private void OnEnable() { if (ready) SetLocalControl(locallyControlled); }
+        private void OnEnable() { ApplyCharacterScale(); if (ready) SetLocalControl(locallyControlled); }
+        private void ApplyCharacterScale()
+        {
+            if (tuning == null) return;
+            float multiplier = Mathf.Max(0.1f, tuning.characterScaleMultiplier);
+            if (Mathf.Approximately(_appliedScaleMultiplier, multiplier)) return;
+            transform.localScale = _baseLocalScale * multiplier;
+            _appliedScaleMultiplier = multiplier;
+        }
         public void SetLocalControl(bool value, bool preserveMotion = false)
         {
             locallyControlled = value;
@@ -46,6 +58,7 @@ namespace Herbalist.Player
         }
         private void Update()
         {
+            ApplyCharacterScale();
             if (!ready || Herbalist.GameUI.GameplayPause.IsPaused) return;
             if (!locallyControlled)
             {
