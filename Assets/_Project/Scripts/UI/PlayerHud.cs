@@ -4,6 +4,7 @@ using TMPro;
 using Herbalist.Abilities;
 using Herbalist.StageOne;
 using Herbalist.Presentation;
+using Herbalist.Levels;
 namespace Herbalist.GameUI
 {
     [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "Herbalist.GameUI", sourceAssembly: "Assembly-CSharp", sourceClassName: "PlayerHudUI")]
@@ -13,6 +14,7 @@ namespace Herbalist.GameUI
         public int slot;
         public GameObject helpPanel, reticle, prompt;
         public TMP_Text helpText, helpHint, pocket, abilityText, feedback, promptText;
+        public TMP_Text jumpPadCountdown;
         public RectTransform[] markers;
         public TMP_Text[] markerLabels;
         public Vector3 promptOffset=new Vector3(0,.3f,0);
@@ -28,9 +30,16 @@ namespace Herbalist.GameUI
         private void Update()
         {
             var view=screen!=null?screen.ViewForSlot(slot):null;
-            if(view==null)return;
+            if(view==null) { if(jumpPadCountdown!=null) jumpPadCountdown.gameObject.SetActive(false); return; }
             var player=view.GetComponent<Herbalist.Player.PlayerController>();
             bool local=player.LocallyControlled;
+            if (jumpPadCountdown != null)
+            {
+                float remaining = 0;
+                bool show = local && ExteriorJumpPad.TryGetLaunchCountdown(out remaining);
+                jumpPadCountdown.gameObject.SetActive(show);
+                if (show) jumpPadCountdown.text = $"점프대 발사까지 {remaining:0.0}초";
+            }
             helpHint.text=settings.helpAction.action.GetBindingDisplayString()+"  "+settings.helpHint;
             helpPanel.SetActive(local&&expanded);
             if(local&&expanded)

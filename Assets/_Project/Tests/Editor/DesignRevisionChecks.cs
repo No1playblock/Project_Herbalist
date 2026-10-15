@@ -123,16 +123,41 @@ namespace Herbalist.Editor
                 float initialRiderHeight = player.transform.position.y;
                 float initialLeafHeight = socket.SocketPosition.y;
                 var partnerPlayer = partner.GetComponent<PlayerController>();
-                partnerPlayer.Motor.Teleport(socket.SocketPosition + Vector3.right * .8f + Vector3.up * .04f); Physics.SyncTransforms();
-                for (int i = 0; i < 15; i++) partnerPlayer.Motor.Simulate(Vector3.zero, .02f);
-                float initialPartnerHeight = partner.transform.position.y;
-                for (int i = 0; i < 31; i++) { inlet.Inject(.1f); pad.Tick(.1f); player.Motor.Simulate(Vector3.zero, .1f); partnerPlayer.Motor.Simulate(Vector3.zero, .1f); }
-                Check(!player.Motor.MovementLocked && !partnerPlayer.Motor.MovementLocked, "both riders retain movement control during ascent");
+                partnerPlayer.Motor.Teleport(socket.SocketPosition + Vector3.right * 10f); Physics.SyncTransforms();
                 var padSettings = Read<SapJumpPadSettings>(pad, "_settings");
+                for (int i = 0; i < 31; i++)
+                {
+                    inlet.Inject(.1f); pad.Tick(.1f);
+                    player.Motor.Simulate(Vector3.zero, .1f); partnerPlayer.Motor.Simulate(Vector3.zero, .1f);
+                }
+                Check(Read<float>(pad, "_launchDelayRemaining") > 0 && Read<float>(pad, "_flight") == 0,
+                    "full charge starts a warning delay without launching");
+                partnerPlayer.Motor.Teleport(socket.SocketPosition + Vector3.right * .8f + Vector3.up * .04f);
+                Physics.SyncTransforms();
+                for (int i = 0; i < 15; i++) partnerPlayer.Motor.Simulate(Vector3.zero, .02f);
+                Check(partnerPlayer.Motor.IsGrounded, "second rider boards during the warning delay");
+                bool launched = false;
+                for (int i = 0; i < 200 && Read<float>(pad, "_launchDelayRemaining") > 0; i++)
+                {
+                    float step = Mathf.Min(.02f, Read<float>(pad, "_launchDelayRemaining"));
+                    pad.Tick(step);
+                    if (Read<float>(pad, "_launchDelayRemaining") == 0)
+                    {
+                        Check(Mathf.Abs(player.Motor.Velocity.y - padSettings.riderLaunchSpeed) < .01f &&
+                              Mathf.Abs(partnerPlayer.Motor.Velocity.y - padSettings.riderLaunchSpeed) < .01f,
+                            "both riders receive launch speed when the warning ends");
+                        launched = true;
+                    }
+                    player.Motor.Simulate(Vector3.zero, step); partnerPlayer.Motor.Simulate(Vector3.zero, step);
+                }
+                Check(launched, "pad erupts after the warning delay");
+                Check(!player.Motor.MovementLocked && !partnerPlayer.Motor.MovementLocked &&
+                      player.Motor.Velocity.y > 0 && partnerPlayer.Motor.Velocity.y > 0,
+                    "eruption immediately launches both riders upward");
                 float firstRise = socket.SocketPosition.y - initialLeafHeight;
                 float beforeSteer = player.transform.position.x;
                 pad.Tick(.2f); player.Motor.Simulate(Vector3.right * player.Tuning.moveSpeed, .2f); partnerPlayer.Motor.Simulate(Vector3.zero, .2f); float secondRise = socket.SocketPosition.y - initialLeafHeight;
-                Check(player.transform.position.x > beforeSteer && player.transform.position.y > initialRiderHeight, "rider steers horizontally while being lifted");
+                Check(player.transform.position.x > beforeSteer && player.transform.position.y > initialRiderHeight, "rider steers horizontally after launch");
                 pad.Tick(.2f); player.Motor.Simulate(Vector3.zero, .2f); partnerPlayer.Motor.Simulate(Vector3.zero, .2f); float thirdRise = socket.SocketPosition.y - initialLeafHeight;
                 pad.Tick(.2f); player.Motor.Simulate(Vector3.zero, .2f); partnerPlayer.Motor.Simulate(Vector3.zero, .2f); float fourthRise = socket.SocketPosition.y - initialLeafHeight;
                 Check(firstRise >= 0 && firstRise < padSettings.presentationRise * .25f &&
@@ -141,24 +166,32 @@ namespace Herbalist.Editor
                       thirdRise - secondRise > fourthRise - thirdRise,
                     $"leaf and water rise with decreasing speed: {firstRise:F2}, {secondRise:F2}, {thirdRise:F2}, {fourthRise:F2}");
                 float remainingAscent = Mathf.Max(0, padSettings.eruptionRiseDuration - (padSettings.flightDuration - Read<float>(pad, "_flight"))) + .00001f;
-                pad.Tick(remainingAscent); player.Motor.Simulate(Vector3.zero, remainingAscent); partnerPlayer.Motor.Simulate(Vector3.zero, remainingAscent);
-                pad.Tick(.02f);
+                while (remainingAscent > 0f)
+                {
+                    float step = Mathf.Min(.02f, remainingAscent);
+                    pad.Tick(step); player.Motor.Simulate(Vector3.zero, step); partnerPlayer.Motor.Simulate(Vector3.zero, step);
+                    remainingAscent -= step;
+                }
                 installed.Tick(.001f);
                 Check(Mathf.Abs(socket.SocketPosition.y - initialLeafHeight - padSettings.presentationRise) < .02f, "decelerating eruption reaches world height despite scaled hole parent");
                 Check(Vector3.Distance(installed.transform.position, socket.SocketPosition) < .01f, "installed leaf follows eruption socket");
                 var jet = Read<GameObject[]>(pad, "_jets")[0];
                 Check(jet.activeSelf && Mathf.Abs(jet.GetComponent<Renderer>().bounds.size.y - padSettings.presentationRise) < .02f, "sap jet grows with leaf height");
-                Check(Mathf.Abs(player.transform.position.y - initialRiderHeight - padSettings.presentationRise) < .3f && Mathf.Abs(partner.transform.position.y - initialPartnerHeight - padSettings.presentationRise) < .3f, "both riders lifted near leaf apex");
-                Check(!player.Motor.MovementLocked && !partnerPlayer.Motor.MovementLocked && player.Motor.CaptureState().ExternalAirControl && Mathf.Abs(player.Motor.Velocity.y) < .01f, "apex release unlocks normal gravity fall without ballistic jump");
+                Check(player.transform.position.y > socket.SocketPosition.y && partner.transform.position.y > socket.SocketPosition.y,
+                    "riders fly above the shorter leaf trajectory");
+                Check(player.Motor.CaptureState().ExternalAirControl && partnerPlayer.Motor.CaptureState().ExternalAirControl,
+                    "both riders keep air steering after launch");
                 pad.Tick(.2f);
                 Check(socket.SocketPosition.y - initialLeafHeight > padSettings.presentationRise * .95f, "leaf begins its return gently after the apex");
                 player.Motor.Simulate(Vector3.right * player.Tuning.moveSpeed, .1f); Check(player.Motor.Velocity.x > 0, "air steering changes horizontal velocity");
-                Check(player.Motor.Velocity.y < 0, "gravity takes over after apex release");
                 // The opposite direction also erupts without a leaf/rider requirement.
                 Write(pad, "_cooldown", 0f); Write(pad, "_flight", 0f);
                 var otherInlet = Read<SapInjectionPort[]>(pad, "_ports")[0];
                 for (int i = 0; i < 31; i++) { otherInlet.Inject(.1f); pad.Tick(.1f); }
-                Check(Read<int>(pad, "_output") == 1 && Read<float>(pad, "_flight") > 0, "symmetric empty port erupts");
+                Check(Read<int>(pad, "_output") == 1 && Read<float>(pad, "_launchDelayRemaining") > 0,
+                    "symmetric empty port schedules eruption");
+                pad.Tick(padSettings.launchDelaySeconds);
+                Check(Read<float>(pad, "_flight") > 0, "symmetric empty port erupts after its warning delay");
                 partner.Abilities.RevokeLeaf(); partner.Abilities.UnlockSap();
                 partner.Abilities.Sap.Configure(() => Object.Instantiate(partner.Abilities.Sap.Settings.offlinePrefab), sap => Object.Destroy(sap.gameObject), false);
                 partner.GetComponent<PlayerController>().Motor.Teleport(inlet.transform.position + Vector3.back * 2);
@@ -195,7 +228,7 @@ namespace Herbalist.Editor
                 Check(player.Motor.MovementLocked && partner.GetComponent<PlayerController>().Motor.MovementLocked, "cloth movement locked");
                 Check(HangingCloth.TryInteract(actor, out _) && !player.Motor.MovementLocked, "release clears only cloth locks");
                 HangingCloth.TryInteract(partner, out _);
-                return "PASS exterior: permanent/capacity/range leaf, symmetric eruption, steerable paired ascent, apex release/gravity/air steering, sap without extraction, paired cloth grab/release.";
+                return "PASS exterior: permanent/capacity/range leaf, symmetric eruption, immediate upward launch/air steering, sap without extraction, paired cloth grab/release.";
             }
             finally { actor.Abilities.Leaf.Clear(); foreach (var leaf in leaves) if (leaf != null) leaf.Finish(); player.Motor.RestoreState(originalState); Object.Destroy(partner.gameObject); }
         }

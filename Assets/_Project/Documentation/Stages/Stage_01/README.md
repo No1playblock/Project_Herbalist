@@ -1,6 +1,8 @@
 # Stage 1 map
 
-Current Stage 1 player scene: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference.unity`. The Main Menu solo route and multiplayer lobby both load this map. It uses the existing `PF_Player` offline player, including its `StageActor` and held-item presentation, plus `PlayerSpawnLayout` with `PF_StageNetworkPlayer` and two spawn points for Fusion sessions. It also has the shared game overlay, the two slot-specific player HUDs, the play-screen controller, cursor capture/release behavior, and the Input System UI event module. The `StageLevel` points to `Stage_02_Mazes`.
+캐릭터·카메라·버섯/나뭇가지 점프대의 수정 위치와 Inspector 값 설명은 [CharacterAndJumpPadTuning.md](CharacterAndJumpPadTuning.md)를 참고하세요.
+
+Current Stage 1 player scene: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference.unity`. The Main Menu solo route and multiplayer lobby both load this map. It uses two `PF_Player` offline instances, including their `StageActor` and held-item presentation, plus `PlayerSpawnLayout` with `PF_Stage01ModelingNetworkPlayer` and two spawn points for Fusion sessions. It also has the shared game overlay, the two slot-specific player HUDs, the play-screen controller, cursor capture/release behavior, and the Input System UI event module. The `StageLevel` points to `Stage_02_Mazes`.
 
 `Stage_01_Exterior_260928.unity` remains available as the earlier authored exterior gameplay scene. The modeling map includes two herb sources, cooperative gathering and brewing, cloth swings, and mushroom and branch jump pads. The cooperative minigame setup is documented in `HerbPotionMinigames.md`; the approved exterior design remains in `Documentation/DesignRevision_260928.md`.
 

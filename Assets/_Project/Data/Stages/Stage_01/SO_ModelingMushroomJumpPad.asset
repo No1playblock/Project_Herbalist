@@ -13,15 +13,22 @@ MonoBehaviour:
   m_Name: SO_ModelingMushroomJumpPad
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Levels.SapJumpPadSettings
   requiredRiders: 0
-  chargeUnits: 3
+  chargeUnits: 1
   injectionGrace: 0.2
-  flightDuration: 3
+  launchDelaySeconds: 3
+  voiceVolume: 1
+  chargedVoice: {fileID: 8300000, guid: e39c8fad06f3f84469f8cf04d65d9f63, type: 3}
+  twoSecondsVoice: {fileID: 8300000, guid: 07870cd4b6f7b7f47972124f28fe7a49, type: 3}
+  oneSecondVoice: {fileID: 8300000, guid: 2bfe2eeef94f6314f9258f2501ead770, type: 3}
+  launchVoice: {fileID: 8300000, guid: c88f983dbf5b7884e94f8897b14d4acf, type: 3}
+  flightDuration: 1
   gravity: 18
   cooldown: 2.6
   standingTolerance: 0.64
   presentationDuration: 0.65
-  presentationRise: 30
+  presentationRise: 15
   eruptionRiseDuration: 1.5
+  riderLaunchSpeed: 73
   jumpWindow: 0.3
   jumpReach: 5
   launchHeightMultiplier: 5
