@@ -6,6 +6,7 @@
 
 | 하고 싶은 작업 | 수정 위치 | 영향 범위 |
 | --- | --- | --- |
+| 모든 씬의 플레이어 크기 조절 | `PF_Player`, `PF_NetworkPlayer`, `PF_StageNetworkPlayer`, `PF_Stage01ModelingNetworkPlayer`의 루트 Transform | 솔로·멀티플레이어의 모델, 충돌 캡슐, 카메라 기준점과 능력 발사 위치 |
 | 1스테이지 이동·일반 점프·카메라 조절 | `Assets/_Project/Data/Characters/SO_Stage01ModelingPlayerTuning.asset` | 이 씬의 솔로 두 플레이어와 전용 멀티플레이어 프리팹 |
 | 다른 씬의 기본 플레이어 조절 | `Assets/_Project/Data/Characters/SO_PlayerTuning.asset` | 기본 `PF_Player`, `PF_StageNetworkPlayer`를 그대로 쓰는 씬 |
 | 버섯·나뭇가지 점프대의 충전·상승·물줄기 조절 | `Assets/_Project/Data/Stages/Stage_01/SO_ModelingMushroomJumpPad.asset` | 현재 1스테이지의 **두 종류 모두** |
@@ -14,17 +15,19 @@
 
 ## 씬에서 캐릭터 보며 작업하기
 
-현재 모델링 씬에는 솔로용 `PF_Player` 인스턴스가 이미 두 개 있습니다. Hierarchy의 `Player`는 두영, `Player_Sodam`은 소담으로 시작합니다. 둘의 루트 Scale은 씬에서 `(3.2, 3.2, 3.2)`로 오버라이드되어 있습니다. 먼저 이 두 오브젝트를 선택하고 Scene 뷰에서 `F`로 포커스를 맞추면 됩니다.
+현재 모델링 씬에는 솔로용 `PF_Player` 인스턴스가 이미 두 개 있습니다. Hierarchy의 `Player`는 두영, `Player_Sodam`은 소담으로 시작합니다. 둘의 루트 Scale은 공용 프리팹의 `(3.2, 3.2, 3.2)`를 상속합니다. 먼저 이 두 오브젝트를 선택하고 Scene 뷰에서 `F`로 포커스를 맞추면 됩니다.
 
 | 용도 | 프리팹 | 사용 방법 |
 | --- | --- | --- |
 | 솔로 플레이어 원본 | `Assets/_Project/Prefabs/Characters/PF_Player.prefab` | 입력·카메라·충돌·능력을 포함합니다. 현재 씬에 이미 두 개가 있으므로 단순 외형 확인을 위해 추가 배치하지 않습니다. |
 | 현재 1스테이지 멀티플레이어 | `Assets/_Project/Prefabs/Characters/PF_Stage01ModelingNetworkPlayer.prefab` | `PlayerSpawnLayout`이 Host에서 `PlayerSpawn_1`, `PlayerSpawn_2` 위치에 생성합니다. 루트 Scale은 3.2이고 1스테이지 전용 튜닝을 참조합니다. 씬에 직접 배치하지 않습니다. |
-| 다른 씬의 공용 멀티플레이어 | `Assets/_Project/Prefabs/Characters/PF_StageNetworkPlayer.prefab` | 기본 튜닝을 참조합니다. 현재 모델링 씬의 `PlayerSpawnLayout`은 이것을 사용하지 않습니다. |
+| 다른 씬의 공용 멀티플레이어 | `Assets/_Project/Prefabs/Characters/PF_StageNetworkPlayer.prefab` | 루트 Scale 3.2와 기본 튜닝을 사용합니다. 현재 모델링 씬의 `PlayerSpawnLayout`은 이것을 사용하지 않습니다. |
 | 소담 외형만 배치 | `Assets/_Project/Art/Characters/sodam/BranchV12/Prefabs/sodamv12.prefab` | 다른 씬에서 크기·배치를 비교할 때 사용합니다. 플레이어 조작 컴포넌트는 없습니다. |
 | 두영 외형만 배치 | `Assets/_Project/Art/Characters/Duyeong/prefab/dy_v5.prefab` | 다른 씬에서 크기·배치를 비교할 때 사용합니다. 플레이어 조작 컴포넌트는 없습니다. |
 
 새 씬에서 **외형을 놓고 보기만 할 때**는 두 모델 프리팹을 `ReferenceCharacters` 같은 빈 부모 아래에 배치하면 됩니다. 게임 플레이를 시험할 때는 `PF_Player`를 사용하고, 모델만 배치한 오브젝트에는 입력·카메라·충돌이 없음을 기억하세요. 현재 씬의 `PlayerSpawnLayout`에 솔로 플레이어 두 개와 네트워크 프리팹이 이미 연결되어 있으므로 중복 플레이어를 놓으면 카메라·입력·스폰이 겹칠 수 있습니다. 모델만 직접 배치했을 때는 플레이어 프리팹 내부의 외형 Transform/루트 Scale 오버라이드가 적용되지 않아 크기가 달라 보일 수 있습니다.
+
+네 플레이어 프리팹 모두 `SO_SapAbilitySettings`와 `SO_LeafAbilitySettings`를 참조합니다. 새 씬에서도 같은 프리팹을 사용하면 능력 설정이 함께 따라옵니다. 다만 수액 구체 반지름과 나뭇잎 충돌 반지름처럼 설정 에셋에 월드 단위로 저장된 값은 플레이어 루트 Scale에 자동으로 곱해지지 않습니다.
 
 ## 캐릭터 튜닝: `SO_Stage01ModelingPlayerTuning`
 
@@ -34,7 +37,7 @@
 
 | Inspector 값 | 현재 값 | 의미와 조절 방향 |
 | --- | ---: | --- |
-| `Character Scale Multiplier` | 1 | 프리팹 루트 크기에 추가로 곱하는 배율. 이 에셋에는 1로 저장돼 있습니다. 현재 씬/전용 네트워크 프리팹의 루트 Scale 3.2와 합쳐 최종 크기를 만듭니다. 크기 실험 시 두 방식의 배율을 중복해서 올리지 마세요. |
+| `Character Scale Multiplier` | 1 | 프리팹 루트 크기에 추가로 곱하는 배율. 이 에셋에는 1로 저장돼 있습니다. 공용·전용 플레이어 프리팹의 루트 Scale은 3.2입니다. 크기 실험 시 두 방식의 배율을 중복해서 올리지 마세요. |
 | `Move Speed` | 20 | 지상에서 WASD로 이동할 때의 목표 수평 속도. 크게 하면 더 빠릅니다. |
 | `Gravity` | 88 | 일반 점프·낙하 때 아래로 가속하는 값. 크게 하면 더 빨리 떨어지고 같은 `Jump Height`를 위한 초기 점프 속도도 커집니다. |
 | `Terminal Speed` | 140 | 일반 낙하의 최대 하강 속도. |
@@ -116,7 +119,7 @@
 ## 배치·튜닝 순서
 
 1. Hierarchy의 기존 `Player`와 `Player_Sodam`으로 캐릭터의 현재 크기를 확인합니다. 새 씬에서 외형 비교만 한다면 소담·두영 **모델 프리팹**만 배치합니다.
-2. 이동감은 `SO_Stage01ModelingPlayerTuning`의 `Move Speed`, `Jump Height`, `Gravity`, `Air Acceleration` 순서로 조절합니다. 플레이어 크기는 씬·네트워크 프리팹의 Scale 3.2와 `Character Scale Multiplier`를 함께 확인합니다.
+2. 이동감은 `SO_Stage01ModelingPlayerTuning`의 `Move Speed`, `Jump Height`, `Gravity`, `Air Acceleration` 순서로 조절합니다. 플레이어 크기는 프리팹 루트 Scale 3.2와 `Character Scale Multiplier`를 함께 확인합니다. 공용 크기를 바꾸면 솔로·네트워크 프리팹을 모두 같은 값으로 맞춥니다.
 3. 충전 뒤 대기 시간은 `Launch Delay Seconds`, 나뭇잎과 물기둥의 높이는 `Presentation Rise`, 플레이어가 솟는 높이는 `Rider Launch Speed`, 나뭇잎 상승 시간은 `Eruption Rise Duration`, 전체 연출 시간은 `Flight Duration`으로 조절합니다.
 4. 점프대 프리팹 변형을 씬으로 드래그해 위치를 잡습니다. 선택 시 하늘색 기즈모는 주입구, 초록색 기즈모는 잎/물 분출점입니다. 복제한 뒤에는 `LeafInstallTarget`의 ID가 고유한지 확인하고 씬을 저장합니다. 필요하면 `Tools > Herbalist > Stage 1 > Assign Jump Pad IDs`를 실행합니다.
 5. 프리팹 인스턴스 Inspector에서 굵게 표시된 값은 씬 오버라이드입니다. 에셋을 바꿨는데 한 배치만 다르게 보이면 해당 오버라이드를 먼저 확인합니다.
