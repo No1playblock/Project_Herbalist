@@ -22,6 +22,8 @@ namespace Herbalist.Levels
         [SerializeField, Min(0)] private float _reversalInputWindow = .45f;
         [SerializeField, Min(0)] private float _spring = 4;
         [SerializeField, Min(0)] private float _damping = .22f;
+        [SerializeField, Min(0), Tooltip("Maximum swing angular speed in degrees per second. 0 leaves the current swing speed unrestricted. Applies to the main swing and the bend around a branch.")]
+        private float _maxSwingSpeed = 0;
         [SerializeField, Min(0)] private float _releaseSpeed = 1;
         [SerializeField, Range(0, 30)] private float _bendMaxAngle = 30;
         [SerializeField, Min(.01f)] private float _bendProbeRadius = .08f;
@@ -199,6 +201,8 @@ namespace Herbalist.Levels
         {
             velocity += impulse;
             velocity += (-angles * _spring - velocity * _damping) * dt;
+            if (_maxSwingSpeed > 0)
+                velocity = Vector2.ClampMagnitude(velocity, _maxSwingSpeed);
             Vector2 next = Vector2.ClampMagnitude(angles + velocity * dt, maxAngle);
             if (next.sqrMagnitude >= maxAngle * maxAngle && Vector2.Dot(velocity, next) > 0)
                 velocity -= Vector2.Dot(velocity, next.normalized) * next.normalized;
