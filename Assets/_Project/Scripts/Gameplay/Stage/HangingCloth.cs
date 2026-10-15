@@ -14,7 +14,7 @@ namespace Herbalist.Levels
         [SerializeField] private Transform _lowerCloth;
         [SerializeField] private Transform _authoredVisual;
         [SerializeField] private Vector3[] _gripOffsets = { new(-.45f, -1, 0), new(.45f, -1, 0) };
-        [SerializeField, Min(.1f)] private float _length = 7;
+        [SerializeField, Min(.1f)] private float _length = 7; // Fallback for a legacy GripPoint left at the pivot.
         [SerializeField, Range(0, 60)] private float _maxAngle = 30;
         [SerializeField, Min(.1f)] private float _grabRange = 2.5f;
         [SerializeField, Min(0)] private float _driveAcceleration = 90;
@@ -46,21 +46,20 @@ namespace Herbalist.Levels
         private readonly RaycastHit[] _bendProbeHits = new RaycastHit[32];
         private readonly StageActor[] _riders = new StageActor[2];
         private readonly Vector3[] _lastPoints = new Vector3[2];
-        private Vector3 _authoredRestPosition;
-        private Quaternion _authoredRestRotation;
-        private Vector3 _authoredPivot;
+        private Quaternion _authoredRootRotation;
+        private Vector3 _authoredGripLocalPosition;
+        private Vector3 _restGripOffset;
         private static readonly HashSet<HangingCloth> Cloths = new();
         private bool Online => Object != null && Object.IsValid;
         public bool Authority => Online ? HasStateAuthority : FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession;
         private void Awake()
         {
+            _restGripOffset = _knot != null ? _knot.position - transform.position : Vector3.zero;
+            if (_restGripOffset.sqrMagnitude < .0001f)
+                _restGripOffset = transform.TransformVector(Vector3.down * _length);
+            _authoredRootRotation = transform.rotation;
+            if (_knot != null) _authoredGripLocalPosition = _knot.localPosition;
             if (_cloth != null) _clothSize = new Vector2(_cloth.localScale.x, _cloth.localScale.z);
-            if (_authoredVisual != null)
-            {
-                _authoredRestPosition = _authoredVisual.position;
-                _authoredRestRotation = _authoredVisual.rotation;
-                _authoredPivot = transform.position;
-            }
         }
         private void OnEnable() => Cloths.Add(this);
         public override void Spawned() { if (HasStateAuthority) { Rider0 = Rider1 = -1; Angles = Vector2.zero; BendActive = false; BendPoint = Vector3.zero; BendLength = 0; BendAngles = Vector2.zero; } }
@@ -152,7 +151,12 @@ namespace Herbalist.Levels
                 Vector3 point = Position(_angles, _bendAngles, i); _lastPoints[i] = point;
                 var net = actor.GetComponent<NetworkPlayer>();
                 if (net != null && net.Object != null && net.Object.IsValid) net.SetTransportAuthoritatively(true, point);
-                else actor.GetComponent<PlayerController>().SetTransport(this, point);
+                else
+                {
+                    var player = actor.GetComponent<PlayerController>();
+                    player.SetTransport(this, point);
+                    player.Motor.Teleport(point);
+                }
             }
             Publish();
         }
@@ -204,16 +208,17 @@ namespace Herbalist.Levels
         {
             point = Vector3.zero; lowerLength = 0;
             Vector3 origin = transform.position;
-            Vector3 direction = Quaternion.Euler(angles.x, 0, angles.y) * Vector3.down;
-            int count = Physics.SphereCastNonAlloc(origin, _bendProbeRadius, direction, _bendProbeHits, _length, _obstructionMask, QueryTriggerInteraction.Ignore);
+            float length = _restGripOffset.magnitude;
+            Vector3 direction = Quaternion.Euler(angles.x, 0, angles.y) * (_restGripOffset / length);
+            int count = Physics.SphereCastNonAlloc(origin, _bendProbeRadius, direction, _bendProbeHits, length, _obstructionMask, QueryTriggerInteraction.Ignore);
             float nearest = float.PositiveInfinity;
             for (int i = 0; i < count; i++)
             {
                 var hit = _bendProbeHits[i];
                 if (hit.collider == null || hit.collider.transform.IsChildOf(transform) || hit.collider.GetComponentInParent<ClothBendSurface>() == null) continue;
                 float upperLength = Vector3.Distance(origin, hit.point);
-                if (upperLength < _minBendSegmentLength || _length - upperLength < _minBendSegmentLength || upperLength >= nearest) continue;
-                nearest = upperLength; point = hit.point; lowerLength = _length - upperLength;
+                if (upperLength < _minBendSegmentLength || length - upperLength < _minBendSegmentLength || upperLength >= nearest) continue;
+                nearest = upperLength; point = hit.point; lowerLength = length - upperLength;
             }
             return nearest < float.PositiveInfinity;
         }
@@ -236,21 +241,25 @@ namespace Herbalist.Levels
         private Vector3 Position(Vector2 primary, Vector2 secondary, int side)
         {
             Quaternion baseRotation = Quaternion.Euler(primary.x, 0, primary.y);
-            if (!_bendActive) return transform.position + baseRotation * (Vector3.down * _length + _gripOffsets[side]);
+            if (!_bendActive) return transform.position + baseRotation * (_restGripOffset + _gripOffsets[side]);
             Quaternion lowerRotation = Quaternion.Euler(secondary.x, 0, secondary.y) * baseRotation;
-            return _bendPoint + lowerRotation * (Vector3.down * _bendLength + _gripOffsets[side]);
+            return _bendPoint + lowerRotation * (_restGripOffset.normalized * _bendLength + _gripOffsets[side]);
         }
         private void Present(Vector2 primary, bool bent, Vector3 point, float lowerLength, Vector2 secondary)
         {
             Quaternion baseRotation = Quaternion.Euler(primary.x, 0, primary.y);
-            Vector3 knot = bent ? point + Quaternion.Euler(secondary.x, 0, secondary.y) * baseRotation * (Vector3.down * lowerLength)
-                                 : transform.position + baseRotation * (Vector3.down * _length);
-            _knot.position = knot;
+            Vector3 knot = bent ? point + Quaternion.Euler(secondary.x, 0, secondary.y) * baseRotation * (_restGripOffset.normalized * lowerLength)
+                                 : transform.position + baseRotation * _restGripOffset;
             if (_authoredVisual != null)
-                _authoredVisual.SetPositionAndRotation(
-                    transform.position + baseRotation * (_authoredRestPosition - _authoredPivot),
-                    baseRotation * _authoredRestRotation);
+            {
+                // Rotate the scaled parent as one rigid unit. Rotating its child under a
+                // non-uniform parent scale shears the mesh away from the grip point.
+                _knot.localPosition = _authoredGripLocalPosition;
+                transform.rotation = baseRotation * _authoredRootRotation;
+                if (bent) _knot.position = knot;
+            }
             else if (_cloth != null) SetSegment(_cloth, transform.position, bent ? point : knot);
+            if (_authoredVisual == null) _knot.position = knot;
             if (_lowerCloth == null) return;
             if (_lowerCloth.gameObject.activeSelf != bent) _lowerCloth.gameObject.SetActive(bent);
             if (bent) SetSegment(_lowerCloth, point, knot);
@@ -282,7 +291,11 @@ namespace Herbalist.Levels
         {
             Cloths.Remove(this);
             if (Authority) { Detach(1); Detach(0); }
-            if (_authoredVisual != null) _authoredVisual.SetPositionAndRotation(_authoredRestPosition, _authoredRestRotation);
+            if (_authoredVisual != null)
+            {
+                transform.rotation = _authoredRootRotation;
+                if (_knot != null) _knot.localPosition = _authoredGripLocalPosition;
+            }
         }
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
