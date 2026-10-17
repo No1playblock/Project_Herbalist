@@ -64,22 +64,18 @@ def fit_crop(path, size, focus=(0.5, 0.5)):
 
 
 def hero():
-    a = OUT / "stage01_live_game_full.png"
-    b = ROOT / "Captures/stage2_sap_trail_preview.png"
-    c = OUT / "06_waterfall_concept.png"
+    a = OUT / "live/stage1_forest_terrain_fixed.png"
+    b = OUT / "live/stage2_maze_control_play.png"
     out = Image.new("RGB", (1600, 900), INK)
-    out.paste(fit_crop(a, (1050, 900), (0.52, 0.55)), (0, 0))
-    out.paste(fit_crop(b, (540, 440), (0.51, 0.52)), (1060, 0))
-    out.paste(fit_crop(c, (540, 450), (0.51, 0.42)), (1060, 450))
+    out.paste(fit_crop(a, (1000, 900), (0.50, 0.50)), (0, 0))
+    out.paste(fit_crop(b, (590, 900), (0.50, 0.70)), (1010, 0))
     d = ImageDraw.Draw(out, "RGBA")
-    for box in [(0, 790, 1050, 900), (1060, 351, 1600, 440), (1060, 805, 1600, 900)]:
+    for box in [(0, 790, 1000, 900), (1010, 790, 1600, 900)]:
         d.rectangle(box, fill=(12, 21, 17, 222))
-    d.rectangle((1050, 0, 1060, 900), fill=GREEN)
-    d.rectangle((1060, 440, 1600, 450), fill=GREEN)
+    d.rectangle((1000, 0, 1010, 900), fill=GREEN)
     txt(d, (38, 803), "01  EXTERIOR · 게임 캡처", 35, "white", True)
-    txt(d, (1088, 367), "02  MAZE · 게임 캡처", 28, "white", True)
-    txt(d, (1088, 820), "03  WATERFALL · 연출 이미지", 25, "white", True)
-    out.save(OUT / "01_gameplay_capture_collage.png", optimize=True)
+    txt(d, (1032, 803), "02  MAZE · 게임 캡처", 29, "white", True)
+    out.save(OUT / "00_overview_gameplay.png", optimize=True)
 
 
 def movement():

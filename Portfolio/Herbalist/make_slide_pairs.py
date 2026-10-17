@@ -74,17 +74,7 @@ if __name__ == "__main__":
     make(
         "12_maze_with_gameplay.png", "물 미로 시뮬레이션과 표현",
         "04_maze_simulation.png",
-        [(CAP / "stage2_maze_control_raw.png", "물 미로 조종 화면", "GAME CAPTURE")],
+        [(OUT / "live/stage2_maze_control_crop.png", "물 미로 조종 화면", "GAME CAPTURE")],
         ["Host는 경로·누수·잔량 계산", "Client는 복제 상태로 물길을 그림", "실제 게임 화면은 Stage 2 프로토타입 캡처"],
     )
-    make(
-        "13_transition_with_gameplay.png", "씬 전환 중 상태 보존",
-        "05_stage_transition.png",
-        [
-            (OUT / "stage01_live_game_full.png", "Stage 1 · 숲", "GAME CAPTURE"),
-            (CAP / "stage2_maze_control_raw.png", "Stage 2 · 미로", "GAME CAPTURE"),
-            (OUT / "06_waterfall_concept.png", "Stage 3 · 폭포", "CONCEPT ART"),
-        ],
-        ["Stage 3 이미지는 실제 게임 캡처가 아닌 연출 이미지입니다."],
-    )
-    print("Built four 1600×900 technical page visuals")
+    print("Built three 1600×900 technical page visuals")
