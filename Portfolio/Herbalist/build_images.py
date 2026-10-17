@@ -64,9 +64,9 @@ def fit_crop(path, size, focus=(0.5, 0.5)):
 
 
 def hero():
-    a = ROOT / "Temp/PortfolioCaptures/stage01_live_game_full.png"
-    b = ROOT / "Assets/_Project/Documentation/UI/Screenshots/06-stage02-hud-1920x1080.png"
-    c = ROOT / "Assets/_Project/Documentation/UI/Screenshots/07-stage03-altar-hud-1920x1080.png"
+    a = OUT / "stage01_live_game_full.png"
+    b = ROOT / "Captures/stage2_sap_trail_preview.png"
+    c = OUT / "06_waterfall_concept.png"
     out = Image.new("RGB", (1600, 900), INK)
     out.paste(fit_crop(a, (1050, 900), (0.52, 0.55)), (0, 0))
     out.paste(fit_crop(b, (540, 440), (0.51, 0.52)), (1060, 0))
@@ -76,9 +76,9 @@ def hero():
         d.rectangle(box, fill=(12, 21, 17, 222))
     d.rectangle((1050, 0, 1060, 900), fill=GREEN)
     d.rectangle((1060, 440, 1600, 450), fill=GREEN)
-    txt(d, (38, 803), "01  EXTERIOR · 약초와 나무 등반", 35, "white", True)
-    txt(d, (1088, 367), "02  MAZE · 물 경로 조종", 28, "white", True)
-    txt(d, (1088, 820), "03  ALTAR · 회전 제단", 28, "white", True)
+    txt(d, (38, 803), "01  EXTERIOR · 게임 캡처", 35, "white", True)
+    txt(d, (1088, 367), "02  MAZE · 게임 캡처", 28, "white", True)
+    txt(d, (1088, 820), "03  WATERFALL · 연출 이미지", 25, "white", True)
     out.save(OUT / "01_gameplay_capture_collage.png", optimize=True)
 
 

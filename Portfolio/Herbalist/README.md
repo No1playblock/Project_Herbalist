@@ -1,18 +1,24 @@
-# HERBALIST 포트폴리오 이미지 초안
+# HERBALIST 포트폴리오 이미지
 
-현재 게임의 3스테이지는 **폭포**다. 아래 합성 이미지와 생성 스크립트의 제단 화면은 이전 프로토타입을 사용한 임시 자료이므로 최종 포트폴리오에 그대로 사용하지 않는다.
-
-원본 포트폴리오 PDF의 16:9 페이지 구성을 기준으로 제작했다. 원본 PDF와 게임 에셋은 수정하지 않았다.
+16:9 포트폴리오 페이지에 넣을 이미지 세트. **게임 캡처**, **AI 연출 이미지**, **구조 도식**의 출처를 구분한다. 현재 3스테이지는 **폭포**이며 제단 프로토타입 화면은 사용하지 않는다.
 
 | 파일 | 용도 | 출처 |
 | --- | --- | --- |
-| `images/stage01_live_game_full.png` | 프로젝트 개요의 단독 게임 화면 | 2026-10-17 현재 `Stage_01_ModelingReference`를 Unity Play 모드에서 3840×2160으로 캡처 |
-| `images/01_gameplay_capture_collage.png` | 프로젝트 개요의 임시 3스테이지 이미지 | 위 실시간 캡처 + 기존 `Documentation/UI/Screenshots`의 미로·제단 프로토타입 화면 합성. 제단 부분은 폭포 화면으로 교체 필요 |
-| `images/02_client_prediction.png` | 플레이어 이동 기술 페이지 왼쪽 이미지 | `NetworkPlayer`, `CharacterControllerMotor`의 실제 처리 순서를 도식화 |
-| `images/03_leaf_replication.png` | 나뭇잎 능력 기술 페이지 왼쪽 이미지 | `NetworkLeafAbility`, `NetworkLeafProjectile`, `LeafInstallTarget`의 권한·복제 흐름 도식화 |
-| `images/04_maze_simulation.png` | 미로 기술 페이지 왼쪽 이미지 | `SapMazeSimulation`, `SapMazeBoard`의 그래프 상태·순환 버퍼 도식화 |
-| `images/05_stage_transition.png` | 씬 전환 기술 페이지 왼쪽 이미지 | `FusionLobbySession`의 스냅샷·로드·복원 흐름 도식화 |
+| `images/00_overview_abilities_concept.png` | 개요: 두 캐릭터가 각각 나뭇잎·물 능력을 사용하는 장면 | 2026-10-17 Stage 1 게임 캡처를 참조해 이미지 생성 도구로 만든 **연출 이미지**. 실제 게임 화면이 아님 |
+| `images/01_gameplay_capture_collage.png` | 개요: 세 스테이지 이미지 | Stage 1·2 실제 게임 캡처 + Stage 3 폭포 연출 이미지. 오른쪽 아래에 구분 표기 |
+| `images/06_waterfall_concept.png` | Stage 3 폭포 참고 이미지 | Stage 1 캡처를 참조해 이미지 생성 도구로 만든 **연출 이미지**. 실제 Stage 3 화면이 아님 |
+| `images/10_movement_with_gameplay.png` | 이동·입력 예측 기술 페이지 | 구조 도식 + 2026-10-05 두 플레이어 게임 캡처 |
+| `images/11_leaf_with_gameplay.png` | 나뭇잎 능력 기술 페이지 | 구조 도식 + 실제 나뭇잎 HUD 게임 캡처 |
+| `images/12_maze_with_gameplay.png` | 물 미로 기술 페이지 | 구조 도식 + 2026-10-05 Stage 2 프로토타입 게임 캡처 |
+| `images/13_transition_with_gameplay.png` | 씬 전환 기술 페이지 | 구조 도식 + Stage 1·2 실제 게임 캡처 + Stage 3 폭포 연출 이미지 |
 
-이미지를 다시 만들려면 이 폴더에서 `build_images.py`를 실행한다. Python Pillow와 Windows 맑은 고딕이 필요하다.
+`images/captures/`에는 사용한 게임 캡처 원본을 변형 없이 복사했다. `images/stage01_live_game_full.png`도 2026-10-17 Unity Play 모드에서 촬영한 원본이다. 이 Stage 1 캡처는 최신 모델링 브랜치를 합치기 **전** 화면이므로 현재 배치의 최종 모습으로 설명하지 않는다. Unity 에디터 또는 실행 빌드가 현재 연결되지 않아 이번 작업에서 새 라이브 캡처는 촬영하지 못했다.
 
-현재 미로·제단 캡처는 기존 UI 문서에 저장된 프로토타입 화면이다. 특히 제단은 현재 3스테이지가 아니므로 폭포 게임 화면으로 교체해야 한다. 최신 아트와 실제 2인 플레이 화면으로 교체할 때 `build_images.py`의 `hero()` 입력 경로와 제목도 함께 바꾼다.
+구조 도식의 원본은 `02_client_prediction.png`부터 `05_stage_transition.png`까지다. `build_images.py`로 도식과 개요 콜라주를, `make_slide_pairs.py`로 도식과 게임 캡처를 결합한 16:9 기술 페이지를 다시 만든다. 두 스크립트는 Python Pillow와 Windows 맑은 고딕을 사용한다.
+
+이미지 생성 도구에 준 핵심 요청은 다음과 같다.
+
+- 개요: 실제 Stage 1 캡처의 두 캐릭터·숲 스타일을 참고해, 한 캐릭터는 초록 나뭇잎을 투척·설치하고 다른 캐릭터는 푸른 물줄기를 기믹에 주입하는 한 장면. UI와 글자는 제외.
+- 폭포: 같은 캐릭터와 게임 스타일을 참고해, 두 사람이 폭포 양옆 발판에서 협동하는 3스테이지 참고 장면. 제단·전투·UI·글자는 제외.
+
+최종 PDF에 넣을 때 연출 이미지에는 **‘연출 이미지’ 또는 ‘Concept Art’** 캡션을 유지한다. 실제 캡처로 대체할 때는 해당 캡션과 입력 경로를 함께 갱신한다.
