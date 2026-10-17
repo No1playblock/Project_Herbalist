@@ -20,6 +20,7 @@ namespace Herbalist.Networking
         [Networked] private NetworkBool Unlocked { get; set; }
         [Networked] private int Count { get; set; }
         [Networked] private NetworkBool Recovering { get; set; }
+        [Networked] private int LeafSlotStates { get; set; }
         [Networked] private uint FeedbackSequence { get; set; }
         [Networked] private NetworkBool RangeRejected { get; set; }
         private void Awake()
@@ -61,11 +62,11 @@ namespace Herbalist.Networking
                 abilities.Sap.Tick(player.Player.View.GetAimRay(player.LookAngles.x, player.LookAngles.y), false, Runner.DeltaTime);
             Publish();
         }
-        private void Publish() { Unlocked = abilities.Unlocked; Count = abilities.DisplayCount; Kind = abilities.Kind; Controlling = abilities.Sap != null && abilities.Sap.Controlling; CanPlace = abilities.Sap != null && abilities.Sap.CanPlace; Ready = abilities.Sap != null && abilities.Sap.Ready; Recovering = abilities.Leaf.Recovering; FeedbackSequence = abilities.Leaf.FeedbackSequence; RangeRejected = abilities.Leaf.RangeRejected; }
+        private void Publish() { Unlocked = abilities.Unlocked; Count = abilities.DisplayCount; Kind = abilities.Kind; Controlling = abilities.Sap != null && abilities.Sap.Controlling; CanPlace = abilities.Sap != null && abilities.Sap.CanPlace; Ready = abilities.Sap != null && abilities.Sap.Ready; Recovering = abilities.Leaf.Recovering; LeafSlotStates = abilities.Leaf.PackedSlotStates; FeedbackSequence = abilities.Leaf.FeedbackSequence; RangeRejected = abilities.Leaf.RangeRejected; }
         public override void Render()
         {
             if (HasStateAuthority) return;
-            abilities.ApplyReplica(Unlocked, Count, Recovering, Kind, Controlling, CanPlace, Ready);
+            abilities.ApplyReplica(Unlocked, Count, Recovering, Kind, Controlling, CanPlace, Ready, LeafSlotStates);
             abilities.Leaf.ApplyFeedback(FeedbackSequence, RangeRejected);
         }
         private void SetShotFacing(float yaw) { if (HasStateAuthority) player.BodyYaw = yaw; }
