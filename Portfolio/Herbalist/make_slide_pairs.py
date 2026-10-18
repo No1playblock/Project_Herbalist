@@ -62,8 +62,8 @@ if __name__ == "__main__":
     make(
         "10_movement_with_gameplay.png", "입력 예측과 재시뮬레이션",
         "02_client_prediction.png",
-        [(CAP / "stage1_two_players_raw.png", "Host / Client 2인 화면", "GAME CAPTURE")],
-        ["클라이언트의 로컬 입력을 먼저 시뮬레이션", "Host 상태를 받아 같은 Tick을 재시뮬레이션", "JumpSequence로 점프 입력 중복 소비 방지"],
+        [(OUT / "live/stage1_movement_20261019_tech_crop.png", "점프 중인 플레이어", "GAME CAPTURE")],
+        ["클라이언트의 로컬 입력을 먼저 시뮬레이션", "Host 상태로 같은 Tick을 재시뮬레이션", "화면은 오프라인 점프 Play 캡처"],
     )
     make(
         "11_leaf_with_gameplay.png", "나뭇잎 능력의 권한 분리",
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     make(
         "12_maze_with_gameplay.png", "물 미로 시뮬레이션과 표현",
         "04_maze_simulation.png",
-        [(OUT / "live/stage2_maze_control_crop.png", "물 미로 조종 화면", "GAME CAPTURE")],
-        ["Host는 경로·누수·잔량 계산", "Client는 복제 상태로 물길을 그림", "실제 게임 화면은 Stage 2 프로토타입 캡처"],
+        [(OUT / "live/stage2_maze_20261019_tech_crop.png", "물길이 형성된 미로", "GAME CAPTURE")],
+        ["Host는 경로·누수·잔량 계산", "Client는 복제 상태로 물길을 그림", "새 모델링을 적용한 Stage 2 Play 캡처"],
     )
     print("Built three 1600×900 technical page visuals")

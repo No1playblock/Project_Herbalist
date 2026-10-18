@@ -129,25 +129,21 @@ def leaf():
 
 
 def maze():
-    im, d = base("그래프 미로와 물길 복제", "SapMazeSimulation / SapMazeBoard", "03")
+    im, d = base("메시 수로와 물길 복제", "SapMazeSurface / SapMazeBoard", "03")
     rounded(d, (55, 255, 905, 676))
-    txt(d, (88, 279), "그래프 기반 이동", 30, INK, True)
-    pts = [(155, 400), (335, 400), (515, 400), (515, 560), (745, 560)]
-    for i in range(len(pts) - 1):
-        d.line((pts[i], pts[i + 1]), fill=(143, 172, 151), width=13)
-    d.line((pts[1], pts[2]), fill=BLUE, width=15)
-    for i, p in enumerate(pts):
-        r = 30
-        d.ellipse((p[0] - r, p[1] - r, p[0] + r, p[1] + r), fill=BLUE if i in (1, 2) else GREEN, outline=INK, width=3)
-        txt(d, p, str(i), 25, "white" if i in (1, 2) else INK, True, "mm")
-    d.ellipse((499, 544, 531, 576), outline=ORANGE, width=6)
-    txt(d, (573, 348), "From=1  →  To=2", 25, INK, True)
-    txt(d, (573, 389), "Progress=0.6", 25, BLUE, True)
-    txt(d, (575, 602), "누수 노드", 24, ORANGE, True)
+    txt(d, (88, 279), "조각된 수로 안에서 이동", 30, INK, True)
+    route = [(145, 560), (145, 380), (330, 380), (330, 505), (550, 505), (550, 365), (770, 365)]
+    d.line(route, fill=(107, 70, 42), width=55, joint="curve")
+    d.line(route, fill=(204, 171, 130), width=33, joint="curve")
+    d.line(route[:4], fill=BLUE, width=22, joint="curve")
+    for p, label, color in [(route[0], "S", GREEN), (route[3], "●", BLUE), (route[4], "!", ORANGE), (route[-1], "G", GREEN)]:
+        d.ellipse((p[0]-21, p[1]-21, p[0]+21, p[1]+21), fill=color, outline=INK, width=3)
+        txt(d, p, label, 21, INK, True, "mm")
+    txt(d, (88, 614), "메시 깊이 샘플 → 연결된 수로 선택 → 입력 방향으로 이동", 23, MUTED)
     rounded(d, (55, 710, 905, 862), fill=(229, 241, 252), outline=(196, 220, 243))
     txt(d, (88, 735), "HOST SIMULATION", 28, (37, 86, 153), True)
-    txt(d, (88, 782), "Tick(dt) → 소단계 분할 → 이동·누수·완료 판정", 26, INK)
-    txt(d, (88, 821), "From / To / Progress / Volume / Phase 복제", 24, MUTED)
+    txt(d, (88, 782), "TickSurface → 소단계 이동·누수·완료 판정", 26, INK)
+    txt(d, (88, 821), "SurfacePosition / Heading / Volume / Phase 복제", 23, MUTED)
     rounded(d, (55, 890, 905, 1124), fill=(28, 37, 34), outline=(28, 37, 34))
     txt(d, (88, 916), "CLIENT PRESENTATION", 28, GREEN, True)
     txt(d, (88, 968), "TrailPoints[128] 순환 버퍼", 28, "white", True)
