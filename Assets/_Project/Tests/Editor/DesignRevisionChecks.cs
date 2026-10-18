@@ -48,8 +48,16 @@ namespace Herbalist.Editor
                 }
                 else if (path == CurrentStagePaths.Maze)
                 {
-                    Check(Object.FindFirstObjectByType<DescendingMazeFlow>() != null, "descending maze flow");
+                    var flow = Object.FindFirstObjectByType<DescendingMazeFlow>();
+                    Check(flow != null, "descending maze flow");
                     Check(Object.FindObjectsByType<SapMazeBoard>(FindObjectsSortMode.None).Length == 3 && level.nextScenePath == CurrentStagePaths.Altar, "three boards and altar destination");
+                    var imported = GameObject.Find("ImportedMazeVisuals");
+                    Check(imported != null && imported.GetComponentsInChildren<MeshRenderer>().Length == 3, "three imported maze faces");
+                    Check(Read<StageTwoPulleyPresentation>(flow, "_pulleyPresentation") != null, "imported pulley presentation connected");
+                    foreach (var board in Object.FindObjectsByType<SapMazeBoard>(FindObjectsSortMode.None))
+                        Check(!board.transform.Find("MazeWalls").GetComponent<MeshRenderer>().enabled &&
+                              board.transform.Find("MazeWalls").GetComponent<MeshCollider>().sharedMesh != null,
+                              "imported face with graph wall collision");
                 }
                 else Check(Object.FindObjectsByType<AltarRing>(FindObjectsSortMode.None).Length == 3 && Object.FindFirstObjectByType<FinalStageExit>() != null, "three rotating rings/final exit");
             }
@@ -227,6 +235,9 @@ namespace Herbalist.Editor
                 finally { Object.Destroy(testBranch); }
                 Check(player.Motor.MovementLocked && partner.GetComponent<PlayerController>().Motor.MovementLocked, "cloth movement locked");
                 Check(HangingCloth.TryInteract(actor, out _) && !player.Motor.MovementLocked, "release clears only cloth locks");
+                Check(HangingCloth.TryInteract(actor, out _) && HangingCloth.IsRiding(actor), "player regrabs cloth");
+                Check(actor.ExecuteCommand(StageCommand.ReleaseCloth) != string.Empty && !HangingCloth.IsRiding(actor) &&
+                    !player.Motor.MovementLocked, "jump release works immediately after grabbing");
                 HangingCloth.TryInteract(partner, out _);
                 return "PASS exterior: permanent/capacity/range leaf, symmetric eruption, immediate upward launch/air steering, sap without extraction, paired cloth grab/release.";
             }
@@ -263,6 +274,14 @@ namespace Herbalist.Editor
             actor.Abilities.RevokeLeaf(); actor.Abilities.UnlockSap(); partner.Abilities.RevokeLeaf(); partner.Abilities.UnlockLeaf();
             var flow = Object.FindFirstObjectByType<DescendingMazeFlow>();
             var boards = Read<SapMazeBoard[]>(flow, "_mazes"); var rafts = Read<Transform[]>(flow, "_rafts");
+            var pulley = Read<StageTwoPulleyPresentation>(flow, "_pulleyPresentation");
+            var firstWheel = Read<Transform[]>(pulley, "_wheels")[0];
+            // Offline Play may have already advanced while the test command was sent.
+            Write(flow, "_current", -1); Write(flow, "_phase", 0); Write(flow, "_travel", 0f);
+            var entryY = Read<Transform[]>(flow, "_stations")[0].position.y;
+            foreach (var raft in rafts) raft.position = new Vector3(raft.position.x, entryY, raft.position.z);
+            pulley.Present(0f);
+            var wheelAtEntry = firstWheel.localRotation;
             var identities = rafts.ToArray();
             var screen = Object.FindFirstObjectByType<PlayScreenController>();
             Check(screen.Mode == PlayScreenMode.Personal && screen.IsLocked && !screen.TryToggle(), "personal viewport forced");
@@ -271,6 +290,8 @@ namespace Herbalist.Editor
                 var copy = Object.Instantiate(board.Definition); copy.initialVolume = 500; copy.speed = 1;
                 board.ConfigureOfflineTestDefinition(copy);
             }
+            Check(boards[0].Surface.MazeCollider.sharedMesh.name == "Low_2" &&
+                boards[1].Surface.MazeCollider.sharedMesh.name == "Low_1", "imported maze order");
             try
             {
                 // Keep the final goal one step short to avoid a scene load inside this synchronous check.
@@ -278,23 +299,44 @@ namespace Herbalist.Editor
                 {
                     for (int tick = 0; tick < 100 && flow.CurrentMaze < maze; tick++) flow.Tick(.1f);
                     Check(flow.CurrentMaze == maze, "automatic descent to maze " + maze);
+                    if (maze == 0)
+                    {
+                        Check(Quaternion.Angle(wheelAtEntry, firstWheel.localRotation) > 1f, "imported pulley turns with raft descent");
+                        Check(rafts.All(r => r.GetComponentsInChildren<MeshRenderer>().Count(v => v.enabled) >= 2), "imported platforms ride both rafts");
+                    }
                     actor.GetComponent<PlayerController>().Motor.Teleport(rafts[0].position + Vector3.up * .05f);
                     partner.GetComponent<PlayerController>().Motor.Teleport(rafts[1].position + Vector3.up * .05f);
                     var board = boards[maze]; board.SetPlayable(true);
                     Check(board.ReceiveAbilityCycle(actor.Abilities, 1) && board.Controlling, "R begins maze control");
-                    var path = SapMazeRoute.Find(board.Definition, board.Definition.startNode, board.Definition.goalNode);
+                    var path = new System.Collections.Generic.List<Vector2>();
+                    Check(board.Surface != null && board.Surface.TryFindPath(board.SurfaceStart, board.SurfaceGoal, path),
+                        "mesh channel connects start and goal " + maze);
+                    if (maze == 1)
+                    {
+                        // These Low_1 passages were wrongly removed when a deep
+                        // decorative point on the board rim set the depth cutoff.
+                        foreach (var passage in new[] { new Vector2(2.77f, 3.6f), new Vector2(-4.5f, 7.2f) })
+                        {
+                            Check(Vector2.Distance(board.Surface.Snap(passage), passage) < .08f,
+                                "marked passage remains open " + passage);
+                            var through = new System.Collections.Generic.List<Vector2>();
+                            Check(board.Surface.TryFindPath(board.SurfaceStart, passage, through) &&
+                                board.Surface.TryFindPath(passage, board.SurfaceGoal, through),
+                                "marked passage connects to both ends " + passage);
+                        }
+                    }
                     for (int edge = 1; edge < path.Count; edge++)
                     {
-                        if (maze == 2 && edge == path.Count - 1) break;
-                        var delta = board.Definition.nodes[path[edge]] - board.Definition.nodes[path[edge - 1]];
-                        var move = delta.normalized;
-                        for (int tick = 0; tick < 500 && board.State.From != path[edge]; tick++)
+                        if (maze == 2 && edge >= path.Count - 2) break;
+                        for (int tick = 0; tick < 100 && Vector2.Distance(board.SapPosition,path[edge]) > .06f; tick++)
                         {
+                            var move = (path[edge] - board.SapPosition).normalized;
                             board.ReceiveMovement(actor.GetComponent<PlayerController>(), move);
                             flow.Tick(.01f);
                             if (board.State.Phase == MazePhase.Solved) break;
                         }
-                        Check(board.State.From == path[edge] || board.State.Phase == MazePhase.Solved, "routed edge " + edge);
+                        Check(Vector2.Distance(board.SapPosition,path[edge]) <= .06f || board.State.Phase == MazePhase.Solved,
+                            "mesh channel step " + maze + "/" + edge);
                     }
                     if (maze < 2)
                     {
@@ -305,13 +347,76 @@ namespace Herbalist.Editor
                     {
                         board.ReceiveAbilityCycle(actor.Abilities, 1);
                         Check(!board.Controlling && !actor.GetComponent<PlayerController>().Motor.MovementLocked, "R resumes player movement");
-                        var before = board.State; board.Tick(.1f);
-                        Check(before.From == board.State.From && before.To == board.State.To && before.Progress == board.State.Progress, "parked sap position retained");
+                        var before = board.SapPosition; board.Tick(.1f);
+                        Check(Vector2.Distance(before,board.SapPosition)<.001f, "parked sap position retained");
                     }
                 }
-                return "PASS maze: personal screen/Tab lock, R input routing, graph paths, automatic descent without reboarding, same raft identities and parked position retention.";
+                return "PASS maze: personal screen/Tab lock, R input routing, mesh channels, automatic descent without reboarding, same raft identities and parked position retention.";
             }
             finally { Object.Destroy(partner.gameObject); }
+        }
+
+        public static string MazeTrailLeak()
+        {
+            Check(Application.isPlaying, "Play revision maze");
+            var board = Object.FindObjectsByType<SapMazeBoard>(FindObjectsSortMode.None)
+                .First(x => x.name == "SapMaze_1");
+            var leak = board.Leaks[0];
+            var socket = Read<Vector2[]>(board, "_surfaceLeaks")[0];
+            var state = Read<MazeRunState>(board, "_state");
+            var oldPosition = Read<Vector2>(board, "_surfacePosition");
+            var points = Read<Vector2[]>(board, "_trailPoints");
+            var oldPoints = points.ToArray();
+            var oldFirst = Read<int>(board, "_trailFirst");
+            var oldCount = Read<int>(board, "_trailCount");
+            var oldPlayable = Read<bool>(board, "_playable");
+            var oldLeakMask = Read<int>(board, "_leakMask");
+            var dummy = new GameObject("MazeTrailLeakCheckLeaf").AddComponent<LeafProjectile>();
+            try
+            {
+                board.SetPlayable(true);
+                var testState = state;
+                testState.Phase = MazePhase.Running;
+                testState.Volume = board.Definition.initialVolume;
+                Write(board, "_state", testState);
+                Write(board, "_surfacePosition", socket + Vector2.right * .6f);
+                points[0] = socket - Vector2.right * .4f;
+                Write(board, "_trailFirst", 0);
+                Write(board, "_trailCount", 1);
+                board.Tick(.5f);
+                Check(board.State.Volume < testState.Volume && board.AnyLeak,
+                    "unblocked leak drains after the head has passed");
+
+                typeof(LeafProjectile).GetField("<State>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .SetValue(dummy, LeafState.Installed);
+                leak.Target.Attach(dummy);
+                var blockedVolume = board.State.Volume;
+                board.Tick(.5f);
+                Check(Mathf.Approximately(board.State.Volume, blockedVolume) && !board.AnyLeak,
+                    "installed leaf stops trail leakage");
+
+                leak.Target.Detach(dummy);
+                testState = Read<MazeRunState>(board, "_state");
+                testState.Volume = board.Definition.initialVolume * .1f;
+                Write(board, "_state", testState);
+                Write(board, "_trailCount", 1);
+                board.Tick(.5f);
+                Check(Mathf.Approximately(board.State.Volume, testState.Volume) && !board.AnyLeak,
+                    "leak stops once shrinking tail no longer reaches the socket");
+                return "PASS maze trail leak: exposed trail drains, installed leaf blocks, short tail stops draining.";
+            }
+            finally
+            {
+                leak.Target.Detach(dummy);
+                Object.Destroy(dummy.gameObject);
+                Write(board, "_state", state);
+                Write(board, "_surfacePosition", oldPosition);
+                System.Array.Copy(oldPoints, points, points.Length);
+                Write(board, "_trailFirst", oldFirst);
+                Write(board, "_trailCount", oldCount);
+                Write(board, "_leakMask", oldLeakMask);
+                board.SetPlayable(oldPlayable);
+            }
         }
     }
 }

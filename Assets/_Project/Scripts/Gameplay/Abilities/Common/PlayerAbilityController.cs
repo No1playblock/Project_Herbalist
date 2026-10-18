@@ -15,6 +15,7 @@ namespace Herbalist.Abilities
         private uint lastCycle, lastUse;
         private bool network, authority;
         private bool _offlineBothUnlocked;
+        private int _replicatedLeafSlotStates;
         public bool OfflineBothUnlocked => _offlineBothUnlocked;
         private PlayerController player;
         public AbilityInputReader Input { get; private set; }
@@ -24,6 +25,7 @@ namespace Herbalist.Abilities
         public bool Unlocked { get; private set; }
         public int DisplayCount { get; private set; }
         public bool DisplayRecovering { get; private set; }
+        public int DisplayLeafSlotStates => network && !authority ? _replicatedLeafSlotStates : Leaf.PackedSlotStates;
         private void Awake() { player = GetComponent<PlayerController>(); Input = GetComponent<AbilityInputReader>(); Leaf = GetComponent<LeafThrowAbility>(); Sap = GetComponent<SapControlAbility>(); }
         private void Start()
         {
@@ -100,8 +102,8 @@ namespace Herbalist.Abilities
             }
             DisplayCount = Kind == PlayerAbilityKind.Sap && Sap != null ? Sap.ActiveCount : Leaf.ActiveCount; DisplayRecovering = Leaf.Recovering;
         }
-        public void ApplyReplica(bool unlocked, int count, bool recovering, PlayerAbilityKind kind = PlayerAbilityKind.Leaf, bool controlling = false, bool canPlace = false, bool ready = false)
-        { Kind = kind; if (Sap != null) Sap.ApplyReplica(controlling, canPlace, ready); Unlocked = unlocked; DisplayCount = count; DisplayRecovering = recovering; }
+        public void ApplyReplica(bool unlocked, int count, bool recovering, PlayerAbilityKind kind = PlayerAbilityKind.Leaf, bool controlling = false, bool canPlace = false, bool ready = false, int leafSlotStates = 0)
+        { Kind = kind; if (Sap != null) Sap.ApplyReplica(controlling, canPlace, ready); Unlocked = unlocked; DisplayCount = count; DisplayRecovering = recovering; _replicatedLeafSlotStates = leafSlotStates; }
         private void OnDisable() { if (authority && Leaf != null) Leaf.Clear(); if (authority && Sap != null) Sap.Clear(); }
     }
 }

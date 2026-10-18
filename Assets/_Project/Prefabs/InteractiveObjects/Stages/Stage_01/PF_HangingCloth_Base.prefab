@@ -77,11 +77,13 @@ MonoBehaviour:
   _length: 56.12773
   _maxAngle: 45
   _grabRange: 8
+  _minimumHoldSeconds: 1
   _driveAcceleration: 90
   _pumpImpulseSeconds: 0.4
   _reversalInputWindow: 0.45
   _spring: 4
   _damping: 0.22
+  _maxSwingSpeed: 0
   _releaseSpeed: 1
   _bendMaxAngle: 30
   _bendProbeRadius: 0.08
@@ -89,7 +91,7 @@ MonoBehaviour:
   _obstructionMask:
     serializedVersion: 2
     m_Bits: 1
-  _grabText: "\uCC9C\uC758 \uB9E4\uB4ED\uC744 \uC7A1\uC558\uC2B5\uB2C8\uB2E4 \xB7 WASD\uB85C \uD754\uB4E4\uB9BC\uC5D0 \uB9DE\uCDB0 \uD798 \uC8FC\uAE30 \xB7 E: \uB193\uAE30"
+  _grabText: "천의 매듭을 잡았습니다 · WASD로 흔들림에 맞춰 힘 주기 · 상호작용/점프로 놓기"
   _releaseText: "\uCC9C\uC744 \uB193\uC558\uC2B5\uB2C8\uB2E4."
   _fullText: "\uB9E4\uB4ED\uC5D0 \uB450 \uBA85\uC774 \uB9E4\uB2EC\uB824 \uC788\uC2B5\uB2C8\uB2E4."
 --- !u!1 &1252689147778479052

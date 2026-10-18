@@ -17,6 +17,7 @@ namespace Herbalist.Abilities
         private static readonly Dictionary<int, LeafInstallTarget> targets = new();
         public int Id => targetId;
         public bool HasSocket => socket != null;
+        public Transform Socket => socket;
         public Vector3 SocketPosition => socket != null ? socket.position : transform.position;
         public Quaternion SocketRotation => socket != null ? socket.rotation : transform.rotation;
         public bool ExactSocketPlacement => socket != null;

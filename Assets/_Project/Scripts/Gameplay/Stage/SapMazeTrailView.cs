@@ -13,14 +13,14 @@ namespace Herbalist.Levels
 
         public SapMazeTrailSettings Settings => _settings;
 
-        public float Present(IReadOnlyList<Vector2> history, Vector2 head, float fraction)
+        public float Present(IReadOnlyList<Vector2> history, Vector2 head, float fraction, SapMazeSurface surface = null)
         {
             if (_line == null || _settings == null) return Mathf.Pow(Mathf.Clamp01(fraction), 1f / 3f);
             var remainingMl = _settings.capacityMl * Mathf.Clamp01(fraction);
-            var budget = Mathf.Max(0, remainingMl - _settings.minimumHeadMl) / _settings.millilitersPerUnit;
+            var budget = _settings.VisibleLength(fraction);
             _visible.Clear();
             var cursor = head;
-            _visible.Add(new Vector3(head.x, head.y, _settings.localZ));
+            _visible.Add(new Vector3(head.x, head.y, surface != null && surface.Ready ? surface.SurfaceZ(head, _settings.localZ) : _settings.localZ));
             var usedLength = 0f;
             for (var i = history.Count - 1; i >= 0 && usedLength < budget; i--)
             {
@@ -30,11 +30,11 @@ namespace Herbalist.Levels
                 if (usedLength + length >= budget)
                 {
                     var tail = Vector2.Lerp(cursor, previous, (budget - usedLength) / length);
-                    _visible.Add(new Vector3(tail.x, tail.y, _settings.localZ));
+                    _visible.Add(new Vector3(tail.x, tail.y, surface != null && surface.Ready ? surface.SurfaceZ(tail, _settings.localZ) : _settings.localZ));
                     usedLength = budget;
                     break;
                 }
-                _visible.Add(new Vector3(previous.x, previous.y, _settings.localZ));
+                _visible.Add(new Vector3(previous.x, previous.y, surface != null && surface.Ready ? surface.SurfaceZ(previous, _settings.localZ) : _settings.localZ));
                 usedLength += length;
                 cursor = previous;
             }
