@@ -30,7 +30,7 @@ namespace Herbalist.Levels
         [SerializeField, Min(.01f)] private float _bendProbeRadius = .08f;
         [SerializeField, Min(.1f)] private float _minBendSegmentLength = 1f;
         [SerializeField] private LayerMask _obstructionMask = 1;
-        [SerializeField] private string _grabText = "천의 매듭을 잡았습니다 · WASD로 흔들림에 맞춰 힘 주기 · E: 놓기";
+        [SerializeField] private string _grabText = "천의 매듭을 잡았습니다 · WASD로 흔들림에 맞춰 힘 주기 · 상호작용/점프: 놓기";
         [SerializeField] private string _releaseText = "천을 놓았습니다.";
         [SerializeField] private string _fullText = "매듭에 두 명이 매달려 있습니다.";
         [Networked] private Vector2 Angles { get; set; }
@@ -98,6 +98,32 @@ namespace Herbalist.Levels
         }
         public override void Spawned() { if (HasStateAuthority) { Rider0 = Rider1 = -1; Angles = Vector2.zero; BendActive = false; BendPoint = Vector3.zero; BendLength = 0; BendAngles = Vector2.zero; } }
         public override void FixedUpdateNetwork() { if (HasStateAuthority) Tick(Runner.DeltaTime); }
+        public static bool IsRiding(StageActor actor)
+        {
+            if (actor == null || !actor.Available) return false;
+            foreach (var cloth in Cloths)
+                if (cloth.Online ? cloth.Rider0 == actor.Slot || cloth.Rider1 == actor.Slot :
+                    cloth._riders[0] == actor || cloth._riders[1] == actor)
+                    return true;
+            return false;
+        }
+        public static bool TryRelease(StageActor actor, out string feedback)
+        {
+            feedback = null;
+            if (actor == null || !actor.Available) return false;
+            foreach (var cloth in Cloths)
+            {
+                if (!cloth.Authority) continue;
+                for (int i = 0; i < 2; i++)
+                    if (cloth._riders[i] == actor)
+                    {
+                        cloth.Detach(i);
+                        feedback = cloth._releaseText;
+                        return true;
+                    }
+            }
+            return false;
+        }
         public static bool TryInteract(StageActor actor, out string feedback)
         {
             feedback = null;

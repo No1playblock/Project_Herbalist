@@ -125,7 +125,9 @@ namespace Herbalist.GameUI
                 clothPrompt.SetActive(false);
                 if (clothHint)
                 {
-                    clothPromptText.text = actor.Binding(0) + "  " + (releasing ? settings.clothReleaseText : settings.clothGrabText);
+                    clothPromptText.text = releasing
+                        ? actor.Binding(0) + " / " + actor.JumpBinding + "  " + settings.clothReleaseText
+                        : actor.Binding(0) + "  " + settings.clothGrabText;
                     Position((RectTransform)clothPrompt.transform, view.Camera, clothPoint + promptOffset);
                 }
             }
