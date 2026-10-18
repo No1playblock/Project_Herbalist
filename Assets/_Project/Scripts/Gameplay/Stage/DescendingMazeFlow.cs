@@ -16,6 +16,7 @@ namespace Herbalist.Levels
         [SerializeField] private StageLevel _level;
         [SerializeField] private PlayScreenController _screen;
         [SerializeField] private Transform[] _introCameras;
+        [SerializeField] private StageTwoPulleyPresentation _pulleyPresentation;
         [SerializeField, Min(.1f)] private float _introDuration = 2;
         [SerializeField, Min(.1f)] private float _descentDuration = 3;
         [SerializeField, Min(.1f)] private float _fallMargin = 3;
@@ -110,6 +111,7 @@ namespace Herbalist.Levels
             int to = Mathf.Clamp(current + 2, 0, _stations.Length - 1);
             float y = moving ? Mathf.Lerp(_stations[from].position.y, _stations[to].position.y, Mathf.SmoothStep(0, 1, travel)) : _stations[from].position.y;
             for (int i = 0; i < 2; i++) _rafts[i].position = new Vector3(_basePositions[i].x, y, _basePositions[i].z);
+            if (_pulleyPresentation != null) _pulleyPresentation.Present(_basePositions[0].y - y);
         }
         private void Carry(StageActor actor, Vector3 point)
         {
