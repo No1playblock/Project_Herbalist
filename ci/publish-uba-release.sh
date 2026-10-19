@@ -47,6 +47,25 @@ github_curl() {
             --header 'X-GitHub-Api-Version: 2022-11-28' "$@"
 }
 
+short_commit="${commit:0:8}"
+release_date="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M KST')"
+commit_summary="${short_commit}"
+if commit_json="$(github_curl "${api}/commits/${commit}" 2>/dev/null)"; then
+    message="$(jq -r '.commit.message // empty' <<<"${commit_json}" 2>/dev/null || true)"
+    message="${message//$'\r'/}"
+    summary="${message%%$'\n'*}"
+    if [[ "${summary}" == "Merge pull request"* ]]; then
+        summary="${message##*$'\n'}"
+    fi
+    if [[ -n "${summary}" ]]; then
+        commit_summary="${summary}"
+    fi
+fi
+
+release_name="Windows | ${release_date} | ${commit_summary} (${short_commit})"
+release_body="$(printf '변경 내용: %s\n기준 브랜치: develop\n빌드 시각: %s\nUnity 빌드 번호: %s (게임 버전이 아닌 빌드 횟수)\n기준 커밋: https://github.com/%s/commit/%s\n\n최신 develop 빌드는 릴리스 목록에서 게시 시각이 가장 늦은 항목을 선택하세요. 아래 Assets에서 Project_Herbalist-Windows-*.zip 파일을 다운로드하고 압축을 푼 다음 .exe를 실행하세요. _Data 폴더와 DLL 파일은 실행 파일 옆에 두세요.' \
+    "${commit_summary}" "${release_date}" "${build_number}" "${repository}" "${commit}")"
+
 tag="uba-develop-${build_number}-${commit:0:8}"
 asset_name="Project_Herbalist-Windows-${tag}.zip"
 temp_dir="$(mktemp -d)"
@@ -64,13 +83,14 @@ fi
 
 release_url="${api}/releases/tags/${tag}"
 if release_json="$(github_curl "${release_url}" 2>/dev/null)"; then
-    echo "Reusing draft release ${tag}."
+    echo "Reusing release ${tag}."
 else
     payload="$(jq -n \
         --arg tag "${tag}" \
         --arg commit "${commit}" \
-        --arg number "${build_number}" \
-        '{tag_name:$tag,target_commitish:$commit,name:("Windows build " + $number),body:("Unity Build Automation Windows build\nCommit: " + $commit),draft:true,prerelease:true,generate_release_notes:false}')"
+        --arg name "${release_name}" \
+        --arg body "${release_body}" \
+        '{tag_name:$tag,target_commitish:$commit,name:$name,body:$body,draft:true,prerelease:true,generate_release_notes:false}')"
     release_json="$(github_curl --request POST --header 'Content-Type: application/json' \
         --data "${payload}" "${api}/releases")"
 fi
@@ -91,8 +111,10 @@ if ! jq -e --arg name "${asset_name}" \
     jq -e '.state == "uploaded"' <<<"${upload_json}" >/dev/null
 fi
 
+publish_payload="$(jq -n --arg name "${release_name}" --arg body "${release_body}" \
+    '{draft:false,prerelease:true,name:$name,body:$body}')"
 github_curl --request PATCH --header 'Content-Type: application/json' \
-    --data '{"draft":false,"prerelease":true}' \
+    --data "${publish_payload}" \
     "${api}/releases/${release_id}" >/dev/null
 
 echo "Published https://github.com/${repository}/releases/tag/${tag}"
