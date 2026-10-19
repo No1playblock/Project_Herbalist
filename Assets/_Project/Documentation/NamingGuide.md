@@ -57,7 +57,7 @@ Boot와 Main 씬은 실제 기능이 분리될 때 추가합니다.
 | UI 이미지 | T_역할 | T_HomeBackground |
 | 독립 애니메이션 클립 | AN_캐릭터_동작 | AN_Sodam_Walk |
 | Animator Controller | AC_대상 | AC_SodamLocomotion |
-| 스테이지 씬 | Stage_번호_역할 | Stage_01_Exterior_260928, Stage_02_Mazes |
+| 스테이지 씬 | Stage_번호_역할 | Stage_01_ModelingReference, Stage_02_Mazes |
 | 개발용 씬 | Sandbox_목적 | Sandbox_Abilities |
 | 그 외 씬 | 역할 | MainMenu |
 

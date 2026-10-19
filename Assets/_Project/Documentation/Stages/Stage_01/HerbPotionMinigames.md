@@ -10,7 +10,7 @@ The Stage One flow now uses two in-scene UGUI views in the authored `PF_PlayerHu
 4. Sodam presses Interact while holding a herb to start brewing. Each Craft press (default Space) counts toward the most recent one-second window. Duyeong sees the current temperature and fire strength; Sodam sees the target band and the brewing gauge. At 0-1 presses per second the pot cools by 6°C/s, at 2-3 it holds, and at 4+ it heats by 6°C/s. The gauge gains 8%/s in the target band and loses 12%/s outside it. Reaching 100% within the recipe's time limit creates the potion. Reaching 100°C or running out of time ends the attempt and keeps the herb.
 5. Drinking, permanent ability choice, and the Stage One gate continue through the existing flow.
 
-The original `Stage_01_Exterior_260928` sources use the same flow and HUD prefab. `Stage_01_ModelingReference`, the current menu destination, now has two copied herb sources near the spawn points and a Stage One network flow. The interior volume at the tree is a temporary Stage One completion region on this modeling map; the map's final entrance layout remains to be authored.
+`Stage_01_ModelingReference`, the current menu destination, has two herb sources near the spawn points and a Stage One network flow. The earlier `Stage_01_Exterior_260928` scene was removed. The interior volume at the tree is a temporary Stage One completion region on this modeling map; the map's final entrance layout remains to be authored.
 
 ## Offline role test
 

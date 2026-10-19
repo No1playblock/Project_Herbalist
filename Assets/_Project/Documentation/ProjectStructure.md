@@ -21,7 +21,6 @@ _Project/
   Scenes/
     01_Title/MainMenu.unity
     Stages/Stage_01/Stage_01_ModelingReference.unity
-    Stages/Stage_01/Stage_01_Exterior_260928.unity (earlier gameplay scene)
     Stages/Stage_02/Stage_02_Mazes.unity
     Stages/Stage_03/Stage_03_Altar.unity
     Development/Sandbox_Abilities.unity

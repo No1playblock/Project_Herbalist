@@ -2,6 +2,8 @@
 
 상태: 사용자의 진행 승인에 따라 A안 구현. 세 씬 구성, R 대상별 능력 사용, 내부 하강 끝의 제단을 적용했다. 프로토타입 배치이며 최종 아트/연출은 별도 제작 대상이다.
 
+2026-10-19 업데이트: 이전 `Stage_01_Exterior_260928` 씬과 전용 PDF 배치 도구는 제거했다. 현재 플레이·빌드 대상은 `Stage_01_ModelingReference`다. 아래의 옛 씬 배치·검증 기록은 당시 구현 이력이다.
+
 기준: `서낭당_레벨_기획서_260928.pdf` (35쪽). 문서에 남아 있는 이전 스테이지 번호와 상향 진행 설명은 최신 하향 진행 설명과 구분한다.
 
 ## 추천 구성
@@ -14,7 +16,7 @@
 
 ## 구현 및 실행
 
-- 현재 로비 시작 맵: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference.unity` (기존 외부 스테이지 구현은 `Stage_01_Exterior_260928.unity`에 유지)
+- 현재 로비 시작 맵: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference.unity`
 - 미로: `Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Mazes.unity`
 - 제단: `Assets/_Project/Scenes/Stages/Stage_03/Stage_03_Altar.unity`
 - 새 설정: `Assets/_Project/Data/Stages/Revision_260928/SO_StageAbilityRules.asset`. 나뭇잎/수액/UGUI 설정은 기존 에셋의 복사본을 사용한다.
