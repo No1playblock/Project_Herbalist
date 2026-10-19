@@ -15,6 +15,8 @@ Use the `Project_Herbalist` Unity Cloud project in the `playblock2000` organizat
 
 The post-build script requires UBA's Windows builder, `UNITY_PLAYER_PATH`, `UCB_BUILD_NUMBER`, `SCM_BRANCH`, `BUILD_REVISION`, and the installed Cygwin `jq` and 7-Zip tools. Unity documents these tools as present on its Windows builders. It publishes only from `develop`. A GitHub Release asset must be under 2 GiB; if the ZIP reaches that limit, split the upload or choose another artifact store.
 
+Release titles show the build time in KST, the merged PR title (or direct commit subject), and the short commit ID. The release body identifies the `develop` commit and explains which ZIP to download. `UCB_BUILD_NUMBER` remains in the tag and release body for tracing UBA logs; it is a build counter, not a game version, and may restart when a build target is recreated. Choose the most recently published prerelease for the newest `develop` build rather than the largest build number.
+
 ## Verification
 
 Check the UBA build history for a successful Windows build, then confirm that the matching GitHub prerelease contains a ZIP with the executable, `_Data` folder, and runtime DLLs. The script does not run for a failed Unity build. Keep the Release token out of the source repository. If the UBA run fails during packaging or upload, inspect its post-build log; the draft release can be reused when the same build is retried.
