@@ -11,7 +11,6 @@
 | 다른 씬의 기본 플레이어 조절 | `Assets/_Project/Data/Characters/SO_PlayerTuning.asset` | 기본 `PF_Player`, `PF_StageNetworkPlayer`를 그대로 쓰는 씬 |
 | 버섯·나뭇가지 점프대의 충전·상승·물줄기 조절 | `Assets/_Project/Data/Stages/Stage_01/SO_ModelingMushroomJumpPad.asset` | 현재 1스테이지의 **두 종류 모두** |
 | 점프대의 위치·외형·주입구·분사구 조절 | 씬의 `PF_MushroomJumpPad` 또는 `PF_BranchJumpPad` 인스턴스 | 선택한 배치 하나. 프리팹 자체를 수정하면 그 변형의 모든 배치 |
-| 이전 외부 씬의 점프대 조절 | `Assets/_Project/Data/Stages/Revision_260928/SO_ExteriorJumpPad.asset` | `Stage_01_Exterior_260928.unity`. 현재 모델링 씬과 별개 |
 
 ## 씬에서 캐릭터 보며 작업하기
 

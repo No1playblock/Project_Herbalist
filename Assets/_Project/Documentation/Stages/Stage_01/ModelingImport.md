@@ -1,6 +1,6 @@
 # Stage 1 modeling import
 
-`Stage_01_ModelingReference.unity` is now the Stage 1 player-testing map. It retains the existing offline `PF_Player` setup and the multiplayer `PlayerSpawnLayout`; `Stage_01_Exterior_260928.unity` remains available as the earlier gameplay scene.
+`Stage_01_ModelingReference.unity` is now the Stage 1 player-testing map. It retains the existing offline `PF_Player` setup and the multiplayer `PlayerSpawnLayout`. The earlier `Stage_01_Exterior_260928.unity` scene was removed.
 
 ## Modeling branch sync (2026-10-12)
 

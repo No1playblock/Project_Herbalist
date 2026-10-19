@@ -22,7 +22,7 @@ namespace Herbalist.Editor
         public static string Authored()
         {
             Check(!Application.isPlaying, "Edit mode required");
-            foreach (string path in new[] { CurrentStagePaths.Exterior, CurrentStagePaths.Maze, CurrentStagePaths.Altar })
+            foreach (string path in new[] { CurrentStagePaths.StageOne, CurrentStagePaths.Maze, CurrentStagePaths.Altar })
             {
                 var scene = EditorSceneManager.OpenScene(path);
                 var level = Object.FindFirstObjectByType<StageLevel>();
@@ -33,18 +33,10 @@ namespace Herbalist.Editor
                     foreach (var t in root.GetComponentsInChildren<Transform>(true)) Check(GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(t.gameObject) == 0, "missing script " + t.name);
                 var ids = Object.FindObjectsByType<LeafInstallTarget>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Select(x => x.Id).ToArray();
                 Check(ids.All(x => x > 0) && ids.Distinct().Count() == ids.Length, "unique leaf IDs " + path);
-                if (path == CurrentStagePaths.Exterior)
+                if (path == CurrentStagePaths.StageOne)
                 {
-                    var layout = AssetDatabase.LoadAssetAtPath<ExteriorLayoutSettings>(PdfExteriorLayoutBuilder.SettingsPath);
-                    Check(layout != null, "PDF layout settings");
-                    Check(Object.FindObjectsByType<ExteriorJumpPad>(FindObjectsSortMode.None).Length == layout.branches.Count(x => x.kind == ExteriorBranchKind.JumpPad), "PDF jump branches");
-                    Check(Object.FindObjectsByType<HangingCloth>(FindObjectsSortMode.None).Length == layout.cloths.Length, "PDF interactive blue cloths");
-                    Check(Object.FindObjectsByType<HangingCloth>(FindObjectsSortMode.None).All(x => Read<Transform>(x, "_lowerCloth") != null), "each cloth has an authored lower bend segment");
-                    Check(Object.FindObjectsByType<ClothBendSurface>(FindObjectsSortMode.None).Length >= layout.branches.Length + 1, "branches and sacred tree can bend cloth");
-                    Check(Object.FindObjectsByType<LandingCheckpoint>(FindObjectsSortMode.None).Length >= layout.branches.Length, "branch landing checkpoints");
-                    var gaps = GameObject.Find("PdfExteriorLayout").transform.Cast<Transform>().Where(x => x.name.StartsWith("LeafBridge_")).ToArray();
-                    Check(gaps.Length == layout.leafBridges.Length && gaps.All(x => x.GetComponentsInChildren<Collider>().All(c => c.bounds.size.y > c.bounds.size.z || c.bounds.size.y > c.bounds.size.x)), "green gaps contain walls, no prebuilt bridge floor");
-                    Check(Object.FindFirstObjectByType<StageOneFlow>().entranceCondition != null && level.nextScenePath == CurrentStagePaths.Maze, "exterior gating/transition");
+                    Check(Object.FindFirstObjectByType<StageOneFlow>() != null &&
+                          level.nextScenePath == CurrentStagePaths.Maze, "stage one flow/transition");
                 }
                 else if (path == CurrentStagePaths.Maze)
                 {
@@ -61,7 +53,7 @@ namespace Herbalist.Editor
                 }
                 else Check(Object.FindObjectsByType<AltarRing>(FindObjectsSortMode.None).Length == 3 && Object.FindFirstObjectByType<FinalStageExit>() != null, "three rotating rings/final exit");
             }
-            return "PASS authored: three scenes, unique target IDs, preauthored UGUI, exterior routes/checkpoints, exactly two persistent rafts and altar.";
+            return "PASS authored: three scenes, unique target IDs, preauthored UGUI, stage one transition, maze and altar.";
         }
         private static LeafProjectile Install(LeafAbilitySettings settings, Transform owner, LeafInstallTarget target)
         {
@@ -76,172 +68,6 @@ namespace Herbalist.Editor
             copy.GetComponent<PlayerController>().SetLocalControl(false);
             var result = copy.GetComponent<StageActor>(); result.offlineSlot = 1;
             result.Abilities.ConfigureNetwork(true); return result;
-        }
-        public static string Exterior()
-        {
-            Check(Application.isPlaying && Object.FindFirstObjectByType<ExteriorStageFlow>() != null, "Play revision exterior");
-            var actor = StageActor.All.First(x => x.Local); var player = actor.GetComponent<PlayerController>();
-            var partner = Partner(actor); var leaves = new List<LeafProjectile>();
-            var originalState = player.Motor.CaptureState();
-            var pads = Object.FindObjectsByType<ExteriorJumpPad>(FindObjectsSortMode.None).OrderBy(x => x.name).ToArray();
-            try
-            {
-                actor.Abilities.RevokeLeaf(); actor.Abilities.UnlockLeaf();
-                for (int i = 0; i < 3; i++)
-                {
-                    var target = Read<LeafInstallTarget[]>(pads[i], "_sockets")[0];
-                    var leaf = Install(actor.Abilities.Leaf.Settings, actor.transform, target); leaves.Add(leaf);
-                    Read<List<LeafProjectile>>(actor.Abilities.Leaf, "leaves").Add(leaf);
-                    leaf.Tick(20); Check(leaf.Installed, "leaf permanent beyond old lifetime");
-                }
-                var fourth = Read<LeafInstallTarget[]>(pads[3], "_sockets")[0];
-                player.Motor.Teleport(fourth.transform.position + new Vector3(0, .2f, -2)); Physics.SyncTransforms();
-                var ray = new Ray(fourth.transform.position + Vector3.up * 3, Vector3.down);
-                actor.Abilities.Tick(actor.Abilities.Input.CycleSequence + 1, actor.Abilities.Input.UseSequence, ray, .3f, false, true);
-                Check(leaves[0].State == LeafState.Returning && actor.Abilities.Leaf.ActiveCount == 3 && actor.Abilities.Leaf.Recovering,
-                    "oldest leaf returns before the fourth leaf launches");
-                var leafSettings = actor.Abilities.Leaf.Settings;
-                player.Motor.Teleport(fourth.transform.position + Vector3.back * (leafSettings.range + 10f));
-                actor.Abilities.Leaf.Tick(.3f, ray);
-                Check(Read<List<LeafProjectile>>(actor.Abilities.Leaf, "leaves").Count == 3,
-                    "queued shot does not create a fourth leaf before recovery finishes");
-                leaves[0].Tick(20f);
-                Check(!actor.Abilities.Leaf.Recovering && actor.Abilities.Leaf.ActiveCount == 3,
-                    "queued shot launches only after the first leaf reaches the player");
-                var thrownLeaf = Read<List<LeafProjectile>>(actor.Abilities.Leaf, "leaves").Last();
-                Check((Read<Vector3>(thrownLeaf, "destination") - Read<Vector3>(thrownLeaf, "start")).magnitude <= leafSettings.range + .001f,
-                    "leaf destination is capped at the configured flight distance");
-                var launchFrame = Read<Transform>(actor.Abilities.Leaf, "launchFrame");
-                Check(Vector3.Distance(Read<Vector3>(thrownLeaf, "start"), launchFrame.TransformPoint(leafSettings.launchOffset)) < .001f,
-                    "new leaf launches from the scaled body offset");
-                actor.Abilities.Tick(actor.Abilities.Input.CycleSequence + 1, actor.Abilities.Input.UseSequence + 1, ray, .1f);
-                Check(leaves[1].Installed, "left click does not manually recall an installed leaf");
-                actor.Abilities.Tick(actor.Abilities.Input.CycleSequence + 2, actor.Abilities.Input.UseSequence + 1, ray, .3f);
-                Check(leaves[1].State == LeafState.Returning && leaves[2].Installed && actor.Abilities.Leaf.Recovering,
-                    "the next throw automatically recalls the next leaf in throw order");
-                leaves[1].Tick(20f);
-                Check(!actor.Abilities.Leaf.Recovering && actor.Abilities.Leaf.ActiveCount == 3,
-                    "fifth leaf launches after the second leaf reaches the player");
-                actor.Abilities.Leaf.Clear(); leaves.Clear();
-                var pad = pads[0]; var socket = Read<LeafInstallTarget[]>(pad, "_sockets")[0]; var inlet = Read<SapInjectionPort[]>(pad, "_ports")[1];
-                var installed = Install(actor.Abilities.Leaf.Settings, actor.transform, socket); leaves.Add(installed);
-                player.Motor.Teleport(socket.SocketPosition + Vector3.up * .04f); Physics.SyncTransforms();
-                for (int i = 0; i < 15; i++) player.Motor.Simulate(Vector3.zero, .02f);
-                Check(player.Motor.IsGrounded, "rider grounded on leaf");
-                float initialRiderHeight = player.transform.position.y;
-                float initialLeafHeight = socket.SocketPosition.y;
-                var partnerPlayer = partner.GetComponent<PlayerController>();
-                partnerPlayer.Motor.Teleport(socket.SocketPosition + Vector3.right * 10f); Physics.SyncTransforms();
-                var padSettings = Read<SapJumpPadSettings>(pad, "_settings");
-                for (int i = 0; i < 31; i++)
-                {
-                    inlet.Inject(.1f); pad.Tick(.1f);
-                    player.Motor.Simulate(Vector3.zero, .1f); partnerPlayer.Motor.Simulate(Vector3.zero, .1f);
-                }
-                Check(Read<float>(pad, "_launchDelayRemaining") > 0 && Read<float>(pad, "_flight") == 0,
-                    "full charge starts a warning delay without launching");
-                partnerPlayer.Motor.Teleport(socket.SocketPosition + Vector3.right * .8f + Vector3.up * .04f);
-                Physics.SyncTransforms();
-                for (int i = 0; i < 15; i++) partnerPlayer.Motor.Simulate(Vector3.zero, .02f);
-                Check(partnerPlayer.Motor.IsGrounded, "second rider boards during the warning delay");
-                bool launched = false;
-                for (int i = 0; i < 200 && Read<float>(pad, "_launchDelayRemaining") > 0; i++)
-                {
-                    float step = Mathf.Min(.02f, Read<float>(pad, "_launchDelayRemaining"));
-                    pad.Tick(step);
-                    if (Read<float>(pad, "_launchDelayRemaining") == 0)
-                    {
-                        Check(Mathf.Abs(player.Motor.Velocity.y - padSettings.riderLaunchSpeed) < .01f &&
-                              Mathf.Abs(partnerPlayer.Motor.Velocity.y - padSettings.riderLaunchSpeed) < .01f,
-                            "both riders receive launch speed when the warning ends");
-                        launched = true;
-                    }
-                    player.Motor.Simulate(Vector3.zero, step); partnerPlayer.Motor.Simulate(Vector3.zero, step);
-                }
-                Check(launched, "pad erupts after the warning delay");
-                Check(!player.Motor.MovementLocked && !partnerPlayer.Motor.MovementLocked &&
-                      player.Motor.Velocity.y > 0 && partnerPlayer.Motor.Velocity.y > 0,
-                    "eruption immediately launches both riders upward");
-                float firstRise = socket.SocketPosition.y - initialLeafHeight;
-                float beforeSteer = player.transform.position.x;
-                pad.Tick(.2f); player.Motor.Simulate(Vector3.right * player.Tuning.moveSpeed, .2f); partnerPlayer.Motor.Simulate(Vector3.zero, .2f); float secondRise = socket.SocketPosition.y - initialLeafHeight;
-                Check(player.transform.position.x > beforeSteer && player.transform.position.y > initialRiderHeight, "rider steers horizontally after launch");
-                pad.Tick(.2f); player.Motor.Simulate(Vector3.zero, .2f); partnerPlayer.Motor.Simulate(Vector3.zero, .2f); float thirdRise = socket.SocketPosition.y - initialLeafHeight;
-                pad.Tick(.2f); player.Motor.Simulate(Vector3.zero, .2f); partnerPlayer.Motor.Simulate(Vector3.zero, .2f); float fourthRise = socket.SocketPosition.y - initialLeafHeight;
-                Check(firstRise >= 0 && firstRise < padSettings.presentationRise * .25f &&
-                      secondRise > firstRise && secondRise < padSettings.presentationRise * .5f &&
-                      secondRise - firstRise > thirdRise - secondRise &&
-                      thirdRise - secondRise > fourthRise - thirdRise,
-                    $"leaf and water rise with decreasing speed: {firstRise:F2}, {secondRise:F2}, {thirdRise:F2}, {fourthRise:F2}");
-                float remainingAscent = Mathf.Max(0, padSettings.eruptionRiseDuration - (padSettings.flightDuration - Read<float>(pad, "_flight"))) + .00001f;
-                while (remainingAscent > 0f)
-                {
-                    float step = Mathf.Min(.02f, remainingAscent);
-                    pad.Tick(step); player.Motor.Simulate(Vector3.zero, step); partnerPlayer.Motor.Simulate(Vector3.zero, step);
-                    remainingAscent -= step;
-                }
-                installed.Tick(.001f);
-                Check(Mathf.Abs(socket.SocketPosition.y - initialLeafHeight - padSettings.presentationRise) < .02f, "decelerating eruption reaches world height despite scaled hole parent");
-                Check(Vector3.Distance(installed.transform.position, socket.SocketPosition) < .01f, "installed leaf follows eruption socket");
-                var jet = Read<GameObject[]>(pad, "_jets")[0];
-                Check(jet.activeSelf && Mathf.Abs(jet.GetComponent<Renderer>().bounds.size.y - padSettings.presentationRise) < .02f, "sap jet grows with leaf height");
-                Check(player.transform.position.y > socket.SocketPosition.y && partner.transform.position.y > socket.SocketPosition.y,
-                    "riders fly above the shorter leaf trajectory");
-                Check(player.Motor.CaptureState().ExternalAirControl && partnerPlayer.Motor.CaptureState().ExternalAirControl,
-                    "both riders keep air steering after launch");
-                pad.Tick(.2f);
-                Check(socket.SocketPosition.y - initialLeafHeight > padSettings.presentationRise * .95f, "leaf begins its return gently after the apex");
-                player.Motor.Simulate(Vector3.right * player.Tuning.moveSpeed, .1f); Check(player.Motor.Velocity.x > 0, "air steering changes horizontal velocity");
-                // The opposite direction also erupts without a leaf/rider requirement.
-                Write(pad, "_cooldown", 0f); Write(pad, "_flight", 0f);
-                var otherInlet = Read<SapInjectionPort[]>(pad, "_ports")[0];
-                for (int i = 0; i < 31; i++) { otherInlet.Inject(.1f); pad.Tick(.1f); }
-                Check(Read<int>(pad, "_output") == 1 && Read<float>(pad, "_launchDelayRemaining") > 0,
-                    "symmetric empty port schedules eruption");
-                pad.Tick(padSettings.launchDelaySeconds);
-                Check(Read<float>(pad, "_flight") > 0, "symmetric empty port erupts after its warning delay");
-                partner.Abilities.RevokeLeaf(); partner.Abilities.UnlockSap();
-                partner.Abilities.Sap.Configure(() => Object.Instantiate(partner.Abilities.Sap.Settings.offlinePrefab), sap => Object.Destroy(sap.gameObject), false);
-                partner.GetComponent<PlayerController>().Motor.Teleport(inlet.transform.position + Vector3.back * 2);
-                partner.Abilities.Sap.TickContextual(new Ray(inlet.transform.position + Vector3.up * 3, Vector3.down), true, .2f);
-                Check(partner.Abilities.Sap.Held != null && partner.Abilities.Sap.Ready, "context sap requires no source");
-                partner.Abilities.Sap.TickContextual(ray, false, .1f); Check(partner.Abilities.Sap.Held == null, "release stops context injection");
-                var cloth = Object.FindObjectsByType<HangingCloth>(FindObjectsSortMode.None).First();
-                var knot = Read<Transform>(cloth, "_knot");
-                player.Motor.Teleport(knot.position - Vector3.up); player.Motor.SetMovementLock(actor.Abilities.Sap, false);
-                partner.GetComponent<PlayerController>().Motor.Teleport(knot.position - Vector3.up);
-                Check(HangingCloth.TryInteract(actor, out _) && HangingCloth.TryInteract(partner, out _), "two players grip knot");
-                var beforeKnot = knot.position;
-                var expectedSwing = Quaternion.Euler(0, player.View.Yaw, 0) * Vector3.right;
-                cloth.ReceiveMovement(player, Vector2.right); cloth.Tick(.1f);
-                Check(Vector3.Dot(knot.position - beforeKnot, expectedSwing) > 0, "cloth moves in camera-relative input direction");
-                cloth.ReceiveMovement(player, Vector2.right);
-                Check(Read<Vector2>(cloth, "_drive") == Vector2.zero, "holding a direction does not add another swing impulse");
-                cloth.ReceiveMovement(player, Vector2.left);
-                Check(Read<Vector2>(cloth, "_drive") != Vector2.zero, "pressing the opposite direction adds a new swing impulse");
-                var testBranch = new GameObject("TestClothBendBranch");
-                try
-                {
-                    testBranch.transform.position = Vector3.Lerp(cloth.transform.position, knot.position, .5f);
-                    testBranch.AddComponent<BoxCollider>().size = Vector3.one * .5f;
-                    testBranch.AddComponent<ClothBendSurface>();
-                    Physics.SyncTransforms();
-                    cloth.Tick(.02f);
-                    Check(Read<bool>(cloth, "_bendActive"), "branch contact creates a second cloth pivot");
-                    var bentKnot = knot.position;
-                    cloth.ReceiveMovement(player, Vector2.right); cloth.Tick(.02f);
-                    Check(Read<Vector2>(cloth, "_bendAngles").magnitude <= 30.001f && (knot.position - bentKnot).sqrMagnitude > .0001f, "lower cloth swings within 30 degrees around branch");
-                }
-                finally { Object.Destroy(testBranch); }
-                Check(player.Motor.MovementLocked && partner.GetComponent<PlayerController>().Motor.MovementLocked, "cloth movement locked");
-                Check(HangingCloth.TryInteract(actor, out _) && !player.Motor.MovementLocked, "release clears only cloth locks");
-                Check(HangingCloth.TryInteract(actor, out _) && HangingCloth.IsRiding(actor), "player regrabs cloth");
-                Check(actor.ExecuteCommand(StageCommand.ReleaseCloth) != string.Empty && !HangingCloth.IsRiding(actor) &&
-                    !player.Motor.MovementLocked, "jump release works immediately after grabbing");
-                HangingCloth.TryInteract(partner, out _);
-                return "PASS exterior: permanent/capacity/range leaf, symmetric eruption, immediate upward launch/air steering, sap without extraction, paired cloth grab/release.";
-            }
-            finally { actor.Abilities.Leaf.Clear(); foreach (var leaf in leaves) if (leaf != null) leaf.Finish(); player.Motor.RestoreState(originalState); Object.Destroy(partner.gameObject); }
         }
         public static string Altar()
         {
