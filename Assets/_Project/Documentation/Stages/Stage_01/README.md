@@ -6,6 +6,8 @@ Current Stage 1 player scene: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_M
 
 `Stage_01_Exterior_260928.unity` remains available as the earlier authored exterior gameplay scene. The modeling map includes two herb sources, cooperative gathering and brewing, cloth swings, and mushroom and branch jump pads. The cooperative minigame setup is documented in `HerbPotionMinigames.md`; the approved exterior design remains in `Documentation/DesignRevision_260928.md`.
 
+In the modeling scene, `Stage2Transition_Summit` is the trigger volume above the top cylinder. After both distinct potions have been crafted and consumed, both players entering this volume completes Stage 1 and loads `Stage_02_Mazes` through `StageExit`. Its BoxCollider can be moved or resized in the scene to match future summit modeling.
+
 ## Placing cloth and jump pads
 
 Drag a **variant**, not a `_Base` template, from `Assets/_Project/Prefabs/InteractiveObjects/Stages/Stage_01` into the stage scene:
