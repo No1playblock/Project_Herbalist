@@ -10,7 +10,7 @@ namespace Herbalist.Levels
     public enum MazeControlView { KeepPlayerCamera, MazeCamera }
 
     [RequireComponent(typeof(NetworkObject))]
-    public sealed class SapMazeBoard : NetworkBehaviour,IPlayerMovementReceiver,IAbilityCycleReceiver
+    public sealed class SapMazeBoard : NetworkBehaviour,IAbilityCycleReceiver
     {
         [SerializeField] private SapMazeDefinition _definition;
         [SerializeField] private SapMazeSurface _surface;
@@ -26,8 +26,8 @@ namespace Herbalist.Levels
         [SerializeField] private MazeControlView _controlView = MazeControlView.KeepPlayerCamera;
         [SerializeField] private TMPro.TMP_Text _status;
         [SerializeField] private string _inactiveText="아직 활성화되지 않은 미로 · 이전 구간을 완료하세요";
-        [SerializeField] private string _readyText="R: 수액 조종 시작 · 잔량 {0:0}%";
-        [SerializeField] private string _moveText="WASD: 수액 이동 · R: 조종 종료 · 잔량 {0:0}%";
+        [SerializeField] private string _readyText="R 유지 + 중앙 조준점: 수액 이동 · 잔량 {0:0}%";
+        [SerializeField] private string _moveText="중앙 조준점으로 홈을 조준 · R을 놓으면 정지 · 잔량 {0:0}%";
         [SerializeField] private string _retryText="수액이 소진되었습니다 · 현재 미로 재시도";
         [SerializeField] private string _solvedText="미로 완료 · 양쪽 하강 발판에 탑승하세요";
         [Networked] private int From {get;set;}
@@ -53,7 +53,9 @@ namespace Herbalist.Levels
         private bool _playable;
         private int _leakMask;
         private int _controllerSlot=-1;
-        private Vector2 _movement;
+        private Vector2 _targetPoint;
+        private bool _hasTarget;
+        private readonly List<Vector2> _targetPath = new List<Vector2>();
         private Vector2 _surfacePosition, _surfaceHeading, _surfaceStart, _surfaceGoal;
         private Vector2[] _surfaceLeaks;
         private StageActor _candidate;
@@ -161,7 +163,7 @@ namespace Herbalist.Levels
                 Herbalist.Networking.FusionLobbySession.Instance.HasNetworkSession))return false;
             StopControl();ReleaseController();_definition=definition;_state=SapMazeSimulation.Initial(definition);
             InitializeSurface();
-            _movement=Vector2.zero;_leakMask=0;ResetTrail();return true;
+            _hasTarget=false;_leakMask=0;ResetTrail();return true;
         }
         public override void Spawned(){if(HasStateAuthority){ResetTrail();Publish();}}
         public void SetPlayable(bool value)
@@ -179,12 +181,17 @@ namespace Herbalist.Levels
         {
             if(!Authority || GameplayPause.IsPaused)return;
             UpdateController();
-            if(!_playable){_movement=Vector2.zero;return;}
+            if(!_playable){_hasTarget=false;return;}
             var before=_state.Phase;
             var attempt=_state.Attempt;
-            if(_surface!=null && _surface.Ready)TickSurface(Controlling?_movement:Vector2.zero,dt);
-            else SapMazeSimulation.Tick(_definition,ref _state,Controlling?_movement:Vector2.zero,dt,i=>_leaks[i].Blocked);
-            _movement=Vector2.zero;
+            if(_surface!=null && _surface.Ready)TickSurface(Controlling && _hasTarget,dt);
+            else
+            {
+                var delta=_targetPoint-_definition.Position(_state);
+                var worldDistance=transform.TransformVector(new Vector3(delta.x,delta.y,0)).magnitude;
+                var input=Controlling && _hasTarget && worldDistance<=_definition.maxTargetPathDistance ? delta.normalized : Vector2.zero;
+                SapMazeSimulation.Tick(_definition,ref _state,input,dt,i=>_leaks[i].Blocked);
+            }
             if(_state.Attempt!=attempt){_surfacePosition=_surfaceStart;_surfaceHeading=Vector2.zero;ResetTrail();}
             else if(_state.Phase==MazePhase.Running||_state.Phase==MazePhase.Solved)
                 AppendTrail(CurrentPosition());
@@ -230,7 +237,7 @@ namespace Herbalist.Levels
             }
             return false;
         }
-        private void TickSurface(Vector2 input,float dt)
+        private void TickSurface(bool moving,float dt)
         {
             if(dt<=0 || float.IsNaN(dt) || float.IsInfinity(dt) || _state.Phase==MazePhase.Solved)return;
             if(_state.Phase==MazePhase.Retrying)
@@ -239,8 +246,25 @@ namespace Herbalist.Levels
                 if(_state.RetryRemaining<=0)_state=SapMazeSimulation.Initial(_definition,_state.Attempt+1);
                 return;
             }
-            if(float.IsNaN(input.x)||float.IsNaN(input.y)||float.IsInfinity(input.x)||float.IsInfinity(input.y))input=Vector2.zero;
-            input=Vector2.ClampMagnitude(input,1);
+            int waypoint=0;
+            if(moving)
+            {
+                if(!_surface.TryFindPath(_surfacePosition,_targetPoint,_targetPath))moving=false;
+                else
+                {
+                    // The first point is the centre of the cell already occupied by the sap.
+                    // Chasing it on every tick can make the head oscillate at the cell edge.
+                    if(_targetPath.Count>1)waypoint=1;
+                    var first=_targetPath[0]-_surfacePosition;
+                    float pathLength=transform.TransformVector(new Vector3(first.x,first.y,0)).magnitude;
+                    for(int i=1;i<_targetPath.Count;i++)
+                    {
+                        var segment=_targetPath[i]-_targetPath[i-1];
+                        pathLength+=transform.TransformVector(new Vector3(segment.x,segment.y,0)).magnitude;
+                    }
+                    if(pathLength>_definition.maxTargetPathDistance) moving=false;
+                }
+            }
             int steps=Mathf.Max(1,Mathf.CeilToInt(dt*_definition.speed/Mathf.Max(.05f,_definition.leakRadius*.5f)));
             float stepTime=dt/steps;
             for(int step=0;step<steps && _state.Phase==MazePhase.Running;step++)
@@ -248,9 +272,13 @@ namespace Herbalist.Levels
                 for(int i=0;i<_leaks.Length;i++)if(AtLeak(i) && !_leaks[i].Blocked)
                     _state.Volume=Mathf.Max(0,_state.Volume-_definition.lossPerSecond*stepTime);
                 if(_state.Volume<=0){_state.Phase=MazePhase.Retrying;_state.RetryRemaining=_definition.retryDelay;break;}
-                if(input.magnitude<_definition.inputDeadzone)continue;
+                if(!moving)continue;
+                while(waypoint<_targetPath.Count && Vector2.Distance(_surfacePosition,_targetPath[waypoint])<=_surface.CellSize*.35f)
+                    waypoint++;
+                if(waypoint>=_targetPath.Count)continue;
                 var previous=_surfacePosition;
-                _surfacePosition=_surface.Move(_surfacePosition,input*_definition.speed*stepTime);
+                var delta=_targetPath[waypoint]-_surfacePosition;
+                _surfacePosition=_surface.Move(_surfacePosition,Vector2.ClampMagnitude(delta,_definition.speed*stepTime));
                 if((_surfacePosition-previous).sqrMagnitude>.000001f)_surfaceHeading=_surfacePosition-previous;
                 if(Vector2.Distance(_surfacePosition,_surfaceGoal)<=Mathf.Max(.12f,_definition.speed*stepTime))
                     _state.Phase=MazePhase.Solved;
@@ -291,30 +319,36 @@ namespace Herbalist.Levels
             for(var i=0;i<count&&i<TrailCapacity;i++)
                 _visibleTrail.Add(Online?TrailPoints[(first+i)%TrailCapacity]:_trailPoints[(first+i)%TrailCapacity]);
         }
-        public void ReceiveMovement(PlayerController player,Vector2 movement)
-        {
-            if(Authority && player==_controller && Active && State.Phase==MazePhase.Running)_movement=movement;
-        }
-        // Receives the existing rebindable Cycle action through the normal offline/Fusion ability input path.
-        public bool ReceiveAbilityCycle(PlayerAbilityController player,uint steps)
+        // The existing rebindable R action carries held state and host-reconstructed aim.
+        public bool ReceiveAbilityCycle(PlayerAbilityController player,uint steps,bool held,Ray aim)
         {
             if(!Authority || _candidate==null || _candidate.Abilities!=player || !Active)return false;
-            if(State.Phase==MazePhase.Running && steps%2!=0)
+            if(State.Phase==MazePhase.Running && held)
             {
-                if(Controlling)StopControl();
-                else
+                if(!Controlling)
                 {
                     player.Sap.Cancel();
                     _controllerSlot=_candidate.Slot;
                 }
+                var plane=new Plane(transform.forward,transform.position);
+                _hasTarget=plane.Raycast(aim,out float distance) && distance>=0;
+                if(_hasTarget)
+                {
+                    var local=transform.InverseTransformPoint(aim.GetPoint(distance));
+                    var point=new Vector2(local.x,local.y);
+                    _hasTarget=!float.IsNaN(point.x) && !float.IsNaN(point.y) &&
+                        !float.IsInfinity(point.x) && !float.IsInfinity(point.y);
+                    if(_hasTarget)_targetPoint=_surface!=null && _surface.Ready?_surface.Snap(point):point;
+                }
                 Publish();UpdateController();
             }
+            else if(Controlling){StopControl();Publish();UpdateController();}
             // Suppress the ordinary hose ability in the active maze control area, including while not controlling.
             return true;
         }
         private void StopControl()
         {
-            _controllerSlot=-1;_movement=Vector2.zero;
+            _controllerSlot=-1;_hasTarget=false;
             if(Online&&HasStateAuthority)ControllerSlot=-1;
         }
         private void UpdateController()
@@ -323,13 +357,19 @@ namespace Herbalist.Levels
             if(Active && State.Phase!=MazePhase.Solved)
                 foreach(var actor in StageActor.All)
                     if(actor.Available && actor.Abilities.Unlocked && actor.Abilities.Kind==PlayerAbilityKind.Sap &&
-                       _controlArea.Contains(actor.transform.position+Vector3.up))
+                       _controlArea.ContainsPlayer(actor.transform.position))
                     {candidate=actor;break;}
             if(candidate!=_candidate)
             {
-                if(_candidate!=null)_candidate.Abilities.ClearCycleReceiver(this);
+                if(_candidate!=null)
+                {
+                    _candidate.Abilities.ClearCycleReceiver(this);
+                }
                 _candidate=candidate;
-                if(_candidate!=null && Authority)_candidate.Abilities.SetCycleReceiver(this);
+                if(_candidate!=null)
+                {
+                    if(Authority)_candidate.Abilities.SetCycleReceiver(this);
+                }
             }
             int slot=Online?ControllerSlot:_controllerSlot;
             if(Authority && slot>=0 && (candidate==null||candidate.Slot!=slot))
@@ -342,7 +382,6 @@ namespace Herbalist.Levels
                 {
                     _controller.GetComponent<PlayerAbilityController>().SetInputLock(this,true);
                     _controller.Motor.SetMovementLock(this,true);
-                    if(Authority)_controller.SetMovementReceiver(this);
                 }
             }
             if(_controller!=null)
@@ -354,9 +393,9 @@ namespace Herbalist.Levels
         private void ReleaseController()
         {
             if(_controller==null)return;
-            _controller.ClearMovementReceiver(this);_controller.Motor.SetMovementLock(this,false);
+            _controller.Motor.SetMovementLock(this,false);
             _controller.GetComponent<PlayerAbilityController>().SetInputLock(this,false);
-            _controller.View.ClearCameraOverride(this);_controller=null;_movement=Vector2.zero;
+            _controller.View.ClearCameraOverride(this);_controller=null;_hasTarget=false;
         }
         private void Update()
         {
@@ -377,8 +416,21 @@ namespace Herbalist.Levels
                 {
                     ReadTrail();
                     headScale=_trailView.Present(_visibleTrail,p,fraction,_surface);
+                    if (_surface != null && _surface.Ready)
+                    {
+                        var center = _trailView.HeadCenter;
+                        _sapVisual.localPosition = new Vector3(center.x, center.y,
+                            _surface.SurfaceZ(center, _sapVisual.localPosition.z));
+                    }
                 }
                 _sapVisual.localScale=_visualScale*headScale;
+                if (visible && _trailView != null && _trailView.HeadWidthWorld > 0 && _sapVisual.parent != null)
+                {
+                    var worldPerLocal = _sapVisual.parent.TransformVector(Vector3.right).magnitude;
+                    if (worldPerLocal > .0001f)
+                        _sapVisual.localScale = new Vector3(_trailView.HeadWidthWorld / worldPerLocal,
+                            _sapVisual.localScale.y, _sapVisual.localScale.z);
+                }
                 var direction = _surface!=null && _surface.Ready ? Online?SurfaceHeading:_surfaceHeading :
                     _definition.nodes[state.To] - _definition.nodes[state.From];
                 if (direction.sqrMagnitude > .000001f)
@@ -398,7 +450,10 @@ namespace Herbalist.Levels
         }
         private void OnDisable()
         {
-            if(_candidate!=null)_candidate.Abilities.ClearCycleReceiver(this);
+            if(_candidate!=null)
+            {
+                _candidate.Abilities.ClearCycleReceiver(this);
+            }
             _candidate=null;ReleaseController();
             if(Authority)StopControl();
         }

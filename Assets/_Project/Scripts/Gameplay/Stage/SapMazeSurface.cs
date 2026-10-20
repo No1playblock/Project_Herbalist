@@ -19,6 +19,7 @@ namespace Herbalist.Levels
 
         public MeshCollider MazeCollider => _mazeCollider;
         public bool Ready => _walkable != null;
+        public float CellSize => _cellSize;
 
         public bool Build(Transform board)
         {
@@ -111,6 +112,34 @@ namespace Herbalist.Levels
             int x = Mathf.RoundToInt((point.x - _origin.x) / _cellSize);
             int y = Mathf.RoundToInt((point.y - _origin.y) / _cellSize);
             return x >= 0 && y >= 0 && x < _width && y < _height && _walkable[y * _width + x];
+        }
+
+        // Measure the actual traversable cross-section, then center the visual water in it.
+        // Width is returned in world units for the LineRenderer; center remains board-local.
+        public float ChannelSection(Vector2 point, Vector2 travel, float maxWorldWidth,
+            float edgeInsetWorld, out Vector2 center)
+        {
+            center = point;
+            if (_walkable == null || _board == null || !IsWalkable(point)) return 0;
+            var forward = travel.sqrMagnitude > .000001f ? travel.normalized : Vector2.up;
+            var across = new Vector2(-forward.y, forward.x);
+            float worldPerLocal = _board.TransformVector(new Vector3(across.x, across.y, 0)).magnitude;
+            if (worldPerLocal < .000001f) return 0;
+            float step = _cellSize * .25f;
+            float limit = Mathf.Max(step, maxWorldWidth / worldPerLocal * .5f + _cellSize);
+            float left = ScanChannel(point, -across, step, limit);
+            float right = ScanChannel(point, across, step, limit);
+            center = point + across * ((right - left) * .5f);
+            float measured = (left + right + step) * worldPerLocal;
+            return Mathf.Max(0, Mathf.Min(measured, maxWorldWidth) - 2f * edgeInsetWorld);
+        }
+
+        private float ScanChannel(Vector2 start, Vector2 direction, float step, float limit)
+        {
+            float distance = 0;
+            while (distance + step <= limit && IsWalkable(start + direction * (distance + step)))
+                distance += step;
+            return distance;
         }
 
         public Vector2 Snap(Vector2 point)

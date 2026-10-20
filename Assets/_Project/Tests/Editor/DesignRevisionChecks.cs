@@ -19,6 +19,8 @@ namespace Herbalist.Editor
         private static void Check(bool ok, string label) { if (!ok) throw new Exception(label); }
         private static T Read<T>(object obj, string field) => (T)obj.GetType().GetField(field, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(obj);
         private static void Write(object obj, string field, object value) => obj.GetType().GetField(field, BindingFlags.NonPublic | BindingFlags.Instance).SetValue(obj, value);
+        private static Ray MazeAim(SapMazeBoard board, Vector2 point) =>
+            new Ray(board.transform.TransformPoint(new Vector3(point.x, point.y, -2f)), board.transform.forward);
         public static string Authored()
         {
             Check(!Application.isPlaying, "Edit mode required");
@@ -118,6 +120,35 @@ namespace Herbalist.Editor
             }
             Check(boards[0].Surface.MazeCollider.sharedMesh.name == "Low_2" &&
                 boards[1].Surface.MazeCollider.sharedMesh.name == "Low_1", "imported maze order");
+            var mechanisms = GameObject.Find("Stage2_ImportedMechanisms");
+            Check(mechanisms != null &&
+                Mathf.Abs(mechanisms.transform.localScale.x - mechanisms.transform.localScale.y) < .0001f &&
+                Mathf.Abs(mechanisms.transform.localScale.y - mechanisms.transform.localScale.z) < .0001f,
+                "imported stage mechanisms keep source proportions");
+            int importedPlatformCount = 0;
+            foreach (var raft in rafts)
+            foreach (var mesh in raft.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (mesh.name != "Platporm" && mesh.name != "Platform003" && mesh.name != "Platform004") continue;
+                var scale = mesh.transform.localScale;
+                Check(Mathf.Abs(scale.x - scale.y) < .0001f && Mathf.Abs(scale.y - scale.z) < .0001f,
+                    "imported raft platform keeps source proportions");
+                importedPlatformCount++;
+            }
+            Check(importedPlatformCount == 4, "all four imported raft platforms present");
+            foreach (var board in boards)
+            {
+                var meshTransform = board.Surface.MazeCollider.transform;
+                var meshScale = meshTransform.localScale;
+                var parentScale = meshTransform.parent.localScale;
+                Check(Mathf.Abs(meshScale.x - meshScale.y) < .0001f &&
+                    Mathf.Abs(meshScale.y - meshScale.z) < .0001f &&
+                    Mathf.Abs(parentScale.x - parentScale.y) < .0001f &&
+                    Mathf.Abs(parentScale.y - parentScale.z) < .0001f,
+                    "imported maze keeps source mesh proportions");
+                Check(meshTransform.GetComponent<MeshFilter>().sharedMesh == board.Surface.MazeCollider.sharedMesh,
+                    "maze visual and channel collider use the same mesh");
+            }
             try
             {
                 // Keep the final goal one step short to avoid a scene load inside this synchronous check.
@@ -133,10 +164,40 @@ namespace Herbalist.Editor
                     actor.GetComponent<PlayerController>().Motor.Teleport(rafts[0].position + Vector3.up * .05f);
                     partner.GetComponent<PlayerController>().Motor.Teleport(rafts[1].position + Vector3.up * .05f);
                     var board = boards[maze]; board.SetPlayable(true);
-                    Check(board.ReceiveAbilityCycle(actor.Abilities, 1) && board.Controlling, "R begins maze control");
+                    Check(board.ReceiveAbilityCycle(actor.Abilities, 1, true, MazeAim(board, board.SurfaceStart)) && board.Controlling,
+                        "holding R begins maze control");
+                    if (maze == 0)
+                    {
+                        var view = actor.GetComponent<PlayerController>().View;
+                        float yaw = view.Yaw;
+                        view.ApplyLook(new Vector2(10, 0));
+                        Check(!Mathf.Approximately(view.Yaw, yaw), "maze player retains mouse look");
+                        Check(Vector3.Angle(view.GetAimRay(view.Yaw, view.Pitch).direction,
+                            Quaternion.Euler(view.Pitch, view.Yaw, 0) * Vector3.forward) < .01f,
+                            "maze aim follows center reticle");
+                        view.SetLookAngles(yaw, view.Pitch);
+                    }
                     var path = new System.Collections.Generic.List<Vector2>();
                     Check(board.Surface != null && board.Surface.TryFindPath(board.SurfaceStart, board.SurfaceGoal, path),
                         "mesh channel connects start and goal " + maze);
+                    if (maze == 0)
+                    {
+                        float routeLength = 0f;
+                        bool checkedRange = false;
+                        for (int edge = 1; edge < path.Count; edge++)
+                        {
+                            var segment = path[edge] - path[edge - 1];
+                            routeLength += board.transform.TransformVector(new Vector3(segment.x, segment.y, 0)).magnitude;
+                            if (routeLength <= board.Definition.maxTargetPathDistance + .2f) continue;
+                            var before = board.SapPosition;
+                            board.ReceiveAbilityCycle(actor.Abilities, 0, true, MazeAim(board, path[edge]));
+                            flow.Tick(.05f);
+                            Check(Vector2.Distance(before, board.SapPosition) < .001f, "target beyond channel path limit stays still");
+                            checkedRange = true;
+                            break;
+                        }
+                        Check(checkedRange, "maze route contains target beyond path limit");
+                    }
                     if (maze == 1)
                     {
                         // These Low_1 passages were wrongly removed when a deep
@@ -156,13 +217,14 @@ namespace Herbalist.Editor
                         if (maze == 2 && edge >= path.Count - 2) break;
                         for (int tick = 0; tick < 100 && Vector2.Distance(board.SapPosition,path[edge]) > .06f; tick++)
                         {
-                            var move = (path[edge] - board.SapPosition).normalized;
-                            board.ReceiveMovement(actor.GetComponent<PlayerController>(), move);
+                            board.ReceiveAbilityCycle(actor.Abilities, 0, true, MazeAim(board, path[edge]));
                             flow.Tick(.01f);
                             if (board.State.Phase == MazePhase.Solved) break;
                         }
                         Check(Vector2.Distance(board.SapPosition,path[edge]) <= .06f || board.State.Phase == MazePhase.Solved,
-                            "mesh channel step " + maze + "/" + edge);
+                            "mesh channel step " + maze + "/" + edge + " position=" + board.SapPosition +
+                            " target=" + path[edge] + " control=" + board.Controlling +
+                            " hasTarget=" + Read<bool>(board,"_hasTarget"));
                     }
                     if (maze < 2)
                     {
@@ -171,13 +233,13 @@ namespace Herbalist.Editor
                     }
                     else
                     {
-                        board.ReceiveAbilityCycle(actor.Abilities, 1);
-                        Check(!board.Controlling && !actor.GetComponent<PlayerController>().Motor.MovementLocked, "R resumes player movement");
+                        board.ReceiveAbilityCycle(actor.Abilities, 0, false, default);
+                        Check(!board.Controlling && !actor.GetComponent<PlayerController>().Motor.MovementLocked, "releasing R resumes player movement");
                         var before = board.SapPosition; board.Tick(.1f);
                         Check(Vector2.Distance(before,board.SapPosition)<.001f, "parked sap position retained");
                     }
                 }
-                return "PASS maze: personal screen/Tab lock, R input routing, mesh channels, automatic descent without reboarding, same raft identities and parked position retention.";
+                return "PASS maze: personal screen/Tab lock, held R and center reticle routing, mesh channels, automatic descent without reboarding, same raft identities and parked position retention.";
             }
             finally { Object.Destroy(partner.gameObject); }
         }
