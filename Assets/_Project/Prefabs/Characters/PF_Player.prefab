@@ -391,6 +391,7 @@ GameObject:
   - component: {fileID: 6907332106242619443}
   - component: {fileID: 4135782989056626551}
   - component: {fileID: 2355799357867397706}
+  - component: {fileID: 197530876083346043}
   m_Layer: 2
   m_Name: PF_Player
   m_TagString: Untagged
@@ -408,7 +409,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 3.2, y: 3.2, z: 3.2}
+  m_LocalScale: {x: 2.7, y: 2.7, z: 2.7}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5317734854731831256}
@@ -454,7 +455,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Player.CharacterControllerMotor
   controller: {fileID: 5011334077555404156}
-  tuning: {fileID: 11400000, guid: d4650b1bce6ab964a965f7f513e7e170, type: 2}
+  tuning: {fileID: 11400000, guid: c82a5cbd35ae4f7bb31dce18aa759105, type: 2}
 --- !u!114 &7403625881262023461
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -484,7 +485,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b27520434664e54cabf1bf0b4bf134c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Player.PlayerView
-  tuning: {fileID: 11400000, guid: d4650b1bce6ab964a965f7f513e7e170, type: 2}
+  tuning: {fileID: 11400000, guid: c82a5cbd35ae4f7bb31dce18aa759105, type: 2}
   body: {fileID: 5317734854731831256}
   headPivot: {fileID: 8152775622926282001}
   cameraTarget: {fileID: 2442274601304945113}
@@ -505,7 +506,7 @@ MonoBehaviour:
   motor: {fileID: 5491160134363142524}
   input: {fileID: 7403625881262023461}
   view: {fileID: 2807452430198039815}
-  tuning: {fileID: 11400000, guid: d4650b1bce6ab964a965f7f513e7e170, type: 2}
+  tuning: {fileID: 11400000, guid: c82a5cbd35ae4f7bb31dce18aa759105, type: 2}
   locallyControlled: 1
 --- !u!114 &9029222071552065044
 MonoBehaviour:
@@ -577,6 +578,7 @@ MonoBehaviour:
   switchAbility: {fileID: 11400000, guid: 2f3895318fb57804baf216a7cb39e92e, type: 2}
   _unlockBoth: {fileID: 11400000, guid: 9ee627606ca3b0a4089084116887d214, type: 2}
   _unlockMessage: "\uC194\uB85C \uD14C\uC2A4\uD2B8: \uB098\uBB47\uC78E\xB7\uC218\uC561 \uD574\uAE08 \xB7 {0}\uB85C \uB2A5\uB825 \uC804\uD658"
+  _initialRole: 1
 --- !u!114 &2355799357867397706
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -611,6 +613,19 @@ MonoBehaviour:
   stoppedSpeedThreshold: 0.05
   stopDamping: 0.01
   teleportDistance: 2
+--- !u!114 &197530876083346043
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7234601531701780049}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1871d0be25cdd942b5a732eb9291a0a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Player.SodamAnimationPresentation
+  _profile: {fileID: 11400000, guid: 576def1ed81bdf841882557481c23c06, type: 2}
 --- !u!1 &7478575300291906797
 GameObject:
   m_ObjectHideFlags: 0
@@ -834,11 +849,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2785431918047693963, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.024440566
+      value: 0.024440568
       objectReference: {fileID: 0}
     - target: {fileID: 2785431918047693963, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.032358583
+      value: -0.032358587
       objectReference: {fileID: 0}
     - target: {fileID: 4299870665631226890, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_Name
@@ -847,30 +862,30 @@ PrefabInstance:
     - target: {fileID: 8022692749843347296, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 9100000, guid: d75b5bd1a63964140bcaf90f11a510f4, type: 2}
+      objectReference: {fileID: 9100000, guid: c5578798574c94742aadc407ff96c2e1, type: 2}
     - target: {fileID: 8022692749843347296, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_ApplyRootMotion
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8439126704027830774, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.0009344091
+      value: -0.00093440915
       objectReference: {fileID: 0}
     - target: {fileID: 8439126704027830774, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.018550156
+      value: -0.018550158
       objectReference: {fileID: 0}
     - target: {fileID: 8866685036864001838, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.15
+      value: 1.363
       objectReference: {fileID: 0}
     - target: {fileID: 8866685036864001838, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.15
+      value: 1.363
       objectReference: {fileID: 0}
     - target: {fileID: 8866685036864001838, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.15
+      value: 1.363
       objectReference: {fileID: 0}
     - target: {fileID: 8866685036864001838, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalPosition.x
