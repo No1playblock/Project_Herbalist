@@ -49,7 +49,8 @@ namespace Herbalist.Abilities
             }
             held.transform.position = origin;
             Controlling = true; CanPlace = true;
-            hose.Tick(held, aim, true, dt, settings, CreateHoseMark);
+            hose.Tick(held, aim, player.Tuning.CanAimWithHead(player.View.BodyYaw, aim.direction),
+                dt, settings, CreateHoseMark);
         }
         public void Configure(Func<SapDeposit> factory, Action<SapDeposit> release, bool network)
         { create = factory; destroy = release; externalTick = network; }
@@ -90,7 +91,8 @@ namespace Herbalist.Abilities
             held.transform.position = next;
             if (Vector3.Distance(next, hover) <= settings.arrivalTolerance) held.SetHeld();
             CanPlace = Ready;
-            hose.Tick(held, aim, Ready && use, dt, settings, CreateHoseMark);
+            hose.Tick(held, aim, Ready && use && player.Tuning.CanAimWithHead(player.View.BodyYaw, aim.direction),
+                dt, settings, CreateHoseMark);
         }
         private SapDeposit CreateHoseMark()
         {

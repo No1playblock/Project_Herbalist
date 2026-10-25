@@ -116,7 +116,7 @@ namespace Dynamite3D.RealIvy
 			{
 				this.leavesPrefabs[i] = copyFrom.leavesPrefabs[i];
 			}
-			
+
 			this.leavesProb = new float[copyFrom.leavesProb.Count];
 			for(int i = 0; i < copyFrom.leavesProb.Count; i++)
 			{
@@ -185,7 +185,7 @@ namespace Dynamite3D.RealIvy
         {
             bool isEqual;
 
-            isEqual = 
+            isEqual =
                 stepSize == compareTo.stepSize &&
                 branchProvability == compareTo.branchProvability &&
                 maxBranchs == compareTo.maxBranchs &&

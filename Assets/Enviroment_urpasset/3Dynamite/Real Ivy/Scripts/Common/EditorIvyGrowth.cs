@@ -70,9 +70,9 @@ namespace Dynamite3D.RealIvy{
 
 		//Definimos el punto a checkear y la dirección a él. Tiramos un raycast y si está libre buscamos el suelo. Si por el contrario topamos con un muro, añadimos un punto y calculamos una nueva growdirection
 		void CheckWall(BranchContainer branch){
-			
+
 			BranchPoint checkPoint = new BranchPoint(
-				branch.GetLastBranchPoint().point + branch.growDirection * infoPool.ivyParameters.stepSize + branch.GetLastBranchPoint().grabVector * branch.deltaHeight, 
+				branch.GetLastBranchPoint().point + branch.growDirection * infoPool.ivyParameters.stepSize + branch.GetLastBranchPoint().grabVector * branch.deltaHeight,
 				branch.branchPoints.Count,
 				0f,
 				branch);
@@ -90,7 +90,7 @@ namespace Dynamite3D.RealIvy{
             }
 		}
 
-		//Si no encontramos muro en el paso anterior, entonces buscamos si tenemos suelo. tiramos el rayo y si da positivo, añadimos punto, calculamos growdirection y decimos al sistema que no estamos cayendo. Si por el contrario no 
+		//Si no encontramos muro en el paso anterior, entonces buscamos si tenemos suelo. tiramos el rayo y si da positivo, añadimos punto, calculamos growdirection y decimos al sistema que no estamos cayendo. Si por el contrario no
 		//hemos encontrado suelo, intenamos agarrarnos al otro lado de la posible esquina.
 		void CheckFloor(BranchContainer branch, BranchPoint potentialPoint, Vector3 oldSurfaceNormal){
 			Ray ray = new Ray(potentialPoint.point, -oldSurfaceNormal);
@@ -143,7 +143,7 @@ namespace Dynamite3D.RealIvy{
 			if (!Physics.Raycast (ray, out RC, infoPool.ivyParameters.stepSize * 1.15f, infoPool.ivyParameters.layerMask.value)) {
 				if (Random.value < infoPool.ivyParameters.grabProvabilityOnFall) {
 					CheckGrabPoint (branch);
-				} 
+				}
 				else {
 					NewGrowDirectionFalling (branch);
 					AddFallingPoint (branch);
@@ -188,7 +188,7 @@ namespace Dynamite3D.RealIvy{
 			//dir = dir.normalized;
 
 			branch.AddBranchPoint(point + normal * branch.currentHeight, -normal);
-			
+
 
 			branch.totalLenght += infoPool.ivyParameters.stepSize;
 
@@ -223,10 +223,10 @@ namespace Dynamite3D.RealIvy{
 			Vector3 grabVector = branch.rotationOnFallIteration * branch.GetLastBranchPoint().grabVector;
 
 			branch.totalLenght += infoPool.ivyParameters.stepSize;
-			branch.AddBranchPoint(branch.branchPoints[branch.branchPoints.Count - 1].point + branch.growDirection * infoPool.ivyParameters.stepSize, 
+			branch.AddBranchPoint(branch.branchPoints[branch.branchPoints.Count - 1].point + branch.growDirection * infoPool.ivyParameters.stepSize,
 				grabVector);
 
-			
+
 			if (Random.value < infoPool.ivyParameters.branchProvability && infoPool.ivyContainer.branches.Count < infoPool.ivyParameters.maxBranchs) {
 				AddBranch (branch, branch.GetLastBranchPoint(), branch.branchPoints[branch.branchPoints.Count - 1].point, -branch.GetLastBranchPoint().grabVector);
 			}
@@ -236,7 +236,7 @@ namespace Dynamite3D.RealIvy{
 		//Todo lo necesario para añadir una nueva hoja
 		void AddLeave(BranchContainer branch){
 			if (branch.branchPoints.Count % (infoPool.ivyParameters.leaveEvery + Random.Range(0, infoPool.ivyParameters.randomLeaveEvery)) == 0) {
-				
+
 				/*BORRAR*/
 				//branch.branchPoints[branch.branchPoints.Count - 1].AddCurrentPointAsLeafPoint();
 				//branch.branchPoints[branch.branchPoints.Count - 1].AddLPLength(branch.totalLenght);
@@ -278,7 +278,7 @@ namespace Dynamite3D.RealIvy{
 		//Todo lo necesario para añadir una rama
 		public void AddBranch(BranchContainer branch, BranchPoint originBranchPoint, Vector3 point, Vector3 normal){
 
-			
+
 			BranchContainer newBranchContainer = ScriptableObject.CreateInstance<BranchContainer>();
 			newBranchContainer.Init();
 
@@ -305,8 +305,8 @@ namespace Dynamite3D.RealIvy{
 
 		//Cálculos de nuevas growdirection en diferentes casuísticas
 		void NewGrowDirection(BranchContainer branch){
-			branch.growDirection = Vector3.Normalize (Vector3.ProjectOnPlane (Quaternion.AngleAxis (Mathf.Sin (branch.branchSense * branch.totalLenght * infoPool.ivyParameters.directionFrequency * (1 + Random.Range (-infoPool.ivyParameters.directionRandomness, infoPool.ivyParameters.directionRandomness))) * 
-				infoPool.ivyParameters.directionAmplitude * infoPool.ivyParameters.stepSize * 10f * Mathf.Max(infoPool.ivyParameters.directionRandomness, 1f), 
+			branch.growDirection = Vector3.Normalize (Vector3.ProjectOnPlane (Quaternion.AngleAxis (Mathf.Sin (branch.branchSense * branch.totalLenght * infoPool.ivyParameters.directionFrequency * (1 + Random.Range (-infoPool.ivyParameters.directionRandomness, infoPool.ivyParameters.directionRandomness))) *
+				infoPool.ivyParameters.directionAmplitude * infoPool.ivyParameters.stepSize * 10f * Mathf.Max(infoPool.ivyParameters.directionRandomness, 1f),
 				branch.GetLastBranchPoint().grabVector) * branch.growDirection,
 				branch.GetLastBranchPoint().grabVector));
 		}
@@ -317,14 +317,14 @@ namespace Dynamite3D.RealIvy{
 
 		void NewGrowDirectionFalling(BranchContainer branch){
 			Vector3 newGrowDirection = Vector3.Lerp (branch.growDirection, infoPool.ivyParameters.gravity, branch.fallIteration / 10f);
-			newGrowDirection = Quaternion.AngleAxis (Mathf.Sin (branch.branchSense * branch.totalLenght * infoPool.ivyParameters.directionFrequency * (1 + Random.Range (-infoPool.ivyParameters.directionRandomness / 8f, infoPool.ivyParameters.directionRandomness / 8f))) * 
-				infoPool.ivyParameters.directionAmplitude * infoPool.ivyParameters.stepSize * 5f * Mathf.Max(infoPool.ivyParameters.directionRandomness / 8f, 1f), 
+			newGrowDirection = Quaternion.AngleAxis (Mathf.Sin (branch.branchSense * branch.totalLenght * infoPool.ivyParameters.directionFrequency * (1 + Random.Range (-infoPool.ivyParameters.directionRandomness / 8f, infoPool.ivyParameters.directionRandomness / 8f))) *
+				infoPool.ivyParameters.directionAmplitude * infoPool.ivyParameters.stepSize * 5f * Mathf.Max(infoPool.ivyParameters.directionRandomness / 8f, 1f),
 				branch.GetLastBranchPoint().grabVector) * newGrowDirection;
 
-			newGrowDirection = Quaternion.AngleAxis (Mathf.Sin (branch.branchSense * branch.totalLenght * infoPool.ivyParameters.directionFrequency / 2f * (1 + Random.Range (-infoPool.ivyParameters.directionRandomness /8f, infoPool.ivyParameters.directionRandomness / 8f))) * 
-				infoPool.ivyParameters.directionAmplitude * infoPool.ivyParameters.stepSize * 5f * Mathf.Max(infoPool.ivyParameters.directionRandomness / 8f, 1f), 
+			newGrowDirection = Quaternion.AngleAxis (Mathf.Sin (branch.branchSense * branch.totalLenght * infoPool.ivyParameters.directionFrequency / 2f * (1 + Random.Range (-infoPool.ivyParameters.directionRandomness /8f, infoPool.ivyParameters.directionRandomness / 8f))) *
+				infoPool.ivyParameters.directionAmplitude * infoPool.ivyParameters.stepSize * 5f * Mathf.Max(infoPool.ivyParameters.directionRandomness / 8f, 1f),
 				Vector3.Cross(branch.GetLastBranchPoint().grabVector, branch.growDirection)) * newGrowDirection;
-			
+
 			branch.rotationOnFallIteration = Quaternion.FromToRotation (branch.growDirection, newGrowDirection);
 			branch.growDirection = newGrowDirection;
 		}
@@ -358,14 +358,14 @@ namespace Dynamite3D.RealIvy{
 					Vector3 preLast = branch.branchPoints [branch.branchPoints.Count - 3].point - branch.branchPoints [branch.branchPoints.Count - 2].point;
 
 					//BranchPoint branchPoint01 = branch.branchPoints[branch.branchPoints.Count - 2];
-					branch.InsertBranchPoint(branch.branchPoints[branch.branchPoints.Count - 2].point + preLast / 2f, 
-						branch.branchPoints[branch.branchPoints.Count - 2].grabVector, 
+					branch.InsertBranchPoint(branch.branchPoints[branch.branchPoints.Count - 2].point + preLast / 2f,
+						branch.branchPoints[branch.branchPoints.Count - 2].grabVector,
 						branch.branchPoints.Count - 2);
 
 					//branch.grabVectors.Insert(branch.grabVectors.Count - 2, ,branch.grabVectors[branch.grabVectors.Count-2]);
 
-					branch.InsertBranchPoint(branch.branchPoints[branch.branchPoints.Count - 2].point + last / 2f, 
-						branch.branchPoints[branch.branchPoints.Count - 2].grabVector, 
+					branch.InsertBranchPoint(branch.branchPoints[branch.branchPoints.Count - 2].point + last / 2f,
+						branch.branchPoints[branch.branchPoints.Count - 2].grabVector,
 						branch.branchPoints.Count - 1);
 
 					//branch.grabVectors.Insert(branch.grabVectors.Count - 1, branch.grabVectors[branch.grabVectors.Count-2]);

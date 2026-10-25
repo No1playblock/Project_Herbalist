@@ -37,7 +37,7 @@ namespace Dynamite3D.RealIvy
 		public Vector3 axis;
 
 		public void SetValues(Vector3 point, Vector3 grabVector, Vector2 pointSS,
-			BranchContainer branchContainer, int index, bool blocked, bool newBranch, 
+			BranchContainer branchContainer, int index, bool blocked, bool newBranch,
 			int newBranchNumber, float length)
 		{
 			this.point = point;
@@ -102,7 +102,7 @@ namespace Dynamite3D.RealIvy
 				angle = Mathf.Rad2Deg * 2 * Mathf.PI / ivyParameters.sides / 2;
 			}
 
-			
+
 
 			Vector3 vertex = Vector3.zero;
 			Vector3 normal = Vector3.zero;
@@ -133,7 +133,7 @@ namespace Dynamite3D.RealIvy
 				vertex -= ivyGO.transform.position;
 				vertex = Quaternion.Inverse(ivyGO.transform.rotation) * vertex;
 
-				uv = new Vector2(length * ivyParameters.uvScale.y + ivyParameters.uvOffset.y - ivyParameters.stepSize, 
+				uv = new Vector2(length * ivyParameters.uvScale.y + ivyParameters.uvOffset.y - ivyParameters.stepSize,
 					1f / ivyParameters.sides * i * ivyParameters.uvScale.x + ivyParameters.uvOffset.x);
 
 				RTVertexData vertexData = new RTVertexData(vertex, normal, uv, Vector2.zero, Color.black);
@@ -187,7 +187,7 @@ namespace Dynamite3D.RealIvy
 				}
 				else
 				{
-					axis = Vector3.Normalize(Vector3.Lerp(point - GetPreviousPoint().point, 
+					axis = Vector3.Normalize(Vector3.Lerp(point - GetPreviousPoint().point,
 						GetNextPoint().point - point, 0.5f));
 				}
 			}

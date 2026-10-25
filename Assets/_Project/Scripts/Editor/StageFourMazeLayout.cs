@@ -72,9 +72,13 @@ namespace Herbalist.Editor
                     Object.DestroyImmediate(t.gameObject);
             RebuildBoardVisuals(board,index);
             var sap=root.Find("MazeSap");
-            var start=d.nodes[d.startNode];sap.localPosition=new Vector3(start.x,start.y,-.53f);
+            var importedFace=GameObject.Find("ImportedMazeVisuals")!=null;
+            if(!importedFace)
+            {
+                var start=d.nodes[d.startNode];sap.localPosition=new Vector3(start.x,start.y,-.53f);
+            }
             sap.localScale=Vector3.one*(18f*layout.boardWidth/layout.width);
-            for(int i=0;i<board.Leaks.Length;i++)
+            for(int i=0;!importedFace && i<board.Leaks.Length;i++)
             {
                 var p=d.nodes[d.leakNodes[i]];
                 board.Leaks[i].transform.localPosition=new Vector3(p.x,p.y,.45f);
@@ -89,6 +93,9 @@ namespace Herbalist.Editor
         public static void RebuildBoardVisuals(SapMazeBoard board,int index)
         {
             var layout=Read(index);var root=board.transform;
+            // The imported Stage Two maze supplies the visible face. Keep the
+            // graph-authored wall collider so routing and leaf placement agree.
+            bool importedFace=GameObject.Find("ImportedMazeVisuals")!=null;
             foreach(Transform t in root.Cast<Transform>().ToArray())
                 if(t.name=="ReferenceFace"||t.name=="ReferenceWalls"||t.name=="MazeFloor"||t.name=="MazeWalls")
                     Object.DestroyImmediate(t.gameObject);
@@ -99,6 +106,7 @@ namespace Herbalist.Editor
             floor.transform.localPosition=new Vector3(0,layout.bottom+layout.boardHeight*.5f,-.315f);
             floor.transform.localScale=new Vector3(layout.boardWidth,layout.boardHeight,.06f);
             floor.GetComponent<Renderer>().sharedMaterial=Material("Floor",new Color(.35f,.27f,.19f));
+            floor.GetComponent<Renderer>().enabled=!importedFace;
             Object.DestroyImmediate(floor.GetComponent<Collider>());
             var wallMat=Material("BlockWall",new Color(.53f,.28f,.12f));
             var primitive=GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -116,6 +124,7 @@ namespace Herbalist.Editor
             var walls=new GameObject("MazeWalls",typeof(MeshFilter),typeof(MeshRenderer),typeof(MeshCollider));
             walls.layer=frontLayer;walls.transform.SetParent(root,false);walls.GetComponent<MeshFilter>().sharedMesh=mesh;
             walls.GetComponent<MeshRenderer>().sharedMaterial=wallMat;walls.GetComponent<MeshCollider>().sharedMesh=mesh;
+            walls.GetComponent<MeshRenderer>().enabled=!importedFace;
         }
         private static Material Material(string name,Color color)
         {

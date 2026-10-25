@@ -8,6 +8,7 @@ namespace Herbalist.Abilities
         [SerializeField] private LeafAbilitySettings settings;
         [SerializeField] private Transform launchFrame;
         private readonly List<LeafProjectile> leaves = new();
+        private LeafProjectile[] displaySlots;
         private Func<LeafProjectile> spawn;
         private Action<LeafProjectile> despawn;
         private bool network;
@@ -18,6 +19,23 @@ namespace Herbalist.Abilities
         public event Action<float> FacingRequested;
         public LeafAbilitySettings Settings => settings;
         public int ActiveCount => leaves.Count;
+        // Two bits per authored HUD slot: 0 held, 1 flying/installed, 2 returning.
+        public int PackedSlotStates
+        {
+            get
+            {
+                if (displaySlots == null) return 0;
+                int packed = 0;
+                for (int i = 0; i < Mathf.Min(3, displaySlots.Length); i++)
+                {
+                    var leaf = displaySlots[i];
+                    int state = leaf == null || leaf.State == LeafState.Complete ? 0 :
+                        leaf.State == LeafState.Returning ? 2 : 1;
+                    packed |= state << (i * 2);
+                }
+                return packed;
+            }
+        }
         public bool Recovering { get; private set; }
         public uint FeedbackSequence { get; private set; }
         public bool RangeRejected { get; private set; }
@@ -25,6 +43,7 @@ namespace Herbalist.Abilities
         {
             var rules = Herbalist.Levels.StageLevel.Instance != null ? Herbalist.Levels.StageLevel.Instance.abilityRules : null;
             if (rules != null && rules.leaf != null) settings = rules.leaf;
+            displaySlots = new LeafProjectile[Mathf.Max(1, settings != null ? settings.capacity : 3)];
         }
         public void ApplyFeedback(uint sequence, bool rangeRejected) { FeedbackSequence = sequence; RangeRejected = rangeRejected; }
         private bool Reject(bool range) { RangeRejected = range; FeedbackSequence++; return false; }
@@ -81,6 +100,8 @@ namespace Herbalist.Abilities
             Vector3 endpoint = origin + Vector3.ClampMagnitude(towardAim, maxDistance);
             var projectile = spawn();
             leaves.Add(projectile);
+            for (int i = 0; i < displaySlots.Length; i++)
+                if (displaySlots[i] == null) { displaySlots[i] = projectile; break; }
             projectile.Initialize(settings, transform, origin, endpoint, OnReturned, network, frame);
             RangeRejected = false;
             cooldown = settings.cooldown;
@@ -89,6 +110,8 @@ namespace Herbalist.Abilities
         {
             bool launchPending = pendingRecovery == leaf && pendingThrow;
             leaves.Remove(leaf);
+            for (int i = 0; i < displaySlots.Length; i++)
+                if (displaySlots[i] == leaf) { displaySlots[i] = null; break; }
             if (pendingRecovery == leaf) { Recovering = false; pendingRecovery = null; pendingThrow = false; }
             despawn(leaf);
             if (launchPending && isActiveAndEnabled && spawn != null) Launch(pendingAim);

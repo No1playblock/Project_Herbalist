@@ -8,7 +8,7 @@ namespace Herbalist.StageOne
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RPC_Command(StageCommand command)
         {
-            if (command < StageCommand.Interact || command > StageCommand.FanEnd) return;
+            if (command < StageCommand.Interact || command > StageCommand.ReleaseCloth) return;
             string result = GetComponent<StageActor>().ExecuteCommand(command);
             RPC_Feedback(result);
         }

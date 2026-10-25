@@ -16,6 +16,7 @@ namespace Herbalist.Levels
         [SerializeField] private StageLevel _level;
         [SerializeField] private PlayScreenController _screen;
         [SerializeField] private Transform[] _introCameras;
+        [SerializeField] private StageTwoPulleyPresentation _pulleyPresentation;
         [SerializeField, Min(.1f)] private float _introDuration = 2;
         [SerializeField, Min(.1f)] private float _descentDuration = 3;
         [SerializeField, Min(.1f)] private float _fallMargin = 3;
@@ -26,7 +27,7 @@ namespace Herbalist.Levels
         [SerializeField] private string _waitingText = "두 플레이어의 진입을 기다리는 중";
         [SerializeField] private string _introText = "무당나무 안으로 떨어집니다 · 각자의 뗏목에 착지";
         [SerializeField] private string _descentText = "미로 완료 · 같은 뗏목으로 아래 구간에 이동 중";
-        [SerializeField] private string _mazeText = "앞: R로 수액 조종 · WASD 이동 / 뒤: 새는 구멍에 R로 나뭇잎 설치";
+        [SerializeField] private string _mazeText = "앞: R 유지 + 중앙 조준점으로 수액 이동 / 뒤: 새는 구멍에 R로 나뭇잎 설치";
         [Networked] private int Current { get; set; }
         [Networked] private int Phase { get; set; }
         [Networked] private float Travel { get; set; }
@@ -110,6 +111,7 @@ namespace Herbalist.Levels
             int to = Mathf.Clamp(current + 2, 0, _stations.Length - 1);
             float y = moving ? Mathf.Lerp(_stations[from].position.y, _stations[to].position.y, Mathf.SmoothStep(0, 1, travel)) : _stations[from].position.y;
             for (int i = 0; i < 2; i++) _rafts[i].position = new Vector3(_basePositions[i].x, y, _basePositions[i].z);
+            if (_pulleyPresentation != null) _pulleyPresentation.Present(_basePositions[0].y - y);
         }
         private void Carry(StageActor actor, Vector3 point)
         {

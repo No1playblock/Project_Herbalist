@@ -39,6 +39,7 @@ namespace Herbalist.StageOne
         public string waitingMessage = "Waiting for both players.";
         public string minigameStartedMessage = "Cooperative minigame started.";
         public string minigameFailedMessage = "Attempt failed. Try again.";
+        public string minigameCancelledMessage = "Minigame closed.";
         public string transferRequestedMessage = "Ask your partner to press Interact to receive the herb.";
         public string clearedFormat = "{0} / {1} players inside";
         public int ItemId(StageItemDefinition item) => System.Array.IndexOf(items, item) + 1;

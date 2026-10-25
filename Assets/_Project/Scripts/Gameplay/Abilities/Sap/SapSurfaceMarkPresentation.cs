@@ -11,18 +11,19 @@ namespace Herbalist.Abilities
 
         public bool Available => projector != null && projector.material != null;
 
-        public void SetVisible(bool visible, SapAbilitySettings settings, float growth)
+        public void SetVisible(bool visible, SapAbilitySettings settings, float growth, float absorptionProgress)
         {
             if (projector == null) return;
             gameObject.SetActive(visible);
             if (!visible || settings == null) return;
 
-            Vector2 footprint = settings.surfaceMarkSize * Mathf.Max(0.01f, growth);
+            float absorption = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(absorptionProgress));
+            Vector2 footprint = settings.surfaceMarkSize * Mathf.Max(0.01f, growth) * Mathf.Lerp(1f, 0.06f, absorption);
             projector.size = new Vector3(footprint.x, footprint.y, settings.surfaceMarkDepth);
             projector.pivot = new Vector3(0, 0, settings.surfaceMarkDepth * .5f);
             projector.drawDistance = settings.surfaceMarkDrawDistance;
             projector.fadeScale = .8f;
-            projector.fadeFactor = settings.surfaceMarkOpacity;
+            projector.fadeFactor = settings.surfaceMarkOpacity * (1f - absorption);
         }
     }
 }

@@ -5,7 +5,7 @@ using Herbalist.Abilities;
 using Herbalist.Networking;
 namespace Herbalist.StageOne
 {
-    public enum StageCommand { Interact, Craft, Drink, Up, Left, Down, Right, FanEnd }
+    public enum StageCommand { Interact, Craft, Drink, Up, Left, Down, Right, FanEnd, CancelMinigame, ReleaseCloth }
     [RequireComponent(typeof(PlayerController))]
     public sealed class StageActor : MonoBehaviour
     {
@@ -34,6 +34,11 @@ namespace Herbalist.StageOne
             actions = new[] { interact.action.Clone(), craft.action.Clone(), drink.action.Clone() };
             for (int i = 0; i < actions.Length; i++) { int index = i; actions[i].performed += _ => Request((StageCommand)index); }
             player.Input.MovePerformed += OnMovePerformed;
+            player.Input.JumpPerformed += OnJumpPerformed;
+        }
+        private void OnJumpPerformed()
+        {
+            if (Local && Herbalist.Levels.HangingCloth.IsRiding(this)) Request(StageCommand.ReleaseCloth);
         }
         private void OnMovePerformed(Vector2 move)
         {
@@ -56,7 +61,8 @@ namespace Herbalist.StageOne
         }
         public void Request(StageCommand command)
         {
-            if (Herbalist.GameUI.GameplayPause.IsPaused || !Local || !Herbalist.Presentation.GameplayCursor.AllowsPointerInput) return;
+            if (Herbalist.GameUI.GameplayPause.IsPaused || !Local ||
+                (command != StageCommand.CancelMinigame && command != StageCommand.ReleaseCloth && !Herbalist.Presentation.GameplayCursor.AllowsPointerInput)) return;
             // Space is also Jump. E starts brewing; each Space press fans while crafting.
             if (command == StageCommand.Craft && StageOneFlow.Instance?.Minigame != StageMinigameKind.Crafting) return;
             if (adapter != null && adapter.Object != null && adapter.Object.IsValid) adapter.RPC_Command(command);
@@ -67,12 +73,15 @@ namespace Herbalist.StageOne
             if (Herbalist.GameUI.GameplayPause.IsPaused || !Available) return string.Empty;
             if (command == StageCommand.Interact && Herbalist.Levels.SoloPotionPickup.TryPickup(this, out var potionMessage)) return potionMessage;
             if (command == StageCommand.Interact && Herbalist.Levels.HangingCloth.TryInteract(this, out var message)) return message;
+            if (command == StageCommand.ReleaseCloth)
+                return Herbalist.Levels.HangingCloth.TryRelease(this, out var releaseMessage) ? releaseMessage : string.Empty;
             if (command == StageCommand.Interact && Herbalist.Levels.BranchRideFlow.TryBoard(this, out var rideMessage)) return rideMessage;
             return StageOneFlow.Instance != null ? StageOneFlow.Instance.Execute(this, command) : string.Empty;
         }
         public void SetFeedback(string text) { Feedback = text; }
         public string Binding(int index) => actions != null ? actions[index].GetBindingDisplayString() : string.Empty;
+        public string JumpBinding => player != null ? player.Input.JumpBinding : string.Empty;
         private void OnDisable() { All.Remove(this); if (actions != null) foreach (var a in actions) a.Disable(); if (player != null && Camera != null) Camera.cullingMask = originalMask; }
-        private void OnDestroy() { if (player != null && player.Input != null) player.Input.MovePerformed -= OnMovePerformed; if (actions != null) foreach (var a in actions) a.Dispose(); }
+        private void OnDestroy() { if (player != null && player.Input != null) { player.Input.MovePerformed -= OnMovePerformed; player.Input.JumpPerformed -= OnJumpPerformed; } if (actions != null) foreach (var a in actions) a.Dispose(); }
     }
 }

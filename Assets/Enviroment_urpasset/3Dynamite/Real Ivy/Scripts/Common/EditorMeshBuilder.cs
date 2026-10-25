@@ -30,7 +30,7 @@ namespace Dynamite3D.RealIvy{
 		//Aquí metemos qué tipos de hojas corresponden a cada material
 		public List<List<int>> typesByMat;
 
-		//Esto es solo para debugear, para hacer una representación 
+		//Esto es solo para debugear, para hacer una representación
 		public Rect[] uv2Rects = new Rect[0];
 		//Booleano para saber si están inicializadas las estructuras para las hojas, así no intenta construir la geometría sin tener lo necesario
 		public bool leavesDataInitialized = false;
@@ -159,7 +159,7 @@ namespace Dynamite3D.RealIvy{
 
 		//Aquí se construyen las hojas, este método es llamado rama a rama
 		void BuildLeaves(int b, ref int vertCount){
-			
+
 			Mesh chosenLeaveMesh;
 			//Se recorren los materiales
 			for (int i = 0; i < leavesMaterials.Count; i++) {
@@ -168,7 +168,7 @@ namespace Dynamite3D.RealIvy{
 				for(int j = 0; j < infoPool.ivyContainer.branches[b].leaves.Count; j++)
 				{
 					LeafPoint currentLeaf = infoPool.ivyContainer.branches[b].leaves[j];
-					
+
 
 					//Ahora vemos si para el material que estamos iterando, le corresponde el tipo de hoja que tenemos en este punto
 					if (typesByMat[i].Contains(currentLeaf.chosenLeave))
@@ -227,8 +227,8 @@ namespace Dynamite3D.RealIvy{
 						//ylos vértices, normales y uvs, aplicando las transformaciones pertinentes, actualizando el contador para la siguiente iteración saber por dónde vamos
 						for (int v = 0; v < chosenLeaveMesh.vertexCount; v++)
 						{
-							Vector3 offset = left * infoPool.ivyParameters.offset.x + 
-								currentLeaf.lpUpward * infoPool.ivyParameters.offset.y + 
+							Vector3 offset = left * infoPool.ivyParameters.offset.x +
+								currentLeaf.lpUpward * infoPool.ivyParameters.offset.y +
 								currentLeaf.lpForward * infoPool.ivyParameters.offset.z;
 
 							verts[vertCount] = quat * chosenLeaveMesh.vertices[v] * scale + currentLeaf.point + offset;
@@ -259,7 +259,7 @@ namespace Dynamite3D.RealIvy{
 
 					//for (int p = 0; p < currentBranchPoint.leaves.Count; p++)
 					//{
-						
+
 					//}
 				}
 
@@ -271,7 +271,7 @@ namespace Dynamite3D.RealIvy{
 
 
 
-					
+
 				}*/
 			}
 		}
@@ -289,7 +289,7 @@ namespace Dynamite3D.RealIvy{
 					int firstVertex = vertCount;
 					Random.InitState (b + infoPool.ivyParameters.randomSeed);
 					if (infoPool.ivyContainer.branches [b].branchPoints.Count > 1) {
-						//En este contador guardaremos cuántos vértices tiene la rama actual, para en la siguiente tenerlo en cuenta y saber qué vértices hay que 
+						//En este contador guardaremos cuántos vértices tiene la rama actual, para en la siguiente tenerlo en cuenta y saber qué vértices hay que
 						//escribir
 						int lastVertCount = 0;
 						//Recorremos cada punto de la rama hasta el penúltimo
@@ -322,7 +322,7 @@ namespace Dynamite3D.RealIvy{
 									if (infoPool.ivyParameters.generateBranches)
 									{
 										//BranchPoint branchPoint = infoPool.ivyContainer.branches[b].branchPoints[p];
-										
+
 										float tipInfluence = GetTipInfluence(branchPoint.length, infoPool.ivyContainer.branches[b].totalLenght);
 										infoPool.ivyContainer.branches[b].branchPoints[p].radius = radius;
 
@@ -345,13 +345,13 @@ namespace Dynamite3D.RealIvy{
 										verts[vertCount] = Quaternion.Inverse(infoPool.ivyContainer.ivyGO.transform.rotation) * verts[vertCount];
 
 
-										uvs[vertCount] = 
-											new Vector2(branchPoint.length * infoPool.ivyParameters.uvScale.y + infoPool.ivyParameters.uvOffset.y - infoPool.ivyParameters.stepSize, 
+										uvs[vertCount] =
+											new Vector2(branchPoint.length * infoPool.ivyParameters.uvScale.y + infoPool.ivyParameters.uvOffset.y - infoPool.ivyParameters.stepSize,
 											1f / infoPool.ivyParameters.sides * v * infoPool.ivyParameters.uvScale.x + infoPool.ivyParameters.uvOffset.x);
 
 										normals[vertCount] = Quaternion.Inverse(infoPool.ivyContainer.ivyGO.transform.rotation) * normals[vertCount];
-										
-										
+
+
 
 
 
@@ -518,7 +518,7 @@ namespace Dynamite3D.RealIvy{
 			for (int round = 0; round < infoPool.ivyContainer.branches [b].branchPoints.Count - 2; round++) {
 				//Y por cada ronda hacemos una pasada a cada lado de la rama
 				for (int i = 0; i < infoPool.ivyParameters.sides; i++) {
-					//Y vamos asignando índices a cada hueco del array de tris con el algoritmo. Para escribir en los huecos correctos sumamos el total de vértices que hay y 
+					//Y vamos asignando índices a cada hueco del array de tris con el algoritmo. Para escribir en los huecos correctos sumamos el total de vértices que hay y
 					//restamos los de la última ráma, así empezamos en el lugar correcto
 					trisBranches [triCount] = (i + (round * (infoPool.ivyParameters.sides + 1))) + vertCount - lastVertCount;
 					trisBranches [triCount + 1] = (i + (round * (infoPool.ivyParameters.sides + 1)) + 1) + vertCount - lastVertCount;
@@ -547,9 +547,9 @@ namespace Dynamite3D.RealIvy{
             {
                 Unwrapping.GenerateSecondaryUVSet(ivyMesh);
             }
-            //Este es el algoritmo custom de empaquetado de UVs de lightmap. Tiene dos fallos principales. El primero es que las ramas al ser muy largas en seguida ocupan todo el ancho del espacio UV, por lo que tenemos que 
+            //Este es el algoritmo custom de empaquetado de UVs de lightmap. Tiene dos fallos principales. El primero es que las ramas al ser muy largas en seguida ocupan todo el ancho del espacio UV, por lo que tenemos que
             //cortar las ramas cada X distancia a nivel de UVs para tener islas de tamaños mas sensatos, habría que guardar el punto por el que hacemos split y redundar la info de ese ring en el último de ese trozo
-            //y el primero del siguiente. Otra movida es que no se tiene en cuenta el tamaño real de las hojas, se consideran cuadradas y con la misma altura de la 
+            //y el primero del siguiente. Otra movida es que no se tiene en cuenta el tamaño real de las hojas, se consideran cuadradas y con la misma altura de la
             //cirfunferencia de la rama. Para este problema habría que guardar en alguna parte la escala aplicada a esa hoja en particular y multiplicarlo por el tamaño de la malla.
             //
             //			//primero se borra lo que hubiera hecho en el diccionario
@@ -597,13 +597,13 @@ namespace Dynamite3D.RealIvy{
             //					maxX = UV2IslesSizesSorted [keys [i]].x;
             //					maxY = UV2IslesSizesSorted [keys [i]].y;
             //					continue;
-            //				} 
+            //				}
             //				else {
             //					if (lastRect.x + lastRect.width + UV2IslesSizesSorted [keys [lastCheckedBackward]].x <= maxX) {
             //						lastRect = new Rect (lastRect.x + lastRect.width, lastRect.y, UV2IslesSizesSorted [keys [lastCheckedBackward]].x, UV2IslesSizesSorted [keys [lastCheckedBackward]].y);
             //						rects.Add (keys [lastCheckedBackward], lastRect);
             //						lastCheckedBackward--;
-            //					} 
+            //					}
             //					else {
             //						if (lastRect.x + lastRect.width + UV2IslesSizesSorted [keys [lastCheckedForward]].x <= maxX) {
             //							lastRect = new Rect (lastRect.x + lastRect.width, lastRect.y, UV2IslesSizesSorted [keys [lastCheckedForward]].x, UV2IslesSizesSorted [keys [lastCheckedForward]].y);

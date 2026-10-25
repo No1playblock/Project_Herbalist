@@ -44,14 +44,14 @@ namespace Dynamite3D.RealIvy
 		public LeafPoint()
 		{}
 
-		public LeafPoint(Vector3 point, float lpLength, Vector3 lpForward, 
-			Vector3 lpUpward, int chosenLeave, BranchPoint initSegment, 
+		public LeafPoint(Vector3 point, float lpLength, Vector3 lpForward,
+			Vector3 lpUpward, int chosenLeave, BranchPoint initSegment,
 			BranchPoint endSegment)
 		{
 			SetValues(point, lpLength, lpForward, lpUpward, chosenLeave, initSegment, endSegment);
 		}
 
-		public void SetValues(Vector3 point, float lpLength, Vector3 lpForward, Vector3 lpUpward, 
+		public void SetValues(Vector3 point, float lpLength, Vector3 lpForward, Vector3 lpUpward,
 			int chosenLeave, BranchPoint initSegment, BranchPoint endSegment)
 		{
 			this.point = point;
@@ -113,15 +113,15 @@ namespace Dynamite3D.RealIvy
 
 			quat = Quaternion.LookRotation(this.lpUpward, forward);
 
-			quat = Quaternion.AngleAxis(ivyParameters.rotation.x, left) * 
-				Quaternion.AngleAxis(ivyParameters.rotation.y, this.lpUpward) * 
-				Quaternion.AngleAxis(ivyParameters.rotation.z, forward) * 
+			quat = Quaternion.AngleAxis(ivyParameters.rotation.x, left) *
+				Quaternion.AngleAxis(ivyParameters.rotation.y, this.lpUpward) *
+				Quaternion.AngleAxis(ivyParameters.rotation.z, forward) *
 				quat;
 
 
-			quat = Quaternion.AngleAxis(Random.Range(-ivyParameters.randomRotation.x, ivyParameters.randomRotation.x), left) * 
-				Quaternion.AngleAxis(Random.Range(-ivyParameters.randomRotation.y, ivyParameters.randomRotation.y), this.lpUpward) * 
-				Quaternion.AngleAxis(Random.Range(-ivyParameters.randomRotation.z, ivyParameters.randomRotation.z), forward) * 
+			quat = Quaternion.AngleAxis(Random.Range(-ivyParameters.randomRotation.x, ivyParameters.randomRotation.x), left) *
+				Quaternion.AngleAxis(Random.Range(-ivyParameters.randomRotation.y, ivyParameters.randomRotation.y), this.lpUpward) *
+				Quaternion.AngleAxis(Random.Range(-ivyParameters.randomRotation.z, ivyParameters.randomRotation.z), forward) *
 				quat;
 
 			quat = this.forwarRot * quat;

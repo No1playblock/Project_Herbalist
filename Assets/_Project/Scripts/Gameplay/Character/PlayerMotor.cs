@@ -19,6 +19,7 @@ namespace Herbalist.Player
             if (locked) movementLocks.Add(owner); else movementLocks.Remove(owner);
         }
         public abstract void Simulate(Vector3 desiredWorldVelocity, float deltaTime);
+        public abstract void Simulate(Vector3 desiredWorldVelocity, float deltaTime, Vector3 rootMotionDisplacement);
         public abstract void Teleport(Vector3 position);
         public abstract void ResetMotion();
         public abstract bool TryJump();

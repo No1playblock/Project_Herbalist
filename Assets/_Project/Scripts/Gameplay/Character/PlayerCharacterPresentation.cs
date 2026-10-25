@@ -36,6 +36,7 @@ namespace Herbalist.Player
         private GameObject _activeRoot;
         private Animator _activeAnimator;
         public Animator ActiveAnimator => _activeAnimator;
+        public bool IsSodamActive => _activeRoot != null && _activeRoot == characterRoot;
 
         private void Awake()
         {
@@ -79,6 +80,7 @@ namespace Herbalist.Player
             head = null;
             if (_activeAnimator != null)
             {
+                // The motor applies baked clip root curves in simulation ticks; Animator must not move the visual a second time.
                 _activeAnimator.applyRootMotion = false;
                 head = _activeAnimator.GetBoneTransform(HumanBodyBones.Head);
             }

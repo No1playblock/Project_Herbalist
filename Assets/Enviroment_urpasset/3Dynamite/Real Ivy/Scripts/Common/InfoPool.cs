@@ -10,7 +10,7 @@ namespace Dynamite3D.RealIvy{
 		public IvyParameters ivyParameters;
 		public EditorIvyGrowth growth;
 	}
-	
+
     [System.Serializable]
     public class IvyParameterInt : IvyParameter
     {
@@ -204,7 +204,7 @@ namespace Dynamite3D.RealIvy{
 			{
 				this.leavesPrefabs.Add(copyFrom.leavesPrefabs[i]);
 			}
-			//this.UV2IslesSizes = copyFrom.UV2IslesSizes;	
+			//this.UV2IslesSizes = copyFrom.UV2IslesSizes;
 		}
     }
 }

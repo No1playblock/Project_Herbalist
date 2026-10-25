@@ -12,9 +12,11 @@ namespace Herbalist.Abilities
         private IAbilityCycleReceiver _cycleReceiver;
         public void SetCycleReceiver(IAbilityCycleReceiver receiver) => _cycleReceiver=receiver;
         public void ClearCycleReceiver(IAbilityCycleReceiver receiver) { if(ReferenceEquals(_cycleReceiver,receiver))_cycleReceiver=null; }
+        public void ReleaseCycleReceiver() => _cycleReceiver?.ReceiveAbilityCycle(this,0,false,default);
         private uint lastCycle, lastUse;
         private bool network, authority;
         private bool _offlineBothUnlocked;
+        private int _replicatedLeafSlotStates;
         public bool OfflineBothUnlocked => _offlineBothUnlocked;
         private PlayerController player;
         public AbilityInputReader Input { get; private set; }
@@ -24,6 +26,7 @@ namespace Herbalist.Abilities
         public bool Unlocked { get; private set; }
         public int DisplayCount { get; private set; }
         public bool DisplayRecovering { get; private set; }
+        public int DisplayLeafSlotStates => network && !authority ? _replicatedLeafSlotStates : Leaf.PackedSlotStates;
         private void Awake() { player = GetComponent<PlayerController>(); Input = GetComponent<AbilityInputReader>(); Leaf = GetComponent<LeafThrowAbility>(); Sap = GetComponent<SapControlAbility>(); }
         private void Start()
         {
@@ -66,7 +69,9 @@ namespace Herbalist.Abilities
         private void Update()
         {
             if (network || !player.LocallyControlled) return;
-            Tick(Input.CycleSequence, Input.UseSequence, player.View.GetAimRay(player.View.Yaw, player.View.Pitch), Time.deltaTime, Input.UseHeld, Input.CycleHeld);
+            Tick(Input.CycleSequence, Input.UseSequence,
+                player.View.GetAimRay(player.View.Yaw, player.View.Pitch),
+                Time.deltaTime, Input.UseHeld, Input.CycleHeld);
         }
         public void Tick(uint cycle, uint use, Ray aim, float dt, bool useHeld = false, bool cycleHeld = false)
         {
@@ -75,7 +80,7 @@ namespace Herbalist.Abilities
             Leaf.Tick(dt, aim);
             uint steps = unchecked(cycle - lastCycle); lastCycle = cycle;
             lastUse = use;
-            if(_cycleReceiver!=null && _cycleReceiver.ReceiveAbilityCycle(this,steps))return;
+            if(_cycleReceiver!=null && _cycleReceiver.ReceiveAbilityCycle(this,steps,cycleHeld,aim))return;
             if(_inputLocks.Count>0)return;
             var rules = Herbalist.Levels.StageLevel.Instance != null ? Herbalist.Levels.StageLevel.Instance.abilityRules : null;
             if (rules != null && rules.contextualUse)
@@ -100,8 +105,8 @@ namespace Herbalist.Abilities
             }
             DisplayCount = Kind == PlayerAbilityKind.Sap && Sap != null ? Sap.ActiveCount : Leaf.ActiveCount; DisplayRecovering = Leaf.Recovering;
         }
-        public void ApplyReplica(bool unlocked, int count, bool recovering, PlayerAbilityKind kind = PlayerAbilityKind.Leaf, bool controlling = false, bool canPlace = false, bool ready = false)
-        { Kind = kind; if (Sap != null) Sap.ApplyReplica(controlling, canPlace, ready); Unlocked = unlocked; DisplayCount = count; DisplayRecovering = recovering; }
+        public void ApplyReplica(bool unlocked, int count, bool recovering, PlayerAbilityKind kind = PlayerAbilityKind.Leaf, bool controlling = false, bool canPlace = false, bool ready = false, int leafSlotStates = 0)
+        { Kind = kind; if (Sap != null) Sap.ApplyReplica(controlling, canPlace, ready); Unlocked = unlocked; DisplayCount = count; DisplayRecovering = recovering; _replicatedLeafSlotStates = leafSlotStates; }
         private void OnDisable() { if (authority && Leaf != null) Leaf.Clear(); if (authority && Sap != null) Sap.Clear(); }
     }
 }

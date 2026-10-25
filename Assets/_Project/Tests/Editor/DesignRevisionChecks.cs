@@ -19,10 +19,12 @@ namespace Herbalist.Editor
         private static void Check(bool ok, string label) { if (!ok) throw new Exception(label); }
         private static T Read<T>(object obj, string field) => (T)obj.GetType().GetField(field, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(obj);
         private static void Write(object obj, string field, object value) => obj.GetType().GetField(field, BindingFlags.NonPublic | BindingFlags.Instance).SetValue(obj, value);
+        private static Ray MazeAim(SapMazeBoard board, Vector2 point) =>
+            new Ray(board.transform.TransformPoint(new Vector3(point.x, point.y, -2f)), board.transform.forward);
         public static string Authored()
         {
             Check(!Application.isPlaying, "Edit mode required");
-            foreach (string path in new[] { CurrentStagePaths.Exterior, CurrentStagePaths.Maze, CurrentStagePaths.Altar })
+            foreach (string path in new[] { CurrentStagePaths.StageOne, CurrentStagePaths.Maze, CurrentStagePaths.Altar })
             {
                 var scene = EditorSceneManager.OpenScene(path);
                 var level = Object.FindFirstObjectByType<StageLevel>();
@@ -33,27 +35,27 @@ namespace Herbalist.Editor
                     foreach (var t in root.GetComponentsInChildren<Transform>(true)) Check(GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(t.gameObject) == 0, "missing script " + t.name);
                 var ids = Object.FindObjectsByType<LeafInstallTarget>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Select(x => x.Id).ToArray();
                 Check(ids.All(x => x > 0) && ids.Distinct().Count() == ids.Length, "unique leaf IDs " + path);
-                if (path == CurrentStagePaths.Exterior)
+                if (path == CurrentStagePaths.StageOne)
                 {
-                    var layout = AssetDatabase.LoadAssetAtPath<ExteriorLayoutSettings>(PdfExteriorLayoutBuilder.SettingsPath);
-                    Check(layout != null, "PDF layout settings");
-                    Check(Object.FindObjectsByType<ExteriorJumpPad>(FindObjectsSortMode.None).Length == layout.branches.Count(x => x.kind == ExteriorBranchKind.JumpPad), "PDF jump branches");
-                    Check(Object.FindObjectsByType<HangingCloth>(FindObjectsSortMode.None).Length == layout.cloths.Length, "PDF interactive blue cloths");
-                    Check(Object.FindObjectsByType<HangingCloth>(FindObjectsSortMode.None).All(x => Read<Transform>(x, "_lowerCloth") != null), "each cloth has an authored lower bend segment");
-                    Check(Object.FindObjectsByType<ClothBendSurface>(FindObjectsSortMode.None).Length >= layout.branches.Length + 1, "branches and sacred tree can bend cloth");
-                    Check(Object.FindObjectsByType<LandingCheckpoint>(FindObjectsSortMode.None).Length >= layout.branches.Length, "branch landing checkpoints");
-                    var gaps = GameObject.Find("PdfExteriorLayout").transform.Cast<Transform>().Where(x => x.name.StartsWith("LeafBridge_")).ToArray();
-                    Check(gaps.Length == layout.leafBridges.Length && gaps.All(x => x.GetComponentsInChildren<Collider>().All(c => c.bounds.size.y > c.bounds.size.z || c.bounds.size.y > c.bounds.size.x)), "green gaps contain walls, no prebuilt bridge floor");
-                    Check(Object.FindFirstObjectByType<StageOneFlow>().entranceCondition != null && level.nextScenePath == CurrentStagePaths.Maze, "exterior gating/transition");
+                    Check(Object.FindFirstObjectByType<StageOneFlow>() != null &&
+                          level.nextScenePath == CurrentStagePaths.Maze, "stage one flow/transition");
                 }
                 else if (path == CurrentStagePaths.Maze)
                 {
-                    Check(Object.FindFirstObjectByType<DescendingMazeFlow>() != null, "descending maze flow");
+                    var flow = Object.FindFirstObjectByType<DescendingMazeFlow>();
+                    Check(flow != null, "descending maze flow");
                     Check(Object.FindObjectsByType<SapMazeBoard>(FindObjectsSortMode.None).Length == 3 && level.nextScenePath == CurrentStagePaths.Altar, "three boards and altar destination");
+                    var imported = GameObject.Find("ImportedMazeVisuals");
+                    Check(imported != null && imported.GetComponentsInChildren<MeshRenderer>().Length == 3, "three imported maze faces");
+                    Check(Read<StageTwoPulleyPresentation>(flow, "_pulleyPresentation") != null, "imported pulley presentation connected");
+                    foreach (var board in Object.FindObjectsByType<SapMazeBoard>(FindObjectsSortMode.None))
+                        Check(!board.transform.Find("MazeWalls").GetComponent<MeshRenderer>().enabled &&
+                              board.transform.Find("MazeWalls").GetComponent<MeshCollider>().sharedMesh != null,
+                              "imported face with graph wall collision");
                 }
                 else Check(Object.FindObjectsByType<AltarRing>(FindObjectsSortMode.None).Length == 3 && Object.FindFirstObjectByType<FinalStageExit>() != null, "three rotating rings/final exit");
             }
-            return "PASS authored: three scenes, unique target IDs, preauthored UGUI, exterior routes/checkpoints, exactly two persistent rafts and altar.";
+            return "PASS authored: three scenes, unique target IDs, preauthored UGUI, stage one transition, maze and altar.";
         }
         private static LeafProjectile Install(LeafAbilitySettings settings, Transform owner, LeafInstallTarget target)
         {
@@ -68,136 +70,6 @@ namespace Herbalist.Editor
             copy.GetComponent<PlayerController>().SetLocalControl(false);
             var result = copy.GetComponent<StageActor>(); result.offlineSlot = 1;
             result.Abilities.ConfigureNetwork(true); return result;
-        }
-        public static string Exterior()
-        {
-            Check(Application.isPlaying && Object.FindFirstObjectByType<ExteriorStageFlow>() != null, "Play revision exterior");
-            var actor = StageActor.All.First(x => x.Local); var player = actor.GetComponent<PlayerController>();
-            var partner = Partner(actor); var leaves = new List<LeafProjectile>();
-            var originalState = player.Motor.CaptureState();
-            var pads = Object.FindObjectsByType<ExteriorJumpPad>(FindObjectsSortMode.None).OrderBy(x => x.name).ToArray();
-            try
-            {
-                actor.Abilities.RevokeLeaf(); actor.Abilities.UnlockLeaf();
-                for (int i = 0; i < 3; i++)
-                {
-                    var target = Read<LeafInstallTarget[]>(pads[i], "_sockets")[0];
-                    var leaf = Install(actor.Abilities.Leaf.Settings, actor.transform, target); leaves.Add(leaf);
-                    Read<List<LeafProjectile>>(actor.Abilities.Leaf, "leaves").Add(leaf);
-                    leaf.Tick(20); Check(leaf.Installed, "leaf permanent beyond old lifetime");
-                }
-                var fourth = Read<LeafInstallTarget[]>(pads[3], "_sockets")[0];
-                player.Motor.Teleport(fourth.transform.position + new Vector3(0, .2f, -2)); Physics.SyncTransforms();
-                var ray = new Ray(fourth.transform.position + Vector3.up * 3, Vector3.down);
-                actor.Abilities.Tick(actor.Abilities.Input.CycleSequence + 1, actor.Abilities.Input.UseSequence, ray, .3f, false, true);
-                Check(leaves[0].State == LeafState.Returning && actor.Abilities.Leaf.ActiveCount == 3 && actor.Abilities.Leaf.Recovering,
-                    "oldest leaf returns before the fourth leaf launches");
-                var leafSettings = actor.Abilities.Leaf.Settings;
-                player.Motor.Teleport(fourth.transform.position + Vector3.back * (leafSettings.range + 10f));
-                actor.Abilities.Leaf.Tick(.3f, ray);
-                Check(Read<List<LeafProjectile>>(actor.Abilities.Leaf, "leaves").Count == 3,
-                    "queued shot does not create a fourth leaf before recovery finishes");
-                leaves[0].Tick(20f);
-                Check(!actor.Abilities.Leaf.Recovering && actor.Abilities.Leaf.ActiveCount == 3,
-                    "queued shot launches only after the first leaf reaches the player");
-                var thrownLeaf = Read<List<LeafProjectile>>(actor.Abilities.Leaf, "leaves").Last();
-                Check((Read<Vector3>(thrownLeaf, "destination") - Read<Vector3>(thrownLeaf, "start")).magnitude <= leafSettings.range + .001f,
-                    "leaf destination is capped at the configured flight distance");
-                var launchFrame = Read<Transform>(actor.Abilities.Leaf, "launchFrame");
-                Check(Vector3.Distance(Read<Vector3>(thrownLeaf, "start"), launchFrame.TransformPoint(leafSettings.launchOffset)) < .001f,
-                    "new leaf launches from the scaled body offset");
-                actor.Abilities.Tick(actor.Abilities.Input.CycleSequence + 1, actor.Abilities.Input.UseSequence + 1, ray, .1f);
-                Check(leaves[1].Installed, "left click does not manually recall an installed leaf");
-                actor.Abilities.Tick(actor.Abilities.Input.CycleSequence + 2, actor.Abilities.Input.UseSequence + 1, ray, .3f);
-                Check(leaves[1].State == LeafState.Returning && leaves[2].Installed && actor.Abilities.Leaf.Recovering,
-                    "the next throw automatically recalls the next leaf in throw order");
-                leaves[1].Tick(20f);
-                Check(!actor.Abilities.Leaf.Recovering && actor.Abilities.Leaf.ActiveCount == 3,
-                    "fifth leaf launches after the second leaf reaches the player");
-                actor.Abilities.Leaf.Clear(); leaves.Clear();
-                var pad = pads[0]; var socket = Read<LeafInstallTarget[]>(pad, "_sockets")[0]; var inlet = Read<SapInjectionPort[]>(pad, "_ports")[1];
-                var installed = Install(actor.Abilities.Leaf.Settings, actor.transform, socket); leaves.Add(installed);
-                player.Motor.Teleport(socket.SocketPosition + Vector3.up * .04f); Physics.SyncTransforms();
-                for (int i = 0; i < 15; i++) player.Motor.Simulate(Vector3.zero, .02f);
-                Check(player.Motor.IsGrounded, "rider grounded on leaf");
-                float initialRiderHeight = player.transform.position.y;
-                float initialLeafHeight = socket.SocketPosition.y;
-                var partnerPlayer = partner.GetComponent<PlayerController>();
-                partnerPlayer.Motor.Teleport(socket.SocketPosition + Vector3.right * .8f + Vector3.up * .04f); Physics.SyncTransforms();
-                for (int i = 0; i < 15; i++) partnerPlayer.Motor.Simulate(Vector3.zero, .02f);
-                float initialPartnerHeight = partner.transform.position.y;
-                for (int i = 0; i < 31; i++) { inlet.Inject(.1f); pad.Tick(.1f); player.Motor.Simulate(Vector3.zero, .1f); partnerPlayer.Motor.Simulate(Vector3.zero, .1f); }
-                Check(!player.Motor.MovementLocked && !partnerPlayer.Motor.MovementLocked, "both riders retain movement control during ascent");
-                var padSettings = Read<SapJumpPadSettings>(pad, "_settings");
-                float firstRise = socket.SocketPosition.y - initialLeafHeight;
-                float beforeSteer = player.transform.position.x;
-                pad.Tick(.2f); player.Motor.Simulate(Vector3.right * player.Tuning.moveSpeed, .2f); partnerPlayer.Motor.Simulate(Vector3.zero, .2f); float secondRise = socket.SocketPosition.y - initialLeafHeight;
-                Check(player.transform.position.x > beforeSteer && player.transform.position.y > initialRiderHeight, "rider steers horizontally while being lifted");
-                pad.Tick(.2f); player.Motor.Simulate(Vector3.zero, .2f); partnerPlayer.Motor.Simulate(Vector3.zero, .2f); float thirdRise = socket.SocketPosition.y - initialLeafHeight;
-                pad.Tick(.2f); player.Motor.Simulate(Vector3.zero, .2f); partnerPlayer.Motor.Simulate(Vector3.zero, .2f); float fourthRise = socket.SocketPosition.y - initialLeafHeight;
-                Check(firstRise >= 0 && firstRise < padSettings.presentationRise * .25f &&
-                      secondRise > firstRise && secondRise < padSettings.presentationRise * .5f &&
-                      secondRise - firstRise > thirdRise - secondRise &&
-                      thirdRise - secondRise > fourthRise - thirdRise,
-                    $"leaf and water rise with decreasing speed: {firstRise:F2}, {secondRise:F2}, {thirdRise:F2}, {fourthRise:F2}");
-                float remainingAscent = Mathf.Max(0, padSettings.eruptionRiseDuration - (padSettings.flightDuration - Read<float>(pad, "_flight"))) + .00001f;
-                pad.Tick(remainingAscent); player.Motor.Simulate(Vector3.zero, remainingAscent); partnerPlayer.Motor.Simulate(Vector3.zero, remainingAscent);
-                pad.Tick(.02f);
-                installed.Tick(.001f);
-                Check(Mathf.Abs(socket.SocketPosition.y - initialLeafHeight - padSettings.presentationRise) < .02f, "decelerating eruption reaches world height despite scaled hole parent");
-                Check(Vector3.Distance(installed.transform.position, socket.SocketPosition) < .01f, "installed leaf follows eruption socket");
-                var jet = Read<GameObject[]>(pad, "_jets")[0];
-                Check(jet.activeSelf && Mathf.Abs(jet.GetComponent<Renderer>().bounds.size.y - padSettings.presentationRise) < .02f, "sap jet grows with leaf height");
-                Check(Mathf.Abs(player.transform.position.y - initialRiderHeight - padSettings.presentationRise) < .3f && Mathf.Abs(partner.transform.position.y - initialPartnerHeight - padSettings.presentationRise) < .3f, "both riders lifted near leaf apex");
-                Check(!player.Motor.MovementLocked && !partnerPlayer.Motor.MovementLocked && player.Motor.CaptureState().ExternalAirControl && Mathf.Abs(player.Motor.Velocity.y) < .01f, "apex release unlocks normal gravity fall without ballistic jump");
-                pad.Tick(.2f);
-                Check(socket.SocketPosition.y - initialLeafHeight > padSettings.presentationRise * .95f, "leaf begins its return gently after the apex");
-                player.Motor.Simulate(Vector3.right * player.Tuning.moveSpeed, .1f); Check(player.Motor.Velocity.x > 0, "air steering changes horizontal velocity");
-                Check(player.Motor.Velocity.y < 0, "gravity takes over after apex release");
-                // The opposite direction also erupts without a leaf/rider requirement.
-                Write(pad, "_cooldown", 0f); Write(pad, "_flight", 0f);
-                var otherInlet = Read<SapInjectionPort[]>(pad, "_ports")[0];
-                for (int i = 0; i < 31; i++) { otherInlet.Inject(.1f); pad.Tick(.1f); }
-                Check(Read<int>(pad, "_output") == 1 && Read<float>(pad, "_flight") > 0, "symmetric empty port erupts");
-                partner.Abilities.RevokeLeaf(); partner.Abilities.UnlockSap();
-                partner.Abilities.Sap.Configure(() => Object.Instantiate(partner.Abilities.Sap.Settings.offlinePrefab), sap => Object.Destroy(sap.gameObject), false);
-                partner.GetComponent<PlayerController>().Motor.Teleport(inlet.transform.position + Vector3.back * 2);
-                partner.Abilities.Sap.TickContextual(new Ray(inlet.transform.position + Vector3.up * 3, Vector3.down), true, .2f);
-                Check(partner.Abilities.Sap.Held != null && partner.Abilities.Sap.Ready, "context sap requires no source");
-                partner.Abilities.Sap.TickContextual(ray, false, .1f); Check(partner.Abilities.Sap.Held == null, "release stops context injection");
-                var cloth = Object.FindObjectsByType<HangingCloth>(FindObjectsSortMode.None).First();
-                var knot = Read<Transform>(cloth, "_knot");
-                player.Motor.Teleport(knot.position - Vector3.up); player.Motor.SetMovementLock(actor.Abilities.Sap, false);
-                partner.GetComponent<PlayerController>().Motor.Teleport(knot.position - Vector3.up);
-                Check(HangingCloth.TryInteract(actor, out _) && HangingCloth.TryInteract(partner, out _), "two players grip knot");
-                var beforeKnot = knot.position;
-                var expectedSwing = Quaternion.Euler(0, player.View.Yaw, 0) * Vector3.right;
-                cloth.ReceiveMovement(player, Vector2.right); cloth.Tick(.1f);
-                Check(Vector3.Dot(knot.position - beforeKnot, expectedSwing) > 0, "cloth moves in camera-relative input direction");
-                cloth.ReceiveMovement(player, Vector2.right);
-                Check(Read<Vector2>(cloth, "_drive") == Vector2.zero, "holding a direction does not add another swing impulse");
-                cloth.ReceiveMovement(player, Vector2.left);
-                Check(Read<Vector2>(cloth, "_drive") != Vector2.zero, "pressing the opposite direction adds a new swing impulse");
-                var testBranch = new GameObject("TestClothBendBranch");
-                try
-                {
-                    testBranch.transform.position = Vector3.Lerp(cloth.transform.position, knot.position, .5f);
-                    testBranch.AddComponent<BoxCollider>().size = Vector3.one * .5f;
-                    testBranch.AddComponent<ClothBendSurface>();
-                    Physics.SyncTransforms();
-                    cloth.Tick(.02f);
-                    Check(Read<bool>(cloth, "_bendActive"), "branch contact creates a second cloth pivot");
-                    var bentKnot = knot.position;
-                    cloth.ReceiveMovement(player, Vector2.right); cloth.Tick(.02f);
-                    Check(Read<Vector2>(cloth, "_bendAngles").magnitude <= 30.001f && (knot.position - bentKnot).sqrMagnitude > .0001f, "lower cloth swings within 30 degrees around branch");
-                }
-                finally { Object.Destroy(testBranch); }
-                Check(player.Motor.MovementLocked && partner.GetComponent<PlayerController>().Motor.MovementLocked, "cloth movement locked");
-                Check(HangingCloth.TryInteract(actor, out _) && !player.Motor.MovementLocked, "release clears only cloth locks");
-                HangingCloth.TryInteract(partner, out _);
-                return "PASS exterior: permanent/capacity/range leaf, symmetric eruption, steerable paired ascent, apex release/gravity/air steering, sap without extraction, paired cloth grab/release.";
-            }
-            finally { actor.Abilities.Leaf.Clear(); foreach (var leaf in leaves) if (leaf != null) leaf.Finish(); player.Motor.RestoreState(originalState); Object.Destroy(partner.gameObject); }
         }
         public static string Altar()
         {
@@ -230,6 +102,14 @@ namespace Herbalist.Editor
             actor.Abilities.RevokeLeaf(); actor.Abilities.UnlockSap(); partner.Abilities.RevokeLeaf(); partner.Abilities.UnlockLeaf();
             var flow = Object.FindFirstObjectByType<DescendingMazeFlow>();
             var boards = Read<SapMazeBoard[]>(flow, "_mazes"); var rafts = Read<Transform[]>(flow, "_rafts");
+            var pulley = Read<StageTwoPulleyPresentation>(flow, "_pulleyPresentation");
+            var firstWheel = Read<Transform[]>(pulley, "_wheels")[0];
+            // Offline Play may have already advanced while the test command was sent.
+            Write(flow, "_current", -1); Write(flow, "_phase", 0); Write(flow, "_travel", 0f);
+            var entryY = Read<Transform[]>(flow, "_stations")[0].position.y;
+            foreach (var raft in rafts) raft.position = new Vector3(raft.position.x, entryY, raft.position.z);
+            pulley.Present(0f);
+            var wheelAtEntry = firstWheel.localRotation;
             var identities = rafts.ToArray();
             var screen = Object.FindFirstObjectByType<PlayScreenController>();
             Check(screen.Mode == PlayScreenMode.Personal && screen.IsLocked && !screen.TryToggle(), "personal viewport forced");
@@ -238,6 +118,37 @@ namespace Herbalist.Editor
                 var copy = Object.Instantiate(board.Definition); copy.initialVolume = 500; copy.speed = 1;
                 board.ConfigureOfflineTestDefinition(copy);
             }
+            Check(boards[0].Surface.MazeCollider.sharedMesh.name == "Low_2" &&
+                boards[1].Surface.MazeCollider.sharedMesh.name == "Low_1", "imported maze order");
+            var mechanisms = GameObject.Find("Stage2_ImportedMechanisms");
+            Check(mechanisms != null &&
+                Mathf.Abs(mechanisms.transform.localScale.x - mechanisms.transform.localScale.y) < .0001f &&
+                Mathf.Abs(mechanisms.transform.localScale.y - mechanisms.transform.localScale.z) < .0001f,
+                "imported stage mechanisms keep source proportions");
+            int importedPlatformCount = 0;
+            foreach (var raft in rafts)
+            foreach (var mesh in raft.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (mesh.name != "Platporm" && mesh.name != "Platform003" && mesh.name != "Platform004") continue;
+                var scale = mesh.transform.localScale;
+                Check(Mathf.Abs(scale.x - scale.y) < .0001f && Mathf.Abs(scale.y - scale.z) < .0001f,
+                    "imported raft platform keeps source proportions");
+                importedPlatformCount++;
+            }
+            Check(importedPlatformCount == 4, "all four imported raft platforms present");
+            foreach (var board in boards)
+            {
+                var meshTransform = board.Surface.MazeCollider.transform;
+                var meshScale = meshTransform.localScale;
+                var parentScale = meshTransform.parent.localScale;
+                Check(Mathf.Abs(meshScale.x - meshScale.y) < .0001f &&
+                    Mathf.Abs(meshScale.y - meshScale.z) < .0001f &&
+                    Mathf.Abs(parentScale.x - parentScale.y) < .0001f &&
+                    Mathf.Abs(parentScale.y - parentScale.z) < .0001f,
+                    "imported maze keeps source mesh proportions");
+                Check(meshTransform.GetComponent<MeshFilter>().sharedMesh == board.Surface.MazeCollider.sharedMesh,
+                    "maze visual and channel collider use the same mesh");
+            }
             try
             {
                 // Keep the final goal one step short to avoid a scene load inside this synchronous check.
@@ -245,23 +156,75 @@ namespace Herbalist.Editor
                 {
                     for (int tick = 0; tick < 100 && flow.CurrentMaze < maze; tick++) flow.Tick(.1f);
                     Check(flow.CurrentMaze == maze, "automatic descent to maze " + maze);
+                    if (maze == 0)
+                    {
+                        Check(Quaternion.Angle(wheelAtEntry, firstWheel.localRotation) > 1f, "imported pulley turns with raft descent");
+                        Check(rafts.All(r => r.GetComponentsInChildren<MeshRenderer>().Count(v => v.enabled) >= 2), "imported platforms ride both rafts");
+                    }
                     actor.GetComponent<PlayerController>().Motor.Teleport(rafts[0].position + Vector3.up * .05f);
                     partner.GetComponent<PlayerController>().Motor.Teleport(rafts[1].position + Vector3.up * .05f);
                     var board = boards[maze]; board.SetPlayable(true);
-                    Check(board.ReceiveAbilityCycle(actor.Abilities, 1) && board.Controlling, "R begins maze control");
-                    var path = SapMazeRoute.Find(board.Definition, board.Definition.startNode, board.Definition.goalNode);
+                    Check(board.ReceiveAbilityCycle(actor.Abilities, 1, true, MazeAim(board, board.SurfaceStart)) && board.Controlling,
+                        "holding R begins maze control");
+                    if (maze == 0)
+                    {
+                        var view = actor.GetComponent<PlayerController>().View;
+                        float yaw = view.Yaw;
+                        view.ApplyLook(new Vector2(10, 0));
+                        Check(!Mathf.Approximately(view.Yaw, yaw), "maze player retains mouse look");
+                        Check(Vector3.Angle(view.GetAimRay(view.Yaw, view.Pitch).direction,
+                            Quaternion.Euler(view.Pitch, view.Yaw, 0) * Vector3.forward) < .01f,
+                            "maze aim follows center reticle");
+                        view.SetLookAngles(yaw, view.Pitch);
+                    }
+                    var path = new System.Collections.Generic.List<Vector2>();
+                    Check(board.Surface != null && board.Surface.TryFindPath(board.SurfaceStart, board.SurfaceGoal, path),
+                        "mesh channel connects start and goal " + maze);
+                    if (maze == 0)
+                    {
+                        float routeLength = 0f;
+                        bool checkedRange = false;
+                        for (int edge = 1; edge < path.Count; edge++)
+                        {
+                            var segment = path[edge] - path[edge - 1];
+                            routeLength += board.transform.TransformVector(new Vector3(segment.x, segment.y, 0)).magnitude;
+                            if (routeLength <= board.Definition.maxTargetPathDistance + .2f) continue;
+                            var before = board.SapPosition;
+                            board.ReceiveAbilityCycle(actor.Abilities, 0, true, MazeAim(board, path[edge]));
+                            flow.Tick(.05f);
+                            Check(Vector2.Distance(before, board.SapPosition) < .001f, "target beyond channel path limit stays still");
+                            checkedRange = true;
+                            break;
+                        }
+                        Check(checkedRange, "maze route contains target beyond path limit");
+                    }
+                    if (maze == 1)
+                    {
+                        // These Low_1 passages were wrongly removed when a deep
+                        // decorative point on the board rim set the depth cutoff.
+                        foreach (var passage in new[] { new Vector2(2.77f, 3.6f), new Vector2(-4.5f, 7.2f) })
+                        {
+                            Check(Vector2.Distance(board.Surface.Snap(passage), passage) < .08f,
+                                "marked passage remains open " + passage);
+                            var through = new System.Collections.Generic.List<Vector2>();
+                            Check(board.Surface.TryFindPath(board.SurfaceStart, passage, through) &&
+                                board.Surface.TryFindPath(passage, board.SurfaceGoal, through),
+                                "marked passage connects to both ends " + passage);
+                        }
+                    }
                     for (int edge = 1; edge < path.Count; edge++)
                     {
-                        if (maze == 2 && edge == path.Count - 1) break;
-                        var delta = board.Definition.nodes[path[edge]] - board.Definition.nodes[path[edge - 1]];
-                        var move = delta.normalized;
-                        for (int tick = 0; tick < 500 && board.State.From != path[edge]; tick++)
+                        if (maze == 2 && edge >= path.Count - 2) break;
+                        for (int tick = 0; tick < 100 && Vector2.Distance(board.SapPosition,path[edge]) > .06f; tick++)
                         {
-                            board.ReceiveMovement(actor.GetComponent<PlayerController>(), move);
+                            board.ReceiveAbilityCycle(actor.Abilities, 0, true, MazeAim(board, path[edge]));
                             flow.Tick(.01f);
                             if (board.State.Phase == MazePhase.Solved) break;
                         }
-                        Check(board.State.From == path[edge] || board.State.Phase == MazePhase.Solved, "routed edge " + edge);
+                        Check(Vector2.Distance(board.SapPosition,path[edge]) <= .06f || board.State.Phase == MazePhase.Solved,
+                            "mesh channel step " + maze + "/" + edge + " position=" + board.SapPosition +
+                            " target=" + path[edge] + " control=" + board.Controlling +
+                            " hasTarget=" + Read<bool>(board,"_hasTarget"));
                     }
                     if (maze < 2)
                     {
@@ -270,15 +233,78 @@ namespace Herbalist.Editor
                     }
                     else
                     {
-                        board.ReceiveAbilityCycle(actor.Abilities, 1);
-                        Check(!board.Controlling && !actor.GetComponent<PlayerController>().Motor.MovementLocked, "R resumes player movement");
-                        var before = board.State; board.Tick(.1f);
-                        Check(before.From == board.State.From && before.To == board.State.To && before.Progress == board.State.Progress, "parked sap position retained");
+                        board.ReceiveAbilityCycle(actor.Abilities, 0, false, default);
+                        Check(!board.Controlling && !actor.GetComponent<PlayerController>().Motor.MovementLocked, "releasing R resumes player movement");
+                        var before = board.SapPosition; board.Tick(.1f);
+                        Check(Vector2.Distance(before,board.SapPosition)<.001f, "parked sap position retained");
                     }
                 }
-                return "PASS maze: personal screen/Tab lock, R input routing, graph paths, automatic descent without reboarding, same raft identities and parked position retention.";
+                return "PASS maze: personal screen/Tab lock, held R and center reticle routing, mesh channels, automatic descent without reboarding, same raft identities and parked position retention.";
             }
             finally { Object.Destroy(partner.gameObject); }
+        }
+
+        public static string MazeTrailLeak()
+        {
+            Check(Application.isPlaying, "Play revision maze");
+            var board = Object.FindObjectsByType<SapMazeBoard>(FindObjectsSortMode.None)
+                .First(x => x.name == "SapMaze_1");
+            var leak = board.Leaks[0];
+            var socket = Read<Vector2[]>(board, "_surfaceLeaks")[0];
+            var state = Read<MazeRunState>(board, "_state");
+            var oldPosition = Read<Vector2>(board, "_surfacePosition");
+            var points = Read<Vector2[]>(board, "_trailPoints");
+            var oldPoints = points.ToArray();
+            var oldFirst = Read<int>(board, "_trailFirst");
+            var oldCount = Read<int>(board, "_trailCount");
+            var oldPlayable = Read<bool>(board, "_playable");
+            var oldLeakMask = Read<int>(board, "_leakMask");
+            var dummy = new GameObject("MazeTrailLeakCheckLeaf").AddComponent<LeafProjectile>();
+            try
+            {
+                board.SetPlayable(true);
+                var testState = state;
+                testState.Phase = MazePhase.Running;
+                testState.Volume = board.Definition.initialVolume;
+                Write(board, "_state", testState);
+                Write(board, "_surfacePosition", socket + Vector2.right * .6f);
+                points[0] = socket - Vector2.right * .4f;
+                Write(board, "_trailFirst", 0);
+                Write(board, "_trailCount", 1);
+                board.Tick(.5f);
+                Check(board.State.Volume < testState.Volume && board.AnyLeak,
+                    "unblocked leak drains after the head has passed");
+
+                typeof(LeafProjectile).GetField("<State>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .SetValue(dummy, LeafState.Installed);
+                leak.Target.Attach(dummy);
+                var blockedVolume = board.State.Volume;
+                board.Tick(.5f);
+                Check(Mathf.Approximately(board.State.Volume, blockedVolume) && !board.AnyLeak,
+                    "installed leaf stops trail leakage");
+
+                leak.Target.Detach(dummy);
+                testState = Read<MazeRunState>(board, "_state");
+                testState.Volume = board.Definition.initialVolume * .1f;
+                Write(board, "_state", testState);
+                Write(board, "_trailCount", 1);
+                board.Tick(.5f);
+                Check(Mathf.Approximately(board.State.Volume, testState.Volume) && !board.AnyLeak,
+                    "leak stops once shrinking tail no longer reaches the socket");
+                return "PASS maze trail leak: exposed trail drains, installed leaf blocks, short tail stops draining.";
+            }
+            finally
+            {
+                leak.Target.Detach(dummy);
+                Object.Destroy(dummy.gameObject);
+                Write(board, "_state", state);
+                Write(board, "_surfacePosition", oldPosition);
+                System.Array.Copy(oldPoints, points, points.Length);
+                Write(board, "_trailFirst", oldFirst);
+                Write(board, "_trailCount", oldCount);
+                Write(board, "_leakMask", oldLeakMask);
+                board.SetPlayable(oldPlayable);
+            }
         }
     }
 }

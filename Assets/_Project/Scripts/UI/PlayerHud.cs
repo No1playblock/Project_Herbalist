@@ -1,9 +1,11 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using TMPro;
+using UnityEngine.UI;
 using Herbalist.Abilities;
 using Herbalist.StageOne;
 using Herbalist.Presentation;
+using Herbalist.Levels;
 namespace Herbalist.GameUI
 {
     [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "Herbalist.GameUI", sourceAssembly: "Assembly-CSharp", sourceClassName: "PlayerHudUI")]
@@ -11,8 +13,12 @@ namespace Herbalist.GameUI
     {
         public GameUiSettings settings;
         public int slot;
-        public GameObject helpPanel, reticle, prompt;
-        public TMP_Text helpText, helpHint, pocket, abilityText, feedback, promptText;
+        public GameObject helpPanel, reticle, prompt, clothPrompt, sapPrompt;
+        public TMP_Text helpText, helpHint, pocket, abilityText, feedback, promptText, clothPromptText, sapPromptText;
+        public TMP_Text jumpPadCountdown;
+        public GameObject leafStatus;
+        public Image[] leafStatusDots;
+        public TMP_Text[] leafStatusLabels;
         public RectTransform[] markers;
         public TMP_Text[] markerLabels;
         public Vector3 promptOffset=new Vector3(0,.3f,0);
@@ -28,9 +34,24 @@ namespace Herbalist.GameUI
         private void Update()
         {
             var view=screen!=null?screen.ViewForSlot(slot):null;
-            if(view==null)return;
+            if(view==null)
+            {
+                if(jumpPadCountdown!=null) jumpPadCountdown.gameObject.SetActive(false);
+                prompt.SetActive(false);
+                if(clothPrompt!=null) clothPrompt.SetActive(false);
+                if(sapPrompt!=null) sapPrompt.SetActive(false);
+                if(leafStatus!=null) leafStatus.SetActive(false);
+                return;
+            }
             var player=view.GetComponent<Herbalist.Player.PlayerController>();
             bool local=player.LocallyControlled;
+            if (jumpPadCountdown != null)
+            {
+                float remaining = 0;
+                bool show = local && ExteriorJumpPad.TryGetLaunchCountdown(out remaining);
+                jumpPadCountdown.gameObject.SetActive(show);
+                if (show) jumpPadCountdown.text = $"점프대 발사까지 {remaining:0.0}초";
+            }
             helpHint.text=settings.helpAction.action.GetBindingDisplayString()+"  "+settings.helpHint;
             helpPanel.SetActive(local&&expanded);
             if(local&&expanded)
@@ -44,6 +65,23 @@ namespace Herbalist.GameUI
                 helpText.text=lines.ToString();
             }
             var ability=view.GetComponent<PlayerAbilityController>();
+            if (leafStatus != null)
+            {
+                bool showLeaves = local && ability != null && ability.Unlocked && ability.Kind == PlayerAbilityKind.Leaf;
+                leafStatus.SetActive(showLeaves);
+                if (showLeaves)
+                {
+                    int packed = ability.DisplayLeafSlotStates;
+                    for (int i = 0; i < leafStatusDots.Length; i++)
+                    {
+                        int state = (packed >> (i * 2)) & 3;
+                        leafStatusDots[i].color = state == 2 ? settings.leafReturningColor :
+                            state == 1 ? settings.leafInstalledColor : settings.leafHeldColor;
+                        leafStatusLabels[i].text = state == 2 ? settings.leafReturningText :
+                            state == 1 ? settings.leafInstalledText : settings.leafHeldText;
+                    }
+                }
+            }
             var rules = Herbalist.Levels.StageLevel.Instance != null ? Herbalist.Levels.StageLevel.Instance.abilityRules : null;
             reticle.SetActive(local&&ability!=null&&ability.Unlocked&&(rules != null || ability.Kind!=PlayerAbilityKind.Sap || ability.Sap.Controlling));
             abilityText.text=ability!=null&&ability.Unlocked?(ability.Kind==PlayerAbilityKind.Sap?settings.sapText:settings.leafText):"";
@@ -72,11 +110,35 @@ namespace Herbalist.GameUI
             }
             if(!GameplayPause.IsPaused)feedbackTime-=Time.unscaledDeltaTime;
             feedback.text=local&&feedbackTime>0?previousFeedback:"";
+            Vector3 clothPoint = default;
+            bool releasing = false;
+            bool clothHint = local && actor != null && clothPrompt != null &&
+                HangingCloth.TryInteractionHint(actor, out clothPoint, out releasing);
             prompt.SetActive(false);
-            if(local&&flow!=null&&actor!=null&&flow.TryInteractionHint(actor,out var point,out bool transfer))
+            if(!clothHint&&local&&flow!=null&&actor!=null&&flow.TryInteractionHint(actor,out var point,out bool transfer))
             {
                 promptText.text=actor.Binding(0)+"  "+(flow.IsCraftHint(actor)?settings.craftText:transfer?settings.giveText:settings.gatherText);
                 Position(prompt.GetComponent<RectTransform>(),view.Camera,point+promptOffset);
+            }
+            if (clothPrompt != null)
+            {
+                clothPrompt.SetActive(false);
+                if (clothHint)
+                {
+                    clothPromptText.text = releasing
+                        ? actor.Binding(0) + " / " + actor.JumpBinding + "  " + settings.clothReleaseText
+                        : actor.Binding(0) + "  " + settings.clothGrabText;
+                    Position((RectTransform)clothPrompt.transform, view.Camera, clothPoint + promptOffset);
+                }
+            }
+            if (sapPrompt != null)
+            {
+                sapPrompt.SetActive(false);
+                if (local && actor != null && SapInjectionPort.TryInteractionHint(actor, out var portPoint))
+                {
+                    sapPromptText.text = ability.Input.CycleBinding + "  " + settings.sapInjectText;
+                    Position((RectTransform)sapPrompt.transform, view.Camera, portPoint + promptOffset);
+                }
             }
             for(int i=0;i<markers.Length;i++)
             {
