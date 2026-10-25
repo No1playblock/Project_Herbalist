@@ -20,6 +20,7 @@ The solo scene contains two separate offline player actors: Duyeong in slot 0 an
 
 - The two herb item assets define appearance text, gathering method, and exactly ten `StageDirection` values.
 - `StageOneSettings` defines the shared one-second fan bands, temperature change, gauge rates, and 100°C failure threshold. Each `StageRecipe` defines initial temperature, target band, and time limit.
+- Brewing now fills the local screen through the existing owner-scoped Personal view override. The preauthored `PF_PlayerHud/BrewingHud` uses the supplied parchment, cauldron/fire and gauge sprites in `Art/UI/Textures/Brewing`; its current-temperature marker, target band, vertical brewing fill and countdown remain live UGUI elements. Duyeong still sees current temperature while Sodam sees the target band. The supplied scroll sprite belongs to the shared stage header in `PF_GameOverlayHud`, which hides during a minigame.
 - Item assets have stable content IDs and a medicine-material flag; herb codex Sprite references remain optional until final codex art is supplied. Recipes retain direct ingredient/result asset references.
 - `SO_StageMinigameUiText` contains the role-specific copy. The `PF_PlayerHud` contains the panel and text references; no UI objects are created during play.
 - The supplied PDF's data-sheet sections contain no herb or potion values. Current appearance descriptions, sequences, and recipe numbers are prototype content to tune with design.
