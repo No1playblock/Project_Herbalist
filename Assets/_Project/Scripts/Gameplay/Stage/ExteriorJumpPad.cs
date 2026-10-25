@@ -36,6 +36,31 @@ namespace Herbalist.Levels
         public bool Authority => Online ? HasStateAuthority : FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession;
         public float ChargeFraction => (Online ? LaunchDelayRemaining : _launchDelayRemaining) > 0
             ? 1f : Mathf.Max(Online ? Charge0 : _charge[0], Online ? Charge1 : _charge[1]) / _settings.chargeUnits;
+        public static bool TryLeafInstallHint(StageActor actor, float hintRange, out Vector3 point)
+        {
+            point = default;
+            var ability = actor != null ? actor.Abilities : null;
+            if (actor == null || !actor.Available || ability == null || !ability.Unlocked ||
+                ability.Kind != PlayerAbilityKind.Leaf || ability.Leaf?.Settings == null) return false;
+
+            float range = Mathf.Min(hintRange, ability.Leaf.Settings.range);
+            float nearest = range;
+            bool found = false;
+            foreach (var pad in ActivePads)
+            {
+                if (pad == null || !pad.isActiveAndEnabled || pad._sockets == null) continue;
+                foreach (var socket in pad._sockets)
+                {
+                    if (socket == null || !socket.CanInstall) continue;
+                    float distance = Vector3.Distance(actor.transform.position, socket.SocketPosition);
+                    if (distance > nearest) continue;
+                    nearest = distance;
+                    point = socket.SocketPosition;
+                    found = true;
+                }
+            }
+            return found;
+        }
         public static bool TryGetLaunchCountdown(out float remaining)
         {
             remaining = float.MaxValue;
