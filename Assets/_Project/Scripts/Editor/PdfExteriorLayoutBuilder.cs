@@ -21,7 +21,7 @@ namespace Herbalist.Editor
         {
             if (Application.isPlaying) throw new Exception("Stop Play before authoring.");
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-            if (scene.path != CurrentStagePaths.Exterior) throw new Exception("Open the current exterior scene first.");
+            if (scene.path != CurrentStagePaths.StageOne) throw new Exception("Open the current Stage One scene first.");
             var settings = AssetDatabase.LoadAssetAtPath<ExteriorLayoutSettings>(SettingsPath) ?? Seed();
             _font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/_Project/Fonts/NanumGothic/NanumGothicSdf.asset");
             var root = Object.FindFirstObjectByType<ExteriorStageFlow>().transform;
