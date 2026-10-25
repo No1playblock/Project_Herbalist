@@ -27,7 +27,7 @@ namespace Herbalist.Levels
         [SerializeField] private string _waitingText = "두 플레이어의 진입을 기다리는 중";
         [SerializeField] private string _introText = "무당나무 안으로 떨어집니다 · 각자의 뗏목에 착지";
         [SerializeField] private string _descentText = "미로 완료 · 같은 뗏목으로 아래 구간에 이동 중";
-        [SerializeField] private string _mazeText = "앞: R 유지 + 중앙 조준점으로 수액 이동 / 뒤: 새는 구멍에 R로 나뭇잎 설치";
+        [SerializeField] private string _mazeText = "앞: R로 미로 보기 · 좌클릭 드래그로 수액 이동 / 뒤: 새는 구멍에 R로 나뭇잎 설치";
         [Networked] private int Current { get; set; }
         [Networked] private int Phase { get; set; }
         [Networked] private float Travel { get; set; }

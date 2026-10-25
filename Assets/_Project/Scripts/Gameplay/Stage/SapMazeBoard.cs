@@ -1,8 +1,10 @@
 using Fusion;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Herbalist.Abilities;
 using Herbalist.Player;
+using Herbalist.Presentation;
 using Herbalist.StageOne;
 using Herbalist.GameUI;
 namespace Herbalist.Levels
@@ -10,7 +12,7 @@ namespace Herbalist.Levels
     public enum MazeControlView { KeepPlayerCamera, MazeCamera }
 
     [RequireComponent(typeof(NetworkObject))]
-    public sealed class SapMazeBoard : NetworkBehaviour,IAbilityCycleReceiver
+    public sealed class SapMazeBoard : NetworkBehaviour,IAbilityCycleReceiver,IAbilityPointerReceiver
     {
         [SerializeField] private SapMazeDefinition _definition;
         [SerializeField] private SapMazeSurface _surface;
@@ -26,11 +28,11 @@ namespace Herbalist.Levels
         [SerializeField] private SapMazeVolumeDisplay _volumeDisplay;
         [SerializeField, Min(1)] private float _dropElongation = 1;
         [SerializeField] private Transform _frontCamera;
-        [SerializeField] private MazeControlView _controlView = MazeControlView.KeepPlayerCamera;
+        [SerializeField] private MazeControlView _controlView = MazeControlView.MazeCamera;
         [SerializeField] private TMPro.TMP_Text _status;
         [SerializeField] private string _inactiveText="아직 활성화되지 않은 미로 · 이전 구간을 완료하세요";
-        [SerializeField] private string _readyText="R 유지 + 중앙 조준점: 수액 이동";
-        [SerializeField] private string _moveText="중앙 조준점으로 홈을 조준 · R을 놓으면 정지";
+        [SerializeField] private string _readyText="R: 미로 화면 열기";
+        [SerializeField] private string _moveText="좌클릭 드래그: 수액 이동 · R: 미로 화면 닫기";
         [SerializeField] private string _retryText="수액이 소진되었습니다 · 현재 미로 재시도";
         [SerializeField] private string _solvedText="미로 완료 · 양쪽 하강 발판에 탑승하세요";
         [SerializeField] private string _needMoreVolumeText="도착에 필요한 수액이 부족합니다";
@@ -398,32 +400,50 @@ namespace Herbalist.Levels
             for(var i=0;i<count&&i<TrailCapacity;i++)
                 _visibleTrail.Add(Online?TrailPoints[(first+i)%TrailCapacity]:_trailPoints[(first+i)%TrailCapacity]);
         }
-        // The existing rebindable R action carries held state and host-reconstructed aim.
+        public static bool TryReadLocalPointer(PlayerView view, out Vector2 boardPoint)
+        {
+            boardPoint = default;
+            var flow = StageLevel.Instance != null ? StageLevel.Instance.GetComponent<DescendingMazeFlow>() : null;
+            var board = flow != null ? flow.CurrentBoard : null;
+            var camera = view != null ? view.Camera : null;
+            if (board == null || !board.Active || !board.Controlling || camera == null ||
+                Mouse.current == null || !GameplayCursor.AllowsPointerInput) return false;
+            var screenPoint = Mouse.current.position.ReadValue();
+            if (!camera.pixelRect.Contains(screenPoint)) return false;
+            var ray = camera.ScreenPointToRay(screenPoint);
+            var plane = new Plane(board.transform.forward, board.transform.position);
+            if (!plane.Raycast(ray, out float distance) || distance < 0) return false;
+            var local = board.transform.InverseTransformPoint(ray.GetPoint(distance));
+            boardPoint = new Vector2(local.x, local.y);
+            return !float.IsNaN(boardPoint.x) && !float.IsNaN(boardPoint.y) &&
+                   !float.IsInfinity(boardPoint.x) && !float.IsInfinity(boardPoint.y);
+        }
+
+        // R toggles the view. The pointer target is supplied separately each tick.
         public bool ReceiveAbilityCycle(PlayerAbilityController player,uint steps,bool held,Ray aim)
         {
             if(!Authority || _candidate==null || _candidate.Abilities!=player || !Active)return false;
-            if(State.Phase==MazePhase.Running && held)
+            if(State.Phase==MazePhase.Running && steps%2!=0)
             {
-                if(!Controlling)
+                if(Controlling) StopControl();
+                else
                 {
                     player.Sap.Cancel();
                     _controllerSlot=_candidate.Slot;
                 }
-                var plane=new Plane(transform.forward,transform.position);
-                _hasTarget=plane.Raycast(aim,out float distance) && distance>=0;
-                if(_hasTarget)
-                {
-                    var local=transform.InverseTransformPoint(aim.GetPoint(distance));
-                    var point=new Vector2(local.x,local.y);
-                    _hasTarget=!float.IsNaN(point.x) && !float.IsNaN(point.y) &&
-                        !float.IsInfinity(point.x) && !float.IsInfinity(point.y);
-                    if(_hasTarget)_targetPoint=_surface!=null && _surface.Ready?_surface.Snap(point):point;
-                }
                 Publish();UpdateController();
             }
-            else if(Controlling){StopControl();Publish();UpdateController();}
             // Suppress the ordinary hose ability in the active maze control area, including while not controlling.
             return true;
+        }
+        public void ReceiveAbilityPointer(PlayerAbilityController player, bool held, bool valid, Vector2 boardPoint)
+        {
+            if (!Authority || _candidate == null || _candidate.Abilities != player || !Controlling) return;
+            _hasTarget = held && valid && State.Phase == MazePhase.Running &&
+                !float.IsNaN(boardPoint.x) && !float.IsNaN(boardPoint.y) &&
+                !float.IsInfinity(boardPoint.x) && !float.IsInfinity(boardPoint.y);
+            if (_hasTarget) _targetPoint = _surface != null && _surface.Ready ?
+                _surface.Snap(boardPoint) : boardPoint;
         }
         private void StopControl()
         {
@@ -467,6 +487,8 @@ namespace Herbalist.Levels
             {
                 if(_controlView==MazeControlView.MazeCamera && _frontCamera!=null)_controller.View.SetCameraOverride(this,_frontCamera);
                 else _controller.View.ClearCameraOverride(this);
+                if (_controller.LocallyControlled && GameplayCursor.Instance != null)
+                    GameplayCursor.Instance.SetWorldPointerMode(this, _controlView == MazeControlView.MazeCamera);
             }
         }
         private void ReleaseController()
@@ -474,6 +496,8 @@ namespace Herbalist.Levels
             if(_controller==null)return;
             _controller.Motor.SetMovementLock(this,false);
             _controller.GetComponent<PlayerAbilityController>().SetInputLock(this,false);
+            if (_controller.LocallyControlled && GameplayCursor.Instance != null)
+                GameplayCursor.Instance.SetWorldPointerMode(this, false);
             _controller.View.ClearCameraOverride(this);_controller=null;_hasTarget=false;
         }
         private void Update()
@@ -549,6 +573,7 @@ namespace Herbalist.Levels
                 _candidate.Abilities.ClearCycleReceiver(this);
             }
             _candidate=null;ReleaseController();
+            if (GameplayCursor.Instance != null) GameplayCursor.Instance.SetWorldPointerMode(this, false);
             if(Authority)StopControl();
         }
     }

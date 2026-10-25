@@ -2131,11 +2131,11 @@ MonoBehaviour:
   _volumeDisplay: {fileID: 1009929373}
   _dropElongation: 1.8
   _frontCamera: {fileID: 1926655440}
-  _controlView: 0
+  _controlView: 1
   _status: {fileID: 610060260}
   _inactiveText: "\uC544\uC9C1 \uD65C\uC131\uD654\uB418\uC9C0 \uC54A\uC740 \uBBF8\uB85C \xB7 \uC774\uC804 \uAD6C\uAC04\uC744 \uC644\uB8CC\uD558\uC138\uC694"
-  _readyText: "R \uC720\uC9C0 + \uC911\uC559 \uC870\uC900\uC810: \uC218\uC561 \uC774\uB3D9"
-  _moveText: "\uC911\uC559 \uC870\uC900\uC810\uC73C\uB85C \uD648\uC744 \uC870\uC900 \xB7 R\uC744 \uB193\uC73C\uBA74 \uC815\uC9C0"
+  _readyText: "R: \uBBF8\uB85C \uD654\uBA74 \uC5F4\uAE30"
+  _moveText: "\uC88C\uD074\uB9AD \uB4DC\uB798\uADF8: \uC218\uC561 \uC774\uB3D9 \u00B7 R: \uBBF8\uB85C \uD654\uBA74 \uB2EB\uAE30"
   _retryText: "\uD604\uC7AC \uBBF8\uB85C\uB97C \uB2E4\uC2DC \uC2DC\uC791\uD569\uB2C8\uB2E4"
   _solvedText: "\uBBF8\uB85C \uC644\uB8CC \xB7 \uB5CF\uBAA9 \uC790\uB3D9 \uD558\uAC15"
   _needMoreVolumeText: "\uB3C4\uCC29\uC5D0 \uD544\uC694\uD55C \uC218\uC561\uC774 \uBD80\uC871\uD569\uB2C8\uB2E4"
@@ -2749,7 +2749,7 @@ MonoBehaviour:
   _waitingText: "\uB450 \uD50C\uB808\uC774\uC5B4\uC758 \uC9C4\uC785\uC744 \uAE30\uB2E4\uB9AC\uB294 \uC911"
   _introText: "\uBB34\uB2F9\uB098\uBB34 \uC548\uC73C\uB85C \uB5A8\uC5B4\uC9D1\uB2C8\uB2E4 \xB7 \uAC01\uC790\uC758 \uB5CF\uBAA9\uC5D0 \uCC29\uC9C0"
   _descentText: "\uBBF8\uB85C \uC644\uB8CC \xB7 \uAC19\uC740 \uB5CF\uBAA9\uC73C\uB85C \uC544\uB798 \uAD6C\uAC04\uC5D0 \uC774\uB3D9 \uC911"
-  _mazeText: "\uC55E: R \uC720\uC9C0 + \uC911\uC559 \uC870\uC900\uC810\uC73C\uB85C \uC218\uC561 \uC774\uB3D9 / \uB4A4: \uC0C8\uB294 \uAD6C\uBA4D\uC5D0 R\uB85C \uB098\uBB47\uC78E \uC124\uCE58"
+  _mazeText: "\uC55E: R\uB85C \uBBF8\uB85C \uBCF4\uAE30 \u00B7 \uC88C\uD074\uB9AD \uB4DC\uB798\uADF8\uB85C \uC218\uC561 \uC774\uB3D9 / \uB4A4: \uC0C8\uB294 \uAD6C\uBA4D\uC5D0 R\uB85C \uB098\uBB47\uC78E \uC124\uCE58"
   _basePositions:
   - {x: 92.05612, y: 224.77655, z: 50}
   - {x: 8.792091, y: 224.77655, z: 50.374146}
@@ -5457,6 +5457,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 365933823}
+  - component: {fileID: 7000000000000000101}
+  - component: {fileID: 7000000000000000102}
   m_Layer: 0
   m_Name: MazeCamera_0
   m_TagString: Untagged
@@ -5479,6 +5481,71 @@ Transform:
   m_Children: []
   m_Father: {fileID: 179547671}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!20 &7000000000000000101
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 365933822}
+  m_Enabled: 0
+  serializedVersion: 2
+  m_ClearFlags: 1
+  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.1
+  far clip plane: 150
+  field of view: 55
+  orthographic: 1
+  orthographic size: 5
+  m_Depth: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 1
+  m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 1
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
+--- !u!114 &7000000000000000102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 365933822}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5687d9629bfb166428714979b3843d41, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Player.MazeCameraFrame
+  _mazeBounds: {fileID: 1067789945}
+  _padding: 1.06
 --- !u!1 &369408151
 GameObject:
   m_ObjectHideFlags: 0
@@ -15577,11 +15644,11 @@ MonoBehaviour:
   _volumeDisplay: {fileID: 642780770}
   _dropElongation: 1.8
   _frontCamera: {fileID: 1166139442}
-  _controlView: 0
+  _controlView: 1
   _status: {fileID: 1935466849}
   _inactiveText: "\uC544\uC9C1 \uD65C\uC131\uD654\uB418\uC9C0 \uC54A\uC740 \uBBF8\uB85C \xB7 \uC774\uC804 \uAD6C\uAC04\uC744 \uC644\uB8CC\uD558\uC138\uC694"
-  _readyText: "R \uC720\uC9C0 + \uC911\uC559 \uC870\uC900\uC810: \uC218\uC561 \uC774\uB3D9"
-  _moveText: "\uC911\uC559 \uC870\uC900\uC810\uC73C\uB85C \uD648\uC744 \uC870\uC900 \xB7 R\uC744 \uB193\uC73C\uBA74 \uC815\uC9C0"
+  _readyText: "R: \uBBF8\uB85C \uD654\uBA74 \uC5F4\uAE30"
+  _moveText: "\uC88C\uD074\uB9AD \uB4DC\uB798\uADF8: \uC218\uC561 \uC774\uB3D9 \u00B7 R: \uBBF8\uB85C \uD654\uBA74 \uB2EB\uAE30"
   _retryText: "\uD604\uC7AC \uBBF8\uB85C\uB97C \uB2E4\uC2DC \uC2DC\uC791\uD569\uB2C8\uB2E4"
   _solvedText: "\uBBF8\uB85C \uC644\uB8CC \xB7 \uB5CF\uBAA9 \uC790\uB3D9 \uD558\uAC15"
   _needMoreVolumeText: "\uB3C4\uCC29\uC5D0 \uD544\uC694\uD55C \uC218\uC561\uC774 \uBD80\uC871\uD569\uB2C8\uB2E4"
@@ -19281,6 +19348,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1166139442}
+  - component: {fileID: 7000000000000000201}
+  - component: {fileID: 7000000000000000202}
   m_Layer: 0
   m_Name: MazeCamera_1
   m_TagString: Untagged
@@ -19303,6 +19372,71 @@ Transform:
   m_Children: []
   m_Father: {fileID: 179547671}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!20 &7000000000000000201
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1166139441}
+  m_Enabled: 0
+  serializedVersion: 2
+  m_ClearFlags: 1
+  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.1
+  far clip plane: 150
+  field of view: 55
+  orthographic: 1
+  orthographic size: 5
+  m_Depth: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 1
+  m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 1
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
+--- !u!114 &7000000000000000202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1166139441}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5687d9629bfb166428714979b3843d41, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Player.MazeCameraFrame
+  _mazeBounds: {fileID: 798227984}
+  _padding: 1.06
 --- !u!1 &1179689827
 GameObject:
   m_ObjectHideFlags: 0
@@ -20541,11 +20675,11 @@ MonoBehaviour:
   _volumeDisplay: {fileID: 1696984260}
   _dropElongation: 1.8
   _frontCamera: {fileID: 365933823}
-  _controlView: 0
+  _controlView: 1
   _status: {fileID: 1195666838}
   _inactiveText: "\uC544\uC9C1 \uD65C\uC131\uD654\uB418\uC9C0 \uC54A\uC740 \uBBF8\uB85C \xB7 \uC774\uC804 \uAD6C\uAC04\uC744 \uC644\uB8CC\uD558\uC138\uC694"
-  _readyText: "R \uC720\uC9C0 + \uC911\uC559 \uC870\uC900\uC810: \uC218\uC561 \uC774\uB3D9"
-  _moveText: "\uC911\uC559 \uC870\uC900\uC810\uC73C\uB85C \uD648\uC744 \uC870\uC900 \xB7 R\uC744 \uB193\uC73C\uBA74 \uC815\uC9C0"
+  _readyText: "R: \uBBF8\uB85C \uD654\uBA74 \uC5F4\uAE30"
+  _moveText: "\uC88C\uD074\uB9AD \uB4DC\uB798\uADF8: \uC218\uC561 \uC774\uB3D9 \u00B7 R: \uBBF8\uB85C \uD654\uBA74 \uB2EB\uAE30"
   _retryText: "\uD604\uC7AC \uBBF8\uB85C\uB97C \uB2E4\uC2DC \uC2DC\uC791\uD569\uB2C8\uB2E4"
   _solvedText: "\uBBF8\uB85C \uC644\uB8CC \xB7 \uB5CF\uBAA9 \uC790\uB3D9 \uD558\uAC15"
   _needMoreVolumeText: "\uB3C4\uCC29\uC5D0 \uD544\uC694\uD55C \uC218\uC561\uC774 \uBD80\uC871\uD569\uB2C8\uB2E4"
@@ -32698,6 +32832,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1926655440}
+  - component: {fileID: 7000000000000000301}
+  - component: {fileID: 7000000000000000302}
   m_Layer: 0
   m_Name: MazeCamera_2
   m_TagString: Untagged
@@ -32720,6 +32856,71 @@ Transform:
   m_Children: []
   m_Father: {fileID: 179547671}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!20 &7000000000000000301
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1926655439}
+  m_Enabled: 0
+  serializedVersion: 2
+  m_ClearFlags: 1
+  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.1
+  far clip plane: 150
+  field of view: 55
+  orthographic: 1
+  orthographic size: 5
+  m_Depth: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 1
+  m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 1
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
+--- !u!114 &7000000000000000302
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1926655439}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5687d9629bfb166428714979b3843d41, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Player.MazeCameraFrame
+  _mazeBounds: {fileID: 303314297}
+  _padding: 1.06
 --- !u!1 &1930303681
 GameObject:
   m_ObjectHideFlags: 0

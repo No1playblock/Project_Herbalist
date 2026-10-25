@@ -15,11 +15,21 @@ namespace Herbalist.Player
         private bool initialized;
         private object _cameraOwner;
         private Transform _cameraOverride;
+        private bool _baseOrthographic;
+        private float _baseOrthographicSize;
+        private float _baseFieldOfView;
+        private float _baseFarClipPlane;
         private CharacterRole _zoomRole = CharacterRole.Sodam;
         private float _zoomMultiplier = 1f;
         private const string ZoomPreferencePrefix = "Herbalist.Camera.Zoom.";
         public void SetCameraOverride(object owner,Transform anchor) { _cameraOwner=owner;_cameraOverride=anchor; }
-        public void ClearCameraOverride(object owner) { if(ReferenceEquals(owner,_cameraOwner)){_cameraOverride=null;_cameraOwner=null;} }
+        public void ClearCameraOverride(object owner)
+        {
+            if (!ReferenceEquals(owner, _cameraOwner)) return;
+            _cameraOverride = null;
+            _cameraOwner = null;
+            RestoreProjection();
+        }
         public Camera Camera => playerCamera;
         public float ZoomMultiplier => _zoomMultiplier;
         public float Yaw { get; private set; }
@@ -39,6 +49,10 @@ namespace Herbalist.Player
             headRest = headPivot.localRotation;
             Yaw = body.eulerAngles.y;
             Pitch = tuning.initialPitch;
+            _baseOrthographic = playerCamera.orthographic;
+            _baseOrthographicSize = playerCamera.orthographicSize;
+            _baseFieldOfView = playerCamera.fieldOfView;
+            _baseFarClipPlane = playerCamera.farClipPlane;
             LoadZoom();
             initialized = true;
             return true;
@@ -114,7 +128,25 @@ namespace Herbalist.Player
             Quaternion target = headRest * tuning.ResolveHeadLook(body.eulerAngles.y, Yaw, Pitch);
             headPivot.localRotation = Quaternion.RotateTowards(headPivot.localRotation, target, tuning.headTurnSpeed * deltaTime);
             if (!playerCamera.enabled) return;
-            if(_cameraOverride!=null){playerCamera.transform.SetPositionAndRotation(_cameraOverride.position,_cameraOverride.rotation);return;}
+            if (_cameraOverride != null)
+            {
+                var mazeFrame = _cameraOverride.GetComponent<MazeCameraFrame>();
+                if (mazeFrame != null && mazeFrame.TryGetFrame(playerCamera.aspect, out var position,
+                        out var cameraRotation, out var size))
+                {
+                    playerCamera.orthographic = true;
+                    playerCamera.orthographicSize = size;
+                    playerCamera.farClipPlane = Mathf.Max(_baseFarClipPlane, mazeFrame.RequiredFarClip(position));
+                    playerCamera.transform.SetPositionAndRotation(position, cameraRotation);
+                }
+                else
+                {
+                    RestoreProjection();
+                    playerCamera.transform.SetPositionAndRotation(_cameraOverride.position, _cameraOverride.rotation);
+                }
+                return;
+            }
+            RestoreProjection();
             Quaternion rotation = Quaternion.Euler(Pitch, Yaw, 0);
             Vector3 backward = rotation * Vector3.back;
             float distance = tuning.cameraDistance * _zoomMultiplier;
@@ -138,5 +170,14 @@ namespace Herbalist.Player
         }
 
         private void OnDisable() => SetLocalView(false);
+
+        private void RestoreProjection()
+        {
+            if (!initialized || playerCamera == null) return;
+            playerCamera.orthographic = _baseOrthographic;
+            playerCamera.orthographicSize = _baseOrthographicSize;
+            playerCamera.fieldOfView = _baseFieldOfView;
+            playerCamera.farClipPlane = _baseFarClipPlane;
+        }
     }
 }
