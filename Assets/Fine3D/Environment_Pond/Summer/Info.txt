@@ -1,0 +1,31 @@
+Some info to get you started
+
+1. Some steps you need to take in order to make everything work:
+- in Project Settings / Player / Rendering dropdown, change the Color Space to Linear
+- In Project Settings / Quality / Other, change the Lod Bias to 3. If you don't want to change this due to your other props LOD's, just change the LOD's distances of the prefabs
+
+2. For Built-in:
+- install the post processing stack v2 from the Window / Package manager
+- unpack the "Built-in_materials" if you are upgrading from URP
+- unpack the "Built-in_demoScenes" for the demo scenes with post processing
+
+3. For URP:
+- unpack the "URP_assets" if you are upgrading from Built-in
+	- the Buit-in vegetation models and materials will not be replaced; only the vegetation PREFABS
+- unpack the "URP_demoScenes" for the demo scenes with Volumes
+
+NOTE: in order to work in URP, the procedural trees and bushes created in Built-in were transfomed into .fbx files. 
+You don't need to do anything!
+I'm providing this information in case you want to create more trees procedurally and then make them work in URP.
+	- install the free asset pack: Autodesk FBX SDK for Unity
+	- this pack is able to transform the existing procedural vegetation objects created in the Buit-in pipeline, into .fbx duplicates 
+	- for the leaves there is a URP shader provided (created with AI); the bark is using a standard URP lit shader
+
+
+4. Possible issue: if you add the packs to the project before having the processing stack v2 installed, it's possible that the scenes might give some errors. 
+Just install the processing stack v2 and re-open the scenes or remove and post processing components and volumes from the scenes and re-open them. 
+
+5. All the audio has been downloaded (available for free) from https://www.zapsplat.com/
+
+
+For any doubts please join the Discord channel: https://discord.gg/9gSzXa4
