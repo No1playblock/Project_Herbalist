@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Player.SodamAnimationProfile
   movingSpeedThreshold: 0.08
   successLandingDrop: 1
+  cameraMovementThresholdDegreesPerSecond: 2
+  cameraStillDelaySeconds: 0.15
   poses:
   - pose: 0
     blendSeconds: 0.12
@@ -3580,3 +3582,40 @@ MonoBehaviour:
       state: sit_idle
     - layer: upper
       state: sodam_catch
+  - pose: 28
+    blendSeconds: 0.12
+    durationSeconds: 0
+    modelOffsetY: 0
+    visualOffsetY:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    useRootMotion: 0
+    overrideMovementInput: 0
+    ignoreRootMotionY: 0
+    rootMotionClip: {fileID: 0}
+    rootMotionClipLength: 0
+    rootMotionPlaybackSpeed: 1
+    rootMotionX:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    rootMotionY:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    rootMotionZ:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    motions:
+    - layer: Base Layer
+      state: standing_idle

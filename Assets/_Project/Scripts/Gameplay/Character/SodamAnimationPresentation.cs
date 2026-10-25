@@ -12,6 +12,7 @@ namespace Herbalist.Player
     {
         [SerializeField] private SodamAnimationProfile _profile;
         private PlayerCharacterPresentation _character;
+        private PlayerController _controller;
         private PlayerAbilityController _abilities;
         private StageActor _actor;
         private Animator _animator;
@@ -29,6 +30,9 @@ namespace Herbalist.Player
         private bool _clothAirborne;
         private float _clothReleaseY;
         private bool _initialized;
+        private bool _hasViewSample;
+        private bool _cameraMoving;
+        private float _lastViewYaw, _lastViewPitch, _cameraStillElapsed;
         public SodamPose? CurrentPose => _character != null && _character.IsSodamActive ? _pose : null;
         public uint PoseSequence => _poseSequence;
         public float RootMotionScale => _animator != null ? _animator.transform.lossyScale.x : 1f;
@@ -37,6 +41,7 @@ namespace Herbalist.Player
         private void Awake()
         {
             _character = GetComponent<PlayerCharacterPresentation>();
+            _controller = GetComponent<PlayerController>();
             _abilities = GetComponent<PlayerAbilityController>();
             _actor = GetComponent<StageActor>();
         }
@@ -47,6 +52,8 @@ namespace Herbalist.Player
             {
                 if (_animator != null) _animator.transform.localPosition = _restVisualPosition;
                 _initialized = false;
+                _hasViewSample = false;
+                _cameraMoving = false;
                 _animator = null;
                 _pose = null;
                 return;
@@ -59,8 +66,12 @@ namespace Herbalist.Player
                 _animator = animator;
                 _restVisualPosition = animator.transform.localPosition;
                 _initialized = false;
+                _hasViewSample = false;
+                _cameraMoving = false;
                 _pose = null;
             }
+
+            UpdateCameraMotion();
 
             var flow = StageOneFlow.Instance;
             bool validSlot = _actor != null && _actor.Available && _actor.Slot >= 0 && _actor.Slot < 2;
@@ -111,9 +122,6 @@ namespace Herbalist.Player
                 PlayOneShot(transform.position.y >= _clothReleaseY - _profile.successLandingDrop
                     ? SodamPose.ClothSwingLand : SodamPose.ClothHardLand);
             }
-            else if (grounded && !_wasGrounded && !onCloth && !onTalisman && !_clothAirborne)
-                PlayOneShot(SodamPose.Land);
-
             if (flow != null && flow.MinigameResultSequence != _lastResultSequence &&
                 _lastMinigame == StageMinigameKind.Crafting && validSlot &&
                 flow.RoleFor(_actor) == Herbalist.Presentation.CharacterRole.Sodam)
@@ -167,7 +175,27 @@ namespace Herbalist.Player
             var item = flow != null && flow.settings != null ? flow.settings.Item(held) : null;
             if (item != null && item.type == StageItemType.Herb) return moving ? SodamPose.HerbMove : SodamPose.HerbIdle;
             if (item != null && item.type == StageItemType.Potion) return moving ? SodamPose.PotionMove : SodamPose.PotionIdle;
-            return moving ? SodamPose.Move : SodamPose.Idle;
+            return moving ? SodamPose.Move : _cameraMoving ? SodamPose.IdleCameraMoving : SodamPose.Idle;
+        }
+
+        private void UpdateCameraMotion()
+        {
+            var view = _controller != null ? _controller.View : null;
+            if (view == null) return;
+            float yaw = view.Yaw;
+            float pitch = view.Pitch;
+            if (_hasViewSample && Time.deltaTime > 0f)
+            {
+                float degrees = Mathf.Max(Mathf.Abs(Mathf.DeltaAngle(_lastViewYaw, yaw)),
+                    Mathf.Abs(pitch - _lastViewPitch));
+                bool rotating = degrees / Time.deltaTime > _profile.cameraMovementThresholdDegreesPerSecond;
+                _cameraStillElapsed = rotating ? 0f : _cameraStillElapsed + Time.deltaTime;
+                _cameraMoving = rotating || _cameraMoving &&
+                    _cameraStillElapsed < _profile.cameraStillDelaySeconds;
+            }
+            _lastViewYaw = yaw;
+            _lastViewPitch = pitch;
+            _hasViewSample = true;
         }
 
         private void PlayOneShot(SodamPose pose)
@@ -225,6 +253,8 @@ namespace Herbalist.Player
         {
             if (_animator != null) _animator.transform.localPosition = _restVisualPosition;
             _initialized = false;
+            _hasViewSample = false;
+            _cameraMoving = false;
             _pose = null;
         }
     }
