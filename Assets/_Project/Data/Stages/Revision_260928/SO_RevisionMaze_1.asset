@@ -704,11 +704,15 @@ MonoBehaviour:
   startNode: 260
   goalNode: 32
   leakNodes: 2e000000a20000000f010000i
-  initialVolume: 100
+  initialVolume: 60
   speed: 2.4
   maxTargetPathDistance: 8.1
   leakRadius: 0.1774398
-  lossPerSecond: 4
+  lossPerSecond: 5
+  useRefillVolumeRules: 1
+  requiredVolume: 110
+  refillAmount: 20
+  refillRadius: 0.55
   retryDelay: 2
   inputDeadzone: 0.2
   directionThreshold: 0.6

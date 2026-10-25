@@ -14,26 +14,31 @@ namespace Herbalist.Levels
     {
         [SerializeField] private SapMazeDefinition _definition;
         [SerializeField] private SapMazeSurface _surface;
+        [SerializeField] private bool _requireSurface;
         [SerializeField] private Transform _startMarker;
         [SerializeField] private Transform _goalMarker;
         [SerializeField, Min(0)] private float _placementWarningDistance = .3f;
         [SerializeField] private MazeLeakSocket[] _leaks;
+        [SerializeField] private Transform[] _refillMarkers;
         [SerializeField] private StageArrivalZone _controlArea;
         [SerializeField] private Transform _sapVisual;
         [SerializeField] private SapMazeTrailView _trailView;
+        [SerializeField] private SapMazeVolumeDisplay _volumeDisplay;
         [SerializeField, Min(1)] private float _dropElongation = 1;
         [SerializeField] private Transform _frontCamera;
         [SerializeField] private MazeControlView _controlView = MazeControlView.KeepPlayerCamera;
         [SerializeField] private TMPro.TMP_Text _status;
         [SerializeField] private string _inactiveText="아직 활성화되지 않은 미로 · 이전 구간을 완료하세요";
-        [SerializeField] private string _readyText="R 유지 + 중앙 조준점: 수액 이동 · 잔량 {0:0}%";
-        [SerializeField] private string _moveText="중앙 조준점으로 홈을 조준 · R을 놓으면 정지 · 잔량 {0:0}%";
+        [SerializeField] private string _readyText="R 유지 + 중앙 조준점: 수액 이동";
+        [SerializeField] private string _moveText="중앙 조준점으로 홈을 조준 · R을 놓으면 정지";
         [SerializeField] private string _retryText="수액이 소진되었습니다 · 현재 미로 재시도";
         [SerializeField] private string _solvedText="미로 완료 · 양쪽 하강 발판에 탑승하세요";
+        [SerializeField] private string _needMoreVolumeText="도착에 필요한 수액이 부족합니다";
         [Networked] private int From {get;set;}
         [Networked] private int To {get;set;}
         [Networked] private float Progress {get;set;}
         [Networked] private float Volume {get;set;}
+        [Networked] private int CollectedRefillMask {get;set;}
         [Networked] private float Retry {get;set;}
         [Networked] private int PhaseValue {get;set;}
         [Networked] private int Attempt {get;set;}
@@ -58,12 +63,16 @@ namespace Herbalist.Levels
         private readonly List<Vector2> _targetPath = new List<Vector2>();
         private Vector2 _surfacePosition, _surfaceHeading, _surfaceStart, _surfaceGoal;
         private Vector2[] _surfaceLeaks;
+        private Vector2[] _surfaceRefills;
         private StageActor _candidate;
         private PlayerController _controller;
         private Vector3 _visualScale;
         private bool Online => Object!=null&&Object.IsValid;
         private bool Authority => !Online||HasStateAuthority;
         public SapMazeDefinition Definition=>_definition;
+        public bool UsesRefillVolumeRules=>_definition!=null&&_definition.useRefillVolumeRules;
+        public float RemainingVolume=>State.Volume;
+        public float RequiredVolume=>_definition!=null?_definition.requiredVolume:0;
         public MazeLeakSocket[] Leaks=>_leaks;
         public StageArrivalZone ControlArea=>_controlArea;
         public MazeControlView ControlView {get=>_controlView;set=>_controlView=value;}
@@ -74,7 +83,9 @@ namespace Herbalist.Levels
         public bool Active=>Online?Playable:_playable;
         public bool AnyLeak=>(Online?LeakMask:_leakMask)!=0;
         public bool Controlling=>(Online?ControllerSlot:_controllerSlot)>=0;
-        public MazeRunState State=>Online?new MazeRunState{From=From,To=To,Progress=Progress,Volume=Volume,RetryRemaining=Retry,Phase=(MazePhase)PhaseValue,Attempt=Attempt}:_state;
+        public MazeRunState State=>Online?new MazeRunState{From=From,To=To,Progress=Progress,Volume=Volume,
+            CollectedRefillMask=CollectedRefillMask,RetryRemaining=Retry,
+            Phase=(MazePhase)PhaseValue,Attempt=Attempt}:_state;
         private void Awake()
         {
             if(_definition!=null)_state=SapMazeSimulation.Initial(_definition);
@@ -114,6 +125,12 @@ namespace Herbalist.Levels
                     }
                 }
             }
+            _surfaceRefills=new Vector2[_refillMarkers!=null?_refillMarkers.Length:0];
+            for(int i=0;i<_surfaceRefills.Length;i++)
+            {
+                var marker=_refillMarkers[i];
+                if(marker!=null)_surfaceRefills[i]=ResolvePlacement(marker,Vector2.zero,"refill " + (i+1));
+            }
             var route=new List<Vector2>();
             if(!_surface.TryFindPath(_surfaceStart,_surfaceGoal,route))
                 Debug.LogError("Maze surface has no route from start to goal: " + name, this);
@@ -140,6 +157,9 @@ namespace Herbalist.Levels
             if(_leaks==null)return;
             for(int i=0;i<_leaks.Length;i++)
                 DrawPlacementWarning(_leaks[i]!=null?_leaks[i].transform:null,"Leak " + (i+1));
+            if(_refillMarkers!=null)
+                for(int i=0;i<_refillMarkers.Length;i++)
+                    DrawPlacementWarning(_refillMarkers[i],"Refill " + (i+1));
         }
         private void DrawPlacementWarning(Transform marker,string label)
         {
@@ -180,6 +200,7 @@ namespace Herbalist.Levels
         public void Tick(float dt)
         {
             if(!Authority || GameplayPause.IsPaused)return;
+            if((_requireSurface || _definition.useRefillVolumeRules) && (_surface==null || !_surface.Ready))return;
             UpdateController();
             if(!_playable){_hasTarget=false;return;}
             var before=_state.Phase;
@@ -193,7 +214,7 @@ namespace Herbalist.Levels
                 SapMazeSimulation.Tick(_definition,ref _state,input,dt,i=>_leaks[i].Blocked);
             }
             if(_state.Attempt!=attempt){_surfacePosition=_surfaceStart;_surfaceHeading=Vector2.zero;ResetTrail();}
-            else if(_state.Phase==MazePhase.Running||_state.Phase==MazePhase.Solved)
+            else if(!_definition.useRefillVolumeRules && (_state.Phase==MazePhase.Running||_state.Phase==MazePhase.Solved))
                 AppendTrail(CurrentPosition());
             if(before!=MazePhase.Retrying && _state.Phase==MazePhase.Retrying)
                 foreach(var leak in _leaks)leak.ResetSocket();
@@ -220,7 +241,7 @@ namespace Herbalist.Levels
             // Use the same length budget as the visible LineRenderer. A leak keeps
             // draining after the head passes, but stops once the shrinking tail
             // no longer covers its socket.
-            float remaining=_trailView.Settings.VisibleLength(_state.Volume/_definition.initialVolume);
+            float remaining=_trailView.Settings.VisibleLength(VisualFraction(_state.Volume));
             for(int n=0;n<_trailCount && remaining>0;n++)
             {
                 int index=(_trailFirst+_trailCount-1-n+TrailCapacity)%TrailCapacity;
@@ -269,25 +290,82 @@ namespace Herbalist.Levels
             float stepTime=dt/steps;
             for(int step=0;step<steps && _state.Phase==MazePhase.Running;step++)
             {
-                for(int i=0;i<_leaks.Length;i++)if(AtLeak(i) && !_leaks[i].Blocked)
-                    _state.Volume=Mathf.Max(0,_state.Volume-_definition.lossPerSecond*stepTime);
-                if(_state.Volume<=0){_state.Phase=MazePhase.Retrying;_state.RetryRemaining=_definition.retryDelay;break;}
-                if(!moving)continue;
-                while(waypoint<_targetPath.Count && Vector2.Distance(_surfacePosition,_targetPath[waypoint])<=_surface.CellSize*.35f)
-                    waypoint++;
-                if(waypoint>=_targetPath.Count)continue;
-                var previous=_surfacePosition;
-                var delta=_targetPath[waypoint]-_surfacePosition;
-                _surfacePosition=_surface.Move(_surfacePosition,Vector2.ClampMagnitude(delta,_definition.speed*stepTime));
-                if((_surfacePosition-previous).sqrMagnitude>.000001f)_surfaceHeading=_surfacePosition-previous;
-                if(Vector2.Distance(_surfacePosition,_surfaceGoal)<=Mathf.Max(.12f,_definition.speed*stepTime))
-                    _state.Phase=MazePhase.Solved;
+                if(!_definition.useRefillVolumeRules)
+                {
+                    for(int i=0;i<_leaks.Length;i++)if(AtLeak(i) && !_leaks[i].Blocked)
+                        _state.Volume=Mathf.Max(0,_state.Volume-_definition.lossPerSecond*stepTime);
+                    if(_state.Volume<=0){_state.Phase=MazePhase.Retrying;_state.RetryRemaining=_definition.retryDelay;break;}
+                }
+                if(moving)
+                {
+                    while(waypoint<_targetPath.Count && Vector2.Distance(_surfacePosition,_targetPath[waypoint])<=_surface.CellSize*.35f)
+                        waypoint++;
+                    if(waypoint<_targetPath.Count)
+                    {
+                        var previous=_surfacePosition;
+                        var delta=_targetPath[waypoint]-_surfacePosition;
+                        _surfacePosition=_surface.Move(_surfacePosition,Vector2.ClampMagnitude(delta,_definition.speed*stepTime));
+                        if((_surfacePosition-previous).sqrMagnitude>.000001f)_surfaceHeading=_surfacePosition-previous;
+                        if(_definition.useRefillVolumeRules)AppendTrail(_surfacePosition);
+                        else if(Vector2.Distance(_surfacePosition,_surfaceGoal)<=Mathf.Max(.12f,_definition.speed*stepTime))
+                            _state.Phase=MazePhase.Solved;
+                    }
+                }
+                if(_definition.useRefillVolumeRules)
+                {
+                    TickRefillVolume(stepTime);
+                    if(_state.Phase!=MazePhase.Running)break;
+                    if(Vector2.Distance(_surfacePosition,_surfaceGoal)<=Mathf.Max(.12f,_definition.speed*stepTime))
+                    {
+                        if(_state.Volume>=_definition.requiredVolume)_state.Phase=MazePhase.Solved;
+                        else if(AllRefillsCollected())BeginRetry();
+                    }
+                }
             }
+        }
+        private void TickRefillVolume(float dt)
+        {
+            for(int i=0;i<_surfaceRefills.Length && i<32;i++)
+            {
+                int bit=1<<i;
+                if(_refillMarkers[i]==null || (_state.CollectedRefillMask&bit)!=0)continue;
+                if(Vector2.Distance(_surfacePosition,_surfaceRefills[i])>_definition.refillRadius)continue;
+                _state.CollectedRefillMask|=bit;
+                _state.Volume+=_definition.refillAmount;
+            }
+            // A leak drains continuously while any part of the visible stream covers it.
+            // The authored layouts do not overlap leak regions, so charge at most one leak.
+            for(int i=0;i<_leaks.Length;i++)
+                if(!_leaks[i].Blocked && AtLeak(i))
+                {
+                    _state.Volume=Mathf.Max(0,_state.Volume-_definition.lossPerSecond*dt);
+                    break;
+                }
+            if(_state.Volume<=0)BeginRetry();
+        }
+        private bool AllRefillsCollected()
+        {
+            for(int i=0;i<_refillMarkers.Length && i<32;i++)
+                if(_refillMarkers[i]!=null && (_state.CollectedRefillMask&(1<<i))==0)return false;
+            return true;
+        }
+        private void BeginRetry()
+        {
+            _state.Phase=MazePhase.Retrying;
+            _state.RetryRemaining=_definition.retryDelay;
+        }
+        private float VisualFraction(float volume)
+        {
+            float capacity=_definition.initialVolume;
+            if(_definition.useRefillVolumeRules && _refillMarkers!=null)
+                foreach(var marker in _refillMarkers)if(marker!=null)capacity+=_definition.refillAmount;
+            return Mathf.Clamp01(volume/Mathf.Max(.01f,capacity));
         }
         private void Publish()
         {
             if(!Online)return;
             From=_state.From;To=_state.To;Progress=_state.Progress;Volume=_state.Volume;
+            CollectedRefillMask=_state.CollectedRefillMask;
             SurfacePosition=_surfacePosition;SurfaceHeading=_surfaceHeading;
             Retry=_state.RetryRemaining;PhaseValue=(int)_state.Phase;Attempt=_state.Attempt;
             Playable=_playable;LeakMask=_leakMask;ControllerSlot=_controllerSlot;
@@ -302,9 +380,10 @@ namespace Herbalist.Levels
         }
         private void AppendTrail(Vector2 position)
         {
-            if(_trailView==null||_trailView.Settings==null||_trailCount==0)return;
+            if(_trailCount==0)return;
             var last=(_trailFirst+_trailCount-1)%TrailCapacity;
-            if(Vector2.Distance(_trailPoints[last],position)<_trailView.Settings.sampleSpacing)return;
+            float spacing=_trailView!=null && _trailView.Settings!=null ? _trailView.Settings.sampleSpacing : .1f;
+            if(Vector2.Distance(_trailPoints[last],position)<spacing)return;
             var next=(_trailFirst+_trailCount)%TrailCapacity;
             if(_trailCount==TrailCapacity)_trailFirst=(_trailFirst+1)%TrailCapacity;
             else _trailCount++;
@@ -402,6 +481,14 @@ namespace Herbalist.Levels
             UpdateController();
             if(_definition==null)return;
             var state=State;
+            if(_volumeDisplay!=null)
+                _volumeDisplay.Present(state.Volume,_definition.requiredVolume,
+                    _definition.useRefillVolumeRules && Active && state.Phase==MazePhase.Running);
+            if(_refillMarkers!=null)
+                for(int i=0;i<_refillMarkers.Length;i++)
+                    if(_refillMarkers[i]!=null)_refillMarkers[i].gameObject.SetActive(
+                        _definition.useRefillVolumeRules && Active && state.Phase==MazePhase.Running &&
+                        i<32 && (state.CollectedRefillMask&(1<<i))==0);
             if(_sapVisual!=null)
             {
                 var visible=Active && state.Phase==MazePhase.Running;
@@ -410,7 +497,7 @@ namespace Herbalist.Levels
                 var p=CurrentPosition();
                 _sapVisual.localPosition=new Vector3(p.x,p.y,_surface!=null && _surface.Ready ?
                     _surface.SurfaceZ(p,_sapVisual.localPosition.z) : _sapVisual.localPosition.z);
-                var fraction=Mathf.Clamp01(state.Volume/_definition.initialVolume);
+                var fraction=VisualFraction(state.Volume);
                 var headScale=Mathf.Pow(fraction,1f/3f);
                 if(visible&&_trailView!=null)
                 {
@@ -445,8 +532,15 @@ namespace Herbalist.Levels
                 _leaks[i].Present(((Online?LeakMask:_leakMask)&(1<<i))!=0);
             }
             if(_status!=null)
-                _status.text=!Active && state.Phase!=MazePhase.Solved?_inactiveText:state.Phase==MazePhase.Running?string.Format(Controlling?_moveText:_readyText,state.Volume/_definition.initialVolume*100):
-                    state.Phase==MazePhase.Retrying?_retryText:_solvedText;
+            {
+                if(!Active && state.Phase!=MazePhase.Solved)_status.text=_inactiveText;
+                else if(state.Phase==MazePhase.Retrying)_status.text=_retryText;
+                else if(state.Phase==MazePhase.Solved)_status.text=_solvedText;
+                else if(_definition.useRefillVolumeRules &&
+                    Vector2.Distance(CurrentPosition(),_surfaceGoal)<=Mathf.Max(.12f,_definition.refillRadius) &&
+                    state.Volume<_definition.requiredVolume)_status.text=_needMoreVolumeText;
+                else _status.text=Controlling?_moveText:_readyText;
+            }
         }
         private void OnDisable()
         {

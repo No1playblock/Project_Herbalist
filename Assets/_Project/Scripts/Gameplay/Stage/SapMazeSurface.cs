@@ -26,26 +26,26 @@ namespace Herbalist.Levels
             _board = board;
             _walkable = null;
             if (_mazeCollider == null || _mazeCollider.sharedMesh == null) return false;
-            var bounds = _mazeCollider.bounds;
-            var min = board.InverseTransformPoint(bounds.min);
-            var max = board.InverseTransformPoint(bounds.max);
-            _origin = new Vector2(Mathf.Min(min.x, max.x), Mathf.Min(min.y, max.y));
-            _width = Mathf.CeilToInt(Mathf.Abs(max.x - min.x) / _cellSize) + 1;
-            _height = Mathf.CeilToInt(Mathf.Abs(max.y - min.y) / _cellSize) + 1;
+            var bounds = LocalBounds();
+            _origin = new Vector2(bounds.min.x, bounds.min.y);
+            _width = Mathf.CeilToInt(bounds.size.x / _cellSize) + 1;
+            _height = Mathf.CeilToInt(bounds.size.y / _cellSize) + 1;
             if (_width < 2 || _height < 2 || _width * _height > 100000) return false;
 
             var depths = new float[_width * _height];
             var interiorDepths = new List<float>(_width * _height);
             var rayStart = bounds.min.z - 1f;
+            var rayLength = (bounds.size.z + 2f) * board.TransformVector(Vector3.forward).magnitude;
+            var rayDirection = board.TransformDirection(Vector3.forward).normalized;
             for (int y = 0; y < _height; y++)
             for (int x = 0; x < _width; x++)
             {
                 var local = CellPosition(x, y);
-                var world = board.TransformPoint(new Vector3(local.x, local.y, 0));
+                var world = board.TransformPoint(new Vector3(local.x, local.y, rayStart));
                 RaycastHit hit;
                 int index = y * _width + x;
-                depths[index] = _mazeCollider.Raycast(new Ray(new Vector3(world.x, world.y, rayStart), Vector3.forward),
-                    out hit, bounds.size.z + 2f) ? hit.point.z : float.NegativeInfinity;
+                depths[index] = _mazeCollider.Raycast(new Ray(world, rayDirection), out hit, rayLength)
+                    ? board.InverseTransformPoint(hit.point).z : float.NegativeInfinity;
                 // The backing board and decorative rim can contain a few points
                 // deeper than the carved channels. Exclude the rim and use a high
                 // percentile so one such point cannot close narrow passages.
@@ -89,6 +89,26 @@ namespace Herbalist.Levels
             _walkable = new bool[candidate.Length];
             for (int i = 0; i < labels.Length; i++) _walkable[i] = labels[i] == bestLabel;
             return true;
+        }
+
+        private Bounds LocalBounds()
+        {
+            var meshBounds = _mazeCollider.sharedMesh.bounds;
+            var min = meshBounds.min;
+            var max = meshBounds.max;
+            var result = new Bounds();
+            bool first = true;
+            for (int x = 0; x < 2; x++)
+            for (int y = 0; y < 2; y++)
+            for (int z = 0; z < 2; z++)
+            {
+                var meshPoint = new Vector3(x == 0 ? min.x : max.x,
+                    y == 0 ? min.y : max.y, z == 0 ? min.z : max.z);
+                var point = _board.InverseTransformPoint(_mazeCollider.transform.TransformPoint(meshPoint));
+                if (first) { result = new Bounds(point, Vector3.zero); first = false; }
+                else result.Encapsulate(point);
+            }
+            return result;
         }
 
         private void Visit(int x, int y, int label, bool[] candidate, int[] labels, int[] queue, ref int tail)
@@ -240,12 +260,13 @@ namespace Herbalist.Levels
         public float SurfaceZ(Vector2 point, float fallback)
         {
             if (_walkable == null) return fallback;
-            var bounds = _mazeCollider.bounds;
-            var world = _board.TransformPoint(new Vector3(point.x, point.y, 0));
+            var bounds = LocalBounds();
+            var world = _board.TransformPoint(new Vector3(point.x, point.y, bounds.min.z - 1f));
             RaycastHit hit;
-            return _mazeCollider.Raycast(new Ray(new Vector3(world.x, world.y, bounds.min.z - 1f), Vector3.forward),
-                out hit, bounds.size.z + 2f)
-                ? _board.InverseTransformPoint(hit.point - Vector3.forward * _visualOffset).z : fallback;
+            var normal = _board.TransformDirection(Vector3.forward).normalized;
+            var distance = (bounds.size.z + 2f) * _board.TransformVector(Vector3.forward).magnitude;
+            return _mazeCollider.Raycast(new Ray(world, normal), out hit, distance)
+                ? _board.InverseTransformPoint(hit.point - normal * _visualOffset).z : fallback;
         }
     }
 }
