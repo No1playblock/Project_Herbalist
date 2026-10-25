@@ -1634,7 +1634,7 @@ MonoBehaviour:
   _cloth: {fileID: 0}
   _lowerCloth: {fileID: 0}
   _authoredVisual: {fileID: 1964490682}
-  _settings: {fileID: 0}
+  _settings: {fileID: 11400000, guid: 683143c00c374cbfb22e7a5719901ed1, type: 2}
   _gripOffsets:
   - {x: 3.3098435, y: -1, z: 1.4300123}
   - {x: 2.593028, y: -1, z: -2.5052352}
@@ -46107,7 +46107,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3a23c2618bc98949b175e3260352a29, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.LeafInstallTarget
-  targetId: 9103
+  targetId: 9105
   socket: {fileID: 127428660}
   _singleOccupant: 1
   _perpendicularToSurfaceOnInstall: 0
@@ -48555,7 +48555,7 @@ MonoBehaviour:
   _cloth: {fileID: 0}
   _lowerCloth: {fileID: 0}
   _authoredVisual: {fileID: 340396933}
-  _settings: {fileID: 0}
+  _settings: {fileID: 11400000, guid: 683143c00c374cbfb22e7a5719901ed1, type: 2}
   _gripOffsets:
   - {x: 0.0008531809, y: -1, z: -3.6055512}
   - {x: -3.3278728, y: -1, z: -1.3875381}
@@ -59906,7 +59906,7 @@ MonoBehaviour:
   _cloth: {fileID: 0}
   _lowerCloth: {fileID: 0}
   _authoredVisual: {fileID: 2080019939}
-  _settings: {fileID: 0}
+  _settings: {fileID: 11400000, guid: 683143c00c374cbfb22e7a5719901ed1, type: 2}
   _gripOffsets:
   - {x: -0.77277744, y: -1, z: 3.5217628}
   - {x: 2.9536362, y: -1, z: 2.0678573}
@@ -62385,7 +62385,7 @@ MonoBehaviour:
   _cloth: {fileID: 0}
   _lowerCloth: {fileID: 0}
   _authoredVisual: {fileID: 1701901141}
-  _settings: {fileID: 0}
+  _settings: {fileID: 11400000, guid: 683143c00c374cbfb22e7a5719901ed1, type: 2}
   _gripOffsets:
   - {x: -3.1228883, y: -1, z: -1.8021009}
   - {x: -2.8645885, y: -1, z: 2.1895504}
@@ -69404,6 +69404,28 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4515449714630141288, guid: 0f57a95512eba6e47b5b752b6264f50a, type: 3}
+--- !u!114 &1087899685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1087899680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3a23c2618bc98949b175e3260352a29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.LeafInstallTarget
+  targetId: 9102
+  socket: {fileID: 0}
+  _singleOccupant: 0
+  _perpendicularToSurfaceOnInstall: 1
+  onInstalled:
+    m_PersistentCalls:
+      m_Calls: []
+  onReleased:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!4 &1089454482 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8104895046205872100, guid: fb6e232d349d9ad4eb96b78bf14a4091, type: 3}
@@ -71083,7 +71105,7 @@ MonoBehaviour:
   _cloth: {fileID: 0}
   _lowerCloth: {fileID: 0}
   _authoredVisual: {fileID: 261688728}
-  _settings: {fileID: 0}
+  _settings: {fileID: 11400000, guid: 683143c00c374cbfb22e7a5719901ed1, type: 2}
   _gripOffsets:
   - {x: -0.6973839, y: -1, z: 3.5374649}
   - {x: 2.9971275, y: -1, z: 2.0043023}
@@ -71795,6 +71817,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0f57a95512eba6e47b5b752b6264f50a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1087899684}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0f57a95512eba6e47b5b752b6264f50a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1087899685}
   m_SourcePrefab: {fileID: 100100000, guid: 0f57a95512eba6e47b5b752b6264f50a, type: 3}
 --- !u!1001 &1140518173
 PrefabInstance:
@@ -81850,7 +81875,7 @@ MonoBehaviour:
   _cloth: {fileID: 0}
   _lowerCloth: {fileID: 0}
   _authoredVisual: {fileID: 686877955}
-  _settings: {fileID: 0}
+  _settings: {fileID: 11400000, guid: 683143c00c374cbfb22e7a5719901ed1, type: 2}
   _gripOffsets:
   - {x: 2.1914551, y: -1, z: -2.863132}
   - {x: -1.8000238, y: -1, z: -3.1240864}
@@ -92086,7 +92111,7 @@ MonoBehaviour:
   _cloth: {fileID: 0}
   _lowerCloth: {fileID: 0}
   _authoredVisual: {fileID: 1895681317}
-  _settings: {fileID: 0}
+  _settings: {fileID: 11400000, guid: 683143c00c374cbfb22e7a5719901ed1, type: 2}
   _gripOffsets:
   - {x: 3.5744498, y: -1, z: 0.47255647}
   - {x: 1.8109944, y: -1, z: -3.1177397}

@@ -56,9 +56,11 @@ namespace Herbalist.Levels
             _voiceSource.playOnAwake = false;
             _voiceSource.spatialBlend = 0f;
             _voiceSource.volume = _settings.voiceVolume;
-            for (int i = 0; i < _leafCenters.Length; i++)
+            for (int i = 0; i < Mathf.Min(_jets.Length, _jetOrigins.Length); i++)
             {
-                _rest[i] = _leafCenters[i].localPosition;
+                if (_jets[i] == null) continue;
+                if (i < _leafCenters.Length && _leafCenters[i] != null)
+                    _rest[i] = _leafCenters[i].localPosition;
                 _jetOrigins[i] = _jets[i].transform.position;
                 _waterJets[i] = _jets[i].GetComponent<MushroomWaterJetPresentation>();
                 if (_waterJets[i] != null) _waterJets[i].Initialize(_settings);
@@ -94,7 +96,12 @@ namespace Herbalist.Levels
             if (clip != null && _voiceSource != null) _voiceSource.PlayOneShot(clip);
         }
         private float AscentDuration => Mathf.Min(_settings.eruptionRiseDuration, _settings.flightDuration * .5f);
-        private Vector3 LaunchPoint(int side) => _leafCenters[side].parent.TransformPoint(_rest[side]);
+        private Vector3 LaunchPoint(int side)
+        {
+            var center = side < _leafCenters.Length ? _leafCenters[side] : null;
+            return center != null && center.parent != null
+                ? center.parent.TransformPoint(_rest[side]) : _jetOrigins[side];
+        }
         private float Rise(float flight)
         {
             float elapsed = Mathf.Clamp(_settings.flightDuration - flight, 0, _settings.flightDuration);
@@ -110,13 +117,15 @@ namespace Herbalist.Levels
         private void Present(float flight, int output)
         {
             float rise = Rise(flight);
-            for (int i = 0; i < _leafCenters.Length; i++)
+            for (int i = 0; i < Mathf.Min(_jets.Length, _jetOrigins.Length); i++)
             {
+                if (_jets[i] == null) continue;
                 bool erupting = flight > 0 && i == output;
-                _leafCenters[i].position = LaunchPoint(i) + (erupting ? Vector3.up * rise : Vector3.zero);
+                Vector3 end = LaunchPoint(i) + (erupting ? Vector3.up * rise : Vector3.zero);
+                if (i < _leafCenters.Length && _leafCenters[i] != null) _leafCenters[i].position = end;
                 _jets[i].SetActive(erupting);
                 if (erupting && _waterJets[i] != null)
-                    _waterJets[i].Present(_jetOrigins[i], _leafCenters[i].position);
+                    _waterJets[i].Present(_jetOrigins[i], end);
             }
         }
         public void Tick(float dt)
@@ -151,7 +160,8 @@ namespace Herbalist.Levels
         {
             _flight = _settings.flightDuration; _cooldown = _settings.cooldown;
             ReleaseRiders(false);
-            var leaf = _sockets[_output].InstalledLeaf;
+            var socket = _output < _sockets.Length ? _sockets[_output] : null;
+            var leaf = socket != null ? socket.InstalledLeaf : null;
             if (leaf != null)
                 foreach (var actor in StageActor.All)
                     if (actor.Available && actor.Slot >= 0 && actor.Slot < _carriedActors.Length && leaf.Supports(actor.GetComponent<CharacterController>(), _settings.standingTolerance))
