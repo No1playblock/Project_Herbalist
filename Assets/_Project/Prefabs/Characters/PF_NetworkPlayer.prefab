@@ -146,6 +146,7 @@ GameObject:
   - component: {fileID: 6708749211600563885}
   - component: {fileID: 2281683777917986764}
   - component: {fileID: 3479663387653853753}
+  - component: {fileID: 7091223526781663267}
   m_Layer: 8
   m_Name: PF_NetworkPlayer
   m_TagString: Untagged
@@ -163,7 +164,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2.7, y: 2.7, z: 2.7}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8245535206254052208}
@@ -209,7 +210,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Player.CharacterControllerMotor
   controller: {fileID: 3943071972849630906}
-  tuning: {fileID: 11400000, guid: d4650b1bce6ab964a965f7f513e7e170, type: 2}
+  tuning: {fileID: 11400000, guid: c82a5cbd35ae4f7bb31dce18aa759105, type: 2}
 --- !u!114 &6992584182586618161
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -239,7 +240,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b27520434664e54cabf1bf0b4bf134c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Player.PlayerView
-  tuning: {fileID: 11400000, guid: d4650b1bce6ab964a965f7f513e7e170, type: 2}
+  tuning: {fileID: 11400000, guid: c82a5cbd35ae4f7bb31dce18aa759105, type: 2}
   body: {fileID: 8245535206254052208}
   headPivot: {fileID: 3380396877370934797}
   cameraTarget: {fileID: 2262807380499130220}
@@ -260,7 +261,7 @@ MonoBehaviour:
   motor: {fileID: 1747169293056399141}
   input: {fileID: 6992584182586618161}
   view: {fileID: 7548050214359424111}
-  tuning: {fileID: 11400000, guid: d4650b1bce6ab964a965f7f513e7e170, type: 2}
+  tuning: {fileID: 11400000, guid: c82a5cbd35ae4f7bb31dce18aa759105, type: 2}
   locallyControlled: 0
 --- !u!114 &5855557322306971455
 MonoBehaviour:
@@ -347,6 +348,7 @@ MonoBehaviour:
     RawValue: 0
   _BodyYaw: 0
   _LookAngles: {x: 0, y: 0}
+  _CameraZoomMultiplier: 0
   _LastJumpSequence: 0
   _MovementBlocked:
     RawValue: 0
@@ -466,6 +468,19 @@ MonoBehaviour:
   stoppedSpeedThreshold: 0.05
   stopDamping: 0.01
   teleportDistance: 2
+--- !u!114 &7091223526781663267
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4785592984878322728}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1871d0be25cdd942b5a732eb9291a0a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Player.SodamAnimationPresentation
+  _profile: {fileID: 11400000, guid: 576def1ed81bdf841882557481c23c06, type: 2}
 --- !u!1 &5455624637811504777
 GameObject:
   m_ObjectHideFlags: 0
@@ -937,11 +952,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2785431918047693963, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.024440566
+      value: 0.024440568
       objectReference: {fileID: 0}
     - target: {fileID: 2785431918047693963, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.032358583
+      value: -0.032358587
       objectReference: {fileID: 0}
     - target: {fileID: 4299870665631226890, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_Name
@@ -950,30 +965,30 @@ PrefabInstance:
     - target: {fileID: 8022692749843347296, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 9100000, guid: d75b5bd1a63964140bcaf90f11a510f4, type: 2}
+      objectReference: {fileID: 9100000, guid: c5578798574c94742aadc407ff96c2e1, type: 2}
     - target: {fileID: 8022692749843347296, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_ApplyRootMotion
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8439126704027830774, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.0009344091
+      value: -0.00093440915
       objectReference: {fileID: 0}
     - target: {fileID: 8439126704027830774, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.018550156
+      value: -0.018550158
       objectReference: {fileID: 0}
     - target: {fileID: 8866685036864001838, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.15
+      value: 1.363
       objectReference: {fileID: 0}
     - target: {fileID: 8866685036864001838, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.15
+      value: 1.363
       objectReference: {fileID: 0}
     - target: {fileID: 8866685036864001838, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.15
+      value: 1.363
       objectReference: {fileID: 0}
     - target: {fileID: 8866685036864001838, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalPosition.x

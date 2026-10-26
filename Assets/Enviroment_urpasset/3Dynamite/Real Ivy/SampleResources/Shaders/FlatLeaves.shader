@@ -1,5 +1,5 @@
 // Made with Amplify Shader Editor
-// Available at the Unity Asset Store - http://u3d.as/y3X 
+// Available at the Unity Asset Store - http://u3d.as/y3X
 Shader "Real Ivy/Flat leaves"
 {
 	Properties
@@ -95,7 +95,7 @@ Shader "Real Ivy/Flat leaves"
 
 		ENDCG
 		CGPROGRAM
-		#pragma surface surf StandardSpecular keepalpha fullforwardshadows vertex:vertexDataFunc 
+		#pragma surface surf StandardSpecular keepalpha fullforwardshadows vertex:vertexDataFunc
 
 		ENDCG
 		Pass

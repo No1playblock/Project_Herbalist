@@ -12,7 +12,12 @@ namespace Herbalist.Abilities
         private IAbilityCycleReceiver _cycleReceiver;
         public void SetCycleReceiver(IAbilityCycleReceiver receiver) => _cycleReceiver=receiver;
         public void ClearCycleReceiver(IAbilityCycleReceiver receiver) { if(ReferenceEquals(_cycleReceiver,receiver))_cycleReceiver=null; }
-        public void ReleaseCycleReceiver() => _cycleReceiver?.ReceiveAbilityCycle(this,0,false,default);
+        public void ReleaseCycleReceiver()
+        {
+            _cycleReceiver?.ReceiveAbilityCycle(this, 0, false, default);
+            if (_cycleReceiver is IAbilityPointerReceiver pointerReceiver)
+                pointerReceiver.ReceiveAbilityPointer(this, false, false, default);
+        }
         private uint lastCycle, lastUse;
         private bool network, authority;
         private bool _offlineBothUnlocked;
@@ -69,18 +74,26 @@ namespace Herbalist.Abilities
         private void Update()
         {
             if (network || !player.LocallyControlled) return;
+            bool pointerValid = Herbalist.Levels.SapMazeBoard.TryReadLocalPointer(player.View, out var pointerPosition);
             Tick(Input.CycleSequence, Input.UseSequence,
                 player.View.GetAimRay(player.View.Yaw, player.View.Pitch),
-                Time.deltaTime, Input.UseHeld, Input.CycleHeld);
+                Time.deltaTime, Input.UseHeld, Input.CycleHeld, pointerValid, pointerPosition);
         }
-        public void Tick(uint cycle, uint use, Ray aim, float dt, bool useHeld = false, bool cycleHeld = false)
+        public void Tick(uint cycle, uint use, Ray aim, float dt, bool useHeld = false, bool cycleHeld = false,
+            bool pointerValid = false, Vector2 pointerPosition = default)
         {
             if (!authority) return;
             if (Herbalist.GameUI.GameplayPause.IsPaused) { lastCycle = cycle; lastUse = use; return; }
             Leaf.Tick(dt, aim);
             uint steps = unchecked(cycle - lastCycle); lastCycle = cycle;
             lastUse = use;
-            if(_cycleReceiver!=null && _cycleReceiver.ReceiveAbilityCycle(this,steps,cycleHeld,aim))return;
+            if (_cycleReceiver != null)
+            {
+                bool consumed = _cycleReceiver.ReceiveAbilityCycle(this, steps, cycleHeld, aim);
+                if (_cycleReceiver is IAbilityPointerReceiver pointerReceiver)
+                    pointerReceiver.ReceiveAbilityPointer(this, useHeld, pointerValid, pointerPosition);
+                if (consumed) return;
+            }
             if(_inputLocks.Count>0)return;
             var rules = Herbalist.Levels.StageLevel.Instance != null ? Herbalist.Levels.StageLevel.Instance.abilityRules : null;
             if (rules != null && rules.contextualUse)

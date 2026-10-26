@@ -1,3 +1,39 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:acbc32694e5c6ffa5d394bb13a7b23ddfa9140adba10b8b3d84850f5d6c43a80
-size 1052
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07991bc58431ce24e9b82ca096b06157, type: 3}
+  m_Name: SO_Stage01ModelingPlayerTuning
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Player.PlayerTuning
+  characterScaleMultiplier: 1
+  moveSpeed: 18
+  gravity: 88
+  terminalSpeed: 140
+  groundStickSpeed: 8
+  bodyTurnSpeed: 540
+  facingMode: 1
+  jumpHeight: 5.5
+  airAcceleration: 70.4
+  cameraDistance: 19.2
+  cameraZoomMinMultiplier: 0.5
+  cameraZoomMaxMultiplier: 1.5
+  cameraZoomStep: 5
+  initialPitch: 30
+  pitchLimits: {x: -90, y: 90}
+  mouseSensitivity: 0.15
+  cameraProbeRadius: 0.64
+  cameraWallPadding: 0.32
+  cameraObstacles:
+    serializedVersion: 2
+    m_Bits: 4194305
+  headYawLimit: 75
+  headPitchLimit: 90
+  headTurnSpeed: 240
+  headTrackingFadeAngles: {x: 75, y: 90}

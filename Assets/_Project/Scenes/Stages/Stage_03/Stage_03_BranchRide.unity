@@ -2280,7 +2280,7 @@ MonoBehaviour:
   motor: {fileID: 336355758}
   input: {fileID: 336355757}
   view: {fileID: 336355755}
-  tuning: {fileID: 11400000, guid: d4650b1bce6ab964a965f7f513e7e170, type: 2}
+  tuning: {fileID: 11400000, guid: c82a5cbd35ae4f7bb31dce18aa759105, type: 2}
   locallyControlled: 1
 --- !u!114 &336355755
 MonoBehaviour:
@@ -2294,7 +2294,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b27520434664e54cabf1bf0b4bf134c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Player.PlayerView
-  tuning: {fileID: 11400000, guid: d4650b1bce6ab964a965f7f513e7e170, type: 2}
+  tuning: {fileID: 11400000, guid: c82a5cbd35ae4f7bb31dce18aa759105, type: 2}
   body: {fileID: 537302043}
   headPivot: {fileID: 108824769}
   cameraTarget: {fileID: 417752196}
@@ -2346,7 +2346,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Player.CharacterControllerMotor
   controller: {fileID: 336355759}
-  tuning: {fileID: 11400000, guid: d4650b1bce6ab964a965f7f513e7e170, type: 2}
+  tuning: {fileID: 11400000, guid: c82a5cbd35ae4f7bb31dce18aa759105, type: 2}
 --- !u!143 &336355759
 CharacterController:
   m_ObjectHideFlags: 0
@@ -2487,7 +2487,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -2, y: 0.6, z: -4}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2.7, y: 2.7, z: 2.7}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 537302043}
@@ -11479,15 +11479,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8866685036864001838, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.15
+      value: 1.363
       objectReference: {fileID: 0}
     - target: {fileID: 8866685036864001838, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.15
+      value: 1.363
       objectReference: {fileID: 0}
     - target: {fileID: 8866685036864001838, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.15
+      value: 1.363
       objectReference: {fileID: 0}
     - target: {fileID: 8866685036864001838, guid: 9a417b5d1e851e340a83a8d4854b4ebf, type: 3}
       propertyPath: m_LocalPosition.x

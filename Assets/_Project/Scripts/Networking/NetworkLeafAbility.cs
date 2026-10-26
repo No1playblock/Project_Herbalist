@@ -58,7 +58,8 @@ namespace Herbalist.Networking
                 if (float.IsNaN(yaw) || float.IsInfinity(yaw) || float.IsNaN(pitch) || float.IsInfinity(pitch)) return;
                 abilities.Tick(input.AbilityCycle, input.AbilityUse,
                     player.Player.View.GetAimRay(yaw, pitch),
-                    Runner.DeltaTime, input.AbilityHeld, input.AbilityCycleHeld);
+                    Runner.DeltaTime, input.AbilityHeld, input.AbilityCycleHeld,
+                    input.MazePointerValid, input.MazePointer);
             }
             else
             {

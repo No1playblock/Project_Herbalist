@@ -1,3 +1,34 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:0bcd5f7f12861eb1bb7a5a319b1c83209fe8fdba1d84e9d036db9cd73fa69012
-size 764
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70a4949957ea0fd41b7f1fe4032fcda1, type: 3}
+  m_Name: SO_ExteriorJumpPad
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Levels.SapJumpPadSettings
+  requiredRiders: 0
+  chargeUnits: 3
+  injectionGrace: 0.2
+  launchDelaySeconds: 3
+  voiceVolume: 1
+  chargedVoice: {fileID: 8300000, guid: e39c8fad06f3f84469f8cf04d65d9f63, type: 3}
+  twoSecondsVoice: {fileID: 8300000, guid: 07870cd4b6f7b7f47972124f28fe7a49, type: 3}
+  oneSecondVoice: {fileID: 8300000, guid: 2bfe2eeef94f6314f9258f2501ead770, type: 3}
+  launchVoice: {fileID: 8300000, guid: c88f983dbf5b7884e94f8897b14d4acf, type: 3}
+  flightDuration: 2.5
+  gravity: 18
+  cooldown: 2.6
+  standingTolerance: 0.3
+  presentationDuration: 0.65
+  presentationRise: 7
+  eruptionRiseDuration: 1.25
+  riderLaunchSpeed: 25
+  jumpWindow: 0.3
+  jumpReach: 5
+  launchHeightMultiplier: 5

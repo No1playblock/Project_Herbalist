@@ -1,5 +1,5 @@
 // Made with Amplify Shader Editor v1.9.9.12
-// Available at the Unity Asset Store - http://u3d.as/y3X 
+// Available at the Unity Asset Store - http://u3d.as/y3X
 Shader "ToonScapes/URP/Stone"
 {
 	Properties
@@ -93,9 +93,9 @@ Shader "ToonScapes/URP/Stone"
 			"com.unity.render-pipelines.universal": "[17.0,18.0]"
 		}
 
-		
 
-		
+
+
 
 		Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" "Queue"="Geometry" "UniversalMaterialType"="Lit" }
 
@@ -107,7 +107,7 @@ Shader "ToonScapes/URP/Stone"
 		Offset 0 , 0
 		AlphaToMask Off
 
-		
+
 
 		HLSLINCLUDE
 		#pragma target 4.5
@@ -222,10 +222,10 @@ Shader "ToonScapes/URP/Stone"
 		#endif //ASE_TESS_FUNCS
 		ENDHLSL
 
-		
+
 		Pass
 		{
-			
+
 			Name "Forward"
 			Tags { "LightMode"="UniversalForward" }
 
@@ -235,7 +235,7 @@ Shader "ToonScapes/URP/Stone"
 			Offset 0 , 0
 			ColorMask RGBA
 
-			
+
 
 			HLSLPROGRAM
 
@@ -395,7 +395,7 @@ Shader "ToonScapes/URP/Stone"
 				#if defined(DYNAMICLIGHTMAP_ON) || defined(ASE_NEEDS_TEXTURE_COORDINATES2)
 					float4 texcoord2 : TEXCOORD2;
 				#endif
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -511,7 +511,7 @@ Shader "ToonScapes/URP/Stone"
 				zNorm  = tex2D( midTexMap, tiling * worldPos.xy * float2( -nsign.z, 1.0 ) * midST.xy + midST.zw );
 				return xNorm * projNormal.x + yNorm * projNormal.y + yNormN * negProjNormalY + zNorm * projNormal.z;
 			}
-			
+
 			inline float4 TriplanarSampling573( sampler2D topTexMap, float4 topST, sampler2D midTexMap, float4 midST, sampler2D botTexMap, float4 botST, float3 worldPos, float3 worldNormal, float falloff, float2 tiling, float3 normalScale, float3 index )
 			{
 				float3 projNormal = ( pow( abs( worldNormal ), falloff ) );
@@ -526,7 +526,7 @@ Shader "ToonScapes/URP/Stone"
 				zNorm  = tex2D( midTexMap, tiling * worldPos.xy * float2( -nsign.z, 1.0 ) * midST.xy + midST.zw );
 				return xNorm * projNormal.x + yNorm * projNormal.y + yNormN * negProjNormalY + zNorm * projNormal.z;
 			}
-			
+
 			inline float3 TriplanarSampling591( sampler2D topTexMap, float4 topST, sampler2D midTexMap, float4 midST, sampler2D botTexMap, float4 botST, float3 worldPos, float3 worldNormal, float falloff, float2 tiling, float3 normalScale, float3 index )
 			{
 				float3 projNormal = ( pow( abs( worldNormal ), falloff ) );
@@ -545,7 +545,7 @@ Shader "ToonScapes/URP/Stone"
 				yNormN.xyz = half3( UnpackNormalScale( yNormN, normalScale.z ).xy * float2( nsign.y, 1.0 ) + worldNormal.xz, worldNormal.y ).xzy;
 				return normalize( xNorm.xyz * projNormal.x + yNorm.xyz * projNormal.y + yNormN.xyz * negProjNormalY + zNorm.xyz * projNormal.z );
 			}
-			
+
 			inline float3 TriplanarSampling594( sampler2D topTexMap, float4 topST, sampler2D midTexMap, float4 midST, sampler2D botTexMap, float4 botST, float3 worldPos, float3 worldNormal, float falloff, float2 tiling, float3 normalScale, float3 index )
 			{
 				float3 projNormal = ( pow( abs( worldNormal ), falloff ) );
@@ -564,7 +564,7 @@ Shader "ToonScapes/URP/Stone"
 				yNormN.xyz = half3( UnpackNormalScale( yNormN, normalScale.z ).xy * float2( nsign.y, 1.0 ) + worldNormal.xz, worldNormal.y ).xzy;
 				return normalize( xNorm.xyz * projNormal.x + yNorm.xyz * projNormal.y + yNormN.xyz * negProjNormalY + zNorm.xyz * projNormal.z );
 			}
-			
+
 			half3 ASEIndirectDiffuse( PackedVaryings input, half3 normalWS, float3 positionWS, half3 viewDirWS )
 			{
 			#if defined( DYNAMICLIGHTMAP_ON )
@@ -577,7 +577,7 @@ Shader "ToonScapes/URP/Stone"
 				return SampleSH( normalWS );
 			#endif
 			}
-			
+
 			half4 CalculateShadowMask1_g61183( half2 LightmapUV )
 			{
 				#if defined(SHADOWS_SHADOWMASK) && defined(LIGHTMAP_ON)
@@ -588,7 +588,7 @@ Shader "ToonScapes/URP/Stone"
 				return half4( 1, 1, 1, 1 );
 				#endif
 			}
-			
+
 			float3 AdditionalLightsLambertMask17x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float4 ShadowMask )
 			{
 				#if ( UNITY_VERSION < 60010000 ) && !defined( USE_CLUSTER_LIGHT_LOOP )
@@ -611,7 +611,7 @@ Shader "ToonScapes/URP/Stone"
 					inputData.normalizedScreenSpaceUV = ScreenUV;
 					inputData.positionWS = WorldPosition;
 					uint meshRenderingLayers = GetMeshRenderingLayer();
-					uint pixelLightCount = GetAdditionalLightsCount();	
+					uint pixelLightCount = GetAdditionalLightsCount();
 					#if USE_CLUSTER_LIGHT_LOOP
 					[loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
 					{
@@ -637,7 +637,7 @@ Shader "ToonScapes/URP/Stone"
 				#endif
 				return Color;
 			}
-			
+
 
 			PackedVaryings VertexFunction( Attributes input  )
 			{
@@ -648,13 +648,13 @@ Shader "ToonScapes/URP/Stone"
 
 				float3 ase_bitangentOS = cross( input.normalOS, input.tangentOS.xyz ) * input.tangentOS.w * ( unity_WorldTransformParams.w >= 0.0 ? 1.0 : -1.0 );
 				output.ase_texcoord8.xyz = ase_bitangentOS;
-				
+
 				output.ase_texcoord7 = input.positionOS;
 				output.ase_normal = input.normalOS;
 				output.ase_tangent = input.tangentOS;
 				output.ase_texcoord9.xy = input.texcoord.xy;
 				output.ase_texcoord9.zw = input.texcoord1.xy;
-				
+
 				//setting value to unused interpolator channels and avoid initialization warnings
 				output.ase_texcoord8.w = 0;
 
@@ -724,7 +724,7 @@ Shader "ToonScapes/URP/Stone"
 				#if defined(DYNAMICLIGHTMAP_ON) || defined(ASE_NEEDS_TEXTURE_COORDINATES2)
 					float4 texcoord2 : TEXCOORD2;
 				#endif
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -749,7 +749,7 @@ Shader "ToonScapes/URP/Stone"
 				#if defined(DYNAMICLIGHTMAP_ON) || defined(ASE_NEEDS_TEXTURE_COORDINATES2)
 					output.texcoord2 = input.texcoord2;
 				#endif
-				
+
 				return output;
 			}
 
@@ -796,7 +796,7 @@ Shader "ToonScapes/URP/Stone"
 				#if defined(DYNAMICLIGHTMAP_ON) || defined(ASE_NEEDS_TEXTURE_COORDINATES2)
 					output.texcoord2 = patch[0].texcoord2 * bary.x + patch[1].texcoord2 * bary.y + patch[2].texcoord2 * bary.z;
 				#endif
-				
+
 				#if defined(ASE_PHONG_TESSELLATION)
 				float3 pp[3];
 				for (int i = 0; i < 3; ++i)
@@ -989,10 +989,10 @@ Shader "ToonScapes/URP/Stone"
 				float3 saferPower843 = abs( saturate( localAdditionalLightsLambertMask17x305_g61181 ) );
 				float3 temp_cast_10 = ( (0.001 + ( _AdditionalLightFalloff - 0.0 ) * ( 12.0 - 0.001 ) / ( 12.0 - 0.0 ) )).xxx;
 				float4 CustomLighting109 = ( staticSwitch456 + ( staticSwitch451 * ( ( ( tex2D( _TextureRamp, temp_cast_8 ) * BlendedTextures167 ) * HalfLambert695 ) + ( BlendedTextures167 * tex2D( _TextureRamp, (pow( saferPower843 , temp_cast_10 )* (0.001 + ( _AdditionalLightInfluence - 0.0 ) * ( 6.0 - 0.001 ) / ( 1.0 - 0.0 ) ) + RampOffset709).xy ) ) ) ) );
-				
+
 				float3 SpecularTint825 = _SpecularColor.rgb;
 				float2 uv_SurfaceTexture847 = input.ase_texcoord9.xy;
-				
+
 				float3 EmissionColor396 = _EmissionColor.rgb;
 				float2 uv_DetailMask393 = input.ase_texcoord9.xy;
 				float EmissionColorAlpha398 = _EmissionColor.a;
@@ -1003,7 +1003,7 @@ Shader "ToonScapes/URP/Stone"
 				float3 staticSwitch405 = float3( 0,0,0 );
 				#endif
 				float3 Emission788 = staticSwitch405;
-				
+
 
 				float3 BaseColor = CustomLighting109.rgb;
 				float3 Normal = BlendedNormals169;
@@ -1273,10 +1273,10 @@ Shader "ToonScapes/URP/Stone"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "ShadowCaster"
 			Tags { "LightMode"="ShadowCaster" }
 
@@ -1331,7 +1331,7 @@ Shader "ToonScapes/URP/Stone"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
             #endif
 
-			
+
 
 			#if defined(ASE_WRITE_DEPTH_CONSERVATIVE) && (SHADER_TARGET >= 45)
 				#define ASE_SV_DEPTH SV_DepthLessEqual
@@ -1346,7 +1346,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 positionOS : POSITION;
 				half3 normalOS : NORMAL;
 				half4 tangentOS : TANGENT;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -1354,7 +1354,7 @@ Shader "ToonScapes/URP/Stone"
 			{
 				ASE_SV_POSITION_QUALIFIERS float4 positionCS : SV_POSITION;
 				float3 positionWS : TEXCOORD0;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO
 			};
@@ -1423,12 +1423,12 @@ Shader "ToonScapes/URP/Stone"
 				int _PassValue;
 			#endif
 
-			
+
 
 			float3 _LightDirection;
 			float3 _LightPosition;
 
-			
+
 			PackedVaryings VertexFunction( Attributes input )
 			{
 				PackedVaryings output;
@@ -1436,7 +1436,7 @@ Shader "ToonScapes/URP/Stone"
 				UNITY_TRANSFER_INSTANCE_ID(input, output);
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO( output );
 
-				
+
 
 				#ifdef ASE_ABSOLUTE_VERTEX_POS
 					float3 defaultVertexValue = input.positionOS.xyz;
@@ -1479,7 +1479,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 positionOS : INTERNALTESSPOS;
 				half3 normalOS : NORMAL;
 				half4 tangentOS : TANGENT;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -1497,7 +1497,7 @@ Shader "ToonScapes/URP/Stone"
 				output.positionOS = input.positionOS;
 				output.normalOS = input.normalOS;
 				output.tangentOS = input.tangentOS;
-				
+
 				return output;
 			}
 
@@ -1537,7 +1537,7 @@ Shader "ToonScapes/URP/Stone"
 				output.positionOS = patch[0].positionOS * bary.x + patch[1].positionOS * bary.y + patch[2].positionOS * bary.z;
 				output.normalOS = patch[0].normalOS * bary.x + patch[1].normalOS * bary.y + patch[2].normalOS * bary.z;
 				output.tangentOS = patch[0].tangentOS * bary.x + patch[1].tangentOS * bary.y + patch[2].tangentOS * bary.z;
-				
+
 				#if defined(ASE_PHONG_TESSELLATION)
 				float3 pp[3];
 				for (int i = 0; i < 3; ++i)
@@ -1577,7 +1577,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 ClipPos = ComputeClipSpacePosition( ScreenPosNorm.xy, input.positionCS.z ) * input.positionCS.w;
 				float4 ScreenPos = ComputeScreenPos( ClipPos );
 
-				
+
 
 				float Alpha = 1;
 				#if defined( _ALPHATEST_ON )
@@ -1610,10 +1610,10 @@ Shader "ToonScapes/URP/Stone"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "DepthOnly"
 			Tags { "LightMode"="DepthOnly" }
 
@@ -1665,7 +1665,7 @@ Shader "ToonScapes/URP/Stone"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
             #endif
 
-			
+
 
 			#if defined(ASE_WRITE_DEPTH_CONSERVATIVE) && (SHADER_TARGET >= 45)
 				#define ASE_SV_DEPTH SV_DepthLessEqual
@@ -1680,7 +1680,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 positionOS : POSITION;
 				half3 normalOS : NORMAL;
 				half4 tangentOS : TANGENT;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -1688,7 +1688,7 @@ Shader "ToonScapes/URP/Stone"
 			{
 				ASE_SV_POSITION_QUALIFIERS float4 positionCS : SV_POSITION;
 				float3 positionWS : TEXCOORD0;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO
 			};
@@ -1757,9 +1757,9 @@ Shader "ToonScapes/URP/Stone"
 				int _PassValue;
 			#endif
 
-			
 
-			
+
+
 			PackedVaryings VertexFunction( Attributes input  )
 			{
 				PackedVaryings output = (PackedVaryings)0;
@@ -1767,7 +1767,7 @@ Shader "ToonScapes/URP/Stone"
 				UNITY_TRANSFER_INSTANCE_ID(input, output);
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-				
+
 
 				#ifdef ASE_ABSOLUTE_VERTEX_POS
 					float3 defaultVertexValue = input.positionOS.xyz;
@@ -1799,7 +1799,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 positionOS : INTERNALTESSPOS;
 				half3 normalOS : NORMAL;
 				half4 tangentOS : TANGENT;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -1817,7 +1817,7 @@ Shader "ToonScapes/URP/Stone"
 				output.positionOS = input.positionOS;
 				output.normalOS = input.normalOS;
 				output.tangentOS = input.tangentOS;
-				
+
 				return output;
 			}
 
@@ -1857,7 +1857,7 @@ Shader "ToonScapes/URP/Stone"
 				output.positionOS = patch[0].positionOS * bary.x + patch[1].positionOS * bary.y + patch[2].positionOS * bary.z;
 				output.normalOS = patch[0].normalOS * bary.x + patch[1].normalOS * bary.y + patch[2].normalOS * bary.z;
 				output.tangentOS = patch[0].tangentOS * bary.x + patch[1].tangentOS * bary.y + patch[2].tangentOS * bary.z;
-				
+
 				#if defined(ASE_PHONG_TESSELLATION)
 				float3 pp[3];
 				for (int i = 0; i < 3; ++i)
@@ -1897,7 +1897,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 ClipPos = ComputeClipSpacePosition( ScreenPosNorm.xy, input.positionCS.z ) * input.positionCS.w;
 				float4 ScreenPos = ComputeScreenPos( ClipPos );
 
-				
+
 
 				float Alpha = 1;
 				#if defined( _ALPHATEST_ON )
@@ -1925,10 +1925,10 @@ Shader "ToonScapes/URP/Stone"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "Meta"
 			Tags { "LightMode"="Meta" }
 
@@ -2011,7 +2011,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 texcoord : TEXCOORD0;
 				float4 texcoord1 : TEXCOORD1;
 				float4 texcoord2 : TEXCOORD2;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -2125,7 +2125,7 @@ Shader "ToonScapes/URP/Stone"
 				zNorm  = tex2D( midTexMap, tiling * worldPos.xy * float2( -nsign.z, 1.0 ) * midST.xy + midST.zw );
 				return xNorm * projNormal.x + yNorm * projNormal.y + yNormN * negProjNormalY + zNorm * projNormal.z;
 			}
-			
+
 			inline float4 TriplanarSampling573( sampler2D topTexMap, float4 topST, sampler2D midTexMap, float4 midST, sampler2D botTexMap, float4 botST, float3 worldPos, float3 worldNormal, float falloff, float2 tiling, float3 normalScale, float3 index )
 			{
 				float3 projNormal = ( pow( abs( worldNormal ), falloff ) );
@@ -2140,7 +2140,7 @@ Shader "ToonScapes/URP/Stone"
 				zNorm  = tex2D( midTexMap, tiling * worldPos.xy * float2( -nsign.z, 1.0 ) * midST.xy + midST.zw );
 				return xNorm * projNormal.x + yNorm * projNormal.y + yNormN * negProjNormalY + zNorm * projNormal.z;
 			}
-			
+
 			inline float3 TriplanarSampling591( sampler2D topTexMap, float4 topST, sampler2D midTexMap, float4 midST, sampler2D botTexMap, float4 botST, float3 worldPos, float3 worldNormal, float falloff, float2 tiling, float3 normalScale, float3 index )
 			{
 				float3 projNormal = ( pow( abs( worldNormal ), falloff ) );
@@ -2159,7 +2159,7 @@ Shader "ToonScapes/URP/Stone"
 				yNormN.xyz = half3( UnpackNormalScale( yNormN, normalScale.z ).xy * float2( nsign.y, 1.0 ) + worldNormal.xz, worldNormal.y ).xzy;
 				return normalize( xNorm.xyz * projNormal.x + yNorm.xyz * projNormal.y + yNormN.xyz * negProjNormalY + zNorm.xyz * projNormal.z );
 			}
-			
+
 			inline float3 TriplanarSampling594( sampler2D topTexMap, float4 topST, sampler2D midTexMap, float4 midST, sampler2D botTexMap, float4 botST, float3 worldPos, float3 worldNormal, float falloff, float2 tiling, float3 normalScale, float3 index )
 			{
 				float3 projNormal = ( pow( abs( worldNormal ), falloff ) );
@@ -2178,7 +2178,7 @@ Shader "ToonScapes/URP/Stone"
 				yNormN.xyz = half3( UnpackNormalScale( yNormN, normalScale.z ).xy * float2( nsign.y, 1.0 ) + worldNormal.xz, worldNormal.y ).xzy;
 				return normalize( xNorm.xyz * projNormal.x + yNorm.xyz * projNormal.y + yNormN.xyz * negProjNormalY + zNorm.xyz * projNormal.z );
 			}
-			
+
 			half3 ASEIndirectDiffuse( PackedVaryings input, half3 normalWS, float3 positionWS, half3 viewDirWS )
 			{
 			#if defined( DYNAMICLIGHTMAP_ON )
@@ -2191,7 +2191,7 @@ Shader "ToonScapes/URP/Stone"
 				return SampleSH( normalWS );
 			#endif
 			}
-			
+
 			half4 CalculateShadowMask1_g61183( half2 LightmapUV )
 			{
 				#if defined(SHADOWS_SHADOWMASK) && defined(LIGHTMAP_ON)
@@ -2202,7 +2202,7 @@ Shader "ToonScapes/URP/Stone"
 				return half4( 1, 1, 1, 1 );
 				#endif
 			}
-			
+
 			float3 AdditionalLightsLambertMask17x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float4 ShadowMask )
 			{
 				#if ( UNITY_VERSION < 60010000 ) && !defined( USE_CLUSTER_LIGHT_LOOP )
@@ -2225,7 +2225,7 @@ Shader "ToonScapes/URP/Stone"
 					inputData.normalizedScreenSpaceUV = ScreenUV;
 					inputData.positionWS = WorldPosition;
 					uint meshRenderingLayers = GetMeshRenderingLayer();
-					uint pixelLightCount = GetAdditionalLightsCount();	
+					uint pixelLightCount = GetAdditionalLightsCount();
 					#if USE_CLUSTER_LIGHT_LOOP
 					[loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
 					{
@@ -2251,7 +2251,7 @@ Shader "ToonScapes/URP/Stone"
 				#endif
 				return Color;
 			}
-			
+
 
 			PackedVaryings VertexFunction( Attributes input  )
 			{
@@ -2284,13 +2284,13 @@ Shader "ToonScapes/URP/Stone"
 				float4 ase_positionCS = TransformObjectToHClip( ( input.positionOS ).xyz );
 				float4 screenPos = ComputeScreenPos( ase_positionCS );
 				output.ase_texcoord11 = screenPos;
-				
+
 				output.ase_texcoord4 = input.positionOS;
 				output.ase_normal = input.normalOS;
 				output.ase_tangent = input.tangentOS;
 				output.ase_texcoord8.xy = input.texcoord.xy;
 				output.ase_texcoord8.zw = input.texcoord1.xy;
-				
+
 				//setting value to unused interpolator channels and avoid initialization warnings
 				output.ase_texcoord3.w = 0;
 				output.ase_texcoord5.w = 0;
@@ -2336,7 +2336,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 texcoord : TEXCOORD0;
 				float4 texcoord1 : TEXCOORD1;
 				float4 texcoord2 : TEXCOORD2;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -2357,7 +2357,7 @@ Shader "ToonScapes/URP/Stone"
 				output.texcoord = input.texcoord;
 				output.texcoord1 = input.texcoord1;
 				output.texcoord2 = input.texcoord2;
-				
+
 				return output;
 			}
 
@@ -2400,7 +2400,7 @@ Shader "ToonScapes/URP/Stone"
 				output.texcoord = patch[0].texcoord * bary.x + patch[1].texcoord * bary.y + patch[2].texcoord * bary.z;
 				output.texcoord1 = patch[0].texcoord1 * bary.x + patch[1].texcoord1 * bary.y + patch[2].texcoord1 * bary.z;
 				output.texcoord2 = patch[0].texcoord2 * bary.x + patch[1].texcoord2 * bary.y + patch[2].texcoord2 * bary.z;
-				
+
 				#if defined(ASE_PHONG_TESSELLATION)
 				float3 pp[3];
 				for (int i = 0; i < 3; ++i)
@@ -2563,7 +2563,7 @@ Shader "ToonScapes/URP/Stone"
 				float3 saferPower843 = abs( saturate( localAdditionalLightsLambertMask17x305_g61181 ) );
 				float3 temp_cast_10 = ( (0.001 + ( _AdditionalLightFalloff - 0.0 ) * ( 12.0 - 0.001 ) / ( 12.0 - 0.0 ) )).xxx;
 				float4 CustomLighting109 = ( staticSwitch456 + ( staticSwitch451 * ( ( ( tex2D( _TextureRamp, temp_cast_8 ) * BlendedTextures167 ) * HalfLambert695 ) + ( BlendedTextures167 * tex2D( _TextureRamp, (pow( saferPower843 , temp_cast_10 )* (0.001 + ( _AdditionalLightInfluence - 0.0 ) * ( 6.0 - 0.001 ) / ( 1.0 - 0.0 ) ) + RampOffset709).xy ) ) ) ) );
-				
+
 				float3 EmissionColor396 = _EmissionColor.rgb;
 				float2 uv_DetailMask393 = input.ase_texcoord8.xy;
 				float EmissionColorAlpha398 = _EmissionColor.a;
@@ -2574,7 +2574,7 @@ Shader "ToonScapes/URP/Stone"
 				float3 staticSwitch405 = float3( 0,0,0 );
 				#endif
 				float3 Emission788 = staticSwitch405;
-				
+
 
 				float3 BaseColor = CustomLighting109.rgb;
 				float3 Emission = Emission788;
@@ -2600,10 +2600,10 @@ Shader "ToonScapes/URP/Stone"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "Universal2D"
 			Tags { "LightMode"="Universal2D" }
 
@@ -2795,7 +2795,7 @@ Shader "ToonScapes/URP/Stone"
 				zNorm  = tex2D( midTexMap, tiling * worldPos.xy * float2( -nsign.z, 1.0 ) * midST.xy + midST.zw );
 				return xNorm * projNormal.x + yNorm * projNormal.y + yNormN * negProjNormalY + zNorm * projNormal.z;
 			}
-			
+
 			inline float4 TriplanarSampling573( sampler2D topTexMap, float4 topST, sampler2D midTexMap, float4 midST, sampler2D botTexMap, float4 botST, float3 worldPos, float3 worldNormal, float falloff, float2 tiling, float3 normalScale, float3 index )
 			{
 				float3 projNormal = ( pow( abs( worldNormal ), falloff ) );
@@ -2810,7 +2810,7 @@ Shader "ToonScapes/URP/Stone"
 				zNorm  = tex2D( midTexMap, tiling * worldPos.xy * float2( -nsign.z, 1.0 ) * midST.xy + midST.zw );
 				return xNorm * projNormal.x + yNorm * projNormal.y + yNormN * negProjNormalY + zNorm * projNormal.z;
 			}
-			
+
 			inline float3 TriplanarSampling591( sampler2D topTexMap, float4 topST, sampler2D midTexMap, float4 midST, sampler2D botTexMap, float4 botST, float3 worldPos, float3 worldNormal, float falloff, float2 tiling, float3 normalScale, float3 index )
 			{
 				float3 projNormal = ( pow( abs( worldNormal ), falloff ) );
@@ -2829,7 +2829,7 @@ Shader "ToonScapes/URP/Stone"
 				yNormN.xyz = half3( UnpackNormalScale( yNormN, normalScale.z ).xy * float2( nsign.y, 1.0 ) + worldNormal.xz, worldNormal.y ).xzy;
 				return normalize( xNorm.xyz * projNormal.x + yNorm.xyz * projNormal.y + yNormN.xyz * negProjNormalY + zNorm.xyz * projNormal.z );
 			}
-			
+
 			inline float3 TriplanarSampling594( sampler2D topTexMap, float4 topST, sampler2D midTexMap, float4 midST, sampler2D botTexMap, float4 botST, float3 worldPos, float3 worldNormal, float falloff, float2 tiling, float3 normalScale, float3 index )
 			{
 				float3 projNormal = ( pow( abs( worldNormal ), falloff ) );
@@ -2848,7 +2848,7 @@ Shader "ToonScapes/URP/Stone"
 				yNormN.xyz = half3( UnpackNormalScale( yNormN, normalScale.z ).xy * float2( nsign.y, 1.0 ) + worldNormal.xz, worldNormal.y ).xzy;
 				return normalize( xNorm.xyz * projNormal.x + yNorm.xyz * projNormal.y + yNormN.xyz * negProjNormalY + zNorm.xyz * projNormal.z );
 			}
-			
+
 			half3 ASEIndirectDiffuse( PackedVaryings input, half3 normalWS, float3 positionWS, half3 viewDirWS )
 			{
 			#if defined( DYNAMICLIGHTMAP_ON )
@@ -2861,7 +2861,7 @@ Shader "ToonScapes/URP/Stone"
 				return SampleSH( normalWS );
 			#endif
 			}
-			
+
 			half4 CalculateShadowMask1_g61183( half2 LightmapUV )
 			{
 				#if defined(SHADOWS_SHADOWMASK) && defined(LIGHTMAP_ON)
@@ -2872,7 +2872,7 @@ Shader "ToonScapes/URP/Stone"
 				return half4( 1, 1, 1, 1 );
 				#endif
 			}
-			
+
 			float3 AdditionalLightsLambertMask17x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float4 ShadowMask )
 			{
 				#if ( UNITY_VERSION < 60010000 ) && !defined( USE_CLUSTER_LIGHT_LOOP )
@@ -2895,7 +2895,7 @@ Shader "ToonScapes/URP/Stone"
 					inputData.normalizedScreenSpaceUV = ScreenUV;
 					inputData.positionWS = WorldPosition;
 					uint meshRenderingLayers = GetMeshRenderingLayer();
-					uint pixelLightCount = GetAdditionalLightsCount();	
+					uint pixelLightCount = GetAdditionalLightsCount();
 					#if USE_CLUSTER_LIGHT_LOOP
 					[loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
 					{
@@ -2921,7 +2921,7 @@ Shader "ToonScapes/URP/Stone"
 				#endif
 				return Color;
 			}
-			
+
 
 			PackedVaryings VertexFunction( Attributes input  )
 			{
@@ -2954,13 +2954,13 @@ Shader "ToonScapes/URP/Stone"
 				float4 ase_positionCS = TransformObjectToHClip( ( input.positionOS ).xyz );
 				float4 screenPos = ComputeScreenPos( ase_positionCS );
 				output.ase_texcoord9 = screenPos;
-				
+
 				output.ase_texcoord2 = input.positionOS;
 				output.ase_normal = input.normalOS;
 				output.ase_tangent = input.tangentOS;
 				output.ase_texcoord6.xy = input.ase_texcoord.xy;
 				output.ase_texcoord6.zw = input.texcoord1.xy;
-				
+
 				//setting value to unused interpolator channels and avoid initialization warnings
 				output.ase_texcoord1.w = 0;
 				output.ase_texcoord3.w = 0;
@@ -3225,7 +3225,7 @@ Shader "ToonScapes/URP/Stone"
 				float3 saferPower843 = abs( saturate( localAdditionalLightsLambertMask17x305_g61181 ) );
 				float3 temp_cast_10 = ( (0.001 + ( _AdditionalLightFalloff - 0.0 ) * ( 12.0 - 0.001 ) / ( 12.0 - 0.0 ) )).xxx;
 				float4 CustomLighting109 = ( staticSwitch456 + ( staticSwitch451 * ( ( ( tex2D( _TextureRamp, temp_cast_8 ) * BlendedTextures167 ) * HalfLambert695 ) + ( BlendedTextures167 * tex2D( _TextureRamp, (pow( saferPower843 , temp_cast_10 )* (0.001 + ( _AdditionalLightInfluence - 0.0 ) * ( 6.0 - 0.001 ) / ( 1.0 - 0.0 ) ) + RampOffset709).xy ) ) ) ) );
-				
+
 
 				float3 BaseColor = CustomLighting109.rgb;
 				float Alpha = 1;
@@ -3244,10 +3244,10 @@ Shader "ToonScapes/URP/Stone"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "DepthNormals"
 			Tags { "LightMode"="DepthNormals" }
 
@@ -3336,7 +3336,7 @@ Shader "ToonScapes/URP/Stone"
 				half3 normalOS : NORMAL;
 				half4 tangentOS : TANGENT;
 				half4 texcoord : TEXCOORD0;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -3443,7 +3443,7 @@ Shader "ToonScapes/URP/Stone"
 				yNormN.xyz = half3( UnpackNormalScale( yNormN, normalScale.z ).xy * float2( nsign.y, 1.0 ) + worldNormal.xz, worldNormal.y ).xzy;
 				return normalize( xNorm.xyz * projNormal.x + yNorm.xyz * projNormal.y + yNormN.xyz * negProjNormalY + zNorm.xyz * projNormal.z );
 			}
-			
+
 			inline float3 TriplanarSampling594( sampler2D topTexMap, float4 topST, sampler2D midTexMap, float4 midST, sampler2D botTexMap, float4 botST, float3 worldPos, float3 worldNormal, float falloff, float2 tiling, float3 normalScale, float3 index )
 			{
 				float3 projNormal = ( pow( abs( worldNormal ), falloff ) );
@@ -3462,7 +3462,7 @@ Shader "ToonScapes/URP/Stone"
 				yNormN.xyz = half3( UnpackNormalScale( yNormN, normalScale.z ).xy * float2( nsign.y, 1.0 ) + worldNormal.xz, worldNormal.y ).xzy;
 				return normalize( xNorm.xyz * projNormal.x + yNorm.xyz * projNormal.y + yNormN.xyz * negProjNormalY + zNorm.xyz * projNormal.z );
 			}
-			
+
 
 			PackedVaryings VertexFunction( Attributes input  )
 			{
@@ -3473,12 +3473,12 @@ Shader "ToonScapes/URP/Stone"
 
 				float3 ase_bitangentOS = cross( input.normalOS, input.tangentOS.xyz ) * input.tangentOS.w * ( unity_WorldTransformParams.w >= 0.0 ? 1.0 : -1.0 );
 				output.ase_texcoord3.xyz = ase_bitangentOS;
-				
+
 				output.ase_tangent = input.tangentOS;
 				output.ase_normal = input.normalOS;
 				output.ase_texcoord4 = input.positionOS;
 				output.ase_texcoord5.xy = input.texcoord.xy;
-				
+
 				//setting value to unused interpolator channels and avoid initialization warnings
 				output.ase_texcoord3.w = 0;
 				output.ase_texcoord5.zw = 0;
@@ -3521,7 +3521,7 @@ Shader "ToonScapes/URP/Stone"
 				half3 normalOS : NORMAL;
 				half4 tangentOS : TANGENT;
 				float4 texcoord : TEXCOORD0;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -3540,7 +3540,7 @@ Shader "ToonScapes/URP/Stone"
 				output.normalOS = input.normalOS;
 				output.tangentOS = input.tangentOS;
 				output.texcoord = input.texcoord;
-				
+
 				return output;
 			}
 
@@ -3581,7 +3581,7 @@ Shader "ToonScapes/URP/Stone"
 				output.normalOS = patch[0].normalOS * bary.x + patch[1].normalOS * bary.y + patch[2].normalOS * bary.z;
 				output.tangentOS = patch[0].tangentOS * bary.x + patch[1].tangentOS * bary.y + patch[2].tangentOS * bary.z;
 				output.texcoord = patch[0].texcoord * bary.x + patch[1].texcoord * bary.y + patch[2].texcoord * bary.z;
-				
+
 				#if defined(ASE_PHONG_TESSELLATION)
 				float3 pp[3];
 				for (int i = 0; i < 3; ++i)
@@ -3691,7 +3691,7 @@ Shader "ToonScapes/URP/Stone"
 				float3 staticSwitch810 = staticSwitch800;
 				#endif
 				float3 BlendedNormals169 = staticSwitch810;
-				
+
 
 				float3 Normal = BlendedNormals169;
 				float Alpha = 1;
@@ -3747,10 +3747,10 @@ Shader "ToonScapes/URP/Stone"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "GBuffer"
 			Tags { "LightMode"="UniversalGBuffer" }
 
@@ -3759,7 +3759,7 @@ Shader "ToonScapes/URP/Stone"
 			ZTest LEqual
 			Offset 0 , 0
 			ColorMask RGBA
-			
+
 
 			HLSLPROGRAM
 
@@ -3780,7 +3780,7 @@ Shader "ToonScapes/URP/Stone"
 
 			// Deferred Rendering Path does not support the OpenGL-based graphics API:
 			// Desktop OpenGL, OpenGL ES 3.0, WebGL 2.0.
-			#pragma exclude_renderers glcore gles3 
+			#pragma exclude_renderers glcore gles3
 
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
 			#if ( UNITY_VERSION >= 60000058 )
@@ -3902,7 +3902,7 @@ Shader "ToonScapes/URP/Stone"
 				#if defined(DYNAMICLIGHTMAP_ON) || defined(ASE_NEEDS_TEXTURE_COORDINATES2)
 					float4 texcoord2 : TEXCOORD2;
 				#endif
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -4024,7 +4024,7 @@ Shader "ToonScapes/URP/Stone"
 				zNorm  = tex2D( midTexMap, tiling * worldPos.xy * float2( -nsign.z, 1.0 ) * midST.xy + midST.zw );
 				return xNorm * projNormal.x + yNorm * projNormal.y + yNormN * negProjNormalY + zNorm * projNormal.z;
 			}
-			
+
 			inline float4 TriplanarSampling573( sampler2D topTexMap, float4 topST, sampler2D midTexMap, float4 midST, sampler2D botTexMap, float4 botST, float3 worldPos, float3 worldNormal, float falloff, float2 tiling, float3 normalScale, float3 index )
 			{
 				float3 projNormal = ( pow( abs( worldNormal ), falloff ) );
@@ -4039,7 +4039,7 @@ Shader "ToonScapes/URP/Stone"
 				zNorm  = tex2D( midTexMap, tiling * worldPos.xy * float2( -nsign.z, 1.0 ) * midST.xy + midST.zw );
 				return xNorm * projNormal.x + yNorm * projNormal.y + yNormN * negProjNormalY + zNorm * projNormal.z;
 			}
-			
+
 			inline float3 TriplanarSampling591( sampler2D topTexMap, float4 topST, sampler2D midTexMap, float4 midST, sampler2D botTexMap, float4 botST, float3 worldPos, float3 worldNormal, float falloff, float2 tiling, float3 normalScale, float3 index )
 			{
 				float3 projNormal = ( pow( abs( worldNormal ), falloff ) );
@@ -4058,7 +4058,7 @@ Shader "ToonScapes/URP/Stone"
 				yNormN.xyz = half3( UnpackNormalScale( yNormN, normalScale.z ).xy * float2( nsign.y, 1.0 ) + worldNormal.xz, worldNormal.y ).xzy;
 				return normalize( xNorm.xyz * projNormal.x + yNorm.xyz * projNormal.y + yNormN.xyz * negProjNormalY + zNorm.xyz * projNormal.z );
 			}
-			
+
 			inline float3 TriplanarSampling594( sampler2D topTexMap, float4 topST, sampler2D midTexMap, float4 midST, sampler2D botTexMap, float4 botST, float3 worldPos, float3 worldNormal, float falloff, float2 tiling, float3 normalScale, float3 index )
 			{
 				float3 projNormal = ( pow( abs( worldNormal ), falloff ) );
@@ -4077,7 +4077,7 @@ Shader "ToonScapes/URP/Stone"
 				yNormN.xyz = half3( UnpackNormalScale( yNormN, normalScale.z ).xy * float2( nsign.y, 1.0 ) + worldNormal.xz, worldNormal.y ).xzy;
 				return normalize( xNorm.xyz * projNormal.x + yNorm.xyz * projNormal.y + yNormN.xyz * negProjNormalY + zNorm.xyz * projNormal.z );
 			}
-			
+
 			half3 ASEIndirectDiffuse( PackedVaryings input, half3 normalWS, float3 positionWS, half3 viewDirWS )
 			{
 			#if defined( DYNAMICLIGHTMAP_ON )
@@ -4090,7 +4090,7 @@ Shader "ToonScapes/URP/Stone"
 				return SampleSH( normalWS );
 			#endif
 			}
-			
+
 			half4 CalculateShadowMask1_g61183( half2 LightmapUV )
 			{
 				#if defined(SHADOWS_SHADOWMASK) && defined(LIGHTMAP_ON)
@@ -4101,7 +4101,7 @@ Shader "ToonScapes/URP/Stone"
 				return half4( 1, 1, 1, 1 );
 				#endif
 			}
-			
+
 			float3 AdditionalLightsLambertMask17x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float4 ShadowMask )
 			{
 				#if ( UNITY_VERSION < 60010000 ) && !defined( USE_CLUSTER_LIGHT_LOOP )
@@ -4124,7 +4124,7 @@ Shader "ToonScapes/URP/Stone"
 					inputData.normalizedScreenSpaceUV = ScreenUV;
 					inputData.positionWS = WorldPosition;
 					uint meshRenderingLayers = GetMeshRenderingLayer();
-					uint pixelLightCount = GetAdditionalLightsCount();	
+					uint pixelLightCount = GetAdditionalLightsCount();
 					#if USE_CLUSTER_LIGHT_LOOP
 					[loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
 					{
@@ -4150,7 +4150,7 @@ Shader "ToonScapes/URP/Stone"
 				#endif
 				return Color;
 			}
-			
+
 
 			PackedVaryings VertexFunction( Attributes input  )
 			{
@@ -4161,13 +4161,13 @@ Shader "ToonScapes/URP/Stone"
 
 				float3 ase_bitangentOS = cross( input.normalOS, input.tangentOS.xyz ) * input.tangentOS.w * ( unity_WorldTransformParams.w >= 0.0 ? 1.0 : -1.0 );
 				output.ase_texcoord8.xyz = ase_bitangentOS;
-				
+
 				output.ase_texcoord7 = input.positionOS;
 				output.ase_normal = input.normalOS;
 				output.ase_tangent = input.tangentOS;
 				output.ase_texcoord9.xy = input.texcoord.xy;
 				output.ase_texcoord9.zw = input.texcoord1.xy;
-				
+
 				//setting value to unused interpolator channels and avoid initialization warnings
 				output.ase_texcoord8.w = 0;
 				#ifdef ASE_ABSOLUTE_VERTEX_POS
@@ -4237,7 +4237,7 @@ Shader "ToonScapes/URP/Stone"
 				#if defined(DYNAMICLIGHTMAP_ON) || defined(ASE_NEEDS_TEXTURE_COORDINATES2)
 					float4 texcoord2 : TEXCOORD2;
 				#endif
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -4262,7 +4262,7 @@ Shader "ToonScapes/URP/Stone"
 				#if defined(DYNAMICLIGHTMAP_ON) || defined(ASE_NEEDS_TEXTURE_COORDINATES2)
 					output.texcoord2 = input.texcoord2;
 				#endif
-				
+
 				return output;
 			}
 
@@ -4309,7 +4309,7 @@ Shader "ToonScapes/URP/Stone"
 				#if defined(DYNAMICLIGHTMAP_ON) || defined(ASE_NEEDS_TEXTURE_COORDINATES2)
 					output.texcoord2 = patch[0].texcoord2 * bary.x + patch[1].texcoord2 * bary.y + patch[2].texcoord2 * bary.z;
 				#endif
-				
+
 				#if defined(ASE_PHONG_TESSELLATION)
 				float3 pp[3];
 				for (int i = 0; i < 3; ++i)
@@ -4493,10 +4493,10 @@ Shader "ToonScapes/URP/Stone"
 				float3 saferPower843 = abs( saturate( localAdditionalLightsLambertMask17x305_g61181 ) );
 				float3 temp_cast_10 = ( (0.001 + ( _AdditionalLightFalloff - 0.0 ) * ( 12.0 - 0.001 ) / ( 12.0 - 0.0 ) )).xxx;
 				float4 CustomLighting109 = ( staticSwitch456 + ( staticSwitch451 * ( ( ( tex2D( _TextureRamp, temp_cast_8 ) * BlendedTextures167 ) * HalfLambert695 ) + ( BlendedTextures167 * tex2D( _TextureRamp, (pow( saferPower843 , temp_cast_10 )* (0.001 + ( _AdditionalLightInfluence - 0.0 ) * ( 6.0 - 0.001 ) / ( 1.0 - 0.0 ) ) + RampOffset709).xy ) ) ) ) );
-				
+
 				float3 SpecularTint825 = _SpecularColor.rgb;
 				float2 uv_SurfaceTexture847 = input.ase_texcoord9.xy;
-				
+
 				float3 EmissionColor396 = _EmissionColor.rgb;
 				float2 uv_DetailMask393 = input.ase_texcoord9.xy;
 				float EmissionColorAlpha398 = _EmissionColor.a;
@@ -4507,7 +4507,7 @@ Shader "ToonScapes/URP/Stone"
 				float3 staticSwitch405 = float3( 0,0,0 );
 				#endif
 				float3 Emission788 = staticSwitch405;
-				
+
 
 				float3 BaseColor = CustomLighting109.rgb;
 				float3 Normal = BlendedNormals169;
@@ -4658,10 +4658,10 @@ Shader "ToonScapes/URP/Stone"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "SceneSelectionPass"
 			Tags { "LightMode"="SceneSelectionPass" }
 
@@ -4710,7 +4710,7 @@ Shader "ToonScapes/URP/Stone"
 			#include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
-			
+
 
 			#if defined(ASE_WRITE_DEPTH_CONSERVATIVE) && (SHADER_TARGET >= 45)
 				#define ASE_SV_DEPTH SV_DepthLessEqual
@@ -4725,7 +4725,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 positionOS : POSITION;
 				half3 normalOS : NORMAL;
 				half4 tangentOS : TANGENT;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -4733,7 +4733,7 @@ Shader "ToonScapes/URP/Stone"
 			{
 				ASE_SV_POSITION_QUALIFIERS float4 positionCS : SV_POSITION;
 				float3 positionWS : TEXCOORD0;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO
 			};
@@ -4802,9 +4802,9 @@ Shader "ToonScapes/URP/Stone"
 				int _PassValue;
 			#endif
 
-			
 
-			
+
+
 			struct SurfaceDescription
 			{
 				float Alpha;
@@ -4820,7 +4820,7 @@ Shader "ToonScapes/URP/Stone"
 				UNITY_TRANSFER_INSTANCE_ID(input, output);
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-				
+
 
 				#ifdef ASE_ABSOLUTE_VERTEX_POS
 					float3 defaultVertexValue = input.positionOS.xyz;
@@ -4851,7 +4851,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 positionOS : INTERNALTESSPOS;
 				half3 normalOS : NORMAL;
 				half4 tangentOS : TANGENT;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -4869,7 +4869,7 @@ Shader "ToonScapes/URP/Stone"
 				output.positionOS = input.positionOS;
 				output.normalOS = input.normalOS;
 				output.tangentOS = input.tangentOS;
-				
+
 				return output;
 			}
 
@@ -4909,7 +4909,7 @@ Shader "ToonScapes/URP/Stone"
 				output.positionOS = patch[0].positionOS * bary.x + patch[1].positionOS * bary.y + patch[2].positionOS * bary.z;
 				output.normalOS = patch[0].normalOS * bary.x + patch[1].normalOS * bary.y + patch[2].normalOS * bary.z;
 				output.tangentOS = patch[0].tangentOS * bary.x + patch[1].tangentOS * bary.y + patch[2].tangentOS * bary.z;
-				
+
 				#if defined(ASE_PHONG_TESSELLATION)
 				float3 pp[3];
 				for (int i = 0; i < 3; ++i)
@@ -4940,7 +4940,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 ScreenPosNorm = float4( GetNormalizedScreenSpaceUV( input.positionCS ), input.positionCS.zw );
 				float4 ClipPos = ComputeClipSpacePosition( ScreenPosNorm.xy, input.positionCS.z ) * input.positionCS.w;
 
-				
+
 
 				surfaceDescription.Alpha = 1;
 				#if defined( _ALPHATEST_ON )
@@ -4965,10 +4965,10 @@ Shader "ToonScapes/URP/Stone"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "ScenePickingPass"
 			Tags { "LightMode"="Picking" }
 
@@ -5016,7 +5016,7 @@ Shader "ToonScapes/URP/Stone"
 			#include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
-			
+
 
 			#if defined(ASE_WRITE_DEPTH_CONSERVATIVE) && (SHADER_TARGET >= 45)
 				#define ASE_SV_DEPTH SV_DepthLessEqual
@@ -5031,7 +5031,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 positionOS : POSITION;
 				half3 normalOS : NORMAL;
 				half4 tangentOS : TANGENT;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -5039,7 +5039,7 @@ Shader "ToonScapes/URP/Stone"
 			{
 				ASE_SV_POSITION_QUALIFIERS float4 positionCS : SV_POSITION;
 				float3 positionWS : TEXCOORD0;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO
 			};
@@ -5108,9 +5108,9 @@ Shader "ToonScapes/URP/Stone"
 				int _PassValue;
 			#endif
 
-			
 
-			
+
+
 			struct SurfaceDescription
 			{
 				float Alpha;
@@ -5126,7 +5126,7 @@ Shader "ToonScapes/URP/Stone"
 				UNITY_TRANSFER_INSTANCE_ID(input, output);
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-				
+
 
 				#ifdef ASE_ABSOLUTE_VERTEX_POS
 					float3 defaultVertexValue = input.positionOS.xyz;
@@ -5157,7 +5157,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 positionOS : INTERNALTESSPOS;
 				half3 normalOS : NORMAL;
 				half4 tangentOS : TANGENT;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -5175,7 +5175,7 @@ Shader "ToonScapes/URP/Stone"
 				output.positionOS = input.positionOS;
 				output.normalOS = input.normalOS;
 				output.tangentOS = input.tangentOS;
-				
+
 				return output;
 			}
 
@@ -5215,7 +5215,7 @@ Shader "ToonScapes/URP/Stone"
 				output.positionOS = patch[0].positionOS * bary.x + patch[1].positionOS * bary.y + patch[2].positionOS * bary.z;
 				output.normalOS = patch[0].normalOS * bary.x + patch[1].normalOS * bary.y + patch[2].normalOS * bary.z;
 				output.tangentOS = patch[0].tangentOS * bary.x + patch[1].tangentOS * bary.y + patch[2].tangentOS * bary.z;
-				
+
 				#if defined(ASE_PHONG_TESSELLATION)
 				float3 pp[3];
 				for (int i = 0; i < 3; ++i)
@@ -5246,7 +5246,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 ScreenPosNorm = float4( GetNormalizedScreenSpaceUV( input.positionCS ), input.positionCS.zw );
 				float4 ClipPos = ComputeClipSpacePosition( ScreenPosNorm.xy, input.positionCS.z ) * input.positionCS.w;
 
-				
+
 
 				surfaceDescription.Alpha = 1;
 				#if defined( _ALPHATEST_ON )
@@ -5270,10 +5270,10 @@ Shader "ToonScapes/URP/Stone"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "MotionVectors"
 			Tags { "LightMode"="MotionVectors" }
 
@@ -5326,7 +5326,7 @@ Shader "ToonScapes/URP/Stone"
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
 
-			
+
 
 			#if defined(ASE_WRITE_DEPTH_CONSERVATIVE) && (SHADER_TARGET >= 45)
 				#define ASE_SV_DEPTH SV_DepthLessEqual
@@ -5349,7 +5349,7 @@ Shader "ToonScapes/URP/Stone"
 				#endif
 				half3 normalOS : NORMAL;
 				half4 tangentOS : TANGENT;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -5359,7 +5359,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 positionCSNoJitter : TEXCOORD0;
 				float4 previousPositionCSNoJitter : TEXCOORD1;
 				float3 positionWS : TEXCOORD2;
-				
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO
 			};
@@ -5428,9 +5428,9 @@ Shader "ToonScapes/URP/Stone"
 				int _PassValue;
 			#endif
 
-			
 
-			
+
+
 			// Applies the graph's vertex stage at a given time so the motion vector pass can
 			// evaluate the current frame and re-evaluate the previous frame (procedural / time-based animation).
 			Attributes ASEApplyVertexModification( Attributes input, float3 timeParameters, inout PackedVaryings output, out float3 customMotionVector  )
@@ -5438,7 +5438,7 @@ Shader "ToonScapes/URP/Stone"
 				float3 currentTimeParameters = _TimeParameters.xyz;
 				_TimeParameters.xyz = timeParameters;
 
-				
+
 
 				#ifdef ASE_ABSOLUTE_VERTEX_POS
 					float3 defaultVertexValue = input.positionOS.xyz;
@@ -5528,7 +5528,7 @@ Shader "ToonScapes/URP/Stone"
 				float4 ScreenPosNorm = float4( GetNormalizedScreenSpaceUV( input.positionCS ), input.positionCS.zw );
 				float4 ClipPos = ComputeClipSpacePosition( ScreenPosNorm.xy, input.positionCS.z ) * input.positionCS.w;
 
-				
+
 
 				float Alpha = 1;
 				#if defined( _ALPHATEST_ON )
@@ -5567,15 +5567,15 @@ Shader "ToonScapes/URP/Stone"
 			ENDHLSL
 		}
 
-	
-	}
-	
 
-	
+	}
+
+
+
 
 	CustomEditor "UnityEditor.ShaderGraphLitGUI"
 	FallBack "Hidden/Shader Graph/FallbackError"
-	
+
 	Fallback Off
 }
 /*ASEBEGIN

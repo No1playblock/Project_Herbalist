@@ -1,5 +1,5 @@
 // Made with Amplify Shader Editor v1.9.9.12
-// Available at the Unity Asset Store - http://u3d.as/y3X 
+// Available at the Unity Asset Store - http://u3d.as/y3X
 Shader "ToonScapes/URP/Vegetation"
 {
 	Properties
@@ -84,9 +84,9 @@ Shader "ToonScapes/URP/Vegetation"
 			"com.unity.render-pipelines.universal": "[17.0,18.0]"
 		}
 
-		
 
-		
+
+
 
 		Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="TransparentCutout" "Queue"="AlphaTest" "UniversalMaterialType"="Lit" }
 
@@ -98,7 +98,7 @@ Shader "ToonScapes/URP/Vegetation"
 		Offset 0 , 0
 		AlphaToMask Off
 
-		
+
 
 		HLSLINCLUDE
 		#pragma target 4.5
@@ -213,10 +213,10 @@ Shader "ToonScapes/URP/Vegetation"
 		#endif //ASE_TESS_FUNCS
 		ENDHLSL
 
-		
+
 		Pass
 		{
-			
+
 			Name "Forward"
 			Tags { "LightMode"="UniversalForward" }
 
@@ -226,7 +226,7 @@ Shader "ToonScapes/URP/Vegetation"
 			Offset 0 , 0
 			ColorMask RGBA
 
-			
+
 
 			HLSLPROGRAM
 
@@ -493,7 +493,7 @@ Shader "ToonScapes/URP/Vegetation"
 				return SampleSH( normalWS );
 			#endif
 			}
-			
+
 			half4 CalculateShadowMask1_g61192( half2 LightmapUV )
 			{
 				#if defined(SHADOWS_SHADOWMASK) && defined(LIGHTMAP_ON)
@@ -504,7 +504,7 @@ Shader "ToonScapes/URP/Vegetation"
 				return half4( 1, 1, 1, 1 );
 				#endif
 			}
-			
+
 			float3 AdditionalLightsLambertMask17x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float4 ShadowMask )
 			{
 				#if ( UNITY_VERSION < 60010000 ) && !defined( USE_CLUSTER_LIGHT_LOOP )
@@ -527,7 +527,7 @@ Shader "ToonScapes/URP/Vegetation"
 					inputData.normalizedScreenSpaceUV = ScreenUV;
 					inputData.positionWS = WorldPosition;
 					uint meshRenderingLayers = GetMeshRenderingLayer();
-					uint pixelLightCount = GetAdditionalLightsCount();	
+					uint pixelLightCount = GetAdditionalLightsCount();
 					#if USE_CLUSTER_LIGHT_LOOP
 					[loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
 					{
@@ -553,7 +553,7 @@ Shader "ToonScapes/URP/Vegetation"
 				#endif
 				return Color;
 			}
-			
+
 
 			PackedVaryings VertexFunction( Attributes input  )
 			{
@@ -584,7 +584,7 @@ Shader "ToonScapes/URP/Vegetation"
 				#else
 				float4 staticSwitch620 = float4( 0,0,0,0 );
 				#endif
-				
+
 				output.ase_color = input.ase_color;
 				output.ase_texcoord7.xy = input.texcoord.xy;
 				output.ase_texcoord7.zw = input.texcoord1.xy;
@@ -879,12 +879,12 @@ Shader "ToonScapes/URP/Vegetation"
 				float3 localAdditionalLightsLambertMask17x305_g61181 = AdditionalLightsLambertMask17x( WorldPosition305_g61181 , ScreenUV305_g61181 , WorldNormal305_g61181 , ShadowMask305_g61181 );
 				float3 saferPower684 = abs( saturate( localAdditionalLightsLambertMask17x305_g61181 ) );
 				float3 temp_cast_7 = ( (0.001 + ( _AdditionalLightFalloff - 0.0 ) * ( 12.0 - 0.001 ) / ( 12.0 - 0.0 ) )).xxx;
-				
+
 				float3 NormalInput660 = tex2DNode470;
-				
+
 				float3 SpecularTint669 = _SpecularColor.rgb;
 				float2 uv_EmissionMap666 = input.ase_texcoord7.xy;
-				
+
 				float3 EmissionColor461 = _EmissionColor.rgb;
 				float2 uv_EmissionMap625 = input.ase_texcoord7.xy;
 				float EmissionAlpha462 = _EmissionColor.a;
@@ -895,9 +895,9 @@ Shader "ToonScapes/URP/Vegetation"
 				float3 staticSwitch589 = float3( 0,0,0 );
 				#endif
 				float3 Emission467 = staticSwitch589;
-				
+
 				float Alpha614 = tex2DNode468.a;
-				
+
 
 				float3 BaseColor = ( staticSwitch618 + ( staticSwitch573 + ( staticSwitch586 * ( FinalLightingHighlights335 + ( tex2DNode468 * tex2D( _TextureRamp, (pow( saferPower684 , temp_cast_7 )* (0.001 + ( _AdditionalLightInfluence - 0.0 ) * ( 6.0 - 0.001 ) / ( 1.0 - 0.0 ) ) + RampOffset552).xy ) ) ) ) ) ).rgb;
 				float3 Normal = NormalInput660;
@@ -1167,10 +1167,10 @@ Shader "ToonScapes/URP/Vegetation"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "ShadowCaster"
 			Tags { "LightMode"="ShadowCaster" }
 
@@ -1329,7 +1329,7 @@ Shader "ToonScapes/URP/Vegetation"
 			float3 _LightDirection;
 			float3 _LightPosition;
 
-			
+
 			PackedVaryings VertexFunction( Attributes input )
 			{
 				PackedVaryings output;
@@ -1359,9 +1359,9 @@ Shader "ToonScapes/URP/Vegetation"
 				#else
 				float4 staticSwitch620 = float4( 0,0,0,0 );
 				#endif
-				
+
 				output.ase_texcoord1.xy = input.ase_texcoord.xy;
-				
+
 				//setting value to unused interpolator channels and avoid initialization warnings
 				output.ase_texcoord1.zw = 0;
 
@@ -1511,7 +1511,7 @@ Shader "ToonScapes/URP/Vegetation"
 				float2 uv_MainTexture468 = input.ase_texcoord1.xy;
 				float4 tex2DNode468 = tex2D( _MainTexture, uv_MainTexture468 );
 				float Alpha614 = tex2DNode468.a;
-				
+
 
 				float Alpha = Alpha614;
 				#if defined( _ALPHATEST_ON )
@@ -1544,10 +1544,10 @@ Shader "ToonScapes/URP/Vegetation"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "DepthOnly"
 			Tags { "LightMode"="DepthOnly" }
 
@@ -1700,7 +1700,7 @@ Shader "ToonScapes/URP/Vegetation"
 			sampler2D _MainTexture;
 
 
-			
+
 			PackedVaryings VertexFunction( Attributes input  )
 			{
 				PackedVaryings output = (PackedVaryings)0;
@@ -1730,9 +1730,9 @@ Shader "ToonScapes/URP/Vegetation"
 				#else
 				float4 staticSwitch620 = float4( 0,0,0,0 );
 				#endif
-				
+
 				output.ase_texcoord1.xy = input.ase_texcoord.xy;
-				
+
 				//setting value to unused interpolator channels and avoid initialization warnings
 				output.ase_texcoord1.zw = 0;
 
@@ -1871,7 +1871,7 @@ Shader "ToonScapes/URP/Vegetation"
 				float2 uv_MainTexture468 = input.ase_texcoord1.xy;
 				float4 tex2DNode468 = tex2D( _MainTexture, uv_MainTexture468 );
 				float Alpha614 = tex2DNode468.a;
-				
+
 
 				float Alpha = Alpha614;
 				#if defined( _ALPHATEST_ON )
@@ -1899,10 +1899,10 @@ Shader "ToonScapes/URP/Vegetation"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "Meta"
 			Tags { "LightMode"="Meta" }
 
@@ -2092,7 +2092,7 @@ Shader "ToonScapes/URP/Vegetation"
 				return SampleSH( normalWS );
 			#endif
 			}
-			
+
 			half4 CalculateShadowMask1_g61192( half2 LightmapUV )
 			{
 				#if defined(SHADOWS_SHADOWMASK) && defined(LIGHTMAP_ON)
@@ -2103,7 +2103,7 @@ Shader "ToonScapes/URP/Vegetation"
 				return half4( 1, 1, 1, 1 );
 				#endif
 			}
-			
+
 			float3 AdditionalLightsLambertMask17x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float4 ShadowMask )
 			{
 				#if ( UNITY_VERSION < 60010000 ) && !defined( USE_CLUSTER_LIGHT_LOOP )
@@ -2126,7 +2126,7 @@ Shader "ToonScapes/URP/Vegetation"
 					inputData.normalizedScreenSpaceUV = ScreenUV;
 					inputData.positionWS = WorldPosition;
 					uint meshRenderingLayers = GetMeshRenderingLayer();
-					uint pixelLightCount = GetAdditionalLightsCount();	
+					uint pixelLightCount = GetAdditionalLightsCount();
 					#if USE_CLUSTER_LIGHT_LOOP
 					[loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
 					{
@@ -2152,7 +2152,7 @@ Shader "ToonScapes/URP/Vegetation"
 				#endif
 				return Color;
 			}
-			
+
 
 			PackedVaryings VertexFunction( Attributes input  )
 			{
@@ -2183,7 +2183,7 @@ Shader "ToonScapes/URP/Vegetation"
 				#else
 				float4 staticSwitch620 = float4( 0,0,0,0 );
 				#endif
-				
+
 				float3 ase_normalWS = TransformObjectToWorldNormal( input.normalOS );
 				output.ase_texcoord3.xyz = ase_normalWS;
 				float3 ase_tangentWS = TransformObjectToWorldDir( input.tangentOS.xyz );
@@ -2205,11 +2205,11 @@ Shader "ToonScapes/URP/Vegetation"
 				float4 ase_positionCS = TransformObjectToHClip( ( input.positionOS ).xyz );
 				float4 screenPos = ComputeScreenPos( ase_positionCS );
 				output.ase_texcoord9 = screenPos;
-				
+
 				output.ase_color = input.ase_color;
 				output.ase_texcoord4.xy = input.texcoord.xy;
 				output.ase_texcoord4.zw = input.texcoord1.xy;
-				
+
 				//setting value to unused interpolator channels and avoid initialization warnings
 				output.ase_texcoord3.w = 0;
 				output.ase_texcoord5.w = 0;
@@ -2440,7 +2440,7 @@ Shader "ToonScapes/URP/Vegetation"
 				float3 localAdditionalLightsLambertMask17x305_g61181 = AdditionalLightsLambertMask17x( WorldPosition305_g61181 , ScreenUV305_g61181 , WorldNormal305_g61181 , ShadowMask305_g61181 );
 				float3 saferPower684 = abs( saturate( localAdditionalLightsLambertMask17x305_g61181 ) );
 				float3 temp_cast_7 = ( (0.001 + ( _AdditionalLightFalloff - 0.0 ) * ( 12.0 - 0.001 ) / ( 12.0 - 0.0 ) )).xxx;
-				
+
 				float3 EmissionColor461 = _EmissionColor.rgb;
 				float2 uv_EmissionMap625 = input.ase_texcoord4.xy;
 				float EmissionAlpha462 = _EmissionColor.a;
@@ -2451,9 +2451,9 @@ Shader "ToonScapes/URP/Vegetation"
 				float3 staticSwitch589 = float3( 0,0,0 );
 				#endif
 				float3 Emission467 = staticSwitch589;
-				
+
 				float Alpha614 = tex2DNode468.a;
-				
+
 
 				float3 BaseColor = ( staticSwitch618 + ( staticSwitch573 + ( staticSwitch586 * ( FinalLightingHighlights335 + ( tex2DNode468 * tex2D( _TextureRamp, (pow( saferPower684 , temp_cast_7 )* (0.001 + ( _AdditionalLightInfluence - 0.0 ) * ( 6.0 - 0.001 ) / ( 1.0 - 0.0 ) ) + RampOffset552).xy ) ) ) ) ) ).rgb;
 				float3 Emission = Emission467;
@@ -2479,10 +2479,10 @@ Shader "ToonScapes/URP/Vegetation"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "Universal2D"
 			Tags { "LightMode"="Universal2D" }
 
@@ -2668,7 +2668,7 @@ Shader "ToonScapes/URP/Vegetation"
 				return SampleSH( normalWS );
 			#endif
 			}
-			
+
 			half4 CalculateShadowMask1_g61192( half2 LightmapUV )
 			{
 				#if defined(SHADOWS_SHADOWMASK) && defined(LIGHTMAP_ON)
@@ -2679,7 +2679,7 @@ Shader "ToonScapes/URP/Vegetation"
 				return half4( 1, 1, 1, 1 );
 				#endif
 			}
-			
+
 			float3 AdditionalLightsLambertMask17x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float4 ShadowMask )
 			{
 				#if ( UNITY_VERSION < 60010000 ) && !defined( USE_CLUSTER_LIGHT_LOOP )
@@ -2702,7 +2702,7 @@ Shader "ToonScapes/URP/Vegetation"
 					inputData.normalizedScreenSpaceUV = ScreenUV;
 					inputData.positionWS = WorldPosition;
 					uint meshRenderingLayers = GetMeshRenderingLayer();
-					uint pixelLightCount = GetAdditionalLightsCount();	
+					uint pixelLightCount = GetAdditionalLightsCount();
 					#if USE_CLUSTER_LIGHT_LOOP
 					[loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
 					{
@@ -2728,7 +2728,7 @@ Shader "ToonScapes/URP/Vegetation"
 				#endif
 				return Color;
 			}
-			
+
 
 			PackedVaryings VertexFunction( Attributes input  )
 			{
@@ -2759,7 +2759,7 @@ Shader "ToonScapes/URP/Vegetation"
 				#else
 				float4 staticSwitch620 = float4( 0,0,0,0 );
 				#endif
-				
+
 				float3 ase_normalWS = TransformObjectToWorldNormal( input.normalOS );
 				output.ase_texcoord1.xyz = ase_normalWS;
 				float3 ase_tangentWS = TransformObjectToWorldDir( input.tangentOS.xyz );
@@ -2781,11 +2781,11 @@ Shader "ToonScapes/URP/Vegetation"
 				float4 ase_positionCS = TransformObjectToHClip( ( input.positionOS ).xyz );
 				float4 screenPos = ComputeScreenPos( ase_positionCS );
 				output.ase_texcoord7 = screenPos;
-				
+
 				output.ase_color = input.ase_color;
 				output.ase_texcoord2.xy = input.ase_texcoord.xy;
 				output.ase_texcoord2.zw = input.texcoord1.xy;
-				
+
 				//setting value to unused interpolator channels and avoid initialization warnings
 				output.ase_texcoord1.w = 0;
 				output.ase_texcoord3.w = 0;
@@ -3010,9 +3010,9 @@ Shader "ToonScapes/URP/Vegetation"
 				float3 localAdditionalLightsLambertMask17x305_g61181 = AdditionalLightsLambertMask17x( WorldPosition305_g61181 , ScreenUV305_g61181 , WorldNormal305_g61181 , ShadowMask305_g61181 );
 				float3 saferPower684 = abs( saturate( localAdditionalLightsLambertMask17x305_g61181 ) );
 				float3 temp_cast_7 = ( (0.001 + ( _AdditionalLightFalloff - 0.0 ) * ( 12.0 - 0.001 ) / ( 12.0 - 0.0 ) )).xxx;
-				
+
 				float Alpha614 = tex2DNode468.a;
-				
+
 
 				float3 BaseColor = ( staticSwitch618 + ( staticSwitch573 + ( staticSwitch586 * ( FinalLightingHighlights335 + ( tex2DNode468 * tex2D( _TextureRamp, (pow( saferPower684 , temp_cast_7 )* (0.001 + ( _AdditionalLightInfluence - 0.0 ) * ( 6.0 - 0.001 ) / ( 1.0 - 0.0 ) ) + RampOffset552).xy ) ) ) ) ) ).rgb;
 				float Alpha = Alpha614;
@@ -3031,10 +3031,10 @@ Shader "ToonScapes/URP/Vegetation"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "DepthNormals"
 			Tags { "LightMode"="DepthNormals" }
 
@@ -3198,7 +3198,7 @@ Shader "ToonScapes/URP/Vegetation"
 			sampler2D _MainTexture;
 
 
-			
+
 			PackedVaryings VertexFunction( Attributes input  )
 			{
 				PackedVaryings output = (PackedVaryings)0;
@@ -3228,9 +3228,9 @@ Shader "ToonScapes/URP/Vegetation"
 				#else
 				float4 staticSwitch620 = float4( 0,0,0,0 );
 				#endif
-				
+
 				output.ase_texcoord3.xy = input.texcoord.xy;
-				
+
 				//setting value to unused interpolator channels and avoid initialization warnings
 				output.ase_texcoord3.zw = 0;
 				#ifdef ASE_ABSOLUTE_VERTEX_POS
@@ -3399,11 +3399,11 @@ Shader "ToonScapes/URP/Vegetation"
 				unpack470.z = lerp( 1, unpack470.z, saturate(_NormalScale) );
 				float3 tex2DNode470 = unpack470;
 				float3 NormalInput660 = tex2DNode470;
-				
+
 				float2 uv_MainTexture468 = input.ase_texcoord3.xy;
 				float4 tex2DNode468 = tex2D( _MainTexture, uv_MainTexture468 );
 				float Alpha614 = tex2DNode468.a;
-				
+
 
 				float3 Normal = NormalInput660;
 				float Alpha = Alpha614;
@@ -3459,10 +3459,10 @@ Shader "ToonScapes/URP/Vegetation"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "GBuffer"
 			Tags { "LightMode"="UniversalGBuffer" }
 
@@ -3471,7 +3471,7 @@ Shader "ToonScapes/URP/Vegetation"
 			ZTest LEqual
 			Offset 0 , 0
 			ColorMask RGBA
-			
+
 
 			HLSLPROGRAM
 
@@ -3494,7 +3494,7 @@ Shader "ToonScapes/URP/Vegetation"
 
 			// Deferred Rendering Path does not support the OpenGL-based graphics API:
 			// Desktop OpenGL, OpenGL ES 3.0, WebGL 2.0.
-			#pragma exclude_renderers glcore gles3 
+			#pragma exclude_renderers glcore gles3
 
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
 			#if ( UNITY_VERSION >= 60000058 )
@@ -3727,7 +3727,7 @@ Shader "ToonScapes/URP/Vegetation"
 				return SampleSH( normalWS );
 			#endif
 			}
-			
+
 			half4 CalculateShadowMask1_g61192( half2 LightmapUV )
 			{
 				#if defined(SHADOWS_SHADOWMASK) && defined(LIGHTMAP_ON)
@@ -3738,7 +3738,7 @@ Shader "ToonScapes/URP/Vegetation"
 				return half4( 1, 1, 1, 1 );
 				#endif
 			}
-			
+
 			float3 AdditionalLightsLambertMask17x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float4 ShadowMask )
 			{
 				#if ( UNITY_VERSION < 60010000 ) && !defined( USE_CLUSTER_LIGHT_LOOP )
@@ -3761,7 +3761,7 @@ Shader "ToonScapes/URP/Vegetation"
 					inputData.normalizedScreenSpaceUV = ScreenUV;
 					inputData.positionWS = WorldPosition;
 					uint meshRenderingLayers = GetMeshRenderingLayer();
-					uint pixelLightCount = GetAdditionalLightsCount();	
+					uint pixelLightCount = GetAdditionalLightsCount();
 					#if USE_CLUSTER_LIGHT_LOOP
 					[loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
 					{
@@ -3787,7 +3787,7 @@ Shader "ToonScapes/URP/Vegetation"
 				#endif
 				return Color;
 			}
-			
+
 
 			PackedVaryings VertexFunction( Attributes input  )
 			{
@@ -3818,7 +3818,7 @@ Shader "ToonScapes/URP/Vegetation"
 				#else
 				float4 staticSwitch620 = float4( 0,0,0,0 );
 				#endif
-				
+
 				output.ase_color = input.ase_color;
 				output.ase_texcoord7.xy = input.texcoord.xy;
 				output.ase_texcoord7.zw = input.texcoord1.xy;
@@ -4104,12 +4104,12 @@ Shader "ToonScapes/URP/Vegetation"
 				float3 localAdditionalLightsLambertMask17x305_g61181 = AdditionalLightsLambertMask17x( WorldPosition305_g61181 , ScreenUV305_g61181 , WorldNormal305_g61181 , ShadowMask305_g61181 );
 				float3 saferPower684 = abs( saturate( localAdditionalLightsLambertMask17x305_g61181 ) );
 				float3 temp_cast_7 = ( (0.001 + ( _AdditionalLightFalloff - 0.0 ) * ( 12.0 - 0.001 ) / ( 12.0 - 0.0 ) )).xxx;
-				
+
 				float3 NormalInput660 = tex2DNode470;
-				
+
 				float3 SpecularTint669 = _SpecularColor.rgb;
 				float2 uv_EmissionMap666 = input.ase_texcoord7.xy;
-				
+
 				float3 EmissionColor461 = _EmissionColor.rgb;
 				float2 uv_EmissionMap625 = input.ase_texcoord7.xy;
 				float EmissionAlpha462 = _EmissionColor.a;
@@ -4120,9 +4120,9 @@ Shader "ToonScapes/URP/Vegetation"
 				float3 staticSwitch589 = float3( 0,0,0 );
 				#endif
 				float3 Emission467 = staticSwitch589;
-				
+
 				float Alpha614 = tex2DNode468.a;
-				
+
 
 				float3 BaseColor = ( staticSwitch618 + ( staticSwitch573 + ( staticSwitch586 * ( FinalLightingHighlights335 + ( tex2DNode468 * tex2D( _TextureRamp, (pow( saferPower684 , temp_cast_7 )* (0.001 + ( _AdditionalLightInfluence - 0.0 ) * ( 6.0 - 0.001 ) / ( 1.0 - 0.0 ) ) + RampOffset552).xy ) ) ) ) ) ).rgb;
 				float3 Normal = NormalInput660;
@@ -4273,10 +4273,10 @@ Shader "ToonScapes/URP/Vegetation"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "SceneSelectionPass"
 			Tags { "LightMode"="SceneSelectionPass" }
 
@@ -4426,7 +4426,7 @@ Shader "ToonScapes/URP/Vegetation"
 			sampler2D _MainTexture;
 
 
-			
+
 			struct SurfaceDescription
 			{
 				float Alpha;
@@ -4464,9 +4464,9 @@ Shader "ToonScapes/URP/Vegetation"
 				#else
 				float4 staticSwitch620 = float4( 0,0,0,0 );
 				#endif
-				
+
 				output.ase_texcoord1.xy = input.ase_texcoord.xy;
-				
+
 				//setting value to unused interpolator channels and avoid initialization warnings
 				output.ase_texcoord1.zw = 0;
 
@@ -4595,7 +4595,7 @@ Shader "ToonScapes/URP/Vegetation"
 				float2 uv_MainTexture468 = input.ase_texcoord1.xy;
 				float4 tex2DNode468 = tex2D( _MainTexture, uv_MainTexture468 );
 				float Alpha614 = tex2DNode468.a;
-				
+
 
 				surfaceDescription.Alpha = Alpha614;
 				#if defined( _ALPHATEST_ON )
@@ -4620,10 +4620,10 @@ Shader "ToonScapes/URP/Vegetation"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "ScenePickingPass"
 			Tags { "LightMode"="Picking" }
 
@@ -4772,7 +4772,7 @@ Shader "ToonScapes/URP/Vegetation"
 			sampler2D _MainTexture;
 
 
-			
+
 			struct SurfaceDescription
 			{
 				float Alpha;
@@ -4810,9 +4810,9 @@ Shader "ToonScapes/URP/Vegetation"
 				#else
 				float4 staticSwitch620 = float4( 0,0,0,0 );
 				#endif
-				
+
 				output.ase_texcoord1.xy = input.ase_texcoord.xy;
-				
+
 				//setting value to unused interpolator channels and avoid initialization warnings
 				output.ase_texcoord1.zw = 0;
 
@@ -4941,7 +4941,7 @@ Shader "ToonScapes/URP/Vegetation"
 				float2 uv_MainTexture468 = input.ase_texcoord1.xy;
 				float4 tex2DNode468 = tex2D( _MainTexture, uv_MainTexture468 );
 				float Alpha614 = tex2DNode468.a;
-				
+
 
 				surfaceDescription.Alpha = Alpha614;
 				#if defined( _ALPHATEST_ON )
@@ -4965,10 +4965,10 @@ Shader "ToonScapes/URP/Vegetation"
 			ENDHLSL
 		}
 
-		
+
 		Pass
 		{
-			
+
 			Name "MotionVectors"
 			Tags { "LightMode"="MotionVectors" }
 
@@ -5132,7 +5132,7 @@ Shader "ToonScapes/URP/Vegetation"
 			sampler2D _MainTexture;
 
 
-			
+
 			// Applies the graph's vertex stage at a given time so the motion vector pass can
 			// evaluate the current frame and re-evaluate the previous frame (procedural / time-based animation).
 			Attributes ASEApplyVertexModification( Attributes input, float3 timeParameters, inout PackedVaryings output, out float3 customMotionVector  )
@@ -5162,9 +5162,9 @@ Shader "ToonScapes/URP/Vegetation"
 				#else
 				float4 staticSwitch620 = float4( 0,0,0,0 );
 				#endif
-				
+
 				output.ase_texcoord3.xy = input.ase_texcoord.xy;
-				
+
 				//setting value to unused interpolator channels and avoid initialization warnings
 				output.ase_texcoord3.zw = 0;
 
@@ -5259,7 +5259,7 @@ Shader "ToonScapes/URP/Vegetation"
 				float2 uv_MainTexture468 = input.ase_texcoord3.xy;
 				float4 tex2DNode468 = tex2D( _MainTexture, uv_MainTexture468 );
 				float Alpha614 = tex2DNode468.a;
-				
+
 
 				float Alpha = Alpha614;
 				#if defined( _ALPHATEST_ON )
@@ -5298,15 +5298,15 @@ Shader "ToonScapes/URP/Vegetation"
 			ENDHLSL
 		}
 
-	
-	}
-	
 
-	
+	}
+
+
+
 
 	CustomEditor "UnityEditor.ShaderGraphLitGUI"
 	FallBack "Hidden/Shader Graph/FallbackError"
-	
+
 	Fallback Off
 }
 /*ASEBEGIN

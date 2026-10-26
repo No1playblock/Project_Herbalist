@@ -15,6 +15,8 @@ namespace Herbalist.Networking
         public uint AbilityUse;
         public NetworkBool AbilityHeld;
         public NetworkBool AbilityCycleHeld;
+        public Vector2 MazePointer;
+        public NetworkBool MazePointerValid;
     }
 
     [RequireComponent(typeof(NetworkObject), typeof(NetworkTransform))]
@@ -84,17 +86,24 @@ namespace Herbalist.Networking
             player.View.SetLookAngles(LookAngles.x, LookAngles.y);
             if (slotMaterials.Length > 0) bodyRenderer.sharedMaterial = slotMaterials[Mathf.Clamp(Slot, 0, slotMaterials.Length - 1)];
         }
-        public PlayerNetworkInput ReadLocalInput() => new PlayerNetworkInput
+        public PlayerNetworkInput ReadLocalInput()
         {
-            Move = player.Input.Move,
-            LookAngles = new Vector2(player.View.Yaw, player.View.Pitch),
-            ZoomMultiplier = player.View.ZoomMultiplier,
-            JumpSequence = player.Input.JumpSequence,
-            AbilityCycle = GetComponent<Herbalist.Abilities.AbilityInputReader>().CycleSequence,
-            AbilityUse = GetComponent<Herbalist.Abilities.AbilityInputReader>().UseSequence,
-            AbilityHeld = GetComponent<Herbalist.Abilities.AbilityInputReader>().UseHeld,
-            AbilityCycleHeld = GetComponent<Herbalist.Abilities.AbilityInputReader>().CycleHeld
-        };
+            bool pointerValid = Herbalist.Levels.SapMazeBoard.TryReadLocalPointer(player.View, out var pointerPosition);
+            var abilityInput = GetComponent<Herbalist.Abilities.AbilityInputReader>();
+            return new PlayerNetworkInput
+            {
+                Move = player.Input.Move,
+                LookAngles = new Vector2(player.View.Yaw, player.View.Pitch),
+                ZoomMultiplier = player.View.ZoomMultiplier,
+                JumpSequence = player.Input.JumpSequence,
+                AbilityCycle = abilityInput.CycleSequence,
+                AbilityUse = abilityInput.UseSequence,
+                AbilityHeld = abilityInput.UseHeld,
+                AbilityCycleHeld = abilityInput.CycleHeld,
+                MazePointer = pointerPosition,
+                MazePointerValid = pointerValid
+            };
+        }
         public override void FixedUpdateNetwork()
         {
             if (IsProxy) return;

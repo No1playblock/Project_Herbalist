@@ -11,7 +11,7 @@ namespace Herbalist.GameUI
     public sealed class GameOverlayHud : MonoBehaviour
     {
         public GameUiSettings settings;
-        public GameObject pauseRoot, ownMenu, options, loading;
+        public GameObject pauseRoot, ownMenu, options, loading, stageHeader;
         public TMP_Text pauseMessage, stageName, objective, subtitle;
         public Button resume, optionButton, mainMenu;
         public string title, defaultObjective;
@@ -79,6 +79,7 @@ namespace Herbalist.GameUI
             var session=FusionLobbySession.Instance;
             loading.SetActive(session!=null&&(session.State==LobbyState.Loading||session.State==LobbyState.Leaving));
             var flow=Herbalist.StageOne.StageOneFlow.Instance;
+            if(stageHeader!=null)stageHeader.SetActive(flow==null||flow.Minigame==StageMinigameKind.None);
             if(flow!=null)objective.text=flow.Objective;
             else
             {

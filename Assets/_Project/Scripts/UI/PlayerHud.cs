@@ -139,6 +139,12 @@ namespace Herbalist.GameUI
                     sapPromptText.text = ability.Input.CycleBinding + "  " + settings.sapInjectText;
                     Position((RectTransform)sapPrompt.transform, view.Camera, portPoint + promptOffset);
                 }
+                else if (local && actor != null &&
+                    ExteriorJumpPad.TryLeafInstallHint(actor, settings.leafInstallHintRange, out var leafPoint))
+                {
+                    sapPromptText.text = ability.Input.CycleBinding + "  " + settings.leafInstallText;
+                    Position((RectTransform)sapPrompt.transform, view.Camera, leafPoint + promptOffset);
+                }
             }
             for(int i=0;i<markers.Length;i++)
             {
