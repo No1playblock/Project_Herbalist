@@ -54,8 +54,10 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: Idle
+      startTimeSeconds: 0
     - layer: head
       state: sodam_idle_lookaround(head)
+      startTimeSeconds: 0
   - pose: 1
     blendSeconds: 0.12
     durationSeconds: 0
@@ -93,8 +95,9 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: Run
+      startTimeSeconds: 0
   - pose: 2
-    blendSeconds: 0.12
+    blendSeconds: 0.025
     durationSeconds: 0
     modelOffsetY: 0
     visualOffsetY:
@@ -130,10 +133,13 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: Jump
+      startTimeSeconds: 0.53846157
     - layer: head
       state: sodam_look_below_head
+      startTimeSeconds: 0
     - layer: leg
       state: sodam_lower_jump
+      startTimeSeconds: 0.7125
   - pose: 3
     blendSeconds: 0.12
     durationSeconds: 0.45
@@ -171,10 +177,13 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: Idle
+      startTimeSeconds: 0
     - layer: head
       state: sodam_look_below_head
+      startTimeSeconds: 0
     - layer: leg
       state: crouch(leg)
+      startTimeSeconds: 0
   - pose: 4
     blendSeconds: 0.12
     durationSeconds: 0
@@ -212,8 +221,10 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: standing_idle
+      startTimeSeconds: 0
     - layer: right_arm
       state: girb_hand
+      startTimeSeconds: 0
   - pose: 5
     blendSeconds: 0.12
     durationSeconds: 0
@@ -251,8 +262,10 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: Run
+      startTimeSeconds: 0
     - layer: right_arm
       state: grib_uphand
+      startTimeSeconds: 0
   - pose: 6
     blendSeconds: 0.12
     durationSeconds: 0
@@ -290,10 +303,13 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: standing_idle
+      startTimeSeconds: 0
     - layer: head
       state: nod_head
+      startTimeSeconds: 0
     - layer: both_arm
       state: grib_twohand
+      startTimeSeconds: 0
   - pose: 7
     blendSeconds: 0.12
     durationSeconds: 0
@@ -331,8 +347,10 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: Run
+      startTimeSeconds: 0
     - layer: both_arm
       state: grib_twohand
+      startTimeSeconds: 0
   - pose: 8
     blendSeconds: 0.12
     durationSeconds: 0.8
@@ -370,12 +388,16 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: standing_idle
+      startTimeSeconds: 0
     - layer: head
       state: nod_head
+      startTimeSeconds: 0
     - layer: leg
       state: crouch(leg)
+      startTimeSeconds: 0
     - layer: right_arm
       state: girb_hand
+      startTimeSeconds: 0
   - pose: 9
     blendSeconds: 0.12
     durationSeconds: 0.5
@@ -413,10 +435,13 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: standing_idle
+      startTimeSeconds: 0
     - layer: head
       state: nod_head
+      startTimeSeconds: 0
     - layer: right_arm
       state: girb_hand
+      startTimeSeconds: 0
   - pose: 10
     blendSeconds: 0.12
     durationSeconds: 1.1
@@ -454,8 +479,10 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: wiping_sweet
+      startTimeSeconds: 0
     - layer: leg
       state: crouch(leg)
+      startTimeSeconds: 0
   - pose: 11
     blendSeconds: 0.12
     durationSeconds: 1.1
@@ -493,6 +520,7 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: dust off your clothes
+      startTimeSeconds: 0
   - pose: 12
     blendSeconds: 0.12
     durationSeconds: 2.5
@@ -530,6 +558,7 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: drink_twohand
+      startTimeSeconds: 0
   - pose: 13
     blendSeconds: 0.12
     durationSeconds: 2
@@ -567,6 +596,7 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: hand_pass
+      startTimeSeconds: 0
   - pose: 14
     blendSeconds: 0.12
     durationSeconds: 2
@@ -604,8 +634,9 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: hand_receive
+      startTimeSeconds: 0
   - pose: 15
-    blendSeconds: 0.12
+    blendSeconds: 0.04
     durationSeconds: 0
     modelOffsetY: 0
     visualOffsetY:
@@ -641,9 +672,10 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: water_cannon
+      startTimeSeconds: 0
   - pose: 16
-    blendSeconds: 0.12
-    durationSeconds: 5.56
+    blendSeconds: 0.05
+    durationSeconds: 0.65
     modelOffsetY: 0
     visualOffsetY:
       serializedVersion: 2
@@ -656,7 +688,7 @@ MonoBehaviour:
     ignoreRootMotionY: 0
     rootMotionClip: {fileID: 0}
     rootMotionClipLength: 0
-    rootMotionPlaybackSpeed: 1
+    rootMotionPlaybackSpeed: 1.6
     rootMotionX:
       serializedVersion: 2
       m_Curve: []
@@ -678,9 +710,10 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: sodam_throw
+      startTimeSeconds: 0.125
   - pose: 17
-    blendSeconds: 0.12
-    durationSeconds: 4.17
+    blendSeconds: 0.05
+    durationSeconds: 1.15
     modelOffsetY: 0
     visualOffsetY:
       serializedVersion: 2
@@ -688,12 +721,12 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    useRootMotion: 1
+    useRootMotion: 0
     overrideMovementInput: 0
     ignoreRootMotionY: 0
     rootMotionClip: {fileID: 1827226128182048838, guid: 77a871cdcb18a894da1503bab37f4247, type: 3}
     rootMotionClipLength: 3.3333335
-    rootMotionPlaybackSpeed: 0.8
+    rootMotionPlaybackSpeed: 1.6
     rootMotionX:
       serializedVersion: 2
       m_Curve:
@@ -1138,6 +1171,7 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: sodam_catch
+      startTimeSeconds: 0
   - pose: 18
     blendSeconds: 0.12
     durationSeconds: 1.4
@@ -1562,6 +1596,7 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: Jump and Grab
+      startTimeSeconds: 0
   - pose: 19
     blendSeconds: 0.12
     durationSeconds: 0
@@ -1599,6 +1634,7 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: hanging
+      startTimeSeconds: 0
   - pose: 20
     blendSeconds: 0.12
     durationSeconds: 1.2
@@ -1636,6 +1672,7 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: falling
+      startTimeSeconds: 0
   - pose: 21
     blendSeconds: 0.12
     durationSeconds: 2.5
@@ -2618,6 +2655,7 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: hard_landing
+      startTimeSeconds: 0
   - pose: 22
     blendSeconds: 0.12
     durationSeconds: 1.7
@@ -3222,6 +3260,7 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: swing_landing
+      startTimeSeconds: 0
   - pose: 23
     blendSeconds: 0.12
     durationSeconds: 2.19
@@ -3259,6 +3298,7 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: balance_walk
+      startTimeSeconds: 0
   - pose: 24
     blendSeconds: 0.12
     durationSeconds: 0
@@ -3467,6 +3507,7 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: sit
+      startTimeSeconds: 0
   - pose: 25
     blendSeconds: 0.12
     durationSeconds: 0
@@ -3504,9 +3545,10 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: sit_water_cannon
+      startTimeSeconds: 0
   - pose: 26
-    blendSeconds: 0.12
-    durationSeconds: 1.94
+    blendSeconds: 0.05
+    durationSeconds: 0.65
     modelOffsetY: 0
     visualOffsetY:
       serializedVersion: 2
@@ -3519,7 +3561,7 @@ MonoBehaviour:
     ignoreRootMotionY: 0
     rootMotionClip: {fileID: 0}
     rootMotionClipLength: 0
-    rootMotionPlaybackSpeed: 1
+    rootMotionPlaybackSpeed: 1.6
     rootMotionX:
       serializedVersion: 2
       m_Curve: []
@@ -3541,11 +3583,13 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: sit_idle
+      startTimeSeconds: 0
     - layer: upper
       state: sit_throw
+      startTimeSeconds: 0.125
   - pose: 27
-    blendSeconds: 0.12
-    durationSeconds: 4.77
+    blendSeconds: 0.05
+    durationSeconds: 1.15
     modelOffsetY: 0
     visualOffsetY:
       serializedVersion: 2
@@ -3558,7 +3602,7 @@ MonoBehaviour:
     ignoreRootMotionY: 0
     rootMotionClip: {fileID: 0}
     rootMotionClipLength: 0
-    rootMotionPlaybackSpeed: 1
+    rootMotionPlaybackSpeed: 1.6
     rootMotionX:
       serializedVersion: 2
       m_Curve: []
@@ -3580,8 +3624,10 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: sit_idle
+      startTimeSeconds: 0
     - layer: upper
       state: sodam_catch
+      startTimeSeconds: 0
   - pose: 28
     blendSeconds: 0.12
     durationSeconds: 0
@@ -3619,3 +3665,4 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: standing_idle
+      startTimeSeconds: 0

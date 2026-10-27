@@ -24,6 +24,7 @@ namespace Herbalist.StageOne
         public bool Local => Available && player.LocallyControlled;
         public Camera Camera => player.View.Camera;
         public string Feedback { get; private set; }
+        public event System.Action<StageCommand> LocalCommandRequested;
         private int originalMask;
         private void Awake()
         {
@@ -65,6 +66,7 @@ namespace Herbalist.StageOne
                 (command != StageCommand.CancelMinigame && command != StageCommand.ReleaseCloth && !Herbalist.Presentation.GameplayCursor.AllowsPointerInput)) return;
             // Space is also Jump. E starts brewing; each Space press fans while crafting.
             if (command == StageCommand.Craft && StageOneFlow.Instance?.Minigame != StageMinigameKind.Crafting) return;
+            LocalCommandRequested?.Invoke(command);
             if (adapter != null && adapter.Object != null && adapter.Object.IsValid) adapter.RPC_Command(command);
             else SetFeedback(ExecuteCommand(command));
         }

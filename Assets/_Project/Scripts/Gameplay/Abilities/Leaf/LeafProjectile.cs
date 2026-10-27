@@ -20,10 +20,11 @@ namespace Herbalist.Abilities
         private float _turnProgress, _turnDuration;
         private float _returnElapsed, _flightSpinAngle;
         private bool _turningAfterMiss;
+        private bool _catchAnnounced;
+        public event Action CatchApproaching;
         private bool initialized, externalTick;
         private Vector3 _installedVisualScale;
         private bool _visualScaleCaptured;
-        private float _appliedVisualScaleMultiplier = float.NaN;
         private Quaternion _baseVisualRotation;
         public LeafState State { get; private set; } = LeafState.Complete;
         public LeafInstallTarget Target { get; private set; }
@@ -36,6 +37,7 @@ namespace Herbalist.Abilities
             _returnFrame = returnFrame != null ? returnFrame : returningOwner;
             release = onRelease; externalTick = network; initialized = true; State = LeafState.Flying;
             _turningAfterMiss = false;
+            _catchAnnounced = false;
             _flightSpinAngle = 0f;
             transform.position = origin;
             var direction = destination - start;
@@ -110,6 +112,12 @@ namespace Herbalist.Abilities
                 Vector3 catchPoint = _returnFrame.TransformPoint(settings.launchOffset);
                 float timeLeft = Mathf.Max(0.0001f, settings.maxReturnDuration - _returnElapsed);
                 float speed = Mathf.Max(settings.returnSpeed, Vector3.Distance(transform.position, catchPoint) / timeLeft);
+                float untilCatch = Mathf.Max(0f, Vector3.Distance(transform.position, catchPoint) - settings.catchDistance) / speed;
+                if (!_catchAnnounced && untilCatch <= settings.catchAnticipationSeconds + dt)
+                {
+                    _catchAnnounced = true;
+                    CatchApproaching?.Invoke();
+                }
                 Vector3 next = Vector3.MoveTowards(transform.position, catchPoint, speed * dt);
                 Vector3 delta = next - transform.position;
                 transform.position = next;
@@ -126,6 +134,12 @@ namespace Herbalist.Abilities
             feet.y -= character.height * Mathf.Abs(character.transform.lossyScale.y) * .5f;
             return surface.Raycast(new Ray(feet + Vector3.up * tolerance, Vector3.down), out var hit, tolerance * 2) &&
                 hit.point.y <= feet.y + character.skinWidth;
+        }
+        public bool TryInstallAtSocket(LeafInstallTarget target)
+        {
+            if (!initialized || State != LeafState.Flying || target == null || !target.HasSocket || !target.CanInstall) return false;
+            Install(target, target.SocketPosition, target.SocketRotation * Vector3.up, target.SocketRotation * Vector3.forward);
+            return true;
         }
         private void Install(LeafInstallTarget target, Vector3 hit, Vector3 normal, Vector3 heading)
         {
@@ -242,9 +256,9 @@ namespace Herbalist.Abilities
                 _baseVisualRotation = _visual.transform.localRotation;
                 _visualScaleCaptured = true;
             }
-            if (Mathf.Approximately(_appliedVisualScaleMultiplier, multiplier)) return;
-            _visual.transform.localScale = _installedVisualScale * multiplier;
-            _appliedVisualScaleMultiplier = multiplier;
+            var scale = Target != null && Target.HasInstalledVisualScale && (Installed || multiplier == settings.installedScaleMultiplier)
+                ? Target.InstalledVisualScale : _installedVisualScale * multiplier;
+            if (_visual.transform.localScale != scale) _visual.transform.localScale = scale;
         }
         public void AdvanceSpinVisual(float dt)
         {

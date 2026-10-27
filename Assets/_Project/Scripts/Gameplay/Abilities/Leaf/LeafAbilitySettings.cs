@@ -35,7 +35,11 @@ namespace Herbalist.Abilities
         [Min(0)] public float tipEmbedDepth = 0.12f;
         [Range(0, 0.49f)] public float maxEmbedFraction = 0.1f;
         [Min(0.01f)] public float catchDistance = 0.25f;
+        [Tooltip("Start the catch pose this many seconds before the returning leaf reaches the player.")]
+        [Min(0)] public float catchAnticipationSeconds = 0.2f;
         [Min(0)] public float cooldown = 0.25f;
+        [Tooltip("Authoritative time from an accepted throw to projectile release. Match the character's hand extension.")]
+        [Min(0)] public float throwPreparationSeconds;
         [Tooltip("Launch and catch position in the body frame's local coordinates; scales with the character.")]
         public Vector3 launchOffset = new Vector3(0f, 1.3f, 0.5f);
         public LayerMask hitMask = 1;

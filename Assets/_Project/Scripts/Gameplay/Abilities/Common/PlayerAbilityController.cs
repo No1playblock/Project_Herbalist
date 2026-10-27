@@ -96,6 +96,14 @@ namespace Herbalist.Abilities
             }
             if(_inputLocks.Count>0)return;
             var rules = Herbalist.Levels.StageLevel.Instance != null ? Herbalist.Levels.StageLevel.Instance.abilityRules : null;
+            if (steps != 0 && Unlocked && Kind == PlayerAbilityKind.Leaf &&
+                Herbalist.Levels.ExteriorJumpPad.TryGetLeafInstallTarget(GetComponent<Herbalist.StageOne.StageActor>(), out var socket))
+            {
+                Leaf.TryThrowAtSocket(socket);
+                DisplayCount = Leaf.ActiveCount;
+                DisplayRecovering = Leaf.Recovering;
+                return;
+            }
             if (rules != null && rules.contextualUse)
             {
                 if (Unlocked && Kind == PlayerAbilityKind.Sap && Sap != null) Sap.TickContextual(aim, cycleHeld, dt);
@@ -118,8 +126,8 @@ namespace Herbalist.Abilities
             }
             DisplayCount = Kind == PlayerAbilityKind.Sap && Sap != null ? Sap.ActiveCount : Leaf.ActiveCount; DisplayRecovering = Leaf.Recovering;
         }
-        public void ApplyReplica(bool unlocked, int count, bool recovering, PlayerAbilityKind kind = PlayerAbilityKind.Leaf, bool controlling = false, bool canPlace = false, bool ready = false, int leafSlotStates = 0)
-        { Kind = kind; if (Sap != null) Sap.ApplyReplica(controlling, canPlace, ready); Unlocked = unlocked; DisplayCount = count; DisplayRecovering = recovering; _replicatedLeafSlotStates = leafSlotStates; }
+        public void ApplyReplica(bool unlocked, int count, bool recovering, PlayerAbilityKind kind = PlayerAbilityKind.Leaf, bool controlling = false, bool canPlace = false, bool ready = false, int leafSlotStates = 0, bool spraying = false)
+        { Kind = kind; if (Sap != null) Sap.ApplyReplica(controlling, canPlace, ready, spraying); Unlocked = unlocked; DisplayCount = count; DisplayRecovering = recovering; _replicatedLeafSlotStates = leafSlotStates; }
         private void OnDisable() { if (authority && Leaf != null) Leaf.Clear(); if (authority && Sap != null) Sap.Clear(); }
     }
 }

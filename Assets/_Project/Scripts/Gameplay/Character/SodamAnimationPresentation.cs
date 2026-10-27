@@ -23,8 +23,10 @@ namespace Herbalist.Player
         private uint _poseSequence;
         private SodamPose? _oneShot;
         private float _oneShotRemaining;
-        private int _lastHeld, _lastConsumed, _lastLeafSlots;
+        private int _lastHeld, _lastConsumed;
         private uint _lastResultSequence;
+        private uint _lastCatchSequence;
+        private uint _lastThrowSequence;
         private StageMinigameKind _lastMinigame;
         private bool _wasGrounded, _wasOnCloth, _wasOnTalisman;
         private bool _clothAirborne;
@@ -33,7 +35,8 @@ namespace Herbalist.Player
         private bool _hasViewSample;
         private bool _cameraMoving;
         private float _lastViewYaw, _lastViewPitch, _cameraStillElapsed;
-        public SodamPose? CurrentPose => _character != null && _character.IsSodamActive ? _pose : null;
+        public SodamPose? CurrentPose => _character != null && _animator != null &&
+            _character.ActiveAnimator == _animator ? _pose : null;
         public uint PoseSequence => _poseSequence;
         public float RootMotionScale => _animator != null ? _animator.transform.lossyScale.x : 1f;
         public SodamAnimationProfile Profile => _profile;
@@ -46,9 +49,9 @@ namespace Herbalist.Player
             _actor = GetComponent<StageActor>();
         }
 
-        private void LateUpdate()
+        private void Update()
         {
-            if (_profile == null || _character == null || !_character.IsSodamActive)
+            if (_profile == null || _character == null || _character.ActiveAnimator == null)
             {
                 if (_animator != null) _animator.transform.localPosition = _restVisualPosition;
                 _initialized = false;
@@ -71,13 +74,19 @@ namespace Herbalist.Player
                 _pose = null;
             }
 
+            // Keep Duyeong's existing locomotion controller; share only the ability poses.
+            if (!_character.IsSodamActive)
+            {
+                UpdateDuyeongAbilities();
+                return;
+            }
+
             UpdateCameraMotion();
 
             var flow = StageOneFlow.Instance;
             bool validSlot = _actor != null && _actor.Available && _actor.Slot >= 0 && _actor.Slot < 2;
             int held = flow != null && flow.Progress != null && validSlot ? flow.Progress.Held[_actor.Slot] : 0;
             int consumed = flow != null && flow.Progress != null && validSlot ? flow.Progress.Consumed[_actor.Slot] : 0;
-            int leafSlots = _abilities != null ? _abilities.DisplayLeafSlotStates : 0;
             bool grounded = animator.GetBool(Animator.StringToHash("Grounded"));
             bool onCloth = _actor != null && HangingCloth.IsRiding(_actor);
             bool onTalisman = _actor != null && BranchRideFlow.IsRiding(_actor);
@@ -85,7 +94,9 @@ namespace Herbalist.Player
 
             if (!_initialized)
             {
-                _lastHeld = held; _lastConsumed = consumed; _lastLeafSlots = leafSlots;
+                _lastHeld = held; _lastConsumed = consumed;
+                _lastCatchSequence = _abilities != null ? _abilities.Leaf.CatchSequence : 0;
+                _lastThrowSequence = _abilities != null ? _abilities.Leaf.ThrowSequence : 0;
                 _lastResultSequence = flow != null ? flow.MinigameResultSequence : 0;
                 _lastMinigame = flow != null ? flow.Minigame : StageMinigameKind.None;
                 _wasGrounded = grounded; _wasOnCloth = onCloth; _wasOnTalisman = onTalisman;
@@ -116,6 +127,10 @@ namespace Herbalist.Player
             }
             if (onTalisman && !_wasOnTalisman) PlayOneShot(SodamPose.TalismanBoard);
 
+            // A previous full-body action must not keep grounded legs during takeoff.
+            if (!grounded && _wasGrounded && !onCloth && !onTalisman && !_clothAirborne)
+                _oneShot = null;
+
             if (_clothAirborne && grounded && !_wasGrounded)
             {
                 _clothAirborne = false;
@@ -139,28 +154,73 @@ namespace Herbalist.Player
                     PlayOneShot(SodamPose.Pass);
             }
 
-            if (leafSlots != _lastLeafSlots)
-            {
-                bool thrown = false, caught = false;
-                for (int i = 0; i < 3; i++)
-                {
-                    int before = (_lastLeafSlots >> (i * 2)) & 3;
-                    int after = (leafSlots >> (i * 2)) & 3;
-                    thrown |= before == 0 && after == 1;
-                    caught |= before == 2 && after == 0;
-                }
-                if (thrown) PlayOneShot(onTalisman ? SodamPose.TalismanThrow : SodamPose.LeafThrow);
-                else if (caught) PlayOneShot(onTalisman ? SodamPose.TalismanCatch : SodamPose.LeafCatch);
-            }
+            uint catchSequence = _abilities != null ? _abilities.Leaf.CatchSequence : 0;
+            if (catchSequence != _lastCatchSequence)
+                PlayOneShot(onTalisman ? SodamPose.TalismanCatch : SodamPose.LeafCatch);
+            _lastCatchSequence = catchSequence;
+            uint throwSequence = _abilities != null ? _abilities.Leaf.ThrowSequence : 0;
+            if (throwSequence != _lastThrowSequence)
+                PlayOneShot(onTalisman ? SodamPose.TalismanThrow : SodamPose.LeafThrow, _abilities.Leaf.ThrowElapsed);
+            _lastThrowSequence = throwSequence;
+
+            if (_abilities != null && _abilities.Sap != null && _abilities.Sap.Spraying &&
+                (_oneShot == SodamPose.LeafThrow || _oneShot == SodamPose.LeafCatch)) _oneShot = null;
 
             if (!_oneShot.HasValue)
                 Apply(ContinuousPose(flow, held, grounded, moving, onCloth, onTalisman));
+            UpdateActionLegs(grounded);
             UpdateVisualOffset();
 
-            _lastHeld = held; _lastConsumed = consumed; _lastLeafSlots = leafSlots;
+            _lastHeld = held; _lastConsumed = consumed;
             _lastResultSequence = flow != null ? flow.MinigameResultSequence : 0;
             _lastMinigame = flow != null ? flow.Minigame : StageMinigameKind.None;
             _wasGrounded = grounded; _wasOnCloth = onCloth; _wasOnTalisman = onTalisman;
+        }
+
+        private void UpdateDuyeongAbilities()
+        {
+            uint catchSequence = _abilities != null ? _abilities.Leaf.CatchSequence : 0;
+            uint throwSequence = _abilities != null ? _abilities.Leaf.ThrowSequence : 0;
+            if (!_initialized)
+            {
+                _lastCatchSequence = catchSequence;
+                _lastThrowSequence = throwSequence;
+                _oneShot = null;
+                _initialized = true;
+            }
+            if (!Herbalist.GameUI.GameplayPause.IsPaused) _oneShotRemaining -= Time.deltaTime;
+            if (_oneShot.HasValue && _oneShotRemaining <= 0f) _oneShot = null;
+            if (catchSequence != _lastCatchSequence) PlayOneShot(SodamPose.LeafCatch);
+            if (throwSequence != _lastThrowSequence) PlayOneShot(SodamPose.LeafThrow, _abilities.Leaf.ThrowElapsed);
+            _lastCatchSequence = catchSequence;
+            _lastThrowSequence = throwSequence;
+            bool spraying = _abilities != null && _abilities.Sap != null && _abilities.Sap.Spraying;
+            if (spraying) _oneShot = null;
+            bool grounded = _animator.GetBool(Animator.StringToHash("Grounded"));
+            bool moving = _animator.GetFloat(Animator.StringToHash("Speed")) > _profile.movingSpeedThreshold;
+            SodamPose? next = _oneShot ?? (spraying ? (SodamPose?)SodamPose.Sap : null);
+            if (next.HasValue)
+            {
+                Apply(next.Value);
+                UpdateActionLegs(grounded);
+                UpdateVisualOffset();
+            }
+            else if (_pose.HasValue)
+            {
+                for (int layer = 1; layer < _animator.layerCount; layer++) _animator.SetLayerWeight(layer, 0f);
+                var locomotion = _profile.Find(!grounded ? SodamPose.Jump : moving ? SodamPose.Move : SodamPose.Idle);
+                if (locomotion != null && locomotion.motions != null)
+                    foreach (var motion in locomotion.motions)
+                    {
+                        if (motion == null || motion.layer != "Base Layer") continue;
+                        int hash = Animator.StringToHash(motion.layer + "." + motion.state);
+                        if (_animator.HasState(0, hash)) _animator.CrossFadeInFixedTime(hash, locomotion.blendSeconds, 0);
+                        break;
+                    }
+                _animator.transform.localPosition = _restVisualPosition;
+                _pose = null;
+                _poseSequence++;
+            }
         }
 
         private SodamPose ContinuousPose(StageOneFlow flow, int held, bool grounded, bool moving, bool onCloth, bool onTalisman)
@@ -168,10 +228,10 @@ namespace Herbalist.Player
             if (onCloth) return SodamPose.ClothHang;
             if (onTalisman)
                 return _abilities != null && _abilities.Sap != null && _abilities.Sap.Controlling
-                    ? SodamPose.TalismanSap : SodamPose.TalismanSit;
+                    && _abilities.Sap.Spraying ? SodamPose.TalismanSap : SodamPose.TalismanSit;
             if (_clothAirborne) return SodamPose.ClothFall;
             if (!grounded) return SodamPose.Jump;
-            if (_abilities != null && _abilities.Sap != null && _abilities.Sap.Controlling) return SodamPose.Sap;
+            if (_abilities != null && _abilities.Sap != null && _abilities.Sap.Spraying) return SodamPose.Sap;
             var item = flow != null && flow.settings != null ? flow.settings.Item(held) : null;
             if (item != null && item.type == StageItemType.Herb) return moving ? SodamPose.HerbMove : SodamPose.HerbIdle;
             if (item != null && item.type == StageItemType.Potion) return moving ? SodamPose.PotionMove : SodamPose.PotionIdle;
@@ -198,17 +258,42 @@ namespace Herbalist.Player
             _hasViewSample = true;
         }
 
-        private void PlayOneShot(SodamPose pose)
+        private void UpdateActionLegs(bool grounded)
         {
-            var definition = _profile.Find(pose);
-            if (definition == null || definition.durationSeconds <= 0) return;
-            _oneShot = pose;
-            _oneShotRemaining = definition.durationSeconds;
-            _pose = null;
-            Apply(pose);
+            if (_pose != SodamPose.LeafThrow && _pose != SodamPose.LeafCatch && _pose != SodamPose.Sap) return;
+            int layer = _animator.GetLayerIndex("leg");
+            if (layer < 0) return;
+            bool moving = _animator.GetFloat(Animator.StringToHash("Speed")) > _profile.movingSpeedThreshold;
+            // Catch contains authored steps even with no movement input. Keep its upper action,
+            // but explicitly cover those steps with idle legs while standing.
+            if (grounded && !moving && _pose != SodamPose.LeafCatch) { _animator.SetLayerWeight(layer, 0f); return; }
+            var locomotion = _profile.Find(!grounded ? SodamPose.Jump : moving ? SodamPose.Move : SodamPose.Idle);
+            if (locomotion == null || locomotion.motions == null) return;
+            foreach (var motion in locomotion.motions)
+            {
+                if (motion == null || motion.layer != (grounded ? "Base Layer" : "leg")) continue;
+                int hash = Animator.StringToHash("leg." + motion.state);
+                if (!_animator.HasState(layer, hash)) return;
+                _animator.SetLayerWeight(layer, 1f);
+                bool alreadyPlaying = _animator.GetCurrentAnimatorStateInfo(layer).fullPathHash == hash ||
+                    _animator.IsInTransition(layer) && _animator.GetNextAnimatorStateInfo(layer).fullPathHash == hash;
+                if (!alreadyPlaying)
+                    _animator.CrossFadeInFixedTime(hash, locomotion.blendSeconds, layer, motion.startTimeSeconds);
+                return;
+            }
         }
 
-        private void Apply(SodamPose pose)
+        private void PlayOneShot(SodamPose pose, float elapsed = 0f)
+        {
+            var definition = _profile.Find(pose);
+            if (definition == null || definition.durationSeconds <= elapsed) return;
+            _oneShot = pose;
+            _oneShotRemaining = definition.durationSeconds - elapsed;
+            _pose = null;
+            Apply(pose, elapsed);
+        }
+
+        private void Apply(SodamPose pose, float elapsed = 0f)
         {
             if (_animator == null) return;
             var definition = _profile.Find(pose);
@@ -217,7 +302,7 @@ namespace Herbalist.Player
             _pose = pose;
             _poseSequence++;
             _previousVisualOffsetY = _animator.transform.localPosition.y - _restVisualPosition.y;
-            _poseElapsed = 0f;
+            _poseElapsed = elapsed;
             for (int layer = 1; layer < _animator.layerCount; layer++)
             {
                 string layerName = _animator.GetLayerName(layer);
@@ -232,7 +317,9 @@ namespace Herbalist.Player
                 int layer = _animator.GetLayerIndex(motion.layer);
                 if (layer < 0) continue;
                 int hash = Animator.StringToHash(motion.layer + "." + motion.state);
-                if (_animator.HasState(layer, hash)) _animator.CrossFadeInFixedTime(hash, definition.blendSeconds, layer);
+                if (_animator.HasState(layer, hash))
+                    _animator.CrossFadeInFixedTime(hash, definition.blendSeconds, layer,
+                        motion.startTimeSeconds + elapsed);
             }
         }
 

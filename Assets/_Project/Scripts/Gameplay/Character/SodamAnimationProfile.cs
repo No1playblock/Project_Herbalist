@@ -18,6 +18,7 @@ namespace Herbalist.Player
     {
         public string layer;
         public string state;
+        [Min(0)] public float startTimeSeconds;
     }
 
     [Serializable]

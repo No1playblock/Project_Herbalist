@@ -18,6 +18,7 @@ namespace Herbalist.Abilities
         private SapHoseSprayer hose;
         public SapAbilitySettings Settings => settings;
         public bool Controlling { get; private set; }
+        public bool Spraying { get; private set; }
         public bool CanPlace { get; private set; }
         public bool Ready => held != null ? held.State == SapState.Controlled : replicaReady;
         public int ActiveCount => deposits.Count;
@@ -31,6 +32,7 @@ namespace Herbalist.Abilities
         // New stage rules generate sap on demand at an eligible inlet. Legacy extraction stays available.
         public void TickContextual(Ray aim, bool useHeld, float dt)
         {
+            Spraying = false;
             if (Herbalist.GameUI.GameplayPause.IsPaused || settings == null || create == null) return;
             Vector3 origin = HoverPosition(aim);
             if (!useHeld)
@@ -49,7 +51,8 @@ namespace Herbalist.Abilities
             }
             held.transform.position = origin;
             Controlling = true; CanPlace = true;
-            hose.Tick(held, aim, player.Tuning.CanAimWithHead(player.View.BodyYaw, aim.direction),
+            Spraying = player.Tuning.CanAimWithHead(player.View.BodyYaw, aim.direction);
+            hose.Tick(held, aim, Spraying,
                 dt, settings, CreateHoseMark);
         }
         public void Configure(Func<SapDeposit> factory, Action<SapDeposit> release, bool network)
@@ -76,6 +79,7 @@ namespace Herbalist.Abilities
         public void Tick(Ray aim, bool use, float dt)
         {
             if (Herbalist.GameUI.GameplayPause.IsPaused) return;
+            Spraying = false;
             CanPlace = false;
             if (!Controlling) return;
             if (held == null || source == null || !source.isActiveAndEnabled || held.State == SapState.Complete)
@@ -91,7 +95,8 @@ namespace Herbalist.Abilities
             held.transform.position = next;
             if (Vector3.Distance(next, hover) <= settings.arrivalTolerance) held.SetHeld();
             CanPlace = Ready;
-            hose.Tick(held, aim, Ready && use && player.Tuning.CanAimWithHead(player.View.BodyYaw, aim.direction),
+            Spraying = Ready && use && player.Tuning.CanAimWithHead(player.View.BodyYaw, aim.direction);
+            hose.Tick(held, aim, Spraying,
                 dt, settings, CreateHoseMark);
         }
         private SapDeposit CreateHoseMark()
@@ -114,11 +119,11 @@ namespace Herbalist.Abilities
             EndControl();
         }
         private void EndControl()
-        { source = null; Controlling = false; CanPlace = false; replicaReady = false; if (player != null) player.Motor.SetMovementLock(this, false); }
+        { source = null; Controlling = false; Spraying = false; CanPlace = false; replicaReady = false; if (player != null) player.Motor.SetMovementLock(this, false); }
         private void Remove(SapDeposit sap) { deposits.Remove(sap); destroy?.Invoke(sap); }
         public void Clear() { Cancel(); foreach (var sap in deposits.ToArray()) if (sap != null) sap.Finish(); deposits.Clear(); }
-        public void ApplyReplica(bool controlling, bool canPlace, bool ready = false)
-        { Controlling = controlling; CanPlace = canPlace; replicaReady = ready; }
+        public void ApplyReplica(bool controlling, bool canPlace, bool ready = false, bool spraying = false)
+        { Controlling = controlling; CanPlace = canPlace; replicaReady = ready; Spraying = spraying; }
         private void OnDisable() { Clear(); }
     }
 }
