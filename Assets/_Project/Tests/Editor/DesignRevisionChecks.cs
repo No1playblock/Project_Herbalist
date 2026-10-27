@@ -24,7 +24,7 @@ namespace Herbalist.Editor
         public static string Authored()
         {
             Check(!Application.isPlaying, "Edit mode required");
-            foreach (string path in new[] { CurrentStagePaths.StageOne, CurrentStagePaths.Maze, CurrentStagePaths.Altar })
+            foreach (string path in new[] { CurrentStagePaths.StageOne, CurrentStagePaths.Maze, CurrentStagePaths.BranchRide })
             {
                 var scene = EditorSceneManager.OpenScene(path);
                 var level = Object.FindFirstObjectByType<StageLevel>();
@@ -44,7 +44,7 @@ namespace Herbalist.Editor
                 {
                     var flow = Object.FindFirstObjectByType<DescendingMazeFlow>();
                     Check(flow != null, "descending maze flow");
-                    Check(Object.FindObjectsByType<SapMazeBoard>(FindObjectsSortMode.None).Length == 3 && level.nextScenePath == CurrentStagePaths.Altar, "three boards and altar destination");
+                    Check(Object.FindObjectsByType<SapMazeBoard>(FindObjectsSortMode.None).Length == 3 && level.nextScenePath == CurrentStagePaths.BranchRide, "three boards and branch ride destination");
                     var imported = GameObject.Find("ImportedMazeVisuals");
                     Check(imported != null && imported.GetComponentsInChildren<MeshRenderer>().Length == 3, "three imported maze faces");
                     Check(Read<StageTwoPulleyPresentation>(flow, "_pulleyPresentation") != null, "imported pulley presentation connected");
@@ -53,9 +53,9 @@ namespace Herbalist.Editor
                               board.transform.Find("MazeWalls").GetComponent<MeshCollider>().sharedMesh != null,
                               "imported face with graph wall collision");
                 }
-                else Check(Object.FindObjectsByType<AltarRing>(FindObjectsSortMode.None).Length == 3 && Object.FindFirstObjectByType<FinalStageExit>() != null, "three rotating rings/final exit");
+                else Check(Object.FindFirstObjectByType<BranchRideFlow>() != null && string.IsNullOrEmpty(level.nextScenePath), "branch ride final stage");
             }
-            return "PASS authored: three scenes, unique target IDs, preauthored UGUI, stage one transition, maze and altar.";
+            return "PASS authored: three scenes, unique target IDs, preauthored UGUI, stage one transition, maze and branch ride.";
         }
         private static LeafProjectile Install(LeafAbilitySettings settings, Transform owner, LeafInstallTarget target)
         {

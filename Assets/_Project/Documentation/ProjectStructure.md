@@ -20,7 +20,7 @@ _Project/
   Prefabs/{Characters,Enemies,InteractiveObjects,UI,VFX,Networking}
   Scenes/
     01_Title/MainMenu.unity
-    Stages/Stage_01/Stage_01_ModelingReference.unity
+    Stages/Stage_01/Stage_01_ModelingReference_CharacterBranch.unity
     Stages/Stage_02/Stage_02_Mazes.unity
     Stages/Stage_03/Stage_03_Altar.unity
     Development/Sandbox_Abilities.unity
@@ -88,7 +88,7 @@ UI 타입 변경에는 MovedFrom을 명시하고 스크립트 GUID를 유지했�
 
 ## 현재 실행 씬
 - 메인 메뉴: `Assets/_Project/Scenes/01_Title/MainMenu.unity`
-- 1스테이지 맵 (현재 플레이 경로): `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference.unity`
+- 1스테이지 맵 (현재 플레이 경로): `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference_CharacterBranch.unity`
 - 2스테이지: `Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Mazes.unity`
 - 최종 제단: `Assets/_Project/Scenes/Stages/Stage_03/Stage_03_Altar.unity`
 - 솔로 능력 테스트: `Assets/_Project/Scenes/Development/Sandbox_Abilities.unity`

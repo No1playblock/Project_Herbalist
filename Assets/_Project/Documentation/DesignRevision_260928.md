@@ -16,7 +16,7 @@
 
 ## 구현 및 실행
 
-- 현재 로비 시작 맵: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference.unity`
+- 현재 로비 시작 맵: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference_CharacterBranch.unity`
 - 미로: `Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Mazes.unity`
 - 제단: `Assets/_Project/Scenes/Stages/Stage_03/Stage_03_Altar.unity`
 - 새 설정: `Assets/_Project/Data/Stages/Revision_260928/SO_StageAbilityRules.asset`. 나뭇잎/수액/UGUI 설정은 기존 에셋의 복사본을 사용한다.
