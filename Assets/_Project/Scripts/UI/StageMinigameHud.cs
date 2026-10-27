@@ -29,6 +29,7 @@ namespace Herbalist.GameUI
         [SerializeField] private StageMinigameUiText copy;
         private PlayerHud _hud;
         private PlayScreenController _screen;
+        private bool _craftingViewOverride;
         private void Awake() { _hud = GetComponent<PlayerHud>(); _screen = FindFirstObjectByType<PlayScreenController>(); }
         private void Update()
         {
@@ -38,6 +39,11 @@ namespace Herbalist.GameUI
                 view != null && view.GetComponent<PlayerController>().LocallyControlled;
             bool gathering = visible && flow.Minigame == StageMinigameKind.Gathering;
             bool crafting = visible && flow.Minigame == StageMinigameKind.Crafting;
+            if (_screen != null && _craftingViewOverride != crafting)
+            {
+                _screen.SetOverride(this, crafting ? PlayScreenMode.Personal : (PlayScreenMode?)null);
+                _craftingViewOverride = crafting;
+            }
             if (panel != null) panel.SetActive(gathering);
             if (brewingHud != null) brewingHud.SetActive(crafting);
             if (!visible) return;
@@ -123,5 +129,11 @@ namespace Herbalist.GameUI
             StageDirection.Up => copy.stepUp, StageDirection.Left => copy.stepLeft,
             StageDirection.Down => copy.stepDown, _ => copy.stepRight
         };
+        private void OnDisable()
+        {
+            if (!_craftingViewOverride || _screen == null) return;
+            _screen.SetOverride(this, null);
+            _craftingViewOverride = false;
+        }
     }
 }

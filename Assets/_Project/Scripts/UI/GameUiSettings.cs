@@ -18,6 +18,8 @@ namespace Herbalist.GameUI
         public string pausedText="게임을 일시 정지하였습니다.", partnerPausedText="다른 플레이어가 게임을 일시 정지하였습니다.";
         public string leafText="잎", sapText="액", gatherText="채집", giveText="전달", craftText="약제 제조";
         public string clothGrabText="천 잡기", clothReleaseText="천 놓기", sapInjectText="수액 주입 (누르고 있기)";
+        public string leafInstallText="나뭇잎 설치";
+        [Min(.1f)] public float leafInstallHintRange=12f;
         public string leafHeldText="보유", leafInstalledText="설치 중", leafReturningText="회수 중";
         public Color leafHeldColor = new Color(.49f, .86f, .66f);
         public Color leafInstalledColor = new Color(.96f, .76f, .36f);
@@ -27,6 +29,8 @@ namespace Herbalist.GameUI
         public ControlHint[] controls;
         public Vector3 markerOffset = new Vector3(-.65f, 1.9f, 0);
         [Min(.1f)] public float feedbackDuration=4;
+        [Min(0)] public float objectiveHoldDuration = 5f;
+        [Min(.01f)] public float objectiveFadeDuration = 1f;
         public string menuScene="Assets/_Project/Scenes/01_Title/MainMenu.unity";
         public string soloScene="Assets/_Project/Scenes/Development/Sandbox_Abilities.unity";
     }

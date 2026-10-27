@@ -18,6 +18,9 @@ namespace Herbalist.Player
         private IPlayerMovementReceiver _movementReceiver;
         private object _transportOwner;
         private Vector3 _transportPosition;
+        private SodamAnimationPresentation _sodamAnimation;
+        private uint _rootMotionPoseSequence;
+        private float _rootMotionElapsed;
         public void SetMovementReceiver(IPlayerMovementReceiver receiver) => _movementReceiver=receiver;
         public void ClearMovementReceiver(IPlayerMovementReceiver receiver) { if(ReferenceEquals(_movementReceiver,receiver))_movementReceiver=null; }
         public bool RouteMovement(Vector2 move) { if(_movementReceiver==null)return false;_movementReceiver.ReceiveMovement(this,move);return true; }
@@ -32,6 +35,7 @@ namespace Herbalist.Player
 
         private void Awake()
         {
+            _sodamAnimation = GetComponent<SodamAnimationPresentation>();
             _baseLocalScale = transform.localScale;
             ApplyCharacterScale();
             ready = motor != null && input != null && view != null && tuning != null;
@@ -66,7 +70,7 @@ namespace Herbalist.Player
                 if (!networkDriven)
                 {
                     if (_transportOwner != null) motor.Teleport(_transportPosition);
-                    else motor.Simulate(Vector3.zero, Time.deltaTime);
+                    else motor.Simulate(Vector3.zero, Time.deltaTime, SampleRootMotion(Time.deltaTime, out _));
                 }
                 return;
             }
@@ -79,7 +83,32 @@ namespace Herbalist.Player
             Vector3 direction = view.PlanarRotation * new Vector3(movement.x, 0, movement.y);
             view.SetBodyYaw(tuning.ResolveBodyYaw(view.BodyYaw, view.Yaw, direction, motor.MovementLocked, Time.deltaTime));
             if (lastJump != input.JumpSequence) { lastJump = input.JumpSequence; TryJump(); }
-            motor.Simulate(direction * tuning.moveSpeed, Time.deltaTime);
+            bool rootMotionActive;
+            Vector3 rootMotion = SampleRootMotion(Time.deltaTime, out rootMotionActive);
+            motor.Simulate(rootMotionActive ? Vector3.zero : direction * tuning.moveSpeed, Time.deltaTime, rootMotion);
+        }
+        private Vector3 SampleRootMotion(float deltaTime, out bool active)
+        {
+            active = false;
+            if (_sodamAnimation == null || !_sodamAnimation.CurrentPose.HasValue || _sodamAnimation.Profile == null)
+            {
+                _rootMotionElapsed = 0f;
+                return Vector3.zero;
+            }
+            if (_rootMotionPoseSequence != _sodamAnimation.PoseSequence)
+            {
+                _rootMotionPoseSequence = _sodamAnimation.PoseSequence;
+                _rootMotionElapsed = 0f;
+            }
+            var pose = _sodamAnimation.CurrentPose.Value;
+            var definition = _sodamAnimation.Profile.Find(pose);
+            if (definition == null || !definition.useRootMotion || definition.rootMotionPlaybackSpeed <= 0f)
+                return Vector3.zero;
+            active = definition.overrideMovementInput &&
+                _rootMotionElapsed * definition.rootMotionPlaybackSpeed < definition.rootMotionClipLength;
+            Vector3 localDelta = _sodamAnimation.Profile.RootMotionDelta(pose, _rootMotionElapsed, deltaTime);
+            _rootMotionElapsed += deltaTime;
+            return Quaternion.Euler(0f, view.BodyYaw, 0f) * (localDelta * _sodamAnimation.RootMotionScale);
         }
         public bool TryJump() => motor.TryJump();
         private void LateUpdate() { if (ready) view.Present(Time.deltaTime, locallyControlled); }

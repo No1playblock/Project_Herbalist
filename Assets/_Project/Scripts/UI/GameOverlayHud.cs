@@ -11,7 +11,7 @@ namespace Herbalist.GameUI
     public sealed class GameOverlayHud : MonoBehaviour
     {
         public GameUiSettings settings;
-        public GameObject pauseRoot, ownMenu, options, loading;
+        public GameObject pauseRoot, ownMenu, options, loading, stageHeader;
         public TMP_Text pauseMessage, stageName, objective, subtitle;
         public Button resume, optionButton, mainMenu;
         public string title, defaultObjective;
@@ -20,8 +20,13 @@ namespace Herbalist.GameUI
         private bool recaptureAfterMinigame;
         private int pauseFrame;
         private float subtitleRemaining;
+        [SerializeField] private CanvasGroup _stageHeaderGroup;
+        private string _shownObjective;
+        private float _objectiveElapsed;
         private void OnEnable()
         {
+            _shownObjective = null;
+            _objectiveElapsed = 0;
             pause=settings.pauseAction.action.Clone(); pause.performed+=_=>TogglePause(); pause.Enable();
             AudioListener.volume=UserOptions.Volume;
         }
@@ -79,17 +84,44 @@ namespace Herbalist.GameUI
             var session=FusionLobbySession.Instance;
             loading.SetActive(session!=null&&(session.State==LobbyState.Loading||session.State==LobbyState.Leaving));
             var flow=Herbalist.StageOne.StageOneFlow.Instance;
+            bool mazeView = Herbalist.Levels.SapMazeBoard.LocalMazeView != null;
             if(flow!=null)objective.text=flow.Objective;
             else
             {
                 var maze = FindFirstObjectByType<Herbalist.Levels.DescendingMazeFlow>();
                 var altar = FindFirstObjectByType<Herbalist.Levels.RotatingAltar>();
+                var branchRide = FindFirstObjectByType<Herbalist.Levels.BranchRideFlow>();
                 if (maze != null) objective.text = maze.Objective;
+                else if (branchRide != null) objective.text = branchRide.Objective;
                 else if (altar != null) objective.text = altar.Objective;
                 else objective.text = defaultObjective;
             }
+            UpdateStageHeader(!mazeView && (flow == null || flow.Minigame == StageMinigameKind.None), paused, Time.unscaledDeltaTime);
             if(!paused)subtitleRemaining-=Time.unscaledDeltaTime;
             subtitle.gameObject.SetActive(subtitleRemaining>0&&!string.IsNullOrEmpty(subtitle.text));
+        }
+        private void UpdateStageHeader(bool visible, bool paused, float deltaTime)
+        {
+            if (_shownObjective != objective.text)
+            {
+                _shownObjective = objective.text;
+                _objectiveElapsed = 0;
+            }
+            else if (visible && !paused) _objectiveElapsed += deltaTime;
+            float alpha = 1f - Mathf.Clamp01((_objectiveElapsed - settings.objectiveHoldDuration) /
+                Mathf.Max(.01f, settings.objectiveFadeDuration));
+            if (_stageHeaderGroup != null) _stageHeaderGroup.alpha = alpha;
+            else
+            {
+                stageName.alpha = alpha;
+                objective.alpha = alpha;
+            }
+            if (stageHeader != null) stageHeader.SetActive(visible && alpha > 0);
+            else
+            {
+                stageName.gameObject.SetActive(visible && alpha > 0);
+                objective.gameObject.SetActive(visible && alpha > 0);
+            }
         }
         private void LateUpdate()
         {

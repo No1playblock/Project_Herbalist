@@ -16,6 +16,7 @@ namespace Herbalist.GameUI
         public GameObject helpPanel, reticle, prompt, clothPrompt, sapPrompt;
         public TMP_Text helpText, helpHint, pocket, abilityText, feedback, promptText, clothPromptText, sapPromptText;
         public TMP_Text jumpPadCountdown;
+        [SerializeField] private SapMazeVolumeDisplay _mazeVolumeDisplay;
         public GameObject leafStatus;
         public Image[] leafStatusDots;
         public TMP_Text[] leafStatusLabels;
@@ -30,12 +31,18 @@ namespace Herbalist.GameUI
         private uint _abilityFeedback;
         private uint _minigameResult;
         private void Awake() { screen=FindFirstObjectByType<PlayScreenController>(); }
-        private void OnEnable() { help=settings.helpAction.action.Clone(); help.performed+=_=>expanded=!expanded; help.Enable(); }
+        private void OnEnable()
+        {
+            foreach (var marker in markers)
+                if (marker != null) marker.gameObject.SetActive(false);
+            help=settings.helpAction.action.Clone(); help.performed+=_=>expanded=!expanded; help.Enable();
+        }
         private void Update()
         {
             var view=screen!=null?screen.ViewForSlot(slot):null;
             if(view==null)
             {
+                if (_mazeVolumeDisplay != null) _mazeVolumeDisplay.Present(0, 0, false);
                 if(jumpPadCountdown!=null) jumpPadCountdown.gameObject.SetActive(false);
                 prompt.SetActive(false);
                 if(clothPrompt!=null) clothPrompt.SetActive(false);
@@ -45,6 +52,12 @@ namespace Herbalist.GameUI
             }
             var player=view.GetComponent<Herbalist.Player.PlayerController>();
             bool local=player.LocallyControlled;
+            var maze = SapMazeBoard.LocalMazeView;
+            bool mazeView = maze != null && maze.IsViewedBy(view);
+            helpHint.gameObject.SetActive(!mazeView);
+            pocket.gameObject.SetActive(!mazeView);
+            abilityText.gameObject.SetActive(!mazeView);
+            feedback.gameObject.SetActive(!mazeView);
             if (jumpPadCountdown != null)
             {
                 float remaining = 0;
@@ -53,7 +66,7 @@ namespace Herbalist.GameUI
                 if (show) jumpPadCountdown.text = $"점프대 발사까지 {remaining:0.0}초";
             }
             helpHint.text=settings.helpAction.action.GetBindingDisplayString()+"  "+settings.helpHint;
-            helpPanel.SetActive(local&&expanded);
+            helpPanel.SetActive(local&&expanded&&!mazeView);
             if(local&&expanded)
             {
                 var lines=new System.Text.StringBuilder();
@@ -65,9 +78,18 @@ namespace Herbalist.GameUI
                 helpText.text=lines.ToString();
             }
             var ability=view.GetComponent<PlayerAbilityController>();
+            if (_mazeVolumeDisplay != null)
+            {
+                var mazeFlow = StageLevel.Instance != null ? StageLevel.Instance.GetComponent<DescendingMazeFlow>() : null;
+                var board = mazeFlow != null ? mazeFlow.CurrentBoard : null;
+                bool show = local && ability != null && ability.Unlocked && ability.Kind == PlayerAbilityKind.Leaf &&
+                    board != null && board.Active && board.UsesRefillVolumeRules && board.State.Phase == MazePhase.Running;
+                _mazeVolumeDisplay.Present(board != null ? board.RemainingVolume : 0,
+                    board != null ? board.RequiredVolume : 0, show);
+            }
             if (leafStatus != null)
             {
-                bool showLeaves = local && ability != null && ability.Unlocked && ability.Kind == PlayerAbilityKind.Leaf;
+                bool showLeaves = !mazeView && local && ability != null && ability.Unlocked && ability.Kind == PlayerAbilityKind.Leaf;
                 leafStatus.SetActive(showLeaves);
                 if (showLeaves)
                 {
@@ -83,7 +105,7 @@ namespace Herbalist.GameUI
                 }
             }
             var rules = Herbalist.Levels.StageLevel.Instance != null ? Herbalist.Levels.StageLevel.Instance.abilityRules : null;
-            reticle.SetActive(local&&ability!=null&&ability.Unlocked&&(rules != null || ability.Kind!=PlayerAbilityKind.Sap || ability.Sap.Controlling));
+            reticle.SetActive(!mazeView&&local&&ability!=null&&ability.Unlocked&&(rules != null || ability.Kind!=PlayerAbilityKind.Sap || ability.Sap.Controlling));
             abilityText.text=ability!=null&&ability.Unlocked?(ability.Kind==PlayerAbilityKind.Sap?settings.sapText:settings.leafText):"";
             if (rules != null && ability != null && ability.Unlocked) abilityText.text = ability.Kind == PlayerAbilityKind.Sap ? rules.sapInstructions : rules.leafInstructions;
             pocket.text="";
@@ -139,15 +161,12 @@ namespace Herbalist.GameUI
                     sapPromptText.text = ability.Input.CycleBinding + "  " + settings.sapInjectText;
                     Position((RectTransform)sapPrompt.transform, view.Camera, portPoint + promptOffset);
                 }
-            }
-            for(int i=0;i<markers.Length;i++)
-            {
-                if (FindFirstObjectByType<Herbalist.Levels.DescendingMazeFlow>() != null) { markers[i].gameObject.SetActive(false); continue; }
-                var target=screen.ViewForSlot(i);
-                var a=target!=null?target.GetComponent<PlayerAbilityController>():null;
-                if(a==null||!a.Unlocked) { markers[i].gameObject.SetActive(false); continue; }
-                markerLabels[i].text=a.Kind==PlayerAbilityKind.Leaf?settings.leafText:settings.sapText;
-                Position(markers[i],view.Camera,target.transform.position+settings.markerOffset);
+                else if (local && actor != null &&
+                    ExteriorJumpPad.TryLeafInstallHint(actor, out var leafPoint))
+                {
+                    sapPromptText.text = ability.Input.CycleBinding + "  " + settings.leafInstallText;
+                    Position((RectTransform)sapPrompt.transform, view.Camera, leafPoint + promptOffset);
+                }
             }
         }
         private void Position(RectTransform rect,Camera camera,Vector3 point)

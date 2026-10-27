@@ -13,10 +13,13 @@ namespace Herbalist.Presentation
         private bool suppressCapturePress;
         private int captureFrame;
         private readonly HashSet<object> uiOwners = new();
+        private readonly HashSet<object> worldPointerOwners = new();
         public static GameplayCursor Instance { get; private set; }
         public static bool AllowsPointerInput => Instance == null || Instance.CanReadPointer;
-        private bool CanReadPointer => captured && Cursor.lockState == CursorLockMode.Locked &&
-            HasGameFocus && uiOwners.Count == 0 && Time.frameCount > captureFrame && !suppressCapturePress;
+        private bool CanReadPointer => HasGameFocus && uiOwners.Count == 0 &&
+            (worldPointerOwners.Count > 0 && Cursor.lockState == CursorLockMode.None ||
+             captured && Cursor.lockState == CursorLockMode.Locked &&
+             Time.frameCount > captureFrame && !suppressCapturePress);
         private bool HasGameFocus
         {
             get
@@ -43,6 +46,7 @@ namespace Herbalist.Presentation
         private void OnRelease(InputAction.CallbackContext context) => Release();
         private void OnCapture(InputAction.CallbackContext context)
         {
+            if (worldPointerOwners.Count > 0) return;
             if (captured && Cursor.lockState == CursorLockMode.Locked) return;
             // A click in another window must never capture the cursor.
             if (context.control.device is Mouse mouse)
@@ -68,6 +72,16 @@ namespace Herbalist.Presentation
             if (open) { uiOwners.Add(owner); Release(); }
             else uiOwners.Remove(owner);
         }
+        public void SetWorldPointerMode(object owner, bool open)
+        {
+            if (owner == null) return;
+            if (open)
+            {
+                if (worldPointerOwners.Add(owner)) Release();
+            }
+            else if (worldPointerOwners.Remove(owner) && worldPointerOwners.Count == 0)
+                Capture();
+        }
         private void Update()
         {
             if (captured && (!HasGameFocus || Cursor.lockState != CursorLockMode.Locked)) Release();
@@ -75,6 +89,7 @@ namespace Herbalist.Presentation
         private void OnApplicationFocus(bool focus) { if (!focus) Release(); }
         private void OnDisable()
         {
+            worldPointerOwners.Clear();
             release?.Dispose(); capture?.Dispose(); release = capture = null;
             if (Instance == this) { Release(); Instance = null; }
         }

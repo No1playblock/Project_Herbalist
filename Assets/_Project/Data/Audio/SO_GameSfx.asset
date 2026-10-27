@@ -1,0 +1,900 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 967811271260d7a45a5aeed196fec7a0, type: 3}
+  m_Name: SO_GameSfx
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Audio.SfxCatalog
+  sounds:
+  - id: 1
+    label: "\uBC84\uD2BC \uC120\uD0DD"
+    clips:
+    - {fileID: 8300000, guid: 6e392309cf8adb044a3ffbffc81393e7, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 0
+    pauseWithGameplay: 0
+    temporaryFallback: 0
+    notes: 
+  - id: 2
+    label: "\uBC84\uD2BC \uD3EC\uCEE4\uC2A4 \uC774\uB3D9"
+    clips:
+    - {fileID: 8300000, guid: 81628ee1bd7d07442b1e98cab947515a, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 0
+    pauseWithGameplay: 0
+    temporaryFallback: 0
+    notes: 
+  - id: 3
+    label: "\uB4A4\uB85C \uAC00\uAE30\xB7\uCDE8\uC18C"
+    clips:
+    - {fileID: 8300000, guid: cc6e456863009444bb798abe0513efaa, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 0
+    pauseWithGameplay: 0
+    temporaryFallback: 0
+    notes: 
+  - id: 4
+    label: "\uD50C\uB808\uC774\uC5B4 \uC785\uC7A5"
+    clips:
+    - {fileID: 8300000, guid: 99d2002230d5d5c4fa171b1583e2fe88, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 0
+    pauseWithGameplay: 0
+    temporaryFallback: 0
+    notes: 
+  - id: 5
+    label: "\uCE90\uB9AD\uD130 \uAD50\uCCB4"
+    clips:
+    - {fileID: 8300000, guid: 99d2002230d5d5c4fa171b1583e2fe88, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.35
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 0
+    pauseWithGameplay: 0
+    temporaryFallback: 1
+    notes: Source missing; temporary reuse of SFX 4. Replace in this catalog.
+  - id: 6
+    label: "\uC900\uBE44 \uC644\uB8CC"
+    clips:
+    - {fileID: 8300000, guid: 6e392309cf8adb044a3ffbffc81393e7, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.35
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 0
+    pauseWithGameplay: 0
+    temporaryFallback: 1
+    notes: Source missing; temporary reuse of SFX 1. Replace in this catalog.
+  - id: 7
+    label: "\uC2A4\uD14C\uC774\uC9C0 \uD45C\uC2DC"
+    clips:
+    - {fileID: 8300000, guid: 0f8625b76d5261045adb596cb2163808, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 0
+    pauseWithGameplay: 0
+    temporaryFallback: 0
+    notes: 
+  - id: 8
+    label: "\uB3C4\uC6C0\uB9D0 \uD45C\uC2DC"
+    clips:
+    - {fileID: 8300000, guid: b4c17f8bbee8bfb47b26c95f40445943, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 0
+    pauseWithGameplay: 0
+    temporaryFallback: 0
+    notes: 
+  - id: 9
+    label: "\uB9AC\uC2A4\uD3F0 \uB4F1\uC7A5"
+    clips:
+    - {fileID: 8300000, guid: 99d2002230d5d5c4fa171b1583e2fe88, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.35
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 1
+    notes: Source missing; temporary reuse of SFX 4. Replace in this catalog.
+  - id: 10
+    label: "\uD759\uBC14\uB2E5 \uBC1C\uC18C\uB9AC"
+    clips:
+    - {fileID: 8300000, guid: 8c611024ec10c4549becec164beef3cb, type: 3}
+    - {fileID: 8300000, guid: 4ee7657bfcf6cf049afbd1b964a771ef, type: 3}
+    - {fileID: 8300000, guid: dc36ddfc91e859144b76c585925a64d1, type: 3}
+    - {fileID: 8300000, guid: 71bd6232748bb3c469991043556e6dd3, type: 3}
+    - {fileID: 8300000, guid: 2bf375a4f48521646a65f552171269fc, type: 3}
+    - {fileID: 8300000, guid: 0dd4a42ba70472c45b623750c94108b8, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 11
+    label: "\uC794\uB514\uBC14\uB2E5 \uBC1C\uC18C\uB9AC"
+    clips:
+    - {fileID: 8300000, guid: f4ac6c8a5edf0bc4bb5dc3e96184739c, type: 3}
+    - {fileID: 8300000, guid: 52e0711ca3770014b935d3f88798d48d, type: 3}
+    - {fileID: 8300000, guid: 73685dcbd443a6a4081df73bdf31ae9c, type: 3}
+    - {fileID: 8300000, guid: 5e79fde69cdf9ce4298e56e6dad201dc, type: 3}
+    - {fileID: 8300000, guid: 07bd7c13df7e55d45bbc979bd31d58e6, type: 3}
+    - {fileID: 8300000, guid: dd2c34d9046c3f24db65d45f31d40094, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: Grass by filename/title; the source wood-condition cell was inconsistent.
+  - id: 12
+    label: "\uB098\uBB34\uAECD\uC9C8\xB7\uBFCC\uB9AC \uBC1C\uC18C\uB9AC"
+    clips:
+    - {fileID: 8300000, guid: e71e586c35d9a30428495d0d7f283cf5, type: 3}
+    - {fileID: 8300000, guid: 2bd5a48de8425594bac3399e71987757, type: 3}
+    - {fileID: 8300000, guid: d094333b66baa9d448ae3911ca5c0e5c, type: 3}
+    - {fileID: 8300000, guid: 9e041a0eaf2d6494a97df57fb8cd02fd, type: 3}
+    - {fileID: 8300000, guid: 5125937a879d33b4aab1651224641760, type: 3}
+    - {fileID: 8300000, guid: c885d1c49856cb745b9a21c86d7b645e, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 13
+    label: "\uC18C\uB2F4 \uC810\uD504 \uB3C4\uC57D"
+    clips:
+    - {fileID: 8300000, guid: 0c714a0653843c348bc04d278be3fc1d, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 14
+    label: "\uB450\uC601 \uC810\uD504 \uB3C4\uC57D"
+    clips:
+    - {fileID: 8300000, guid: 9178310bdd0401f4c8fe9de3ba370da9, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 15
+    label: "\uD759 \uCC29\uC9C0"
+    clips:
+    - {fileID: 8300000, guid: f6ab9f2df8f98d643bd6298bb32c851e, type: 3}
+    lightClip: {fileID: 8300000, guid: dee131889bed4fa4d8cd4ae527aafdc4, type: 3}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 16
+    label: "\uBAA9\uC7AC \uCC29\uC9C0"
+    clips:
+    - {fileID: 8300000, guid: 19347c3e30585b243a68256a7e29f5dc, type: 3}
+    lightClip: {fileID: 8300000, guid: 5c1380e37f8f92541bbfa1636d0f9cc5, type: 3}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 17
+    label: "\uACF5\uC911 \uB099\uD558 \uBC14\uB78C"
+    clips:
+    - {fileID: 8300000, guid: 9423ba17c305dfa4eb691df41c6caedf, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 18
+    label: "\uB3C4\uAC10 \uD3BC\uCE58\uAE30"
+    clips:
+    - {fileID: 8300000, guid: c19c86acd4d99b2409b31cc448bb4adf, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 19
+    label: "\uC78E \uC0B4\uD3B4\uBCF4\uAE30"
+    clips:
+    - {fileID: 8300000, guid: 54b00fe2344ae2f4fbb8ba2023078be6, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 20
+    label: "WASD \uCC44\uC9D1 \uC785\uB825 \uD53C\uB4DC\uBC31"
+    clips:
+    - {fileID: 8300000, guid: e65e4790f171c6844989d8a62034b13d, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 21
+    label: "\uC57D\uCD08 \uBF51\uD788\uB294 \uC18C\uB9AC"
+    clips:
+    - {fileID: 8300000, guid: ad4c97bcd8feee3438f4af922a774eb3, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 22
+    label: "\uCC44\uC9D1 \uC131\uACF5 \uC54C\uB9BC"
+    clips:
+    - {fileID: 8300000, guid: 80259be6ba6df594a921cee5ce09185b, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 23
+    label: "\uCC44\uC9D1 \uC2E4\uD328 \uC54C\uB9BC"
+    clips:
+    - {fileID: 8300000, guid: c7111d8abb5e15d40b99d3bf1732a1f2, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 24
+    label: "\uD654\uB85C \uBD88 \uD0C0\uB294 \uC18C\uB9AC"
+    clips:
+    - {fileID: 8300000, guid: 35cfd9793a738fd41a1e601fb96af0ee, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.22
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 1
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 25
+    label: "\uD0D5\uC57D \uB053\uB294 \uC18C\uB9AC"
+    clips:
+    - {fileID: 8300000, guid: ec724b48b41bb1449ae39c1ce60cc3f7, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.22
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 1
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 26
+    label: "\uBD80\uCC44\uC9C8"
+    clips:
+    - {fileID: 8300000, guid: 207a9b2f86360384982738e748648a54, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 27
+    label: "\uC81C\uC870 \uC2E4\uD328 \uC54C\uB9BC"
+    clips:
+    - {fileID: 8300000, guid: f4517569714bbb8488ee3f75a2cacb47, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 28
+    label: "\uC81C\uC870 \uC131\uACF5 \uC54C\uB9BC"
+    clips:
+    - {fileID: 8300000, guid: e699972086757b74484a6434cb5361bc, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 29
+    label: "\uC57D\uC81C \uB9C8\uC2DC\uB294 \uC18C\uB9AC"
+    clips:
+    - {fileID: 8300000, guid: 22f8fd51d713a854a872deb20054fd0f, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 31
+    label: "\uC218\uC561 \uC774\uB3D9\xB7\uD750\uB984"
+    clips:
+    - {fileID: 8300000, guid: c1071615179901946aadd6521b431c3c, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.22
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 1
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 32
+    label: "\uC218\uC561 \uCC29\uC9C0"
+    clips:
+    - {fileID: 8300000, guid: 011094f1d02b4314ca889350d3952011, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 33
+    label: "\uB098\uBB47\uC78E \uBC1C\uC0AC"
+    clips:
+    - {fileID: 8300000, guid: 2e40122d641c23d429c8a7b61452681b, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 34
+    label: "\uB098\uBB47\uC78E \uBE44\uD589"
+    clips:
+    - {fileID: 8300000, guid: 5fde940c2dbb43642968af45f090caac, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.22
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 1
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 35
+    label: "\uB098\uBB47\uC78E \uBD80\uCC29"
+    clips:
+    - {fileID: 8300000, guid: 0b07975411c6cee479fe43ab45dfdd2d, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 36
+    label: "\uB098\uBB47\uC78E \uD68C\uC218"
+    clips:
+    - {fileID: 8300000, guid: 1b51b59793e51bb4b8201b57b9d47055, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 37
+    label: "\uC232 \uBC30\uACBD\uC74C"
+    clips:
+    - {fileID: 8300000, guid: 4c51e09039eb2d14fb1349b4ab154a59, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.16
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 1
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 38
+    label: "\uCC9C \uC6C0\uC9C1\uC774\uB294 \uC18C\uB9AC"
+    clips:
+    - {fileID: 8300000, guid: f14f58a72b0d1e542b5566b08df75ce4, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 4.2
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 39
+    label: "\uC218\uC561 \uC810\uD504\uB300 \uC8FC\uC785"
+    clips:
+    - {fileID: 8300000, guid: 419a5982c3c8c0348bba578e9526b217, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.8
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: Injection cue selected by title. liquid-bubble-3000 is retained as an alternate, not mixed.
+  - id: 40
+    label: "\uC218\uC561 \uC810\uD504\uB300 \uC791\uB3D9"
+    clips:
+    - {fileID: 8300000, guid: 4bc05f03f6fefcf42bb3add1d3130dcb, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: Eruption/activation cue selected by title; source condition cells 39/40 were reversed.
+  - id: 41
+    label: "\uB098\uBB47\uC78E \uBC1C\uD310 \uD280\uC5B4\uC624\uB984"
+    clips:
+    - {fileID: 8300000, guid: 6b7f20f3f3e11ea44af94427854749ba, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 42
+    label: "\uBBF8\uB85C \uD648 \uC218\uC561 \uD750\uB984"
+    clips:
+    - {fileID: 8300000, guid: 5bb480d224c1470448c9aec71669abaa, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.22
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 1
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 43
+    label: "\uC218\uC561 \uC870\uC791 \uBD88\uAC00 \uD53C\uB4DC\uBC31"
+    clips:
+    - {fileID: 8300000, guid: cc6e456863009444bb798abe0513efaa, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.15
+    spatialBlend: 0
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.8
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 1
+    notes: Source missing; temporary reuse of SFX 3. Replace in this catalog.
+  - id: 44
+    label: "\uD5C8\uB984\uD55C \uD310\uC790 \uB204\uC218"
+    clips:
+    - {fileID: 8300000, guid: 558b1d9b09372f24caa791dacc9d4fda, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 2.7
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 45
+    label: "\uBC1C\uD310 \uD558\uAC15 \uC2DC\uC791"
+    clips:
+    - {fileID: 8300000, guid: 57eaff5019524164ebf12ec8835bb89e, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 46
+    label: "\uB3C4\uB974\uB798\xB7\uAE08\uC904 \uC7A5\uB825"
+    clips:
+    - {fileID: 8300000, guid: 3a1abf46fcf4cd248a4cff36e89c62ba, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: One-shot tension cue; never loop.
+  - id: 47
+    label: "\uD558\uAC15 \uBC1C\uD310 \uC815\uC9C0"
+    clips:
+    - {fileID: 8300000, guid: 9b029c21bd6b57d4b81c19898d73f0d3, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 48
+    label: "\uBD80\uC801 \uD0D1\uC2B9"
+    clips:
+    - {fileID: 8300000, guid: eaee8cd5b00cdff45b8e69871f6f9809, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 49
+    label: "\uBD80\uC801 \uC774\uB3D9"
+    clips:
+    - {fileID: 8300000, guid: e8e7f79d1554336469f43eb38eb46574, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.22
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 1
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 50
+    label: "\uBD80\uC801 \uD0D1\uC2B9 \uD574\uC81C"
+    clips:
+    - {fileID: 8300000, guid: 8ada29b3c7b0f7e438eef47ac2ebfa75, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 51
+    label: "\uACFC\uB141 \uBA85\uC911"
+    clips:
+    - {fileID: 8300000, guid: 17e5bd6faaff16949afe80dcabada7bf, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 52
+    label: "\uAC00\uC9C0 \uBC29\uD5A5 \uC804\uD658"
+    clips:
+    - {fileID: 8300000, guid: d06e9c8e395524541aa9872c1cca128e, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 1.7
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 53
+    label: "\uB099\uC11D \uB5A8\uC5B4\uC9D0"
+    clips:
+    - {fileID: 8300000, guid: 8929afbd363a9fc409336fb0043f96fd, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 54
+    label: "\uB099\uC11D \uAC00\uC9C0 \uCDA9\uB3CC"
+    clips:
+    - {fileID: 8300000, guid: 6d46371f9b8b196429845e2edec6abb0, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 55
+    label: "\uB099\uC11D \uAD74\uB7EC\uAC10"
+    clips:
+    - {fileID: 8300000, guid: ea8ed1b8ecf4b0846854701a4bc4f37e, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.22
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 1, y: 1}
+    loop: 1
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 56
+    label: "\uB099\uC11D \uC544\uB798\uB85C \uB099\uD558"
+    clips:
+    - {fileID: 8300000, guid: e9a21dddba5eeba4ba4176eb592f2071, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 57
+    label: "\uB098\uBB47\uC78E\xB7\uB3CC \uCDA9\uB3CC \uD68C\uC218"
+    clips:
+    - {fileID: 8300000, guid: 6c1f45eec70169745945010b39ab9872, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.5
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 0.12
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 0
+    notes: 
+  - id: 58
+    label: "\uC2E0\uBE44 \uC57D\uCD08 \uD68D\uB4DD \uC9C0\uC810"
+    clips:
+    - {fileID: 8300000, guid: b4c17f8bbee8bfb47b26c95f40445943, type: 3}
+    lightClip: {fileID: 0}
+    volume: 0.35
+    spatialBlend: 1
+    minDistance: 5
+    maxDistance: 100
+    cooldown: 1.5
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    pauseWithGameplay: 1
+    temporaryFallback: 1
+    notes: Source missing; temporary reuse of SFX 8. Replace in this catalog.
+  footstepSoundId: 10
+  fallingWindEnabled: 0
+  stepDistanceInHeights: 0.4
+  movementThreshold: 0.15
+  strongLandingSpeed: 8
+  fallingWindSpeed: 8
+  teleportDistanceInHeights: 4
+  groundProbeHeight: 1
+  groundProbeDistance: 2
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294966015
+  boilingTemperature: 35
+  clothMotionThreshold: 0.3
+  stoneContactDistance: 0.7

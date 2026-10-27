@@ -16,6 +16,16 @@ namespace Herbalist.Abilities
         private bool pendingThrow;
         private Ray pendingAim;
         private float cooldown;
+        private bool _preparingThrow;
+        private float _preparationRemaining;
+        private Ray _preparedAim;
+        private LeafInstallTarget _preparedSocket;
+        private LeafInstallTarget _pendingSocket;
+        private bool _socketThrow, _pendingSocketThrow;
+        public uint ThrowSequence { get; private set; }
+        public float ThrowElapsed { get; private set; }
+        public bool PreparingThrow => _preparingThrow;
+        public void ApplyThrowPresentation(uint sequence, float elapsed) { ThrowSequence = sequence; ThrowElapsed = elapsed; }
         public event Action<float> FacingRequested;
         public LeafAbilitySettings Settings => settings;
         public int ActiveCount => leaves.Count;
@@ -38,6 +48,9 @@ namespace Herbalist.Abilities
         }
         public bool Recovering { get; private set; }
         public uint FeedbackSequence { get; private set; }
+        public uint CatchSequence { get; private set; }
+        public void ApplyCatchSequence(uint sequence) => CatchSequence = sequence;
+        private void OnCatchApproaching() => CatchSequence++;
         public bool RangeRejected { get; private set; }
         private void Awake()
         {
@@ -55,12 +68,29 @@ namespace Herbalist.Abilities
         { spawn = create; despawn = remove; network = online; }
         public void Tick(float dt, Ray aim)
         {
+            if (Herbalist.GameUI.GameplayPause.IsPaused) return;
             cooldown = Mathf.Max(0, cooldown - dt);
+            ThrowElapsed += dt;
             if (pendingThrow) pendingAim = aim;
+            if (_preparingThrow)
+            {
+                _preparedAim = aim;
+                _preparationRemaining -= dt;
+                if (_preparationRemaining <= 0f) { _preparingThrow = false; Launch(_preparedAim); }
+            }
         }
         public bool TryThrow(Ray aim)
+            => TryThrow(aim, null);
+        public bool TryThrowAtSocket(LeafInstallTarget socket)
         {
-            if (Recovering || cooldown > 0) return false;
+            if (socket == null || !socket.HasSocket || !socket.CanInstall ||
+                Vector3.Distance(transform.position, socket.SocketPosition) > settings.range) return false;
+            var direction = socket.SocketPosition - transform.position;
+            return TryThrow(new Ray(transform.position, direction.normalized), socket);
+        }
+        private bool TryThrow(Ray aim, LeafInstallTarget socket)
+        {
+            if (Recovering || cooldown > 0 || _preparingThrow) return false;
             if (ActiveCount >= settings.capacity)
             {
                 LeafProjectile oldest = leaves[0];
@@ -69,25 +99,50 @@ namespace Herbalist.Abilities
                 pendingRecovery = oldest;
                 pendingThrow = true;
                 pendingAim = aim;
+                _pendingSocket = socket;
+                _pendingSocketThrow = socket != null;
                 if (oldest.State != LeafState.Returning) oldest.BeginReturn();
                 return true;
             }
-            Launch(aim);
+            PrepareThrow(aim, socket, socket != null);
             return true;
+        }
+        private void PrepareThrow(Ray aim, LeafInstallTarget socket = null, bool socketThrow = false)
+        {
+            _preparedSocket = socket;
+            _socketThrow = socketThrow;
+            ThrowSequence++;
+            ThrowElapsed = 0f;
+            _preparedAim = aim;
+            _preparationRemaining = settings.throwPreparationSeconds;
+            _preparingThrow = _preparationRemaining > 0f;
+            FaceAim(aim);
+            if (!_preparingThrow) Launch(aim);
+        }
+        private void FaceAim(Ray aim)
+        {
+            if (!settings.faceAimOnThrow) return;
+            var player = GetComponent<Herbalist.Player.PlayerController>();
+            var planar = Vector3.ProjectOnPlane(aim.direction, Vector3.up);
+            if (player == null || planar.sqrMagnitude <= 0.0001f) return;
+            float yaw = Quaternion.LookRotation(planar).eulerAngles.y;
+            player.View.SetBodyYaw(yaw);
+            FacingRequested?.Invoke(yaw);
         }
         private void Launch(Ray aim)
         {
-            if (settings.faceAimOnThrow)
+            var socket = _preparedSocket;
+            bool installAtSocket = _socketThrow;
+            _preparedSocket = null;
+            _socketThrow = false;
+            if (installAtSocket)
             {
-                var player = GetComponent<Herbalist.Player.PlayerController>();
-                var planar = Vector3.ProjectOnPlane(aim.direction, Vector3.up);
-                if (player != null && planar.sqrMagnitude > 0.0001f)
-                {
-                    float yaw = Quaternion.LookRotation(planar).eulerAngles.y;
-                    player.View.SetBodyYaw(yaw);
-                    FacingRequested?.Invoke(yaw);
-                }
+                if (socket == null || !socket.CanInstall ||
+                    Vector3.Distance(transform.position, socket.SocketPosition) > settings.range)
+                { Reject(false); return; }
+                aim = new Ray(transform.position, (socket.SocketPosition - transform.position).normalized);
             }
+            FaceAim(aim);
             Transform frame = launchFrame != null ? launchFrame : transform;
             Vector3 origin = frame.TransformPoint(settings.launchOffset);
             float maxDistance = settings.range;
@@ -99,25 +154,34 @@ namespace Herbalist.Abilities
             if (towardAim.sqrMagnitude < 0.000001f) towardAim = aim.direction;
             Vector3 endpoint = origin + Vector3.ClampMagnitude(towardAim, maxDistance);
             var projectile = spawn();
+            projectile.CatchApproaching += OnCatchApproaching;
             leaves.Add(projectile);
             for (int i = 0; i < displaySlots.Length; i++)
                 if (displaySlots[i] == null) { displaySlots[i] = projectile; break; }
             projectile.Initialize(settings, transform, origin, endpoint, OnReturned, network, frame);
+            if (installAtSocket && !projectile.TryInstallAtSocket(socket)) projectile.BeginReturn();
             RangeRejected = false;
             cooldown = settings.cooldown;
         }
         private void OnReturned(LeafProjectile leaf)
         {
+            leaf.CatchApproaching -= OnCatchApproaching;
             bool launchPending = pendingRecovery == leaf && pendingThrow;
+            var pendingSocket = _pendingSocket;
+            bool pendingSocketThrow = _pendingSocketThrow;
             leaves.Remove(leaf);
             for (int i = 0; i < displaySlots.Length; i++)
                 if (displaySlots[i] == leaf) { displaySlots[i] = null; break; }
-            if (pendingRecovery == leaf) { Recovering = false; pendingRecovery = null; pendingThrow = false; }
+            if (pendingRecovery == leaf) { Recovering = false; pendingRecovery = null; pendingThrow = false; _pendingSocket = null; _pendingSocketThrow = false; }
             despawn(leaf);
-            if (launchPending && isActiveAndEnabled && spawn != null) Launch(pendingAim);
+            if (launchPending && isActiveAndEnabled && spawn != null) PrepareThrow(pendingAim, pendingSocket, pendingSocketThrow);
         }
         public void Clear()
         {
+            _preparingThrow = false;
+            _preparationRemaining = 0f;
+            _preparedSocket = _pendingSocket = null;
+            _socketThrow = _pendingSocketThrow = false;
             pendingThrow = false; pendingRecovery = null; Recovering = false;
             foreach (var leaf in leaves.ToArray()) if (leaf != null) leaf.Finish();
             leaves.Clear();

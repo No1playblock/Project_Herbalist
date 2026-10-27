@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5abfb0e98a8047f3b084dc7845047bb3, type: 3}
+  m_Name: SO_HangingClothTuning
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Levels.HangingClothSettings
+  grabRange: 16
+  minimumHoldSeconds: 1
+  maxAngle: 30
+  driveAcceleration: 20
+  pumpImpulseSeconds: 0.6
+  reversalInputWindow: 0.45
+  spring: 4
+  damping: 0.22
+  maxSwingSpeed: 30
+  releaseSpeed: 1
+  bendMaxAngle: 30
+  bendProbeRadius: 0.08
+  minBendSegmentLength: 1
+  obstructionMask:
+    serializedVersion: 2
+    m_Bits: 4456449

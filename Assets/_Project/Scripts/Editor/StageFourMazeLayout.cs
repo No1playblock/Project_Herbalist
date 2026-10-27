@@ -52,6 +52,8 @@ namespace Herbalist.Editor
             if(Application.isPlaying||SceneManager.GetActiveScene().isDirty)
                 throw new Exception("Stop Play and save scene edits first.");
             var scene=EditorSceneManager.OpenScene(CurrentStagePaths.Maze);
+            if(scene.GetRootGameObjects().Any(root=>root.name=="Stage2_OriginalMechanisms"))
+                throw new Exception("Stage Two now uses the original modeled mazes. The block-maze rebuild would overwrite their authored routes and is disabled for this scene.");
             var flow=Object.FindFirstObjectByType<DescendingMazeFlow>();
             if(flow==null)throw new Exception("Current descending maze flow not found.");
             var mazes=new SerializedObject(flow).FindProperty("_mazes");

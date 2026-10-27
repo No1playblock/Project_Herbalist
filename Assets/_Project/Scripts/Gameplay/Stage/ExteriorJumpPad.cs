@@ -34,8 +34,52 @@ namespace Herbalist.Levels
         private readonly StageActor[] _carriedActors = new StageActor[2];
         private bool Online => Object != null && Object.IsValid;
         public bool Authority => Online ? HasStateAuthority : FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession;
+        public float PresentationFlight => Online ? Flight : _flight;
+        public bool PresentationHasLeaf
+        {
+            get { foreach (var socket in _sockets) if (socket != null && socket.HasLeaf) return true; return false; }
+        }
         public float ChargeFraction => (Online ? LaunchDelayRemaining : _launchDelayRemaining) > 0
             ? 1f : Mathf.Max(Online ? Charge0 : _charge[0], Online ? Charge1 : _charge[1]) / _settings.chargeUnits;
+        public static bool TryLeafInstallHint(StageActor actor, float hintRange, out Vector3 point)
+        {
+            bool found = TryGetLeafInstallTarget(actor, hintRange, out var target);
+            point = found ? target.SocketPosition : default;
+            return found;
+        }
+        public static bool TryLeafInstallHint(StageActor actor, out Vector3 point)
+        {
+            bool found = TryGetLeafInstallTarget(actor, out var target);
+            point = found ? target.SocketPosition : default;
+            return found;
+        }
+        public static bool TryGetLeafInstallTarget(StageActor actor, out LeafInstallTarget target)
+            => TryGetLeafInstallTarget(actor, float.PositiveInfinity, out target);
+        private static bool TryGetLeafInstallTarget(StageActor actor, float hintRange, out LeafInstallTarget target)
+        {
+            target = null;
+            var ability = actor != null ? actor.Abilities : null;
+            if (actor == null || !actor.Available || ability == null || !ability.Unlocked ||
+                ability.Kind != PlayerAbilityKind.Leaf || ability.Leaf?.Settings == null) return false;
+
+            float nearest = float.PositiveInfinity;
+            bool found = false;
+            foreach (var pad in ActivePads)
+            {
+                if (pad == null || !pad.isActiveAndEnabled || pad._sockets == null || pad._settings == null) continue;
+                float range = Mathf.Min(hintRange, Mathf.Min(pad._settings.leafInstallRange, ability.Leaf.Settings.range));
+                foreach (var socket in pad._sockets)
+                {
+                    if (socket == null || !socket.HasSocket || !socket.CanInstall) continue;
+                    float distance = Vector3.Distance(actor.transform.position, socket.SocketPosition);
+                    if (distance > range || distance >= nearest) continue;
+                    nearest = distance;
+                    target = socket;
+                    found = true;
+                }
+            }
+            return found;
+        }
         public static bool TryGetLaunchCountdown(out float remaining)
         {
             remaining = float.MaxValue;

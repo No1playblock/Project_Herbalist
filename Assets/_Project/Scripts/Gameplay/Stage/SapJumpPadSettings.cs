@@ -5,6 +5,7 @@ namespace Herbalist.Levels
     public sealed class SapJumpPadSettings : ScriptableObject
     {
         [Min(1)] public int requiredRiders = 2;
+        [Min(.1f)] public float leafInstallRange = 12f;
         [Min(.05f)] public float chargeUnits = 1.0f;
         [Min(.01f)] public float injectionGrace = .2f;
         [Header("Launch warning")]
