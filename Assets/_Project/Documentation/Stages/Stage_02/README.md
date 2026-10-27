@@ -2,7 +2,7 @@
 
 보충물 배치는 사용자 제공 `수액_미로_시스템.pdf`의 1~3쪽 도면을 기준으로 2026-10-26 갱신했다. 노란 테두리·남색 타원의 중심을 실제 미로 홈에 대응시켜 `Refill_+20_N` Transform을 옮겼다. 위쪽에 몰려 있던 배치를 고쳤으며 개수는 1번 4개, 2번 7개, 3번 8개다. 미로 메시, 시작·도착·누수 표식과 수량 설정은 변경하지 않았다. 세 미로의 정면 렌더를 PDF와 대조했고, 저장된 씬을 별도 Preview Scene에서 읽어 19개 모두 +20 획득 및 중복 획득 방지를 확인했다. 도면 좌표와 배치 대조 자료는 `Logs/MazePdfReference`에 있다. 전체 경로 수동 플레이와 Host/Client 실접속 검사는 이번 배치 변경에서 수행하지 않았다.
 
-현재 플레이 씬은 `Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Mazes.unity`다. 앞쪽 수액 역할이 활성 미로의 조작 구역에서 R을 누르면 미로 화면을 열고, 좌클릭을 누른 채 경로를 따라 드래그해 수액을 이동한다. 좌클릭을 놓으면 수액이 멈추며, R을 다시 누르면 캐릭터 조작으로 돌아간다. 현재 세 미로는 `Limit Pointer Path Distance`를 꺼서 먼 목표라는 이유로 이동을 중단하지 않는다. 실제 벽, 누수·보충·재시도와 Host 권한 처리는 유지한다.
+현재 플레이 씬은 `Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Mazes.unity`다. 앞쪽 수액 역할이 활성 미로의 조작 구역에서 R을 누르면 미로 화면을 열고, 좌클릭을 누른 채 경로를 따라 드래그해 수액을 이동한다. 좌클릭을 놓으면 수액이 멈추며, R을 다시 누르면 캐릭터 조작으로 돌아간다. 2026-10-27 요청에 따라 현재 세 미로는 `Limit Pointer Path Distance`를 켜고 `Max Target Path Distance`를 **3m**로 설정했다. 현재 수액에서 마우스 목표까지 통로를 따라 계산한 월드 거리가 3m를 넘으면 이동하지 않는다. 화면 직선거리나 플레이어와의 거리가 아니며, 근처 통로를 따라 드래그하여 조종한다. 실제 벽, 누수·보충·재시도와 Host 권한 처리는 유지한다.
 
 ## 2026-10-26 수정
 
@@ -46,3 +46,16 @@
 12개 구멍의 LeafSocket은 뒷면의 갈라진 흔적 중심에 맞추며, 잎의 넓은 면이 미로 판과 평행하도록 회전한다. 모든 덮개는 가장 큰 흔적을 기준으로 동일한 크기(약 가로 14.85, 세로 32.23, 시각 두께 0.12 월드 단위)를 사용한다. `LeafInstallTarget._installedVisualScale`은 이 소켓에 설치된 잎에만 적용되는 시각 Transform 크기다. 0이면 기존 공용 설치 배율을 사용하므로 점프대와 일반 벽의 크기는 변경하지 않는다. 공용 `SO_RevisionLeaf` 배율 자체도 유지했다.
 
 `SapMazeBoard.InitializeSurface`는 경로에 누수 지점을 Snap할 때 작성된 소켓과 타깃 사이 상대 위치를 보존한다. 누수 시뮬레이션 지점은 기존 경로를 유지하고, 덮개는 흔적 중심에 붙는다. 실제 투척으로 12개 모두 설치·판과 평행한 회전·동일 크기·Blocked 판정 및 잎 제거 후 해제를 검사했다. 클라이언트 `ApplyReplica` 경로에서도 12개 타깃의 동일 크기가 적용되는 것을 확인했다. 두 프로세스 Host/Client 실접속 검사는 수행하지 않았다.
+
+## 구멍 뒷면 누수 물줄기 (2026-10-27)
+
+각 누수 소켓의 기존 Host `LeakMask`를 그대로 사용하며, `MazeLeakSocket.Present`가 `PF_MazeLeakStream`을 켜고 끈다. 세 미로 3/4/5개, 총 12개 구멍에 편집 단계에서 배치했다. 수액 머리 또는 현재 보이는 꼬리가 막히지 않은 구멍을 덮는 동안 분출하며, 꼬리까지 지나가거나 잎으로 막으면 물줄기와 물방울을 즉시 끈다. 실패·완료·비활성 구간에도 누수가 남지 않는다. 수액량 손실과 기존 잎 판정은 바꾸지 않았다.
+
+`MazeLeakStreamPresentation`은 능력의 `MAT_SapStream`과 `WaterSprayDroplets`의 재질·메시를 그대로 사용한다. 능력과 같은 원통 표면 파동/UV 방식으로 구멍 뒷면에서 짧게 분출한 뒤 중력 방향으로 휜다. 예전 사각 WetSurface 표시는 숨겼다. 뒷면 MazeBack 레이어와 기존 역할별 앞/뒤 정보 분리는 유지한다.
+
+모양은 `Assets/_Project/Prefabs/VFX/PF_MazeLeakStream.prefab`에서 조정한다. `Diameter`는 월드 굵기, `Launch Speed`와 `Flight Time`은 뿜어지는 거리, `Gravity`는 아래로 휘는 정도, 물방울 필드는 크기/밀도/속도다. 게임플레이 충돌이나 추가 네트워크 오브젝트는 만들지 않는다. 물줄기 위치는 각 Leak 자식으로 저장되므로 미로/구멍 이동을 따라간다.
+
+거리 제한은 `Assets/_Project/Data/Stages/Revision_260928/SO_RevisionMaze_1~3_Scale27.asset`에서 변경한다. Host가 매 입력의 실제 통로 길이를 검사하므로 Client 입력에도 동일하게 적용된다.
+검증 결과: Windows Development Host/Client 별도 두 프로세스로 3개 미로의 총 12개 구멍 누수 켜짐/꺼짐을 모두 확인했다. 미로마다 실제 네트워크 잎을 설치해 분출 차단 및 누수 마스크 해제를 양쪽에서 확인했다. Host의 원거리 거부/근거리 이동 검사와 Client 가상 마우스가 보낸 원거리 목표 거부·근거리 이동을 세 미로 모두 통과했다. 기존 원격 R 진입/종료, 뗏목 하강 및 현재 Stage_03_BranchRide 전환도 통과했다. 양쪽 ALL PASS, 런타임 예외/오류 0건. 각 미로를 양쪽의 뒷면 확인용 카메라로 렌더한 6개 PNG와 로그는 로컬 `Logs/MazeLeakVerification_20261027`에 보존했다. 일반 역할별 카메라 마스크는 변경하지 않았다.
+
+검증은 `MazeLeakNetworkChecks`를 기존 명시적 `MultiplayerTraversalCheck`에 연결한 opt-in 개발 검사다. 구멍별 누수 재현에는 수액 위치와 시험용 volume=1000을 Host에서 주입하고, 누수 검사 뒤 실제 정의의 초기 수액량으로 되돌린다. 미로 완료 상태를 주입해 다음 구간/씬 전환을 단축하므로 전체 퍼즐 수동 완주 검사는 아니다. 두 프로세스 검사 도중 오래된 Fusion prefab table import 캐시가 Stage 2 플레이어를 누락하고 있어 SDK의 Rebuild Prefab Table로 갱신한 뒤 다시 빌드/검증했다. 신규 자산 추가 후 같은 증상이 있으면 Fusion 메뉴의 Rebuild Prefab Table를 사용한다.

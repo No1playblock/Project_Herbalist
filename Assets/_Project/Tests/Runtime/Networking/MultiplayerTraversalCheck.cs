@@ -204,10 +204,18 @@ namespace Herbalist.Tests
                     await Wait(() => mazeFlow.CurrentBoard == boards[i], "maze station " + i);
                     var board = boards[i];
                     Check(board.Surface != null && board.Surface.Ready, "maze surface built " + i);
+                    await MazeLeakNetworkChecks.Run(host, board, i, _folder);
                     if (host)
                     {
                         await Signal("maze-control-" + i);
                         await Wait(() => board.Controlling, "remote R " + i, 20);
+                        await Wait(() => Status("client.txt") == "maze-far-" + i, "remote far target ready");
+                        var parked = board.SapPosition;
+                        Set("host.txt", "maze-far-ready-" + i);
+                        await Wait(() => Status("client.txt") == "maze-far-done-" + i, "remote far target sent");
+                        Check(Vector2.Distance(parked, board.SapPosition) < .001f, "remote target beyond 3m rejected by Host");
+                        Set("host.txt", "maze-near-ready-" + i);
+                        Debug.Log("[MazeLeakCheck] Remote 3m range rejection PASS maze=" + i);
                         var before = board.SapPosition;
                         await Wait(() => Vector2.Distance(before, board.SapPosition) > .025f, "remote pointer movement " + i, 25);
                         Set("host.txt", "maze-moved-" + i);
@@ -227,6 +235,14 @@ namespace Herbalist.Tests
                         Check(board.Surface.TryFindPath(board.SapPosition, board.SurfaceGoal, path) && path.Count > 1, "maze path " + i);
                         var target = path.Count > 8 ? path[8] : Vector2.MoveTowards(board.SapPosition, path[path.Count - 1], .35f);
                         var camera = NetworkPlayer.Local.GetComponent<PlayerController>().View.Camera;
+                        var goal = board.SurfaceGoal;
+                        var farPixel = camera.WorldToScreenPoint(board.transform.TransformPoint(new Vector3(goal.x, goal.y, board.Surface.SurfaceZ(goal, 0))));
+                        Set("client.txt", "maze-far-" + i);
+                        await Wait(() => Status("host.txt") == "maze-far-ready-" + i, "Host ready for distant click");
+                        InputSystem.QueueStateEvent(mouse, new MouseState { position = farPixel, buttons = 1 });
+                        await Task.Delay(750);
+                        Set("client.txt", "maze-far-done-" + i);
+                        await Wait(() => Status("host.txt") == "maze-near-ready-" + i, "distant click rejected");
                         var pixel = camera.WorldToScreenPoint(board.transform.TransformPoint(new Vector3(target.x, target.y, board.Surface.SurfaceZ(target, 0))));
                         InputSystem.QueueStateEvent(mouse, new MouseState { position = pixel, buttons = 1 });
                         await Wait(() => Status("host.txt") == "maze-moved-" + i, "host observed pointer " + i, 30);
