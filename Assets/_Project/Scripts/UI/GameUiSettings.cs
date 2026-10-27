@@ -29,6 +29,8 @@ namespace Herbalist.GameUI
         public ControlHint[] controls;
         public Vector3 markerOffset = new Vector3(-.65f, 1.9f, 0);
         [Min(.1f)] public float feedbackDuration=4;
+        [Min(0)] public float objectiveHoldDuration = 5f;
+        [Min(.01f)] public float objectiveFadeDuration = 1f;
         public string menuScene="Assets/_Project/Scenes/01_Title/MainMenu.unity";
         public string soloScene="Assets/_Project/Scenes/Development/Sandbox_Abilities.unity";
     }

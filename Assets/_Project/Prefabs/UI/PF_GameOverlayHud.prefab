@@ -286,6 +286,7 @@ GameObject:
   - component: {fileID: 7711328457083416342}
   - component: {fileID: 8083313801564831057}
   - component: {fileID: 911335555916222849}
+  - component: {fileID: 5654738430965171873}
   m_Layer: 0
   m_Name: Resume
   m_TagString: Untagged
@@ -395,6 +396,19 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5654738430965171873
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1285328998999211624}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 736303600ca5d0e47ba40d0163c7467f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Audio.SfxUiFeedback
+  _clickId: 1
 --- !u!1 &1390626953454978100
 GameObject:
   m_ObjectHideFlags: 0
@@ -532,6 +546,7 @@ MonoBehaviour:
   mainMenu: {fileID: 3040458156023346428}
   title: 
   defaultObjective: 
+  _stageHeaderGroup: {fileID: 6498284465660720278}
 --- !u!114 &3348535450943759721
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -556,6 +571,7 @@ GameObject:
   - component: {fileID: 7957414924116240599}
   - component: {fileID: 8152179259182733787}
   - component: {fileID: 414959721950263892}
+  - component: {fileID: 6498284465660720278}
   m_Layer: 0
   m_Name: StageHeader
   m_TagString: Untagged
@@ -622,6 +638,18 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!225 &6498284465660720278
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1598679166980658068}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &2046809765645073226
 GameObject:
   m_ObjectHideFlags: 0
@@ -634,6 +662,7 @@ GameObject:
   - component: {fileID: 428464950421128197}
   - component: {fileID: 1927626487106385622}
   - component: {fileID: 2580140760148252297}
+  - component: {fileID: 7062612855159656783}
   m_Layer: 0
   m_Name: Options
   m_TagString: Untagged
@@ -743,6 +772,19 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &7062612855159656783
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2046809765645073226}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 736303600ca5d0e47ba40d0163c7467f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Audio.SfxUiFeedback
+  _clickId: 1
 --- !u!1 &2586874335965346428
 GameObject:
   m_ObjectHideFlags: 0
@@ -969,6 +1011,7 @@ GameObject:
   - component: {fileID: 8412823255838693368}
   - component: {fileID: 8065515994339526672}
   - component: {fileID: 3040458156023346428}
+  - component: {fileID: 8271328407798423915}
   m_Layer: 0
   m_Name: MainMenu
   m_TagString: Untagged
@@ -1078,6 +1121,19 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8271328407798423915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4370324470278216921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 736303600ca5d0e47ba40d0163c7467f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Audio.SfxUiFeedback
+  _clickId: 1
 --- !u!1 &5039485969590119086
 GameObject:
   m_ObjectHideFlags: 0
@@ -1843,8 +1899,29 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8392791985741292672, guid: e8867de3d8eb9b847a6251caa6cac959, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8543632846168530746}
   m_SourcePrefab: {fileID: 100100000, guid: e8867de3d8eb9b847a6251caa6cac959, type: 3}
+--- !u!1 &6404417255139678827 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8392791985741292672, guid: e8867de3d8eb9b847a6251caa6cac959, type: 3}
+  m_PrefabInstance: {fileID: 3213353895017414379}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8543632846168530746
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6404417255139678827}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 736303600ca5d0e47ba40d0163c7467f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Audio.SfxUiFeedback
+  _clickId: 3
 --- !u!224 &7708259183718673230 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5071366217366820261, guid: e8867de3d8eb9b847a6251caa6cac959, type: 3}
