@@ -40,6 +40,7 @@ namespace Herbalist.Levels
         private bool Online => Object != null && Object.IsValid;
         private bool Authority => Online ? HasStateAuthority : FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession;
         public int CurrentMaze => Online ? Current : _current;
+        public int PresentationPhase => Online ? Phase : _phase;
         public SapMazeBoard CurrentBoard => (Online ? Phase : _phase) == 3 && CurrentMaze >= 0 &&
             CurrentMaze < _mazes.Length ? _mazes[CurrentMaze] : null;
         public bool Finished => CurrentMaze >= _mazes.Length;

@@ -11,6 +11,7 @@ namespace Herbalist.Levels
         [Min(.01f)] public float initialVolume=8;
         [Min(.01f)] public float speed=1.5f;
         [Min(.01f)] public float maxTargetPathDistance=3f;
+        public bool limitPointerPathDistance = true;
         [Min(.01f)] public float leakRadius=.45f;
         [Min(0)] public float lossPerSecond=6;
         public bool useRefillVolumeRules;

@@ -81,10 +81,25 @@ namespace Herbalist.Levels
         public SapMazeSurface Surface => _surface;
         public Vector2 SurfaceStart => _surfaceStart;
         public Vector2 SurfaceGoal => _surfaceGoal;
+        public Transform StartMarker => _startMarker;
+        public Transform GoalMarker => _goalMarker;
         public Vector2 SapPosition => CurrentPosition();
         public bool Active=>Online?Playable:_playable;
         public bool AnyLeak=>(Online?LeakMask:_leakMask)!=0;
         public bool Controlling=>(Online?ControllerSlot:_controllerSlot)>=0;
+        public static SapMazeBoard LocalMazeView
+        {
+            get
+            {
+                var flow = StageLevel.Instance != null ? StageLevel.Instance.GetComponent<DescendingMazeFlow>() : null;
+                var board = flow != null ? flow.CurrentBoard : null;
+                return board != null && board.Active && board.Controlling && board._controller != null &&
+                    board._controller.LocallyControlled && board._controlView == MazeControlView.MazeCamera &&
+                    board._frontCamera != null ? board : null;
+            }
+        }
+        public bool IsViewedBy(PlayerView view) => view != null && _controller != null &&
+            _controller.View == view && LocalMazeView == this;
         public MazeRunState State=>Online?new MazeRunState{From=From,To=To,Progress=Progress,Volume=Volume,
             CollectedRefillMask=CollectedRefillMask,RetryRemaining=Retry,
             Phase=(MazePhase)PhaseValue,Attempt=Attempt}:_state;
@@ -117,13 +132,13 @@ namespace Herbalist.Levels
                 if(_leaks[i]!=null && _leaks[i].Target!=null)
                 {
                     var target=_leaks[i].Target.transform;
+                    var socket=_leaks[i].Target.Socket;
+                    var socketOffset=socket!=null ? socket.position-target.position : Vector3.zero;
                     var local=transform.InverseTransformPoint(target.position);
                     target.position=transform.TransformPoint(new Vector3(_surfaceLeaks[i].x,_surfaceLeaks[i].y,local.z));
-                    var socket=_leaks[i].Target.Socket;
                     if(socket!=null)
                     {
-                        local=transform.InverseTransformPoint(socket.position);
-                        socket.position=transform.TransformPoint(new Vector3(_surfaceLeaks[i].x,_surfaceLeaks[i].y,local.z));
+                        socket.position=target.position+socketOffset;
                     }
                 }
             }
@@ -146,7 +161,7 @@ namespace Herbalist.Levels
             if(Vector2.Distance(placed,snapped)>_placementWarningDistance)
                 Debug.LogWarning("Maze " + name + " " + label + " is outside its channel by " +
                     Vector2.Distance(placed,snapped).ToString("0.00") + " local units",marker);
-            marker.position=transform.TransformPoint(new Vector3(snapped.x,snapped.y,local.z));
+            // Keep the designer's authored transform; only the simulation uses the corrected point.
             return snapped;
         }
 #if UNITY_EDITOR
@@ -212,7 +227,7 @@ namespace Herbalist.Levels
             {
                 var delta=_targetPoint-_definition.Position(_state);
                 var worldDistance=transform.TransformVector(new Vector3(delta.x,delta.y,0)).magnitude;
-                var input=Controlling && _hasTarget && worldDistance<=_definition.maxTargetPathDistance ? delta.normalized : Vector2.zero;
+                var input=Controlling && _hasTarget && (!_definition.limitPointerPathDistance || worldDistance<=_definition.maxTargetPathDistance) ? delta.normalized : Vector2.zero;
                 SapMazeSimulation.Tick(_definition,ref _state,input,dt,i=>_leaks[i].Blocked);
             }
             if(_state.Attempt!=attempt){_surfacePosition=_surfaceStart;_surfaceHeading=Vector2.zero;ResetTrail();}
@@ -285,7 +300,7 @@ namespace Herbalist.Levels
                         var segment=_targetPath[i]-_targetPath[i-1];
                         pathLength+=transform.TransformVector(new Vector3(segment.x,segment.y,0)).magnitude;
                     }
-                    if(pathLength>_definition.maxTargetPathDistance) moving=false;
+                    if(_definition.limitPointerPathDistance && pathLength>_definition.maxTargetPathDistance) moving=false;
                 }
             }
             int steps=Mathf.Max(1,Mathf.CeilToInt(dt*_definition.speed/Mathf.Max(.05f,_definition.leakRadius*.5f)));
@@ -406,14 +421,27 @@ namespace Herbalist.Levels
             var flow = StageLevel.Instance != null ? StageLevel.Instance.GetComponent<DescendingMazeFlow>() : null;
             var board = flow != null ? flow.CurrentBoard : null;
             var camera = view != null ? view.Camera : null;
-            if (board == null || !board.Active || !board.Controlling || camera == null ||
+            if (board == null || !board.Active || !board.Controlling || board._controller == null ||
+                board._controller.View != view || camera == null ||
                 Mouse.current == null || !GameplayCursor.AllowsPointerInput) return false;
-            var screenPoint = Mouse.current.position.ReadValue();
+            return board.TryProjectPointer(camera, Mouse.current.position.ReadValue(), out boardPoint);
+        }
+        public bool TryProjectPointer(Camera camera, Vector2 screenPoint, out Vector2 boardPoint)
+        {
+            boardPoint = default;
+            if (camera == null || !float.IsFinite(screenPoint.x) || !float.IsFinite(screenPoint.y)) return false;
             if (!camera.pixelRect.Contains(screenPoint)) return false;
             var ray = camera.ScreenPointToRay(screenPoint);
-            var plane = new Plane(board.transform.forward, board.transform.position);
-            if (!plane.Raycast(ray, out float distance) || distance < 0) return false;
-            var local = board.transform.InverseTransformPoint(ray.GetPoint(distance));
+            Vector3 point;
+            if (_surface != null && _surface.Ready && _surface.MazeCollider != null &&
+                _surface.MazeCollider.Raycast(ray, out var hit, float.PositiveInfinity)) point = hit.point;
+            else
+            {
+                var plane = new Plane(transform.forward, transform.position);
+                if (!plane.Raycast(ray, out float distance) || distance < 0) return false;
+                point = ray.GetPoint(distance);
+            }
+            var local = transform.InverseTransformPoint(point);
             boardPoint = new Vector2(local.x, local.y);
             return !float.IsNaN(boardPoint.x) && !float.IsNaN(boardPoint.y) &&
                    !float.IsInfinity(boardPoint.x) && !float.IsInfinity(boardPoint.y);

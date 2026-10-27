@@ -16,7 +16,7 @@ namespace Herbalist.GameUI
         {
             if (gameObject.activeSelf != visible)gameObject.SetActive(visible);
             if (!visible)return;
-            if (_amount != null)_amount.text = current.ToString("0.0") + " / " + target.ToString("0");
+            if (_amount != null)_amount.text = "수액 " + current.ToString("0.0") + "\n목표 " + target.ToString("0");
             if (_droplet != null)
             {
                 var ratio = target > 0 ? current / target : 0;
