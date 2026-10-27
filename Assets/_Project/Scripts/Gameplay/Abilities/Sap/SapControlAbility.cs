@@ -23,6 +23,7 @@ namespace Herbalist.Abilities
         public bool Ready => held != null ? held.State == SapState.Controlled : replicaReady;
         public int ActiveCount => deposits.Count;
         public SapDeposit Held => held;
+        public event Action<float> FacingRequested;
         private void Awake()
         {
             player = GetComponent<PlayerController>(); hose = new SapHoseSprayer();
@@ -34,7 +35,23 @@ namespace Herbalist.Abilities
         {
             Spraying = false;
             if (Herbalist.GameUI.GameplayPause.IsPaused || settings == null || create == null) return;
+            // Use the same eligible inlet as the authored injection prompt.
+            // Turn before resolving the body-relative hose origin.
+            Vector3 inletPoint = default;
+            bool aimingAtInlet = useHeld && SapInjectionPort.TryInteractionHint(
+                GetComponent<Herbalist.StageOne.StageActor>(), out inletPoint);
+            if (aimingAtInlet)
+            {
+                Vector3 facing = Vector3.ProjectOnPlane(inletPoint - transform.position, Vector3.up);
+                if (facing.sqrMagnitude > .000001f)
+                {
+                    float yaw = Quaternion.LookRotation(facing).eulerAngles.y;
+                    player.View.SetBodyYaw(yaw);
+                    FacingRequested?.Invoke(yaw);
+                }
+            }
             Vector3 origin = HoverPosition(aim);
+            if (aimingAtInlet) aim = new Ray(origin, (inletPoint - origin).normalized);
             if (!useHeld)
             {
                 if (held == null) return;
@@ -51,7 +68,7 @@ namespace Herbalist.Abilities
             }
             held.transform.position = origin;
             Controlling = true; CanPlace = true;
-            Spraying = player.Tuning.CanAimWithHead(player.View.BodyYaw, aim.direction);
+            Spraying = aimingAtInlet || player.Tuning.CanAimWithHead(player.View.BodyYaw, aim.direction);
             hose.Tick(held, aim, Spraying,
                 dt, settings, CreateHoseMark);
         }

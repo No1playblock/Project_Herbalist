@@ -36,6 +36,7 @@ namespace Herbalist.Networking
         {
             abilities.ConfigureNetwork(HasStateAuthority);
             abilities.Leaf.FacingRequested += SetShotFacing;
+            if (abilities.Sap != null) abilities.Sap.FacingRequested += SetShotFacing;
             if (!HasStateAuthority) return;
             abilities.Leaf.Configure(() => Runner.Spawn(leafPrefab, transform.position, Quaternion.identity, Object.InputAuthority).GetComponent<LeafProjectile>(),
                 leaf => { if (leaf != null && Runner != null && Runner.IsRunning) Runner.Despawn(leaf.GetComponent<NetworkObject>()); }, true);
@@ -87,6 +88,7 @@ namespace Herbalist.Networking
         public override void Despawned(NetworkRunner runner, bool hasState)
         {
             abilities.Leaf.FacingRequested -= SetShotFacing;
+            if (abilities.Sap != null) abilities.Sap.FacingRequested -= SetShotFacing;
             abilities.RevokeLeaf();
         }
     }
