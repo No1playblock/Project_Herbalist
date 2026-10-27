@@ -227,13 +227,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 275250995}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.002464694, y: -0.99830824, z: -0.041894376, w: -0.04024224}
-  m_LocalPosition: {x: -1.8133862, y: 2.4769547, z: 2.9112573}
+  m_LocalRotation: {x: 0.007011295, y: -0.99662113, z: 0.07155963, w: -0.039703343}
+  m_LocalPosition: {x: -0.125, y: 2.17, z: 2.9112573}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: -4.81, y: -184.613, z: -0.089}
+  m_LocalEulerAnglesHint: {x: 8.168, y: -184.644, z: -1.138}
 --- !u!114 &275250999
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -344,15 +344,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 559769329002658560, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.6
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 559769329002658560, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 559769329002658560, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 573900651118977295, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
@@ -371,24 +371,28 @@ PrefabInstance:
       value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 1227990144986216772, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
-      propertyPath: m_dragForce
-      value: 0.6
-      objectReference: {fileID: 0}
-    - target: {fileID: 1227990144986216772, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
-      propertyPath: m_jointRadius
-      value: 0.05125
-      objectReference: {fileID: 0}
-    - target: {fileID: 1227990144986216772, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
-      propertyPath: m_stiffnessForce
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 1267651629847455210, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
       value: 0.4
       objectReference: {fileID: 0}
+    - target: {fileID: 1227990144986216772, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_jointRadius
+      value: 0.04820122
+      objectReference: {fileID: 0}
+    - target: {fileID: 1227990144986216772, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_stiffnessForce
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1267651629847455210, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_dragForce
+      value: 0.3
+      objectReference: {fileID: 0}
     - target: {fileID: 1267651629847455210, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.046398476
+      value: 0.07317073
+      objectReference: {fileID: 0}
+    - target: {fileID: 1267651629847455210, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_gravityPower
+      value: 0.8
       objectReference: {fileID: 0}
     - target: {fileID: 1267651629847455210, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_anglelimitType
@@ -396,7 +400,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1267651629847455210, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.14285715
+      value: 0.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 1365718424596323691, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: 'Colliders.Array.data[0]'
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 1399535692295436721, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
@@ -424,15 +432,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2298561382690164169, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.6
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 2298561382690164169, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 2298561382690164169, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2470317440086749930, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_Name
@@ -440,11 +448,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2568910659729249608, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.6
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 2568910659729249608, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 2568910659729249608, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_gravityPower
@@ -452,7 +460,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2568910659729249608, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2955351135069857872, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_LocalPosition.x
@@ -496,11 +504,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3033690611132812531, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.4
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 3033690611132812531, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.046398476
+      value: 0.07317073
+      objectReference: {fileID: 0}
+    - target: {fileID: 3033690611132812531, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_gravityPower
+      value: 0.8
       objectReference: {fileID: 0}
     - target: {fileID: 3033690611132812531, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_anglelimitType
@@ -508,19 +520,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3033690611132812531, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.14285715
+      value: 0.03
       objectReference: {fileID: 0}
     - target: {fileID: 3167206618554692607, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.134
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 3167206618554692607, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 3167206618554692607, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.17857143
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3415783384733405760, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
@@ -536,27 +548,43 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3429253346731166103, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 3429253346731166103, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3705571867703192199, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.1
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3705571867703192199, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_jointRadius
+      value: 0.06196903
+      objectReference: {fileID: 0}
+    - target: {fileID: 3705571867703192199, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_gravityPower
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3705571867703192199, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_stiffnessForce
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3728698703610743995, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: 'Colliders.Array.data[0]'
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 3823675494206489709, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.6
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 3823675494206489709, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 3823675494206489709, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4150820012099498039, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
@@ -568,7 +596,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4907717442330249483, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.3
+      value: 0.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907717442330249483, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_jointRadius
+      value: 0.06196903
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907717442330249483, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_gravityPower
+      value: 0.04
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907717442330249483, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_stiffnessForce
+      value: 0.02
       objectReference: {fileID: 0}
     - target: {fileID: 5080800701668263734, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
@@ -576,23 +616,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5080800701668263734, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 5080800701668263734, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5145014059160050901, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.6
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 5145014059160050901, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 5145014059160050901, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: SpringBone.Springs.Array.data[4].Joints.Array.size
@@ -744,35 +784,35 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: SpringBone.Springs.Array.data[3].ColliderGroups.Array.size
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: SpringBone.Springs.Array.data[4].ColliderGroups.Array.size
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: SpringBone.Springs.Array.data[5].ColliderGroups.Array.size
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: SpringBone.Springs.Array.data[6].ColliderGroups.Array.size
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: SpringBone.Springs.Array.data[7].ColliderGroups.Array.size
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: SpringBone.Springs.Array.data[8].ColliderGroups.Array.size
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: SpringBone.Springs.Array.data[9].ColliderGroups.Array.size
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: SpringBone.Springs.Array.data[10].ColliderGroups.Array.size
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: 'SpringBone.Springs.Array.data[1].ColliderGroups.Array.data[0]'
@@ -793,114 +833,126 @@ PrefabInstance:
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: 'SpringBone.Springs.Array.data[4].ColliderGroups.Array.data[0]'
       value: 
-      objectReference: {fileID: 1692979634}
+      objectReference: {fileID: 1620636125}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: 'SpringBone.Springs.Array.data[4].ColliderGroups.Array.data[1]'
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1278460295}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: 'SpringBone.Springs.Array.data[5].ColliderGroups.Array.data[0]'
       value: 
-      objectReference: {fileID: 1692979634}
+      objectReference: {fileID: 1620636125}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: 'SpringBone.Springs.Array.data[5].ColliderGroups.Array.data[1]'
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1278460295}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: 'SpringBone.Springs.Array.data[6].ColliderGroups.Array.data[0]'
       value: 
-      objectReference: {fileID: 1692979634}
+      objectReference: {fileID: 1620636125}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: 'SpringBone.Springs.Array.data[6].ColliderGroups.Array.data[1]'
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1278460295}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: 'SpringBone.Springs.Array.data[7].ColliderGroups.Array.data[0]'
       value: 
-      objectReference: {fileID: 1692979634}
+      objectReference: {fileID: 1620636125}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: 'SpringBone.Springs.Array.data[7].ColliderGroups.Array.data[1]'
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1278460295}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: 'SpringBone.Springs.Array.data[8].ColliderGroups.Array.data[0]'
       value: 
-      objectReference: {fileID: 1692979634}
+      objectReference: {fileID: 1278460295}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: 'SpringBone.Springs.Array.data[8].ColliderGroups.Array.data[1]'
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1620636125}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: 'SpringBone.Springs.Array.data[9].ColliderGroups.Array.data[0]'
       value: 
-      objectReference: {fileID: 1692979634}
+      objectReference: {fileID: 1620636125}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: 'SpringBone.Springs.Array.data[9].ColliderGroups.Array.data[1]'
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1278460295}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: 'SpringBone.Springs.Array.data[10].ColliderGroups.Array.data[0]'
       value: 
-      objectReference: {fileID: 1692979634}
+      objectReference: {fileID: 1620636125}
     - target: {fileID: 5365008051112877401, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: 'SpringBone.Springs.Array.data[10].ColliderGroups.Array.data[1]'
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1278460295}
     - target: {fileID: 5791143256973090604, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.134
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 5791143256973090604, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 5791143256973090604, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.17857143
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5932660295870467498, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5932660295870467498, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
-      propertyPath: m_stiffnessForce
-      value: 0.01
-      objectReference: {fileID: 0}
-    - target: {fileID: 6029212232692834855, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
-      propertyPath: m_dragForce
-      value: 0.134
-      objectReference: {fileID: 0}
-    - target: {fileID: 6029212232692834855, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.06196903
       objectReference: {fileID: 0}
-    - target: {fileID: 6029212232692834855, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
-      propertyPath: m_stiffnessForce
-      value: 0.17857143
-      objectReference: {fileID: 0}
-    - target: {fileID: 6037774057255582742, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
-      propertyPath: m_dragForce
-      value: 0.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6037774057255582742, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+    - target: {fileID: 5932660295870467498, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_gravityPower
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5932660295870467498, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_stiffnessForce
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6029212232692834855, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_dragForce
+      value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6029212232692834855, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_jointRadius
+      value: 0.04820122
+      objectReference: {fileID: 0}
+    - target: {fileID: 6029212232692834855, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_stiffnessForce
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6037774057255582742, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_dragForce
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6037774057255582742, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_jointRadius
+      value: 0.06196903
+      objectReference: {fileID: 0}
+    - target: {fileID: 6037774057255582742, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_gravityPower
+      value: 0.03
+      objectReference: {fileID: 0}
     - target: {fileID: 6037774057255582742, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.035714284
+      value: 0.01
       objectReference: {fileID: 0}
     - target: {fileID: 6261951048852226249, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.134
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 6261951048852226249, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 6261951048852226249, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.17857143
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6508389148839765226, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_pitch
@@ -928,31 +980,43 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6679564058717277270, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.134
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 6679564058717277270, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 6679564058717277270, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.17857143
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6773790912039317769, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.134
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 6773790912039317769, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 6773790912039317769, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.17857143
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6813487089693263547, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.2
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6813487089693263547, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_jointRadius
+      value: 0.06196903
+      objectReference: {fileID: 0}
+    - target: {fileID: 6813487089693263547, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_gravityPower
+      value: 0.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 6813487089693263547, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_stiffnessForce
+      value: 0.01
       objectReference: {fileID: 0}
     - target: {fileID: 7090395481239219803, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
@@ -960,23 +1024,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7090395481239219803, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 7090395481239219803, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7117057572231549383, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.134
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 7117057572231549383, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 7117057572231549383, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.17857143
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7521860179058012037, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
@@ -984,11 +1048,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7521860179058012037, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 7521860179058012037, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7794911504823251686, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
@@ -996,31 +1060,39 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7794911504823251686, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 7794911504823251686, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8321093522009288919, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.6
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 8321093522009288919, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 8321093522009288919, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8481985370726738980, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
-      value: 0.3
+      value: 0.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 8481985370726738980, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_jointRadius
+      value: 0.06196903
+      objectReference: {fileID: 0}
+    - target: {fileID: 8481985370726738980, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+      propertyPath: m_gravityPower
+      value: 0.04
       objectReference: {fileID: 0}
     - target: {fileID: 8481985370726738980, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.071428575
+      value: 0.02
       objectReference: {fileID: 0}
     - target: {fileID: 8987402937693328094, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
@@ -1028,11 +1100,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8987402937693328094, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05125
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 8987402937693328094, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9101564401777288462, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_dragForce
@@ -1040,16 +1112,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9101564401777288462, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_jointRadius
-      value: 0.05
+      value: 0.04820122
       objectReference: {fileID: 0}
     - target: {fileID: 9101564401777288462, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_stiffnessForce
-      value: 0.3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9215394974854492714, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 9100000, guid: 326d71aaaaa10814e85e74a6fe35f71a, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1110,11 +1182,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a942e03b39600e41a1b161e958048f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneJoint
-  m_stiffnessForce: 0
-  m_gravityPower: 1.5892857
+  m_stiffnessForce: 1
+  m_gravityPower: 0
   m_gravityDir: {x: 0, y: -1, z: 0}
-  m_dragForce: 0.286
-  m_jointRadius: 0.05125
+  m_dragForce: 0.4
+  m_jointRadius: 0.04820122
   m_anglelimitType: 0
   m_limitSpaceOffset: {x: 0, y: 0, z: 0, w: 1}
   m_pitch: 3.1415927
@@ -1136,11 +1208,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a942e03b39600e41a1b161e958048f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneJoint
-  m_stiffnessForce: 0
-  m_gravityPower: 1.5892857
+  m_stiffnessForce: 1
+  m_gravityPower: 0
   m_gravityDir: {x: 0, y: -1, z: 0}
-  m_dragForce: 0.286
-  m_jointRadius: 0.05125
+  m_dragForce: 0.4
+  m_jointRadius: 0.04820122
   m_anglelimitType: 0
   m_limitSpaceOffset: {x: 0, y: 0, z: 0, w: 1}
   m_pitch: 3.1415927
@@ -1162,11 +1234,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a942e03b39600e41a1b161e958048f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneJoint
-  m_stiffnessForce: 0
-  m_gravityPower: 1.5892857
+  m_stiffnessForce: 1
+  m_gravityPower: 0
   m_gravityDir: {x: 0, y: -1, z: 0}
-  m_dragForce: 0.286
-  m_jointRadius: 0.05125
+  m_dragForce: 0.4
+  m_jointRadius: 0.04820122
   m_anglelimitType: 0
   m_limitSpaceOffset: {x: 0, y: 0, z: 0, w: 1}
   m_pitch: 3.1415927
@@ -1199,11 +1271,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a942e03b39600e41a1b161e958048f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneJoint
-  m_stiffnessForce: 0
-  m_gravityPower: 1.5892857
+  m_stiffnessForce: 1
+  m_gravityPower: 0
   m_gravityDir: {x: 0, y: -1, z: 0}
-  m_dragForce: 0.286
-  m_jointRadius: 0.05125
+  m_dragForce: 0.4
+  m_jointRadius: 0.04820122
   m_anglelimitType: 0
   m_limitSpaceOffset: {x: 0, y: 0, z: 0, w: 1}
   m_pitch: 3.1415927
@@ -1284,6 +1356,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b78bd41c9caf3db49929737f775305c3, type: 3}
+--- !u!114 &1278460295 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7516073138284903049, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+  m_PrefabInstance: {fileID: 709676815}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 177ea458e237fee41b0902e3006c744b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneColliderGroup
 --- !u!1 &1306598929 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3418442114214102700, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
@@ -1301,11 +1384,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a942e03b39600e41a1b161e958048f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneJoint
-  m_stiffnessForce: 0
-  m_gravityPower: 1.5892857
+  m_stiffnessForce: 1
+  m_gravityPower: 0
   m_gravityDir: {x: 0, y: -1, z: 0}
-  m_dragForce: 0.286
-  m_jointRadius: 0.05125
+  m_dragForce: 0.4
+  m_jointRadius: 0.04820122
   m_anglelimitType: 0
   m_limitSpaceOffset: {x: 0, y: 0, z: 0, w: 1}
   m_pitch: 3.1415927
@@ -1360,15 +1443,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a942e03b39600e41a1b161e958048f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneJoint
-  m_stiffnessForce: 0
-  m_gravityPower: 1.5892857
+  m_stiffnessForce: 1
+  m_gravityPower: 0
   m_gravityDir: {x: 0, y: -1, z: 0}
-  m_dragForce: 0.286
-  m_jointRadius: 0.05125
+  m_dragForce: 0.4
+  m_jointRadius: 0.04820122
   m_anglelimitType: 0
   m_limitSpaceOffset: {x: 0, y: 0, z: 0, w: 1}
   m_pitch: 3.1415927
   m_yaw: 0
+--- !u!114 &1620636125 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9216969044427388154, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
+  m_PrefabInstance: {fileID: 709676815}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 177ea458e237fee41b0902e3006c744b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneColliderGroup
 --- !u!114 &1692979634 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5953549141411843334, guid: ef820757baf2d714d8eccf812b851dbd, type: 3}
@@ -1616,11 +1710,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a942e03b39600e41a1b161e958048f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneJoint
-  m_stiffnessForce: 0
-  m_gravityPower: 1.5892857
+  m_stiffnessForce: 1
+  m_gravityPower: 0
   m_gravityDir: {x: 0, y: -1, z: 0}
-  m_dragForce: 0.286
-  m_jointRadius: 0.05125
+  m_dragForce: 0.4
+  m_jointRadius: 0.04820122
   m_anglelimitType: 0
   m_limitSpaceOffset: {x: 0, y: 0, z: 0, w: 1}
   m_pitch: 3.1415927

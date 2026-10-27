@@ -179,24 +179,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3135921509060577837, guid: 099801845f50f0b49bb1505fbf2cc86c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 9216969044427388154}
-    - targetCorrespondingSourceObject: {fileID: 3135921509060577837, guid: 099801845f50f0b49bb1505fbf2cc86c, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 250303049626333333}
-    - targetCorrespondingSourceObject: {fileID: 3135921509060577837, guid: 099801845f50f0b49bb1505fbf2cc86c, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1365718424596323691}
     - targetCorrespondingSourceObject: {fileID: -3086436065929644917, guid: 099801845f50f0b49bb1505fbf2cc86c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4188642196069746239}
     - targetCorrespondingSourceObject: {fileID: -3086436065929644917, guid: 099801845f50f0b49bb1505fbf2cc86c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7516073138284903049}
-    - targetCorrespondingSourceObject: {fileID: -3086436065929644917, guid: 099801845f50f0b49bb1505fbf2cc86c, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 4296379456153384424}
-    - targetCorrespondingSourceObject: {fileID: -3086436065929644917, guid: 099801845f50f0b49bb1505fbf2cc86c, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 3728698703610743995}
     - targetCorrespondingSourceObject: {fileID: -7657966619581158213, guid: 099801845f50f0b49bb1505fbf2cc86c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6786006769804236627}
@@ -533,38 +521,6 @@ MonoBehaviour:
   Name: L_leg
   Colliders:
   - {fileID: 992226355593879718}
---- !u!114 &250303049626333333
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 363730202226820502}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 35bfb658269b2af478e501de243deda6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneCollider
-  ColliderType: 4
-  Offset: {x: 0.27, y: 0.37, z: -0.04}
-  Radius: 0.28
-  Tail: {x: 0.25, y: 0.08, z: 0.07}
-  Normal: {x: 0, y: 1, z: 0}
---- !u!114 &1365718424596323691
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 363730202226820502}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 177ea458e237fee41b0902e3006c744b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneColliderGroup
-  Name: L_inside
-  Colliders:
-  - {fileID: 250303049626333333}
 --- !u!1 &385393357530927148 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3157037052629000087, guid: 099801845f50f0b49bb1505fbf2cc86c, type: 3}
@@ -1049,7 +1005,7 @@ MonoBehaviour:
       ColliderGroups:
       - {fileID: 9216969044427388154}
       - {fileID: 7516073138284903049}
-      - {fileID: 1365718424596323691}
+      - {fileID: 0}
       Joints:
       - {fileID: 1267651629847455210}
       - {fileID: 8481985370726738980}
@@ -1060,7 +1016,7 @@ MonoBehaviour:
       ColliderGroups:
       - {fileID: 9216969044427388154}
       - {fileID: 7516073138284903049}
-      - {fileID: 3728698703610743995}
+      - {fileID: 0}
       Joints:
       - {fileID: 3033690611132812531}
       - {fileID: 4907717442330249483}
@@ -2860,38 +2816,6 @@ MonoBehaviour:
   Name: R_leg
   Colliders:
   - {fileID: 4188642196069746239}
---- !u!114 &4296379456153384424
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8909241076558117680}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 35bfb658269b2af478e501de243deda6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneCollider
-  ColliderType: 4
-  Offset: {x: -0.27, y: 0.37, z: -0.04}
-  Radius: 0.28
-  Tail: {x: -0.25, y: 0.08, z: 0.07}
-  Normal: {x: 0, y: 1, z: 0}
---- !u!114 &3728698703610743995
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8909241076558117680}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 177ea458e237fee41b0902e3006c744b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneColliderGroup
-  Name: R_inside
-  Colliders:
-  - {fileID: 4296379456153384424}
 --- !u!1 &9051488792420247187 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -3236851903346448088, guid: 099801845f50f0b49bb1505fbf2cc86c, type: 3}
