@@ -1,6 +1,6 @@
 # 1스테이지 캐릭터·점프대 튜닝 가이드
 
-기준 씬은 `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference.unity`입니다. 아래 값은 현재 프로젝트에 저장된 값이며, Unity Inspector에서 같은 이름의 에셋이나 컴포넌트를 선택해 수정합니다. 거리·높이·속도는 Unity 월드 단위 기준입니다.
+기준 씬은 `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference_CharacterBranch.unity`입니다. 아래 값은 현재 프로젝트에 저장된 값이며, Unity Inspector에서 같은 이름의 에셋이나 컴포넌트를 선택해 수정합니다. 거리·높이·속도는 Unity 월드 단위 기준입니다.
 
 ## 먼저 열 파일
 
@@ -14,12 +14,14 @@
 
 ## 씬에서 캐릭터 보며 작업하기
 
-현재 모델링 씬에는 솔로용 `PF_Player` 인스턴스가 이미 두 개 있습니다. Hierarchy의 `Player`는 두영, `Player_Sodam`은 소담으로 시작합니다. 둘의 루트 Scale은 공용 프리팹의 `(3.2, 3.2, 3.2)`를 상속합니다. 먼저 이 두 오브젝트를 선택하고 Scene 뷰에서 `F`로 포커스를 맞추면 됩니다.
+현재 모델링 씬에는 솔로용 `PF_Player` 인스턴스가 이미 두 개 있습니다. Hierarchy의 `Player`는 두영, `Player_Sodam`은 소담으로 시작합니다. 두 인스턴스의 루트 Scale은 CharacterModeling 기준인 `(2.7, 2.7, 2.7)`로 맞춥니다. 먼저 이 두 오브젝트를 선택하고 Scene 뷰에서 `F`로 포커스를 맞추면 됩니다.
+
+2026-10-26 사용자 요청으로 플레이어 프리팹과 씬의 `SodamVisual`, `DuyeongVisual` 내부 Local Scale을 모두 `(1, 1, 1)`로 통일했습니다. 소담의 기존 1.363 배율은 제거했습니다. 플레이어 루트 크기·이동 튜닝·카메라 줌은 이 변경에 포함하지 않습니다.
 
 | 용도 | 프리팹 | 사용 방법 |
 | --- | --- | --- |
 | 솔로 플레이어 원본 | `Assets/_Project/Prefabs/Characters/PF_Player.prefab` | 입력·카메라·충돌·능력을 포함합니다. 현재 씬에 이미 두 개가 있으므로 단순 외형 확인을 위해 추가 배치하지 않습니다. |
-| 현재 1스테이지 멀티플레이어 | `Assets/_Project/Prefabs/Characters/PF_Stage01ModelingNetworkPlayer.prefab` | `PlayerSpawnLayout`이 Host에서 `PlayerSpawn_1`, `PlayerSpawn_2` 위치에 생성합니다. 루트 Scale은 3.2이고 1스테이지 전용 튜닝을 참조합니다. 씬에 직접 배치하지 않습니다. |
+| 현재 1스테이지 멀티플레이어 | `Assets/_Project/Prefabs/Characters/PF_Stage01ModelingNetworkPlayer.prefab` | `PlayerSpawnLayout`이 Host에서 `PlayerSpawn_1`, `PlayerSpawn_2` 위치에 생성합니다. 루트 Scale은 2.7이고 1스테이지 전용 튜닝을 참조합니다. 씬에 직접 배치하지 않습니다. |
 | 다른 씬의 공용 멀티플레이어 | `Assets/_Project/Prefabs/Characters/PF_StageNetworkPlayer.prefab` | 루트 Scale 3.2와 기본 튜닝을 사용합니다. 현재 모델링 씬의 `PlayerSpawnLayout`은 이것을 사용하지 않습니다. |
 | 소담 외형만 배치 | `Assets/_Project/Art/Characters/sodam/BranchV12/Prefabs/sodamv12.prefab` | 다른 씬에서 크기·배치를 비교할 때 사용합니다. 플레이어 조작 컴포넌트는 없습니다. |
 | 두영 외형만 배치 | `Assets/_Project/Art/Characters/Duyeong/prefab/dy_v5.prefab` | 다른 씬에서 크기·배치를 비교할 때 사용합니다. 플레이어 조작 컴포넌트는 없습니다. |
@@ -36,14 +38,14 @@
 
 | Inspector 값 | 현재 값 | 의미와 조절 방향 |
 | --- | ---: | --- |
-| `Character Scale Multiplier` | 1 | 프리팹 루트 크기에 추가로 곱하는 배율. 이 에셋에는 1로 저장돼 있습니다. 공용·전용 플레이어 프리팹의 루트 Scale은 3.2입니다. 크기 실험 시 두 방식의 배율을 중복해서 올리지 마세요. |
-| `Move Speed` | 20 | 지상에서 WASD로 이동할 때의 목표 수평 속도. 크게 하면 더 빠릅니다. |
+| `Character Scale Multiplier` | 1 | 프리팹 루트 크기에 추가로 곱하는 배율. 현재 1스테이지의 오프라인 두 인스턴스와 전용 네트워크 프리팹 루트 Scale은 2.7입니다. 크기 실험 시 두 방식의 배율을 중복해서 올리지 마세요. |
+| `Move Speed` | 18 | 지상에서 WASD로 이동할 때의 목표 수평 속도. 크게 하면 더 빠릅니다. |
 | `Gravity` | 88 | 일반 점프·낙하 때 아래로 가속하는 값. 크게 하면 더 빨리 떨어지고 같은 `Jump Height`를 위한 초기 점프 속도도 커집니다. |
 | `Terminal Speed` | 140 | 일반 낙하의 최대 하강 속도. |
 | `Ground Stick Speed` | 8 | 바닥에 붙어 있을 때 아래로 유지하는 작은 속도. 경사나 미세한 단차에서 접지를 돕습니다. |
 | `Body Turn Speed` | 540°/초 | `MovementDirection`에서 몸이 이동 방향으로 도는 최대 속도. |
 | `Facing Mode` | `MovementDirection` | 카메라와 독립적으로 WASD 이동 방향을 향해 몸을 돌립니다. `CameraAligned`는 몸을 카메라 방향에 맞춥니다. |
-| `Jump Height` | 6.6 | **스페이스 일반 점프**의 목표 높이. 초기 상승 속도는 `sqrt(2 × Gravity × Jump Height)`로 계산됩니다. 점프대 상승 높이와는 별개입니다. |
+| `Jump Height` | 5.5 | **스페이스 일반 점프**의 목표 높이. 초기 상승 속도는 `sqrt(2 × Gravity × Jump Height)`로 계산됩니다. 점프대 상승 높이와는 별개입니다. |
 | `Air Acceleration` | 70.4 | 공중에서 WASD로 수평 속도를 바꾸는 정도. 크게 하면 점프·점프대 하강 중 방향 전환이 빨라집니다. |
 
 ### 카메라·시선
@@ -58,7 +60,7 @@
 | `Mouse Sensitivity` | 0.15 | 마우스 이동에 따른 카메라 회전 민감도. 게임 옵션의 시점 배율도 함께 곱해집니다. |
 | `Camera Probe Radius` | 0.64 | 카메라가 벽에 가려지는지 검사하는 구의 반지름. |
 | `Camera Wall Padding` | 0.32 | 벽 충돌 지점에서 카메라가 떨어져 남기는 거리. |
-| `Camera Obstacles` | Default 레이어 | 카메라 거리 충돌 검사에 포함할 레이어 마스크. |
+| `Camera Obstacles` | Default 및 22번 레이어 | 카메라 거리 충돌 검사에 포함할 레이어 마스크. |
 | `Head Yaw/Pitch Limit` | 75° / 90° | 몸에 대한 머리의 좌우·상하 회전 제한. |
 | `Head Turn Speed` | 240°/초 | 머리가 목표 시선으로 회전하는 속도. |
 | `Head Tracking Fade Angles` | 75° / 90° | 카메라와 몸의 좌우 각도 차이가 75°부터 커질 때 머리 추적을 약하게 하고, 90°에서 중립으로 돌리는 범위. |
@@ -118,7 +120,7 @@
 ## 배치·튜닝 순서
 
 1. Hierarchy의 기존 `Player`와 `Player_Sodam`으로 캐릭터의 현재 크기를 확인합니다. 새 씬에서 외형 비교만 한다면 소담·두영 **모델 프리팹**만 배치합니다.
-2. 이동감은 `SO_Stage01ModelingPlayerTuning`의 `Move Speed`, `Jump Height`, `Gravity`, `Air Acceleration` 순서로 조절합니다. 플레이어 크기는 프리팹 루트 Scale 3.2와 `Character Scale Multiplier`를 함께 확인합니다. 공용 크기를 바꾸면 솔로·네트워크 프리팹을 모두 같은 값으로 맞춥니다.
+2. 이동감은 `SO_Stage01ModelingPlayerTuning`의 `Move Speed`, `Jump Height`, `Gravity`, `Air Acceleration` 순서로 조절합니다. 현재 1스테이지 플레이어 크기는 루트 Scale 2.7과 `Character Scale Multiplier`를 함께 확인합니다. 크기를 바꾸면 솔로 인스턴스와 전용 네트워크 프리팹을 모두 같은 값으로 맞춥니다.
 3. 충전 뒤 대기 시간은 `Launch Delay Seconds`, 나뭇잎과 물기둥의 높이는 `Presentation Rise`, 플레이어가 솟는 높이는 `Rider Launch Speed`, 나뭇잎 상승 시간은 `Eruption Rise Duration`, 전체 연출 시간은 `Flight Duration`으로 조절합니다.
 4. 점프대 프리팹 변형을 씬으로 드래그해 위치를 잡습니다. 선택 시 하늘색 기즈모는 주입구, 초록색 기즈모는 잎/물 분출점입니다. 복제한 뒤에는 `LeafInstallTarget`의 ID가 고유한지 확인하고 씬을 저장합니다. 필요하면 `Tools > Herbalist > Stage 1 > Assign Jump Pad IDs`를 실행합니다.
 5. 프리팹 인스턴스 Inspector에서 굵게 표시된 값은 씬 오버라이드입니다. 에셋을 바꿨는데 한 배치만 다르게 보이면 해당 오버라이드를 먼저 확인합니다.
