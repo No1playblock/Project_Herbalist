@@ -11,9 +11,11 @@ Use the `Project_Herbalist` Unity Cloud project in the `playblock2000` organizat
 3. Enable **Auto-build** and leave **Auto-cancel** off. Auto-cancel would skip intermediate pushes, while this pipeline keeps each successful build.
 4. In Advanced Settings, set **Post-Build Script Path** to `ci/publish-uba-release.sh`.
 5. Add a build-target environment variable named `GITHUB_RELEASE_TOKEN` containing that token, or a separate repository-scoped token with **Contents: Read and write**. Create and enter tokens directly in GitHub and Unity Cloud; never commit them or paste them into build logs.
-6. Save the target configuration and push this CI change to `develop`. The first successful build should create a prerelease with a tag like `uba-develop-123-abcdef12` and a `Project_Herbalist-Windows-*.zip` asset. Unzip it before running the `.exe` so its `_Data` directory and DLLs remain alongside the executable.
+6. Save the target configuration and push this CI change to `develop`. Each successful build should create a prerelease named and tagged with the next version (`v2` after the current `v1`) and a `Project_Herbalist-Windows-*.zip` asset. Unzip it before running the `.exe` so its `_Data` directory and DLLs remain alongside the executable.
 
 The post-build script requires UBA's Windows builder, `UNITY_PLAYER_PATH`, `UCB_BUILD_NUMBER`, `SCM_BRANCH`, `BUILD_REVISION`, and the installed Cygwin `jq` and 7-Zip tools. Unity documents these tools as present on its Windows builders. It publishes only from `develop`. A GitHub Release asset must be under 2 GiB; if the ZIP reaches that limit, split the upload or choose another artifact store.
+
+Release titles contain only an increasing version: `v1`, `v2`, `v3`, and so on. The release body contains exactly four fields: change summary, related PR (or `없음` for a direct commit), base branch, and publication time in KST. The version is assigned at publication from the largest published release version, independently of UBA's build counter. A failed draft keeps its build-specific tag and does not use a version. Choose the highest `vN` for the newest published build.
 
 ## Verification
 

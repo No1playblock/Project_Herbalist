@@ -63,9 +63,9 @@ namespace Herbalist.GameUI
                 float remaining = 0;
                 bool show = local && ExteriorJumpPad.TryGetLaunchCountdown(out remaining);
                 jumpPadCountdown.gameObject.SetActive(show);
-                if (show) jumpPadCountdown.text = $"점프대 발사까지 {remaining:0.0}초";
+                if (show) jumpPadCountdown.text = string.Format(settings.jumpPadCountdownFormat, remaining);
             }
-            helpHint.text=settings.helpAction.action.GetBindingDisplayString()+"  "+settings.helpHint;
+            helpHint.text=string.Format(settings.controlHintFormat, settings.helpAction.action.GetBindingDisplayString(), settings.helpHint);
             helpPanel.SetActive(local&&expanded&&!mazeView);
             if(local&&expanded)
             {
@@ -74,7 +74,7 @@ namespace Herbalist.GameUI
                 bool offlineTest = switcher != null && switcher.isActiveAndEnabled;
                 foreach(var h in settings.controls)
                     if(h.action!=null && (!h.offlineTestOnly || offlineTest))
-                        lines.AppendLine(h.action.action.GetBindingDisplayString()+"  "+h.label);
+                        lines.AppendLine(string.Format(settings.controlHintFormat, h.action.action.GetBindingDisplayString(), h.label));
                 helpText.text=lines.ToString();
             }
             var ability=view.GetComponent<PlayerAbilityController>();
@@ -139,7 +139,7 @@ namespace Herbalist.GameUI
             prompt.SetActive(false);
             if(!clothHint&&local&&flow!=null&&actor!=null&&flow.TryInteractionHint(actor,out var point,out bool transfer))
             {
-                promptText.text=actor.Binding(0)+"  "+(flow.IsCraftHint(actor)?settings.craftText:transfer?settings.giveText:settings.gatherText);
+                promptText.text=string.Format(settings.controlHintFormat, actor.Binding(0), flow.IsCraftHint(actor)?settings.craftText:transfer?settings.giveText:settings.gatherText);
                 Position(prompt.GetComponent<RectTransform>(),view.Camera,point+promptOffset);
             }
             if (clothPrompt != null)
@@ -148,8 +148,8 @@ namespace Herbalist.GameUI
                 if (clothHint)
                 {
                     clothPromptText.text = releasing
-                        ? actor.Binding(0) + " / " + actor.JumpBinding + "  " + settings.clothReleaseText
-                        : actor.Binding(0) + "  " + settings.clothGrabText;
+                        ? string.Format(settings.alternativeControlHintFormat, actor.Binding(0), actor.JumpBinding, settings.clothReleaseText)
+                        : string.Format(settings.controlHintFormat, actor.Binding(0), settings.clothGrabText);
                     Position((RectTransform)clothPrompt.transform, view.Camera, clothPoint + promptOffset);
                 }
             }
@@ -158,13 +158,13 @@ namespace Herbalist.GameUI
                 sapPrompt.SetActive(false);
                 if (local && actor != null && SapInjectionPort.TryInteractionHint(actor, out var portPoint))
                 {
-                    sapPromptText.text = ability.Input.CycleBinding + "  " + settings.sapInjectText;
+                    sapPromptText.text = string.Format(settings.controlHintFormat, ability.Input.CycleBinding, settings.sapInjectText);
                     Position((RectTransform)sapPrompt.transform, view.Camera, portPoint + promptOffset);
                 }
                 else if (local && actor != null &&
                     ExteriorJumpPad.TryLeafInstallHint(actor, out var leafPoint))
                 {
-                    sapPromptText.text = ability.Input.CycleBinding + "  " + settings.leafInstallText;
+                    sapPromptText.text = string.Format(settings.controlHintFormat, ability.Input.CycleBinding, settings.leafInstallText);
                     Position((RectTransform)sapPrompt.transform, view.Camera, leafPoint + promptOffset);
                 }
             }

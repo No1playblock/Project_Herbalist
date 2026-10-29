@@ -25,6 +25,9 @@ namespace Herbalist.GameUI
         public Color leafInstalledColor = new Color(.96f, .76f, .36f);
         public Color leafReturningColor = new Color(.43f, .77f, .94f);
         public string pauseHint="일시정지", helpHint="키 확인", emptyPocket="빈손";
+        public string controlHintFormat = "<b>{0}</b>  {1}";
+        public string alternativeControlHintFormat = "<b>{0}</b> / <b>{1}</b>  {2}";
+        public string jumpPadCountdownFormat = "점프대 발사까지 <b>{0:0.0}</b>초";
         public InputActionReference pauseAction, helpAction;
         public ControlHint[] controls;
         public Vector3 markerOffset = new Vector3(-.65f, 1.9f, 0);
