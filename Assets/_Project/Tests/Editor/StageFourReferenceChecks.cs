@@ -39,6 +39,9 @@ namespace Herbalist.Editor
                 if(!unreachable.SequenceEqual(i==1?new[]{0}:new int[0]))throw new Exception("Unexpected unreachable leak");
                 var route=SapMazeRoute.Find(d,d.startNode,d.goalNode);
                 var state=SapMazeSimulation.Initial(d);int index=1,guard=0;
+                // The reference graph has no authored refill markers; the playable
+                // surface board awards those before the exit is evaluated.
+                if(d.useRefillVolumeRules)state.Volume=d.requiredVolume;
                 while(state.Phase==MazePhase.Running&&guard++<30000)
                 {
                     if(state.From==route[index]&&state.To==state.From)index++;

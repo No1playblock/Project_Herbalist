@@ -28,18 +28,35 @@ namespace Herbalist.Player
             return true;
         }
         public override void Simulate(Vector3 desiredWorldVelocity, float deltaTime)
+            => Simulate(desiredWorldVelocity, deltaTime, Vector3.zero);
+
+        public override void Simulate(Vector3 desiredWorldVelocity, float deltaTime, Vector3 rootMotionDisplacement)
         {
             if (!isActiveAndEnabled || !controller.enabled || deltaTime <= 0) return;
             if (grounded && velocity.y < 0) velocity.y = -tuning.groundStickSpeed;
             velocity.y = _liftSpeed > 0 ? _liftSpeed : _externalFlight ? velocity.y - _externalGravity * deltaTime : Mathf.Max(velocity.y - tuning.gravity * deltaTime, -tuning.terminalSpeed);
             Vector3 desired = Vector3.ProjectOnPlane(desiredWorldVelocity, Vector3.up);
             Vector3 horizontal = Vector3.ProjectOnPlane(velocity, Vector3.up);
-            horizontal = _externalFlight && !_externalAirControl ? horizontal : MovementLocked ? Vector3.zero : grounded ? desired : Vector3.MoveTowards(horizontal, desired, tuning.airAcceleration * deltaTime);
+            if (!(_externalFlight && !_externalAirControl))
+            {
+                if (MovementLocked) horizontal = Vector3.zero;
+                else if (grounded) horizontal = desired;
+                else if (_externalFlight && _externalAirControl)
+                {
+                    // Steering changes the launch direction without braking its inherited momentum when input is released.
+                    if (desired.sqrMagnitude > .0001f)
+                    {
+                        float speed = Mathf.Max(horizontal.magnitude, desired.magnitude);
+                        horizontal = Vector3.MoveTowards(horizontal, desired.normalized * speed, tuning.airAcceleration * deltaTime);
+                    }
+                }
+                else horizontal = Vector3.MoveTowards(horizontal, desired, tuning.airAcceleration * deltaTime);
+            }
             velocity.x = horizontal.x; velocity.z = horizontal.z;
-            Herbalist.Interaction.OneWayPlatform.PrepareMove(controller, velocity);
+            Herbalist.Interaction.OneWayPlatform.PrepareMove(controller, velocity + rootMotionDisplacement / deltaTime);
             Vector3 previousCenter = transform.TransformPoint(controller.center);
             Herbalist.Levels.StageEntranceGate.PrepareMove(controller, _enteredGateMask);
-            CollisionFlags flags = controller.Move(velocity * deltaTime);
+            CollisionFlags flags = controller.Move(velocity * deltaTime + rootMotionDisplacement);
             _enteredGateMask = Herbalist.Levels.StageEntranceGate.FinishMove(controller, previousCenter, _enteredGateMask);
             grounded = (flags & CollisionFlags.Below) != 0;
             if (grounded && velocity.y <= 0) _externalFlight = false;

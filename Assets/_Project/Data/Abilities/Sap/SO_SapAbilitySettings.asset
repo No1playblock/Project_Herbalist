@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: SO_SapAbilitySettings
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.SapAbilitySettings
   offlinePrefab: {fileID: 2631380105216188163, guid: 199e67f748b08fb45b4ad00b8c86caac, type: 3}
-  hoseHoverOffset: {x: 0.55, y: 1.15, z: 0.15}
+  hoseHoverOffset: {x: 0, y: 1.15, z: 0.55}
   hoseExtendSpeed: 32
   hoseRetractSpeed: 36
   hoseLaunchSpeed: 16
@@ -24,6 +24,8 @@ MonoBehaviour:
   hoseMaxScale: 2.4
   hoseMergeNormalDot: 0.85
   hoseMarkLifetime: 5
+  groundWaterAbsorbDuration: 2
+  groundWaterNormalThreshold: 0.7
   hoseMarkSpacing: 1
   surfaceMarkSize: {x: 0.85, y: 0.85}
   surfaceMarkDepth: 0.45
@@ -37,7 +39,7 @@ MonoBehaviour:
   streamFlowSpeed: 2
   streamBeadSize: 0.075
   hoseEffectScale: 1
-  impactCrownScale: 0.65
+  impactCrownScale: 1
   extractionProbeOffset: {x: 0, y: 1.3, z: 0}
   extractionRange: 3
   controlRange: 14
@@ -45,6 +47,6 @@ MonoBehaviour:
   surfaceOffset: 0.025
   collisionMask:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 4456449
   attachedScale: {x: 0.85, y: 0.85, z: 0.12}
   controlledScale: {x: 0.44, y: 0.44, z: 0.44}

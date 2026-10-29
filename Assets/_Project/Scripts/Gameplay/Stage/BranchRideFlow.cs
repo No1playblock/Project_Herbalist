@@ -48,6 +48,16 @@ namespace Herbalist.Levels
         private bool Online => Object != null && Object.IsValid;
         private bool Authority => Online ? HasStateAuthority : FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession;
         public string Objective => (Online ? RiderMask : _mask) == 3 ? _ridingText : _waitingText;
+        public int PresentationBranchMask => Online ? BranchMask : _branchMask;
+        public float PresentationStoneClock => Online ? StoneClock : _stoneClock;
+        public bool PresentationBlockedByLeaf => _stopSocket != null && _stopSocket.HasLeaf;
+        public static bool IsRiding(StageActor actor)
+        {
+            if (actor == null || !actor.Available || actor.Slot < 0 || actor.Slot > 1) return false;
+            foreach (var flow in Active)
+                if (((flow.Online ? flow.RiderMask : flow._mask) & (1 << actor.Slot)) != 0) return true;
+            return false;
+        }
         private void OnEnable() => Active.Add(this);
         private void OnDisable()
         {

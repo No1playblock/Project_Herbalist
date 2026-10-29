@@ -128,9 +128,9 @@ namespace Herbalist.StageOne
             Minigame = StageMinigameKind.Crafting;
             adapter?.Publish();
         }
-        private void EndMinigame(bool success = false)
+        private void EndMinigame(bool success = false, bool showResult = true)
         {
-            if (Minigame != StageMinigameKind.None) { MinigameSucceeded = success; MinigameResultSequence++; }
+            if (Minigame != StageMinigameKind.None && showResult) { MinigameSucceeded = success; MinigameResultSequence++; }
             Minigame = StageMinigameKind.None; MinigameItemId = 0; MinigameSteps = 0;
             Temperature = CraftingGauge = MinigameTime = 0;
             _fanPressTimes.Clear(); FanPressCount = 0;
@@ -211,6 +211,9 @@ namespace Herbalist.StageOne
         }
         public bool IsCraftHint(StageActor actor) => actor != null && Progress != null && actor.Slot >= 0 && actor.Slot < 2 &&
             settings.slotRoles[actor.Slot] == CharacterRole.Sodam && settings.Item(Progress.Held[actor.Slot])?.type == StageItemType.Herb;
+        public bool CanCancelMinigame(StageActor actor) => actor != null && actor.Available && Minigame != StageMinigameKind.None &&
+            ((Minigame == StageMinigameKind.Gathering && RoleFor(actor) == CharacterRole.Duyeong) ||
+             (Minigame == StageMinigameKind.Crafting && RoleFor(actor) == CharacterRole.Sodam));
         public string Execute(StageActor actor, StageCommand command)
         {
             if (Herbalist.GameUI.GameplayPause.IsPaused || !Authority || actor == null || !actor.Available || Progress.Cleared) return settings.waitingMessage;
@@ -218,6 +221,11 @@ namespace Herbalist.StageOne
             if (slot < 0 || slot >= Actors.Length || Actors[slot] != actor) return settings.waitingMessage;
             if (Minigame != StageMinigameKind.None)
             {
+                if (command == StageCommand.CancelMinigame && CanCancelMinigame(actor))
+                {
+                    EndMinigame(showResult: false);
+                    return settings.minigameCancelledMessage;
+                }
                 if (Minigame == StageMinigameKind.Gathering && command >= StageCommand.Up && command <= StageCommand.Right && RoleFor(actor) == CharacterRole.Duyeong)
                 {
                     var steps = settings.Item(MinigameItemId)?.harvestingSteps;

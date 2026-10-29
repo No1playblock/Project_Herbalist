@@ -15,6 +15,8 @@ namespace Herbalist.Networking
         public uint AbilityUse;
         public NetworkBool AbilityHeld;
         public NetworkBool AbilityCycleHeld;
+        public Vector2 MazePointer;
+        public NetworkBool MazePointerValid;
     }
 
     [RequireComponent(typeof(NetworkObject), typeof(NetworkTransform))]
@@ -25,6 +27,7 @@ namespace Herbalist.Networking
         [SerializeField] private Material[] slotMaterials;
         private PlayScreenController screen;
         private PlayerCharacterPresentation characterPresentation;
+        private SodamAnimationPresentation _sodamAnimation;
         public static NetworkPlayer Local { get; private set; }
         [Networked] public Vector3 SimulationPosition { get; set; }
         [Networked] public Vector3 SimulationVelocity { get; set; }
@@ -42,6 +45,9 @@ namespace Herbalist.Networking
         [Networked] public NetworkBool Transported { get; set; }
         [Networked] public Vector3 TransportPosition { get; set; }
         [Networked] public float LiftSpeed { get; set; }
+        [Networked] public int RootMotionPose { get; set; }
+        [Networked] public float RootMotionElapsed { get; set; }
+        [Networked] public uint RootMotionSequence { get; set; }
         public void SetLiftAuthoritatively(float speed)
         {
             if (HasStateAuthority) LiftSpeed = Mathf.Max(0, speed);
@@ -60,6 +66,7 @@ namespace Herbalist.Networking
         {
             player.SetNetworkControl(HasInputAuthority);
             characterPresentation = GetComponent<PlayerCharacterPresentation>();
+            _sodamAnimation = GetComponent<SodamAnimationPresentation>();
             if (characterPresentation != null) characterPresentation.SetNetworkSlot(Slot);
             if (HasInputAuthority) Local = this;
             if (HasStateAuthority)
@@ -70,6 +77,7 @@ namespace Herbalist.Networking
                 BodyYaw = transform.eulerAngles.y;
                 LookAngles = new Vector2(BodyYaw, player.Tuning.initialPitch);
                 CameraZoomMultiplier = 1f;
+                RootMotionPose = -1;
             }
             screen = FindFirstObjectByType<PlayScreenController>();
             if (screen != null) screen.Register(player.View, Slot, HasInputAuthority);
@@ -78,24 +86,39 @@ namespace Herbalist.Networking
             player.View.SetLookAngles(LookAngles.x, LookAngles.y);
             if (slotMaterials.Length > 0) bodyRenderer.sharedMaterial = slotMaterials[Mathf.Clamp(Slot, 0, slotMaterials.Length - 1)];
         }
-        public PlayerNetworkInput ReadLocalInput() => new PlayerNetworkInput
+        public PlayerNetworkInput ReadLocalInput()
         {
-            Move = player.Input.Move,
-            LookAngles = new Vector2(player.View.Yaw, player.View.Pitch),
-            ZoomMultiplier = player.View.ZoomMultiplier,
-            JumpSequence = player.Input.JumpSequence,
-            AbilityCycle = GetComponent<Herbalist.Abilities.AbilityInputReader>().CycleSequence,
-            AbilityUse = GetComponent<Herbalist.Abilities.AbilityInputReader>().UseSequence,
-            AbilityHeld = GetComponent<Herbalist.Abilities.AbilityInputReader>().UseHeld,
-            AbilityCycleHeld = GetComponent<Herbalist.Abilities.AbilityInputReader>().CycleHeld
-        };
+            bool pointerValid = Herbalist.Levels.SapMazeBoard.TryReadLocalPointer(player.View, out var pointerPosition);
+            var abilityInput = GetComponent<Herbalist.Abilities.AbilityInputReader>();
+            return new PlayerNetworkInput
+            {
+                Move = player.Input.Move,
+                LookAngles = new Vector2(player.View.Yaw, player.View.Pitch),
+                ZoomMultiplier = player.View.ZoomMultiplier,
+                JumpSequence = player.Input.JumpSequence,
+                AbilityCycle = abilityInput.CycleSequence,
+                AbilityUse = abilityInput.UseSequence,
+                AbilityHeld = abilityInput.UseHeld,
+                AbilityCycleHeld = abilityInput.CycleHeld,
+                MazePointer = pointerPosition,
+                MazePointerValid = pointerValid
+            };
+        }
         public override void FixedUpdateNetwork()
         {
             if (IsProxy) return;
             if (Herbalist.GameUI.GameplayPause.IsPaused) { if (GetInput(out PlayerNetworkInput pausedInput)) LastJumpSequence = pausedInput.JumpSequence; return; }
             if(Transported)
             {
-                if(GetInput(out PlayerNetworkInput ridingInput)) { LastJumpSequence=ridingInput.JumpSequence; if(HasStateAuthority)player.RouteMovement(ridingInput.Move); }
+                if (HasStateAuthority) { RootMotionPose = -1; RootMotionElapsed = 0f; }
+                if(GetInput(out PlayerNetworkInput ridingInput))
+                {
+                    LastJumpSequence=ridingInput.JumpSequence;
+                    if(Finite(ridingInput.LookAngles.x) && Finite(ridingInput.LookAngles.y))
+                        LookAngles=new Vector2(Mathf.Repeat(ridingInput.LookAngles.x,360),Mathf.Clamp(ridingInput.LookAngles.y,player.Tuning.pitchLimits.x,player.Tuning.pitchLimits.y));
+                    if(HasStateAuthority && Finite(ridingInput.Move.x) && Finite(ridingInput.Move.y))
+                        player.RouteMovement(ridingInput.Move);
+                }
                 player.Motor.Teleport(TransportPosition);SimulationPosition=TransportPosition;
                 SimulationVelocity=Vector3.zero;Grounded=false;return;
             }
@@ -114,9 +137,9 @@ namespace Herbalist.Networking
                         CameraZoomMultiplier = input.ZoomMultiplier;
                         if (!HasInputAuthority) player.View.SetRemoteZoom(input.ZoomMultiplier);
                     }
+                    LookAngles = new Vector2(Mathf.Repeat(input.LookAngles.x, 360), Mathf.Clamp(input.LookAngles.y, player.Tuning.pitchLimits.x, player.Tuning.pitchLimits.y));
                     var movement = Vector2.ClampMagnitude(input.Move, 1);
                     if(HasStateAuthority && player.RouteMovement(movement))movement=Vector2.zero;
-                    LookAngles = new Vector2(Mathf.Repeat(input.LookAngles.x, 360), Mathf.Clamp(input.LookAngles.y, player.Tuning.pitchLimits.x, player.Tuning.pitchLimits.y));
                     direction = Quaternion.Euler(0, LookAngles.x, 0) * new Vector3(movement.x, 0, movement.y);
                 }
                 if (LastJumpSequence != input.JumpSequence)
@@ -125,7 +148,33 @@ namespace Herbalist.Networking
                     player.TryJump();
                 }
             }
-            player.Motor.Simulate(direction * player.Tuning.moveSpeed, Runner.DeltaTime);
+            if (HasStateAuthority && _sodamAnimation != null)
+            {
+                var pose = _sodamAnimation.CurrentPose;
+                int nextPose = pose.HasValue ? (int)pose.Value : -1;
+                if (RootMotionPose != nextPose || RootMotionSequence != _sodamAnimation.PoseSequence)
+                {
+                    RootMotionPose = nextPose;
+                    RootMotionSequence = _sodamAnimation.PoseSequence;
+                    RootMotionElapsed = 0f;
+                }
+            }
+            Vector3 rootMotion = Vector3.zero;
+            bool rootMotionActive = false;
+            if (RootMotionPose >= 0 && _sodamAnimation != null && _sodamAnimation.Profile != null)
+            {
+                var pose = (SodamPose)RootMotionPose;
+                var definition = _sodamAnimation.Profile.Find(pose);
+                if (definition != null && definition.useRootMotion && definition.rootMotionPlaybackSpeed > 0f)
+                {
+                    rootMotionActive = definition.overrideMovementInput &&
+                        RootMotionElapsed * definition.rootMotionPlaybackSpeed < definition.rootMotionClipLength;
+                    Vector3 localDelta = _sodamAnimation.Profile.RootMotionDelta(pose, RootMotionElapsed, Runner.DeltaTime);
+                    rootMotion = Quaternion.Euler(0f, BodyYaw, 0f) * (localDelta * _sodamAnimation.RootMotionScale);
+                    RootMotionElapsed += Runner.DeltaTime;
+                }
+            }
+            player.Motor.Simulate(rootMotionActive ? Vector3.zero : direction * player.Tuning.moveSpeed, Runner.DeltaTime, rootMotion);
             BodyYaw = player.Tuning.ResolveBodyYaw(BodyYaw, LookAngles.x, direction, player.Motor.MovementLocked, Runner.DeltaTime);
             var state = player.Motor.CaptureState();
             SimulationPosition = state.Position; SimulationVelocity = state.Velocity; Grounded = state.Grounded;

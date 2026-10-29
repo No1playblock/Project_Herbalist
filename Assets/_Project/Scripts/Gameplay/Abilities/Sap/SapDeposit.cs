@@ -16,7 +16,9 @@ namespace Herbalist.Abilities
         private Transform surface;
         private bool hoseMark;
         private float markScale = 1;
+        private float absorptionProgress;
         public float MarkScale => markScale;
+        public float AbsorptionProgress => absorptionProgress;
         public bool IsHoseMark => hoseMark;
         public Vector3 StreamEnd { get; private set; }
         public Vector3 HoseLaunchVelocity { get; private set; }
@@ -98,7 +100,16 @@ public void SetStream(Vector3 start, bool active)
             {
                 if (surface == null || !surface.gameObject.activeInHierarchy) { Finish(); return; }
                 transform.SetPositionAndRotation(surface.TransformPoint(localPosition), surface.rotation * localRotation);
-                remaining -= dt; if (remaining <= 0) Finish();
+                remaining -= dt;
+                if (remaining <= 0) { Finish(); return; }
+                float nextAbsorption = Vector3.Dot(transform.forward, Vector3.up) >= settings.groundWaterNormalThreshold
+                    ? 1f - Mathf.Clamp01(remaining / Mathf.Max(0.01f, settings.groundWaterAbsorbDuration))
+                    : 0f;
+                if (!Mathf.Approximately(absorptionProgress, nextAbsorption))
+                {
+                    absorptionProgress = nextAbsorption;
+                    RefreshVisual();
+                }
                 return;
             }
         }
@@ -128,6 +139,7 @@ public void SetStream(Vector3 start, bool active)
                 if (nearest.Receiver != null) nearest.Receiver.Attach(nearest);
             }
             nearest.remaining = nearest.settings.hoseMarkLifetime;
+            nearest.absorptionProgress = 0f;
             nearest.markScale = Mathf.Min(nearest.settings.hoseMaxScale, nearest.markScale + nearest.settings.hoseGrowthPerSecond * dt);
             nearest.RefreshVisual();
         }
@@ -138,11 +150,13 @@ public void SetStream(Vector3 start, bool active)
             Detach(); RefreshVisual(); remove?.Invoke(this);
         }
         private void Detach() { if (Receiver != null) Receiver.Detach(this); Receiver = null; }
-        public void ApplyReplica(SapState state, int receiverId, bool replicatedHoseMark = false, float replicatedMarkScale = 1f)
+        public void ApplyReplica(SapState state, int receiverId, bool replicatedHoseMark = false,
+            float replicatedMarkScale = 1f, float replicatedAbsorptionProgress = 0f)
         {
             var receiver = SapReceiver.Find(receiverId);
             if (State != state || Receiver != receiver) Detach();
             State = state; Receiver = receiver; hoseMark = replicatedHoseMark; markScale = replicatedMarkScale;
+            absorptionProgress = replicatedAbsorptionProgress;
             if (IsPlaced && Receiver != null) Receiver.Attach(this);
             RefreshVisual();
         }
@@ -151,12 +165,16 @@ public void SetStream(Vector3 start, bool active)
             if (visual == null || settings == null) return;
             bool active = State != SapState.Complete && State != SapState.Inactive;
             bool attached = active && IsPlaced;
-            bool projected = attached && surfaceMark != null && surfaceMark.Available;
-            bool raised = attached && surfaceVolume != null && surfaceVolume.Available;
+            bool groundHoseMark = hoseMark &&
+                Vector3.Dot(transform.forward, Vector3.up) >= settings.groundWaterNormalThreshold;
+            bool raised = attached && surfaceVolume != null && surfaceVolume.Available &&
+                (!hoseMark || groundHoseMark);
+            bool projected = attached && surfaceMark != null && surfaceMark.Available &&
+                (!groundHoseMark || !raised);
             visual.gameObject.SetActive(active && !projected && !raised);
             visual.localScale = IsPlaced ? Vector3.Scale(settings.attachedScale, new Vector3(markScale, markScale, 1)) : settings.controlledScale;
-            if (surfaceMark != null) surfaceMark.SetVisible(projected, settings, markScale);
-            if (surfaceVolume != null) surfaceVolume.SetVisible(raised, settings, markScale);
+            if (surfaceMark != null) surfaceMark.SetVisible(projected, settings, markScale, absorptionProgress);
+            if (surfaceVolume != null) surfaceVolume.SetVisible(raised, settings, markScale, absorptionProgress);
         }
     }
 }
