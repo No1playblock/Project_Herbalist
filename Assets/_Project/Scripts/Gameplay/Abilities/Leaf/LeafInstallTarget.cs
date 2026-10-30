@@ -28,6 +28,10 @@ namespace Herbalist.Abilities
         public bool PerpendicularToSurfaceOnInstall => _perpendicularToSurfaceOnInstall && socket == null;
         public LeafProjectile InstalledLeaf { get { foreach(var leaf in occupants) if(leaf != null && leaf.Installed) return leaf; return null; } }
         public bool HasLeaf => InstalledLeaf != null;
+        public void CopyInstalledLeavesTo(List<LeafProjectile> destination)
+        {
+            foreach (var leaf in occupants) if (leaf != null && leaf.Installed) destination.Add(leaf);
+        }
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)] private static void ResetStatics() => targets.Clear();
         private void OnEnable()
         {
