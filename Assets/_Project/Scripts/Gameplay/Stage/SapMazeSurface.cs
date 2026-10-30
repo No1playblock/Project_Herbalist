@@ -31,6 +31,33 @@ namespace Herbalist.Levels
         public MeshCollider MazeCollider => _mazeCollider;
         public bool Ready => _walkable != null;
         public float CellSize => _sampleSize > 0 ? _sampleSize : _cellSize;
+        public int GridWidth => _width;
+        public int GridCount => _walkable != null ? _walkable.Length : 0;
+        public Vector2 GridPoint(int index) => CellPosition(index % _width, index / _width);
+        public bool GridOpen(int index) => index >= 0 && index < GridCount && _walkable[index];
+        public int GridCell(Vector2 point) => NearestReachableCell(point);
+        public bool IsSurfaceOpen(Vector2 point) => Ready && OpenPoint(point);
+        public bool IsSegmentOpen(Vector2 from, Vector2 to) => Ready && ClearSegment(from, to);
+
+        // All fluid transfers use the same mesh-tested edges as navigation.
+        public int GridNeighbour(int from, int direction)
+        {
+            int x = from % _width, y = from / _width;
+            int nx = x + (direction == 0 ? -1 : direction == 1 ? 1 : 0);
+            int ny = y + (direction == 2 ? -1 : direction == 3 ? 1 : 0);
+            if (nx < 0 || ny < 0 || nx >= _width || ny >= _height) return -1;
+            int index = ny * _width + nx;
+            if (!GridOpen(index)) return -1;
+            byte bit = (byte)(1 << direction);
+            byte reverse = (byte)(1 << (direction ^ 1));
+            if ((_checkedEdges[from] & bit) == 0)
+            {
+                _checkedEdges[from] |= bit; _checkedEdges[index] |= reverse;
+                if (ClearSegment(GridPoint(from), GridPoint(index)))
+                { _openEdges[from] |= bit; _openEdges[index] |= reverse; }
+            }
+            return (_openEdges[from] & bit) != 0 ? index : -1;
+        }
 
         public bool Build(Transform board)
         {
@@ -311,13 +338,10 @@ namespace Herbalist.Levels
         public float SurfaceZ(Vector2 point, float fallback)
         {
             if (_walkable == null) return fallback;
-            var bounds = LocalBounds();
-            var world = _board.TransformPoint(new Vector3(point.x, point.y, bounds.min.z - 1f));
+            var world = _board.TransformPoint(new Vector3(point.x, point.y, _rayStartZ));
             RaycastHit hit;
-            var normal = _board.TransformDirection(Vector3.forward).normalized;
-            var distance = (bounds.size.z + 2f) * _board.TransformVector(Vector3.forward).magnitude;
-            return _mazeCollider.Raycast(new Ray(world, normal), out hit, distance)
-                ? _board.InverseTransformPoint(hit.point - normal * _visualOffset).z : fallback;
+            return _mazeCollider.Raycast(new Ray(world, _rayDirection), out hit, _rayLength)
+                ? _board.InverseTransformPoint(hit.point - _rayDirection * _visualOffset).z : fallback;
         }
     }
 }
