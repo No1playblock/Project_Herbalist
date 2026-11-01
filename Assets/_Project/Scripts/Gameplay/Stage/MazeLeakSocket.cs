@@ -17,7 +17,7 @@ namespace Herbalist.Levels
             if (_stream != null) _stream.SetActive(visible);
             if (_wetSurface != null) _wetSurface.SetActive(visible);
             if (_approachSplash != null)
-                _approachSplash.SetActive(!Blocked && (leaking || sapDistance <= _approachDistance));
+                _approachSplash.SetActive(!Blocked && !visible && sapDistance <= _approachDistance);
         }
         public void ResetSocket()
         {

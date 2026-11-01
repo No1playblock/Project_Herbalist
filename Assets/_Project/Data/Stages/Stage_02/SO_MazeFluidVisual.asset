@@ -20,17 +20,29 @@ MonoBehaviour:
   maximumChannelWidth: 0.945
   channelEdgeInset: 0.036450002
   localZ: -0.53
-  useVolumeField: 0
+  useVolumeField: 1
   volumePerLocalArea: 50
   pressureCells: 4
+  minimumFlowWidthWorld: 1.2
+  minimumFlowDensity: 0.6
   grabRadiusWorld: 4
   surfaceThreshold: 0.04
   simulationStep: 0.008
   potentialRefreshDistance: 3
+  maximumTransfersPerTick: 48
+  fluidRenderInterval: 0.05
+  fluidSurfaceLiftWorld: 0.035
+  outlineBlendRadiusWorld: 0.45
+  outlineBlendPasses: 12
+  outlineThreshold: 0.35
+  outlineSubdivisions: 2
+  waterUvScale: 0.25
+  outlineWallInsetWorld: 0.04
+  outlineGeometryCacheLimit: 32768
   surfaceRoundRadiusWorld: 0.8
-  surfaceRoundPasses: 0
-  surfaceRoundStrength: 0.75
-  useTubeBody: 1
+  surfaceRoundPasses: 2
+  surfaceRoundStrength: 0.65
+  useTubeBody: 0
   tubeWidthWorld: 0.85
   tubeInitialLengthWorld: 8
   tubeMaxLengthWorld: 32

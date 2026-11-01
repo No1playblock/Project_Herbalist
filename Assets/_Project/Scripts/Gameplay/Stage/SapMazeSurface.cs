@@ -8,6 +8,14 @@ namespace Herbalist.Levels
     public sealed class SapMazeSurface : MonoBehaviour
     {
         [SerializeField] private MeshCollider _mazeCollider;
+        [Tooltip("Authored unit XY quad. Its transform defines the liquid plane and rectangular bounds; no collider is required.")]
+        [SerializeField] private Transform _floorPlane;
+        [Tooltip("Baked wall silhouettes extruded across the liquid plane. When assigned, the decorative relief no longer blocks water.")]
+        [SerializeField] private MeshCollider _waterWallCollider;
+        [Tooltip("Editor wall bake: height slice from wall crest (0) towards channel floor (1). Does not change the water plane.")]
+        [SerializeField, Range(.1f, .7f)] private float _wallBakeDepthFraction = .6f;
+        [SerializeField, Min(0)] private float _wallBakePaddingWorld = .01f;
+        [SerializeField, Min(256)] private int _pointQueryCacheLimit = 32768;
         [SerializeField, Range(.005f, .25f)] private float _cellSize = .04f;
         [SerializeField, Min(10000)] private int _maximumSamples = 1000000;
         [Tooltip("Depth below the front wall band; shallow openings do not need to reach the deepest floor.")]
@@ -15,6 +23,8 @@ namespace Herbalist.Levels
         [Tooltip("Navigation slice between the front wall band (0) and channel floor (1). Calibrate to the relief mesh.")]
         [SerializeField, Range(0, 1)] private float _channelDepthFraction = .5f;
         [SerializeField, Range(0, .2f)] private float _visualOffset = .04f;
+        [Tooltip("Maximum floor slope relative to the maze face. Steeper relief is a wall, never a liquid surface.")]
+        [SerializeField, Range(0, 80)] private float _maximumFloorSlope = 45f;
 
         private bool[] _walkable;
         private int _width, _height;
@@ -22,11 +32,40 @@ namespace Herbalist.Levels
         private Transform _board;
         private float _sampleSize, _passageZ, _rayStartZ, _rayLength;
         private Vector3 _rayDirection;
-        private int[] _previous, _queue;
+        private int[] _routeDistance, _routeQueue;
+        private int _routeRoot = -1, _routeHead, _routeTail;
+        private readonly SapMazeNearestCells _nearest = new SapMazeNearestCells();
+        private readonly List<Vector2> _cachedPath = new List<Vector2>();
+        private Vector2 _cachedStart, _cachedGoal;
+        private bool _hasCachedPath, _cachedPathFound;
+        private readonly Dictionary<Vector2, bool> _pointQueries = new Dictionary<Vector2, bool>();
+        private readonly Queue<Vector2> _pointQueryOrder = new Queue<Vector2>();
+        private bool _cachePointQueries;
         private byte[] _checkedEdges, _openEdges;
         private Mesh _builtMesh;
         private Matrix4x4 _builtBoardMatrix, _builtMeshMatrix;
         private float _builtCellSize, _builtDepthTolerance, _builtDepthFraction;
+        private float _builtFloorSlope;
+        private Matrix4x4 _builtPlaneMatrix;
+        private Transform _builtPlane;
+        private Vector3 _planePoint, _planeNormal;
+        private Mesh _builtWaterWallMesh;
+        private Matrix4x4 _builtWaterWallMatrix;
+
+        public Transform FloorPlane => _floorPlane;
+        public bool UsesFloorPlane => _floorPlane != null;
+        public MeshCollider WaterWallCollider => _waterWallCollider;
+        private bool UsesWaterWalls => UsesFloorPlane && _waterWallCollider != null && _waterWallCollider.sharedMesh != null;
+        public int GeometryVersion { get; private set; }
+
+        private float PlaneDepth(Vector2 point) => _planePoint.z -
+            (_planeNormal.x * (point.x - _planePoint.x) + _planeNormal.y * (point.y - _planePoint.y)) / _planeNormal.z;
+
+        private bool InsidePlane(Vector2 point)
+        {
+            var local = _floorPlane.InverseTransformPoint(_board.TransformPoint(new Vector3(point.x, point.y, PlaneDepth(point))));
+            return Mathf.Abs(local.x) <= .5f && Mathf.Abs(local.y) <= .5f;
+        }
 
         public MeshCollider MazeCollider => _mazeCollider;
         public bool Ready => _walkable != null;
@@ -64,10 +103,20 @@ namespace Herbalist.Levels
             if (_walkable != null && _mazeCollider != null && _builtMesh == _mazeCollider.sharedMesh &&
                 _builtBoardMatrix == board.localToWorldMatrix && _builtMeshMatrix == _mazeCollider.transform.localToWorldMatrix &&
                 _builtCellSize == _cellSize && _builtDepthTolerance == _channelDepthTolerance &&
-                _builtDepthFraction == _channelDepthFraction) return true;
+                _builtDepthFraction == _channelDepthFraction && _builtFloorSlope == _maximumFloorSlope &&
+                _builtWaterWallMesh == (_waterWallCollider != null ? _waterWallCollider.sharedMesh : null) &&
+                (_waterWallCollider == null || _builtWaterWallMatrix == _waterWallCollider.transform.localToWorldMatrix) &&
+                _builtPlane == _floorPlane && (_floorPlane == null || _builtPlaneMatrix == _floorPlane.localToWorldMatrix)) return true;
             _board = board;
             _walkable = null;
+            _cachePointQueries = false; _pointQueries.Clear(); _pointQueryOrder.Clear();
             if (_mazeCollider == null || _mazeCollider.sharedMesh == null) return false;
+            if (_floorPlane != null)
+            {
+                _planePoint = board.InverseTransformPoint(_floorPlane.position);
+                _planeNormal = board.localToWorldMatrix.transpose.MultiplyVector(_floorPlane.forward).normalized;
+                if (Mathf.Abs(_planeNormal.z) < .001f) return false;
+            }
             var bounds = LocalBounds();
             _origin = new Vector2(bounds.min.x, bounds.min.y);
             _sampleSize = Mathf.Max(.005f, _cellSize);
@@ -75,11 +124,17 @@ namespace Herbalist.Levels
             _height = Mathf.CeilToInt(bounds.size.y / _sampleSize) + 1;
             if (_width < 2 || _height < 2 || (long)_width * _height > _maximumSamples) return false;
 
-            var depths = new float[_width * _height];
-            var interiorDepths = new List<float>(_width * _height);
-            _rayStartZ = bounds.min.z - 1f;
-            _rayLength = (bounds.size.z + 2f) * board.TransformVector(Vector3.forward).magnitude;
+            int sampleCount = _width * _height;
+            var depths = UsesWaterWalls ? null : new float[sampleCount];
+            var floors = UsesWaterWalls ? null : new bool[sampleCount];
+            var interiorDepths = UsesWaterWalls ? null : new List<float>(sampleCount);
+            // Start strictly outside the extruded proxy, never on its front cap.
+            // PhysX rays starting on/inside a collider can miss that collider.
+            _rayStartZ = bounds.min.z - 2f;
+            _rayLength = (bounds.size.z + 4f) * board.TransformVector(Vector3.forward).magnitude;
             _rayDirection = board.TransformDirection(Vector3.forward).normalized;
+            if (!UsesWaterWalls)
+            {
             for (int y = 0; y < _height; y++)
             for (int x = 0; x < _width; x++)
             {
@@ -87,8 +142,9 @@ namespace Herbalist.Levels
                 var world = board.TransformPoint(new Vector3(local.x, local.y, _rayStartZ));
                 RaycastHit hit;
                 int index = y * _width + x;
-                depths[index] = _mazeCollider.Raycast(new Ray(world, _rayDirection), out hit, _rayLength)
-                    ? board.InverseTransformPoint(hit.point).z : float.NegativeInfinity;
+                bool found = _mazeCollider.Raycast(new Ray(world, _rayDirection), out hit, _rayLength);
+                depths[index] = found ? board.InverseTransformPoint(hit.point).z : float.NegativeInfinity;
+                floors[index] = found && IsFloorNormal(hit.normal);
                 // Include boundary walls: a thin interior barrier may not cover 5% of the board.
                 // The percentile still ignores isolated extreme decorations.
                 if (!float.IsNegativeInfinity(depths[index]))
@@ -99,19 +155,40 @@ namespace Herbalist.Levels
             float front = interiorDepths[Mathf.FloorToInt((interiorDepths.Count - 1) * .05f)];
             float floor = interiorDepths[Mathf.FloorToInt((interiorDepths.Count - 1) * .99f)];
             _passageZ = Mathf.Max(front + _channelDepthTolerance, Mathf.Lerp(front, floor, _channelDepthFraction));
-            _walkable = new bool[depths.Length];
+            }
+            _walkable = new bool[sampleCount];
             int count = 0;
-            for (int i = 0; i < depths.Length; i++) if (depths[i] > _passageZ) { _walkable[i] = true; count++; }
+            for (int i = 0; i < sampleCount; i++)
+            {
+                var point = GridPoint(i);
+                bool open = UsesWaterWalls ? OpenPoint(point) : UsesFloorPlane ? InsidePlane(point) && depths[i] > PlaneDepth(point) :
+                    depths[i] > _passageZ && floors[i];
+                if (open) { _walkable[i] = true; count++; }
+            }
             if (count < 2) { _walkable = null; return false; }
-            _previous = new int[depths.Length]; _queue = new int[depths.Length];
-            _checkedEdges = new byte[depths.Length]; _openEdges = new byte[depths.Length];
+            _nearest.Build(_walkable, GridPoint);
+            _routeDistance = new int[sampleCount]; _routeQueue = new int[sampleCount];
+            _routeRoot = -1; _hasCachedPath = false;
+            _checkedEdges = new byte[sampleCount]; _openEdges = new byte[sampleCount];
             _builtMesh = _mazeCollider.sharedMesh;
             _builtBoardMatrix = board.localToWorldMatrix; _builtMeshMatrix = _mazeCollider.transform.localToWorldMatrix;
             _builtCellSize = _cellSize; _builtDepthTolerance = _channelDepthTolerance;
             _builtDepthFraction = _channelDepthFraction;
+            _builtFloorSlope = _maximumFloorSlope;
+            _builtPlane = _floorPlane;
+            _builtPlaneMatrix = _floorPlane != null ? _floorPlane.localToWorldMatrix : Matrix4x4.identity;
+            _builtWaterWallMesh = _waterWallCollider != null ? _waterWallCollider.sharedMesh : null;
+            _builtWaterWallMatrix = _waterWallCollider != null ? _waterWallCollider.transform.localToWorldMatrix : Matrix4x4.identity;
+            GeometryVersion++;
+            _cachePointQueries = true;
             return true;
         }
-        private void OnValidate() { _walkable = null; _sampleSize = 0f; }
+        public void InvalidateGeometry()
+        {
+            _walkable = null; _sampleSize = 0f; _cachePointQueries = false;
+            _pointQueries.Clear(); _pointQueryOrder.Clear(); _hasCachedPath = false; _routeRoot = -1;
+        }
+        private void OnValidate() => InvalidateGeometry();
 
         private Bounds LocalBounds()
         {
@@ -133,21 +210,44 @@ namespace Herbalist.Levels
             return result;
         }
 
+        private bool IsFloorNormal(Vector3 normal) =>
+            Vector3.Dot(normal, -_rayDirection) >= Mathf.Cos(_maximumFloorSlope * Mathf.Deg2Rad);
+
         private bool OpenPoint(Vector2 point)
         {
+            if (_cachePointQueries && _pointQueries.TryGetValue(point, out bool open)) return open;
+            open = QueryOpenPoint(point);
+            if (_cachePointQueries)
+            {
+                if (_pointQueries.Count >= Mathf.Max(256, _pointQueryCacheLimit)) _pointQueries.Remove(_pointQueryOrder.Dequeue());
+                _pointQueries.Add(point, open); _pointQueryOrder.Enqueue(point);
+            }
+            return open;
+        }
+
+        private bool QueryOpenPoint(Vector2 point)
+        {
+            if (UsesFloorPlane && !InsidePlane(point)) return false;
             var start = _board.TransformPoint(new Vector3(point.x, point.y, _rayStartZ));
+            if (UsesWaterWalls) return !_waterWallCollider.Raycast(new Ray(start, _rayDirection), out _, _rayLength);
             return _mazeCollider.Raycast(new Ray(start, _rayDirection), out var hit, _rayLength) &&
-                _board.InverseTransformPoint(hit.point).z > _passageZ;
+                (UsesFloorPlane ? _board.InverseTransformPoint(hit.point).z > PlaneDepth(point) :
+                _board.InverseTransformPoint(hit.point).z > _passageZ && IsFloorNormal(hit.normal));
         }
         private bool ClearSegment(Vector2 from, Vector2 to)
         {
-            var start = _board.TransformPoint(new Vector3(from.x, from.y, _passageZ));
-            var end = _board.TransformPoint(new Vector3(to.x, to.y, _passageZ));
+            // Reject covered points and intersect the wall at the same plane used by rendering.
+            int samples = Mathf.Max(1, Mathf.CeilToInt(Vector2.Distance(from, to) / (CellSize * .5f)));
+            for (int i = 0; i <= samples; i++)
+                if (!OpenPoint(Vector2.Lerp(from, to, (float)i / samples))) return false;
+            var start = _board.TransformPoint(new Vector3(from.x, from.y, UsesFloorPlane ? PlaneDepth(from) : _passageZ));
+            var end = _board.TransformPoint(new Vector3(to.x, to.y, UsesFloorPlane ? PlaneDepth(to) : _passageZ));
             var delta = end - start;
             if (delta.sqrMagnitude < .00000001f) return true;
             float distance = Mathf.Max(0f, delta.magnitude - .00001f);
-            return !_mazeCollider.Raycast(new Ray(start, delta.normalized), out _, distance) &&
-                !_mazeCollider.Raycast(new Ray(end, -delta.normalized), out _, distance);
+            var walls = UsesWaterWalls ? _waterWallCollider : _mazeCollider;
+            return !walls.Raycast(new Ray(start, delta.normalized), out _, distance) &&
+                !walls.Raycast(new Ray(end, -delta.normalized), out _, distance);
         }
         private Vector2 CellPosition(int x, int y) => _origin + new Vector2(x * CellSize, y * CellSize);
         private bool CanOccupy(Vector2 point)
@@ -208,18 +308,8 @@ namespace Herbalist.Levels
         {
             if (_walkable == null) return point;
             if (OpenPoint(point)) return point;
-            Vector2 best = point;
-            float distance = float.PositiveInfinity;
-            for (int y = 0; y < _height; y++)
-            for (int x = 0; x < _width; x++)
-            {
-                if (!_walkable[y * _width + x]) continue;
-                var candidate = CellPosition(x, y);
-                if (!CanOccupy(candidate)) continue;
-                float d = (candidate - point).sqrMagnitude;
-                if (d < distance) { distance = d; best = candidate; }
-            }
-            return best;
+            int best = _nearest.Find(point);
+            return best >= 0 ? GridPoint(best) : point;
         }
 
         public Vector2 Move(Vector2 current, Vector2 delta)
@@ -260,6 +350,18 @@ namespace Herbalist.Levels
         {
             result.Clear();
             if (_walkable == null) return false;
+            if (!_hasCachedPath || !_cachedStart.Equals(start) || !_cachedGoal.Equals(goal))
+            {
+                _cachedPath.Clear();
+                _cachedPathFound = FindPath(start, goal, _cachedPath);
+                _cachedStart = start; _cachedGoal = goal; _hasCachedPath = true;
+            }
+            result.AddRange(_cachedPath);
+            return _cachedPathFound;
+        }
+
+        private bool FindPath(Vector2 start, Vector2 goal, List<Vector2> result)
+        {
             // A direct liquid drag must not require a grid cell to fit inside the gap.
             // Use the actual mesh first; the grid is only needed to route around bends.
             var exactStart = Snap(start);
@@ -271,26 +373,37 @@ namespace Herbalist.Levels
             int first = NearestReachableCell(start);
             int last = NearestReachableCell(goal);
             if (first < 0 || last < 0) return false;
-            var previous = _previous;
-            for (int i = 0; i < previous.Length; i++) previous[i] = -1;
-            var queue = _queue;
-            int head = 0, tail = 0;
-            queue[tail++] = first;
-            previous[first] = first;
-            while (head < tail && previous[last] < 0)
+            // Reuse a goal-rooted distance tree as the water's starting point changes.
+            // Greedy L/R/D/U descent yields the same tie-break as the original forward BFS.
+            if (_routeRoot != last)
             {
-                int cell = queue[head++];
-                int x = cell % _width, y = cell / _width;
-                PathVisit(x - 1, y, cell, 1, 2, previous, queue, ref tail);
-                PathVisit(x + 1, y, cell, 2, 1, previous, queue, ref tail);
-                PathVisit(x, y - 1, cell, 4, 8, previous, queue, ref tail);
-                PathVisit(x, y + 1, cell, 8, 4, previous, queue, ref tail);
+                System.Array.Fill(_routeDistance, -1);
+                _routeRoot = last; _routeHead = 0; _routeTail = 1;
+                _routeQueue[0] = last; _routeDistance[last] = 0;
             }
-            if (previous[last] < 0) return false;
-            for (int cell = last; cell != first; cell = previous[cell])
-                result.Add(CellPosition(cell % _width, cell / _width));
-            result.Add(CellPosition(first % _width, first / _width));
-            result.Reverse();
+            while (_routeHead < _routeTail && _routeDistance[first] < 0)
+            {
+                int cell = _routeQueue[_routeHead++];
+                for (int direction = 0; direction < 4; direction++)
+                {
+                    int next = GridNeighbour(cell, direction);
+                    if (next < 0 || _routeDistance[next] >= 0) continue;
+                    _routeDistance[next] = _routeDistance[cell] + 1;
+                    _routeQueue[_routeTail++] = next;
+                }
+            }
+            if (_routeDistance[first] < 0) return false;
+            for (int cell = first;;)
+            {
+                result.Add(GridPoint(cell));
+                if (cell == last) break;
+                for (int direction = 0; direction < 4; direction++)
+                {
+                    int next = GridNeighbour(cell, direction);
+                    if (next < 0 || _routeDistance[next] != _routeDistance[cell] - 1) continue;
+                    cell = next; break;
+                }
+            }
             var exactGoal = Snap(goal);
             if ((exactGoal - result[result.Count - 1]).sqrMagnitude > .00000001f) result.Add(exactGoal);
             return true;
@@ -301,15 +414,7 @@ namespace Herbalist.Levels
             point = Snap(point);
             int cell = CellIndex(point);
             if (cell >= 0 && _walkable[cell] && ClearSegment(point, CellPosition(cell % _width, cell / _width))) return cell;
-            float distance = float.PositiveInfinity; int best = -1;
-            for (int i = 0; i < _walkable.Length; i++)
-            {
-                if (!_walkable[i]) continue;
-                var p = CellPosition(i % _width, i / _width);
-                float d = (p - point).sqrMagnitude;
-                if (d < distance && ClearSegment(point, p)) { distance = d; best = i; }
-            }
-            return best;
+            return _nearest.Find(point, candidate => ClearSegment(point, GridPoint(candidate)));
         }
 
         private int CellIndex(Vector2 point)
@@ -319,28 +424,15 @@ namespace Herbalist.Levels
             return x >= 0 && y >= 0 && x < _width && y < _height ? y * _width + x : -1;
         }
 
-        private void PathVisit(int x, int y, int from, byte direction, byte reverse, int[] previous, int[] queue, ref int tail)
-        {
-            if (x < 0 || y < 0 || x >= _width || y >= _height) return;
-            int index = y * _width + x;
-            if (previous[index] >= 0 || !CanOccupy(CellPosition(x, y))) return;
-            if ((_checkedEdges[from] & direction) == 0)
-            {
-                _checkedEdges[from] |= direction; _checkedEdges[index] |= reverse;
-                if (ClearSegment(CellPosition(from % _width, from / _width), CellPosition(x, y)))
-                { _openEdges[from] |= direction; _openEdges[index] |= reverse; }
-            }
-            if ((_openEdges[from] & direction) == 0) return;
-            previous[index] = from;
-            queue[tail++] = index;
-        }
 
         public float SurfaceZ(Vector2 point, float fallback)
         {
             if (_walkable == null) return fallback;
+            if (UsesFloorPlane) return PlaneDepth(point);
             var world = _board.TransformPoint(new Vector3(point.x, point.y, _rayStartZ));
             RaycastHit hit;
-            return _mazeCollider.Raycast(new Ray(world, _rayDirection), out hit, _rayLength)
+            return _mazeCollider.Raycast(new Ray(world, _rayDirection), out hit, _rayLength) &&
+                _board.InverseTransformPoint(hit.point).z > _passageZ && IsFloorNormal(hit.normal)
                 ? _board.InverseTransformPoint(hit.point - _rayDirection * _visualOffset).z : fallback;
         }
     }

@@ -1,3 +1,126 @@
+## 2026-11-01 Maze3 좁은 구간 실제 Host/Client 입력 검증 완료
+
+- Unity MCP Development Windows64 빌드 build-227f3d03c3 성공(오류 0, 651.86 MB). 최신 좁은 굽이 보정과 MazeNarrowNetworkCheck를 포함한다.
+- 네이티브 Player 두 프로세스로 실제 Photon 방에 접속해 Host=Sap/Client=Leaf, Host=Leaf/Client=Sap 두 조합을 검사했다. 명시적인 -herbalist-maze-narrow-check 플래그가 있을 때만 동작한다.
+- 기존에 정지하던 경로 index 464 및 추가 정지 index 672를 포함하는 두 구간(360→540, 600→760)을 각각 역방향으로도 통과시켰다. 조합당 4회, 총 8회 실제 이동 검사 통과.
+- 시험용 초기 위치와 초기 물량 60은 각 구간 시작 시 한 번만 설정했다. 그 뒤에는 조종자 프로세스의 synthetic Mouse를 일반 Input System과 NetworkPlayer.ReadLocalInput으로 읽고, Fusion 입력으로 Host에 전달해 기존 authoritative Tick으로 이동시켰다. 수액을 반복 순간이동시키거나 테스트에서 ReceiveAbilityPointer를 직접 호출하지 않았다. 숨겨진 창의 OS 포커스 제한만 기존 방식으로 우회하고, 카메라를 조준점에 맞췄다.
+- Host 조종 입력 관측 86회, Client 조종 입력 관측 157회. 두 조합 모두 네 지점에서 도착 확인, 벽 내부 셀 0, 수액 메쉬 생성 성공. 각 지점에서 양쪽 Packed FluidCells를 정렬해 SHA256 비교한 결과 전부 일치했다. RemainingVolume도 양쪽 동일했다.
+- 체크포인트 비교 때만 자동 stage flow simulation을 잠시 멈췄으며, 이동 구간에서는 정상 Fusion simulation을 사용했다. 전체 스테이지 공략이나 자연스러운 플레이어 이동/카메라 조작까지 검증한 것은 아니다.
+- 네 Player 모두 exit 0. 성공 로그의 Assert/NullReference/검증 실패 0, 최종 Editor 콘솔 오류 0. Player 프로세스는 모두 종료했다.
+- 결과: Logs/Maze3NarrowNetwork_20261101/verification.json. HostSap 및 ClientSap 폴더에 peer별 결과, 로그, 종료 코드와 조종자 실제 카메라 캡처 4장씩 보관했다. 실행 스크립트는 같은 루트의 run-pair.ps1이다.
+
+## 2026-11-01 미로 3 좁은 굽이의 수액 정지 보정
+
+- 실제 Maze3 시작–도착 경로(1572개 점)를 가까운 목표 지점 8칸씩 당기는 계산으로 재현했다. 기존 코드는 경로 464번째 점(-0.24001,-6.36107 local)에서 240 Tick 이상 전진하지 못했다. 최소 폭만 0으로 만든 시험 설정에서는 전체 경로가 통과해 벽 연결 문제가 아니라 최소 폭 조건의 교착임을 확인했다.
+- HasFlowWidth는 넓은 영역의 기존 minimumFlowWidthWorld 1.2 및 minimumFlowDensity 0.6을 유지한다. 현재 단면이 요구 폭 이하인 좁은 통로나 다음 칸이 좁아지는 입구에서는 단면을 전부 채울 때까지 기다리는 조건을 풀어 수액이 통로 폭에 맞춰 들어갈 수 있게 했다. 실제 이웃/벽 판정은 변경하지 않았다.
+- 다음 칸의 단면 폭은 셀/축별로 재사용하고 요구 폭이 달라질 때만 초기화한다. 벽 콜라이더, Plane, 격자 크기, 속도 7, 물량 및 기존 표면 설정은 수정하지 않았다.
+- RunNarrowRoute 회귀 검사 추가: 실제 씬 경로를 따라 당기며 정지 여부, 물량 보존 및 벽 내부 셀 발생 여부를 검사한다. Maze3 왕복 통과: forward 636 Tick / reverse 703 Tick. 넓은 영역 최소 폭 유지, 네 방향/반전, 누수/보충, 표면 및 정확한 누수 접촉 기존 검사 통과.
+- 최종 추가 검사: 누수 5곳 및 보충 8곳, 총 13개 분기 경로 모두 통과했다. 중간 MCP 시간 초과 후 사용자 확인을 받고 분기별로 다시 검사했다. Play에서 기존 정지 지점(경로 index 464)을 넘어 index 480 도달, 물량 59.99939 보존, 벽 내부 물량 셀/표면 정점 0 확인. 최종 콘솔 오류 0, Play 종료 후 모든 Board/Flow 활성 복구 및 씬 저장 확인.
+- 진단 파일 Logs/Maze3Narrow_20261101/{before-graph,before-traversal}.json 및 통로 연결 그림 참조. 이 수정 후 Development Player를 재빌드했으며 실제 Host/Client 입력 검증도 완료했다. 아래가 아닌 최상단의 네트워크 검증 기록을 참조한다.
+
+## 2026-11-01 실제 Host/Client 누수 시야 검증 완료
+
+- Unity MCP Windows64 Development 빌드 build-94e18d1520 성공(오류 0). MainMenu/Stage2만 포함하는 검증용 빌드이며 일반 메뉴 씬 연결은 바꾸지 않는다. MazeLeakVisibilityNetworkCheck는 명시적인 -herbalist-maze-visibility-check 인수와 Editor/Development 조건에서만 실행한다.
+- 실제 Photon 방에 서로 다른 네이티브 Player 두 프로세스로 접속했다. Host=Sap/Client=Leaf, Host=Leaf/Client=Sap 두 조합 모두 2명 접속, 역할 선택, Stage2 로딩, 실제 Board controller 배정을 확인했다.
+- 실제 접속에서 Fusion 오브젝트 상태 크기 초과(8501 words/34004 bytes > 32768 bytes)를 발견했다. SnapshotCapacity를 8192에서 7680으로 조정해 다른 Board 네트워크 필드 공간을 확보했다. 현재 콘텐츠 최대 물량 220(완전 충전 셀 2750개)은 이 한계보다 작으며 유체 회귀 검사도 통과했다.
+- 검증은 Host에서 물 위치/물량을 반복 공급하는 시험 조건을 사용한다. 자동 스테이지 진행만 SetIsSimulated(false)로 멈추고 기존 authoritative Board.Tick으로 누수/복제 상태를 생성한다. 임의의 LeakMask나 카메라 cullingMask를 주입하지 않으며, 카메라 위치만 누수 구멍이 보이도록 고정한다. 일반 이동 입력이나 전체 스테이지 공략을 시험한 것은 아니다.
+- 세 미로 12개 구멍에 대해 near/wet/dry 36개 검사를 양쪽 피어에서 각각 수행했다. 두 역할 조합 모두 모든 검사 통과, 네 프로세스 모두 exit 0.
+- 각 미로의 첫 구멍은 실제 로컬 플레이어 카메라로 이펙트를 켠/끈 이미지 픽셀을 비교했다. 조종자는 스파클 및 뒤쪽 물줄기 차이 0픽셀. 상대는 스파클 1624~3271픽셀, 물줄기 13074~13114픽셀로 실제 렌더링 차이가 확인됐다. 물줄기 메쉬 생성과 아래로 떨어지는 포물선 경로도 양쪽에서 검사했다.
+- 최종 성공 실행의 로그에서 AssertException/NullReference/검증 실패 없음. 첫 접속의 제한 환경 오류와 두 번째 조합의 방 생성 전 접속(GameNotFound)은 별도 실패 기록으로 보존했으며 성공 결과와 섞지 않는다.
+- 결과: Logs/MazeVisibilityNetwork_20261101/verification.json. 성공 실행 폴더는 HostSap_Fixed 및 HostLeaf_Ready이며 각 폴더에 host/client-result.json, Player 로그와 near/wet 캡처 12장이 있다. 빌드 위치: Builds/MazeVisibilityNetworkCheck/Herbalist.exe.
+
+## 2026-11-01 누수 경고 시야 및 정확한 물 접촉
+
+- 12개 Leak의 ApproachSplash를 뒤쪽 레이어 12로 통일하고 FrontImpactSparkle 복사본은 비활성화했다. 기존 DescendingMazeFlow 카메라 마스크가 Sap 조종자에게 레이어 12를 숨기고 Leaf 쪽에게 표시한다. 화면 분할과 개인 화면 모두 카메라마다 적용된다.
+- 구멍 근처(기존 Approach Distance 3 world)에서는 스파클만 표시한다. 실제 누수 중에는 스파클을 숨기고 기존 LeakStream 및 WetSurface를 표시한다. 나뭇잎으로 막으면 둘 다 숨기는 기존 조건을 유지한다.
+- 유체 모드의 AtLeak은 leakRadius 안의 가장 가까운 물을 찾던 방식 대신 SapMazeFluidField.Contains로 구멍 좌표를 덮는 실제 물량 셀을 검사한다. 셀 공유 모서리/꼭짓점은 닿은 어느 셀의 물도 인정하고 0.00001 local 수치 오차만 허용한다. 벽 너머/인접 마른 셀로 스냅하지 않는다.
+- 누수와 물줄기는 같은 Host 판정을 사용한다. 해당 Tick에서 물이 빠져 중심 셀이 비어도 그 Tick의 실제 누수 접촉은 LeakMask에 보존한다. 소진/재시도/완료 상태에서는 Mask를 지운다. 클라이언트는 기존 복제 LeakMask로 연출한다.
+- 기존 MazeLeakStreamPresentation의 포물선 튜브/물방울/수액 능력과 같은 MAT_SapStream 재질을 재사용했다. 움직임, 벽, 속도 7 및 최근 성능 최적화는 변경하지 않았다.
+- Play 검사: 12개 모두 가까운 마른 셀은 경고만, 구멍 접촉은 물줄기만, 멀어지면 둘 다 꺼짐. 셀 경계에 놓인 Maze2 Leak4도 접촉 성공. 실제 카메라를 Sap/Leaf로 전환해 경고 레이어 비표시/표시 확인. 물줄기 23개 경로 점의 앞쪽 진행과 아래 낙하 확인.
+- 실제 Tick 검사: 0.16 volume에서 0.1 누수 후 LeakMask=1, 소량 0.01 소진 후 Retrying/LeakMask=0. 기존 유체 회귀 검사와 정확한 접촉/셀 경계 검사를 통과했다. 최종 콘솔 오류 0, Play 종료 및 씬 저장 완료.
+- Logs/MazeLeakPresentation_20261101/{socket-checks,camera-check,drain-stream-check,final-drain-check}.json 참조. 이번 작업에서는 실제 두 프로세스 Host/Client 접속 검사는 수행하지 않았다.
+
+## 2026-11-01 수액 계산 재사용 및 메쉬 최적화
+
+- 이동 속도 7, 물량 이동 알고리즘, WaterFloorPlane, WaterWalls 에셋 및 벽 판정 절차, 표면 해상도/갱신 간격/둥글기 설정을 유지했다.
+- SapMazeNearestCells: 통로 셀의 정적 공간 인덱스로 최근접 셀을 찾는다. 기존 전체 순회와 같은 정확한 거리 및 동률 시 row-major 우선순위를 유지하며, 가시성 필터가 필요한 GridCell에도 사용한다.
+- SapMazeSurface: 정확히 같은 시작/목표의 경로를 재사용한다. 목표 셀 기준의 거리 트리를 점진적으로 확장해 시작 셀이 움직여도 재사용하며, 기존 L/R/D/U 순방향 BFS와 같은 경로로 복원한다. 점별 충돌 질의는 FIFO 제한 캐시(Point Query Cache Limit 32768)에 저장한다. 기하 재구축/무효화 시 캐시를 모두 지운다.
+- WaterWalls 사용 시 초기화 단계의 불필요한 원본 relief 깊이 샘플링과 정렬을 생략했다. 전용 벽 충돌 판정 자체는 그대로다.
+- SapMazeFluidOutline: 매 패스의 Dictionary/HashSet 조회를 재사용 배열로 교체하고, 현재 표면 영역의 이웃 셀을 패스당 반복 조회하지 않는다. 이전 영역만 비워 남은 값이 새 물에 섞이지 않도록 한다. 배열 캐시를 위한 메모리 사용은 늘지만 매 갱신 할당/해시 조회는 줄어든다.
+- SapMazeTrailView: 고정 Plane의 동일 법선을 재사용하고 Bounds 중복 계산을 제거했다. 표면 해상도와 갱신 빈도는 낮추지 않았다.
+- 동일 Editor Play 측정: 벽 조준 Snap 10.35381 → 0.006605ms, 같은 경로 재조회 15.02759 → 0.00079ms, 반복 메쉬 갱신 10.34323 → 4.60586ms. 새 기하 영역 첫 갱신은 78.9933 → 52.0859ms로 여전히 순간 비용이 남는다. 전체 게임 FPS/GPU 성능이나 매 프레임 이 수치를 보장하는 측정은 아니다.
+- 동일 초기 상태와 입력 120회 이동: 전체 이동 경로 1898개 점, 복제용 물량 snapshot, 표면 정점 3691개와 삼각형 인덱스 20754개가 수정 전후 정확히 일치했다. Logs/MazeOptimization_20261101/{before,after,comparison}.json 참조.
+- 최근접 셀 300회 전체 순회 대조, 캐시 경로와 기존 순방향 BFS 대조(합성 및 실제 미로에서 시작점 5회 변경), 재사용 표면 버퍼 대조, 물량/누수/보충/벽 차단 검사 통과. 실제 세 미로의 도착점 및 누수/보충 31곳 모두 연결, 벽 내부 물량 셀/표면 정점 0, 물량 보존 확인.
+- 최종 콘솔 오류 0. Play 종료 후 세 Board 활성화 및 씬 저장 확인. 실제 두 프로세스 Host/Client 검사는 이번 작업에서 수행하지 않았다.
+
+## 2026-10-31 수액 전용 WaterWalls 충돌 메쉬
+
+- 각 SapMaze 아래 WaterWalls/MeshCollider를 작성하고 SapMazeSurface의 Water Wall Collider에 연결했다. 수액 높이는 WaterFloorPlane 그대로이며 이동/영역/표면 경계는 전용 벽만 검사한다. 바닥 돌출부와 기존 Plane이 교차해 생기던 가짜 벽을 제거했다.
+- Assets/_Project/Data/Stages/Stage_02/Collision/SapMaze_N_WaterWalls.asset는 원본 relief의 벽 높이 단면을 0.04 local 간격으로 샘플링해, 연속 벽 영역을 직사각형으로 합치고 깊이 방향으로 돌출한 별도 메쉬다. 장식 메쉬/기존 플레이어 콜라이더는 수정하지 않았다.
+- SapMazeSurface의 Wall Bake Depth Fraction 0.6(벽 정상 0 / 홈 바닥 1), Wall Bake Padding World 0.01을 사용한다. 낮은 바닥 굴곡은 제외하고 높은 벽 윤곽을 보존한다. 경계는 샘플 해상도만큼 근사된다.
+- 지형이 바뀌면 Edit 모드에서 Herbalist > Stage 2 > Bake Water Walls로 다시 생성한다. 이 메뉴는 현재 씬의 미로를 굽고 에셋을 저장한다. 이후 씬도 저장해야 한다. 같은 메쉬를 다시 굽더라도 이동/표면 캐시가 무효화된다.
+- WaterWalls는 Ignore Raycast 레이어이며 excludeLayers=-1로 접촉을 제외한다. 수액의 Collider.Raycast 직접 질의에만 사용한다. 현재 나뭇잎/수액 능력의 hitMask에는 레이어 2가 포함되지 않는다.
+- 전용 메쉬 앞면보다 바깥에서 검사 레이를 시작한다. 앞면에 붙어서 시작하면 PhysX가 벽을 놓칠 수 있어 수정하고 회귀 검사를 추가했다.
+- 사용자 표시 구간에 대응하는 Maze1 (-8.8,8.8)~(-8.8,8.95), (-2.6,-0.2)~(-2.6,-0.05)의 직선 통과 확인. 실제 벽 지점은 차단됨을 확인했다.
+- 최종 Play: 세 도착점 및 누수/보충 31곳 모두 연결, 각 120회 이동 후 물량 보존, 벽 내부 물량 셀/표면 정점 0. 평면 높이 오차 최대 약 0.000015 world. Logs/MazeWaterWalls_20261031/SapMaze_N.json 참조.
+- 합성 회귀 검사: Plane을 뚫는 장식 바닥 돌출부 무시, 별도 얇은 벽 차단/우회, 영역 밖 차단, Plane 높이 고정, 기존 물량/누수/보충 검사 통과. 최종 콘솔 오류 0, Play 종료 및 씬 저장 완료. 실제 두 프로세스 Host/Client 검사는 이번 작업에서 수행하지 않았다.
+
+## 2026-10-31 authored WaterFloorPlane 적용
+
+- 각 SapMaze_1/2/3 아래에 WaterFloorPlane XY Quad를 하나씩 작성하고 SapMazeSurface.floorPlane에 연결했다. 기준용 Quad의 Renderer/Collider는 꺼두었다. 스케일 X/Y가 영역 크기이며 로컬 Z가 수액 깊이다.
+- Plane이 연결되면 기존 경사/퍼센타일 기반 바닥 추정을 이동 판정에 사용하지 않는다. Plane보다 앞에 있는 실제 미로 메쉬는 막힌 영역이며, 같은 Plane 위 양방향 레이캐스트로 벽을 가로지르는 이동도 차단한다. 물 표면과 조준 투영도 이 Plane을 사용한다. 물 표면의 추가 lift는 0이다.
+- 최종 저장된 로컬 Z: Maze1 -0.291543484, Maze2 -0.453751951, Maze3 -0.7749194. 세 미로의 속도는 7이다.
+- 합성 메쉬 회귀 검사: 얇은 벽 직선 통과 차단, 벽 우회, Plane 영역 밖 차단, 고정 깊이, Plane 이동 후 캐시 갱신 통과. 기존 물량/누수/보충/표면 검사 통과.
+- Play에서 세 시작–도착 경로가 연결되며 각 180회 이동 후 물량 보존, 바닥 밖 물량 셀/표면 정점 0 확인. 모든 표면 정점의 Plane 오차 약 0.000004 world 이하. Logs/MazeFloorPlanes_20261031/play-checks.json 참조.
+- Maze2 refill index 5 경로를 위해 Plane Z를 -0.453751951로 보정해 Edit 모드에서 씬 저장했다. 새 Play 검사에서 세 도착점과 누수/보충 31개 지점 모두 연결 확인(미로별 7/11/13개, 도달 불가 0). Logs/MazeFloorPlanes_20261031/final-routes.json에 기록됐다. 검사 응답이 시간 초과됐지만 결과 파일 생성은 확인했다. MCP 재연결 후 Edit 모드, 세 Board 활성화, 세 Plane 참조와 저장된 깊이/속도 7을 재확인했다. 최종 콘솔 오류 0이며 씬 저장을 마쳤다.
+
+## 2026-10-31 수액 속도 7 및 바닥 한정 이동
+
+- 세 MazeControl 에셋의 speed를 7로 변경.
+- SapMazeSurface의 기존 깊이 판정에 면의 법선 판정을 추가. 이동 그래프, 직접 이동, 구간 통과, 물 표면 높이가 같은 바닥 판정을 사용한다.
+- 실제 세 미로는 channelDepthFraction 0.85, maximumFloorSlope 65도. 조각된 바닥 자체의 거친 굴곡을 허용하면서 홈의 아래쪽 깊이 영역으로 제한한다. 45도만 적용하면 미로 1/2의 정상 통로가 끊겨 실제 경로를 비교해 조정했다.
+- Play에서 세 미로 시작–도착 경로 연결 확인. 각 120회 이동 후 바닥 밖 물량 셀 0, 표면 정점 약 530개씩 표본 검사에서 바닥 밖 정점 0, 물량 보존. 기존 네 방향/반전/누수/보충/표면 테스트 통과, 최종 콘솔 오류 0.
+
+## 2026-10-31 연속적인 둥근 물 외곽선과 물 재질
+
+사용자 승인으로 표시 메쉬를 칸 모서리 직접 연결 방식에서 연속 밀도 윤곽으로 변경했다. `SapMazeFluidOutline`이 실제 물량을 읽어 열린 통로 이웃으로만 표시 밀도를 확산시키고, 그 등밀도선으로 메쉬를 만든다. 이동/누수/보충/네트워크 물량은 수정하지 않는다. 물리 표면장력이나 SPH 입자 시뮬레이션을 새로 추가한 것은 아니다.
+
+설정은 `SO_MazeFluidVisual`: Outline Blend Radius World=0.45m, Outline Blend Passes=12(최대), Outline Threshold=0.35, Outline Subdivisions=2다. 작은 물방울의 밀도에는 표시 임계값을 낮춰 소량이 사라지지 않게 한다. 벽으로 끊긴 영역은 함께 부드럽게 만들지 않으며, 실제 메쉬 검사로 표시 정점/연결선이 벽을 넘는 것을 제한한다. 표시 경계는 둥글어지지만 벽 접촉부는 실제 미로의 경계를 따른다. 이전 Surface Round Passes/Radius/Strength는 과거 메쉬 보정의 설정으로 현재 연속 윤곽에는 사용하지 않는다.
+
+바닥 표본과 경계 연결을 캐시하고, 경계 정점을 공유해 매끄러운 노멀과 UV를 생성한다. 표시 간격은 기존 0.05초를 유지하며 변하지 않은 모양은 재생성하지 않는다. 바닥 표시 여유는 0.035m, 벽 접촉 여유는 0.04m, 바닥 표본 캐시 한도는 32768개다. 정점쌍을 64비트로 합친 키의 기본 해시 충돌이 병목이어서, 키를 섞는 가역 함수로 캐시 조회를 분산했다.
+
+Water_sphere 원본을 보존하고 `WaterTest/shader/SG_MazeWaterOrb.shadergraph`와 `WaterTest/Mat/M_MazeWaterOrb.mat`를 만들었다. 원본의 움직이는 색/무늬를 활용하되 Vertex Position은 원래 메쉬 위치로 직접 연결하여 구체용 정점 출렁임이 미로 바닥을 뚫지 않게 했다. Alpha=0.95, Smoothness=0.8, AO=1로 조정했다. 세 미로의 물 MeshRenderer에 새 재질을 씬에서 연결했다.
+
+검증: 기존 물량/최소 폭/U턴/누수/보충/벽 검사와 표시 밀도/물량 불변/벽 분리/작은 물방울 검사를 통과했다. Play의 1번 미로 이동 120틱 후 3930정점/7161삼각형, 초기 생성 29.35ms, 캐시 후 강제 재생성 10회 평균 5.55ms였다(밀도 2.92ms, 메쉬 구성 2.52ms, 업로드 0.11ms). 초기 캐시는 한 번의 비용이며 이동으로 새 영역이 드러나면 새 표본 검사가 필요하다. 이 값은 메쉬 생성만의 검사 구간 비용이며 전체 게임 FPS가 아니다.
+
+미로 1/2/3의 표시 정점은 각각 3930/3665/3672개, UV 개수도 일치했다. 정점 약 256개 및 삼각형 연결선 약 128개씩의 표본 검사에서 바닥 밖 정점/벽 관통 연결선은 모두 0개였다. 논리 물량 60, 실제 셀 합계 59.99939가 유지됐다. 최종 검사 중 콘솔 오류는 없었다. 실제 Host/Client 두 프로세스 접속은 검사하지 않았다. 검증용 Play 임시 비활성 상태는 Play 종료로 복구했다. 캡처 및 수치: `Logs/MazeRoundedOutline_20261031`.
+
+## 2026-10-31 가느다란 수액 흐름 제한
+
+`SO_MazeFluidVisual`에 Minimum Flow Width World=1.2m와 Minimum Flow Density=0.6을 추가했다. 적은 물이 생긴 칸에서 바로 다음 칸으로 뻗는 대신, 실제 물이 충분한 밀도와 횡단 폭으로 모인 뒤 전진한다. 미로의 실제 월드 스케일을 적용하며, 좁은 통로는 통로 폭으로 제한을 낮춘다. 전체 물량이 적으면 가능한 작은 덩어리로 움직이므로 없는 물을 만들거나 작은 물방울의 이동을 막지 않는다. 먼 경계부터 줄이는 기존 규칙과 누수/보충량은 유지한다.
+
+기존 십자 네 방향/U턴/누수/보충/벽 검사와 새 최소 폭/횡단 물량/좁은 통로/작은 물방울 검사를 통과했다. 실제 1번 미로 120틱 직접 이동의 평균 비용은 0.510ms/틱, 실제 셀 합계 59.99939(논리 물량 60)이었다. 형태 확인용 Play 임시 미리보기는 `Logs/MazeMinimumWidth_20261031/minimum-width-verified.png`에 있으며 Play 종료로 임시 표시 상태를 복구했다. 실제 두 프로세스 Host/Client 검사는 수행하지 않았다.
+
+## 2026-10-30 유체 A안 복구: 먼 경계부터 당겨 모으기
+
+사용자 선택에 따라 `SO_MazeFluidVisual`의 Use Volume Field를 켜고 Use Tube Body를 껐다. `SapMazeFluidField`의 실제 칸별 물량이 이동, 누수, 보충, 도착 및 표시의 기준이다. 클릭/드래그 위치까지 미로의 열린 통로로 거리를 계산하고, 가장 먼 경계의 물부터 빼서 기존 물에 인접한 앞쪽 경계에 같은 양을 더한다. 내부에 가득 찬 물은 얇아지지 않으며 U턴에서는 같은 칸의 물량으로 합쳐진다. 원통 중심선이나 머리의 이동 기록을 표시하지 않는다. 전체 물리 유체 입자 시뮬레이션을 사용하는 방식은 아니다.
+
+Host가 물량과 누수/보충을 계산하고 최대 8192개의 셀 ID/밀도 스냅샷으로 표시 영역을 복제한다. 기존 카메라 시점, 좌클릭 조작, 능력 소유권 및 진행 조건은 유지했다. 이전 원통 구현 코드는 비활성 상태로 남긴다.
+
+성능 상한은 Maximum Transfers Per Tick=48, Fluid Render Interval=0.05초다. 이전의 긴 경계 반경 탐색과 내부 반복 이완은 제거했다. 현재 경계는 바로 이웃 두 점으로 2회 다듬으며 Surface Round Strength=0.65다. 바닥 겹침을 줄이기 위한 Fluid Surface Lift World는 0.025m다. 이 수치들은 동일 설정 에셋에서 조절한다.
+
+`SapMazeFluidChecks.Run()`에서 십자 네 방향의 물량 수렴, U턴/합침, 벽 비관통, 스냅샷, 누수/보충, 가장 먼 경계 우선 감소, 채워진 내부 유지 및 완전 소진 후 빈 스냅샷을 통과했다. 실제 Play에서 미로 3개 모두 초기 물량 60/750셀로 초기화됐다. 1번 미로 120틱 직접 이동 계산은 평균 0.332ms/틱, 이동 후 778셀/60 물량(실제 셀 합계 59.99939)이었다. 경계 보정 포함 메쉬 강제 재생성 20회 평균은 5.484ms였다. 이 값은 해당 검사 구간의 컴포넌트 비용이며 전체 게임 FPS 측정이 아니다. 최초 Fusion Editor 재로드 Assert 후 Play를 정상 재시작했으며 마지막 이동 검사에서 콘솔 오류는 없었다. 실제 두 프로세스 Host/Client 접속 검사는 수행하지 않았다.
+
+화면 확인: `Logs/MazeFluidRestore_20261030/fluid-rounded.png`. 아래 원통/이전 유체 설명은 변경 이력이다.
+
+## 2026-10-30 나무 배경 지평선 노출 수정
+
+2.7배 크기의 현재 씬에서 카메라 Far Clip이 기존 150m여서 뒤쪽 나무가 잘리고 Skybox 지평선이 보였다. 현재 씬의 PlayerCamera와 세 MazeCamera, 멀티플레이용 `PF_Stage02MazesNetworkPlayer`의 Camera에 Far Clip 1000m를 저장했다. `PlayerView`는 초기 카메라 값을 복원하므로 전용 프리팹에도 같은 값을 저장해야 한다. 다른 스테이지의 공용 플레이어 프리팹은 변경하지 않았다.
+
+기존 기둥 사이의 실제 틈은 `Stage2_EnvironmentModeling/BackgroundTrunkEnclosure`의 배경 나무 12개로 보강했다. 기존 Root_Big1 메시와 재질을 공유하며, 중심 (50, 270, 50) 주변 반경 440m에 배치했다. 모델 로컬 X/Y 폭은 2배, 높이를 담당하는 Z는 1배다. Collider와 그림자 투사는 없으며 기존 이동/미로 충돌과 조명은 유지한다. Inspector에서 이 루트의 자식 Transform으로 배경을 조정할 수 있다.
+
+양쪽 발판 X=-31.21/132.06, 높이 80/143/205/244m, 30도 간격 12방향의 96개 렌더에서 화면 중앙 지평선 띠를 검사했다. 첫 보강에서 남은 6개 시점은 최종 폭 조정 후 480x270으로 재검사해 배경 노출 픽셀 0개를 확인했다. 상/중/하 4방향 최종 렌더도 확인했다. Play에서 Player Camera의 1000m 유지와 프리팹 저장값을 확인했으며 검증 캡처/기록은 로컬 `Logs/Stage2Enclosure`에 있다. 실제 Host/Client 두 프로세스 접속 검사는 수행하지 않았다. 검사 중 별도 수액 코드 `SapMazeTrailView.cs`의 CS0103 콘솔 기록이 있어 전체 프로젝트 컴파일 성공으로 판단하지 않았다.
+
 ## 2026-10-29 경량 원통 몸통 A안으로 교체
 
 사용자가 유체 셀/윤곽 보정의 지연과 모양을 확인한 뒤 선택한 A안이다. 현재 활성 구현은 `SapMazeTubeBody` + `SapMazeTrailView.PresentTube`다. 이전 셀 유체/경계 라운딩은 실행하지 않으며 보드의 8192셀 NetworkArray도 제거했다. 중심선은 기본 24점, 최대 128점으로 관리하고 기존 `TrailPoints` 네트워크 배열로 현재 중심선 전체를 전달한다. 과거 머리 이동 기록을 재생하는 방식이 아니다.

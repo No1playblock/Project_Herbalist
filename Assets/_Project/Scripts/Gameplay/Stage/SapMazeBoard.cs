@@ -53,6 +53,14 @@ namespace Herbalist.Levels
         [Networked] private int TrailFirst {get;set;}
         [Networked] private int TrailCount {get;set;}
         [Networked, Capacity(TrailCapacity)] private NetworkArray<Vector2> TrailPoints => default;
+        [Networked] private int FluidCount { get; set; }
+        [Networked, Capacity(SapMazeFluidField.SnapshotCapacity)] private NetworkArray<uint> FluidCells => default;
+        private readonly List<uint> _fluidSnapshot = new List<uint>();
+        private SapMazeFluidField _fluid;
+        public SapMazeFluidField Fluid => _fluid;
+        private bool UsesFluid => _definition != null && _definition.useRefillVolumeRules &&
+            _surface != null && _surface.Ready && _trailView != null &&
+            _trailView.Settings != null && _trailView.Settings.useVolumeField;
         private SapMazeTubeBody _tube;
         private bool _pointerHeld, _grabbed;
         private bool UsesTube => _definition != null && _definition.useRefillVolumeRules &&
@@ -226,6 +234,7 @@ namespace Herbalist.Levels
             if((_requireSurface || _definition.useRefillVolumeRules) && (_surface==null || !_surface.Ready))return;
             UpdateController();
             if(!_playable){_hasTarget=false;return;}
+            _leakMask = 0;
             var before=_state.Phase;
             var attempt=_state.Attempt;
             if(_surface!=null && _surface.Ready)TickSurface(Controlling && _hasTarget,dt);
@@ -241,8 +250,7 @@ namespace Herbalist.Levels
                 AppendTrail(CurrentPosition());
             if(before!=MazePhase.Retrying && _state.Phase==MazePhase.Retrying)
                 foreach(var leak in _leaks)leak.ResetSocket();
-            if(_state.Phase!=MazePhase.Running)StopControl();
-            _leakMask=0;
+            if(_state.Phase!=MazePhase.Running) { StopControl(); _leakMask = 0; }
             for(int i=0;i<_leaks.Length;i++)
             {
                 bool wet=AtLeak(i);
@@ -256,6 +264,7 @@ namespace Herbalist.Levels
             if(_surface==null || !_surface.Ready)return SapMazeSimulation.AtLeak(_definition,_state,i);
             if(_state.Phase!=MazePhase.Running)return false;
             var leak=_surfaceLeaks[i];
+            if (UsesFluid && _fluid != null) return _fluid.Contains(leak);
             if (UsesTube && _tube != null) return _tube.Distance(leak) <= _definition.leakRadius;
             var radius=_definition.leakRadius;
             var cursor=_surfacePosition;
@@ -284,6 +293,7 @@ namespace Herbalist.Levels
         }
         private void TickSurface(bool moving,float dt)
         {
+            if (UsesFluid && _fluid != null) { TickFluid(moving, dt); return; }
             if(dt<=0 || float.IsNaN(dt) || float.IsInfinity(dt) || _state.Phase==MazePhase.Solved)return;
             if(_state.Phase==MazePhase.Retrying)
             {
@@ -348,6 +358,45 @@ namespace Herbalist.Levels
                 }
             }
         }
+        private void TickFluid(bool moving, float dt)
+        {
+            if (dt <= 0 || !float.IsFinite(dt) || _state.Phase == MazePhase.Solved) return;
+            if (_state.Phase == MazePhase.Retrying)
+            {
+                _state.RetryRemaining -= dt;
+                if (_state.RetryRemaining <= 0) _state = SapMazeSimulation.Initial(_definition, _state.Attempt + 1);
+                return;
+            }
+            if (moving)
+            {
+                bool reachable = !_definition.limitPointerPathDistance ||
+                    (_surface.TryFindPath(_surfacePosition, _targetPoint, _targetPath) &&
+                     PathWorldLength(_targetPath) <= _definition.maxTargetPathDistance);
+                if (reachable)
+                {
+                    _fluid.Step(_surface.GridCell(_targetPoint), _definition.speed, dt, _trailView.Settings);
+                    int wet = _fluid.NearestWet(_targetPoint);
+                    if (wet >= 0) _surfacePosition = _fluid.Point(wet);
+                }
+            }
+            TickRefillVolume(dt);
+            if (_state.Phase == MazePhase.Running && DistanceToWater(_surfaceGoal) <= .12f)
+            {
+                if (_state.Volume >= _definition.requiredVolume) _state.Phase = MazePhase.Solved;
+                else if (AllRefillsCollected()) BeginRetry();
+            }
+        }
+        private float PathWorldLength(List<Vector2> path)
+        {
+            float length = 0;
+            for (int i = 1; i < path.Count; i++)
+            {
+                var d = path[i] - path[i - 1];
+                length += transform.TransformVector(new Vector3(d.x, d.y, 0)).magnitude;
+            }
+            return length;
+        }
+
         private void TickRefillVolume(float dt)
         {
             for(int i=0;i<_surfaceRefills.Length && i<32;i++)
@@ -358,13 +407,18 @@ namespace Herbalist.Levels
                 _state.CollectedRefillMask|=bit;
                 _state.Volume+=_definition.refillAmount;
                 if (UsesTube && _tube != null) _tube.SetVolume(_state.Volume);
+                if (UsesFluid && _fluid != null) _fluid.SetVolume(_state.Volume, _surface.GridCell(_surfaceRefills[i]));
             }
             // A leak drains continuously while the occupied water region covers it.
             // The authored layouts do not overlap leak regions, so charge at most one leak.
             for(int i=0;i<_leaks.Length;i++)
                 if(!_leaks[i].Blocked && AtLeak(i))
                 {
-                    _state.Volume=Mathf.Max(0,_state.Volume-_definition.lossPerSecond*dt);
+                    float loss = Mathf.Min(_state.Volume, _definition.lossPerSecond * dt);
+                    // Preserve contact during this tick even if draining empties the hole's cell.
+                    if (loss > 0) _leakMask |= 1 << i;
+                    _state.Volume -= loss;
+                    if (UsesFluid && _fluid != null) _fluid.Drain(_surfaceLeaks[i], loss);
 
                     break;
                 }
@@ -392,6 +446,12 @@ namespace Herbalist.Levels
         private void Publish()
         {
             if (UsesTube) SyncTube();
+            if (UsesFluid && _fluid != null && Online && HasStateAuthority)
+            {
+                var cells = FluidCells;
+                FluidCount = _fluid.ActiveCells.Count;
+                for (int i = 0; i < FluidCount; i++) cells.Set(i, _fluid.Pack(i));
+            }
             if(!Online)return;
             From=_state.From;To=_state.To;Progress=_state.Progress;Volume=_state.Volume;
             CollectedRefillMask=_state.CollectedRefillMask;
@@ -400,7 +460,7 @@ namespace Herbalist.Levels
             Playable=_playable;LeakMask=_leakMask;ControllerSlot=_controllerSlot;
             TrailFirst=_trailFirst;TrailCount=_trailCount;
         }
-        private float DistanceToWater(Vector2 point) => UsesTube && _tube != null ?
+        private float DistanceToWater(Vector2 point) => UsesFluid && _fluid != null ? _fluid.Distance(point) : UsesTube && _tube != null ?
             _tube.Distance(point) : Vector2.Distance(_surfacePosition, point);
 
         private void SyncTube()
@@ -416,6 +476,14 @@ namespace Herbalist.Levels
         private void ResetTrail()
         {
             _pointerHeld = false; _grabbed = false;
+            if (UsesFluid)
+            {
+                _fluid = new SapMazeFluidField(_surface, _trailView.Settings.volumePerLocalArea);
+                _fluid.OccupancyThreshold = _trailView.Settings.surfaceThreshold;
+                _fluid.WorldScale = transform.TransformVector(Vector3.right).magnitude;
+                _fluid.Reset(_surface.GridCell(_surfaceStart), _state.Volume);
+                return;
+            }
             if (UsesTube)
             {
                 _tube = new SapMazeTubeBody(_surface, _trailView.Settings,
@@ -469,7 +537,14 @@ namespace Herbalist.Levels
             if (!camera.pixelRect.Contains(screenPoint)) return false;
             var ray = camera.ScreenPointToRay(screenPoint);
             Vector3 point;
-            if (_surface != null && _surface.Ready && _surface.MazeCollider != null &&
+            if (_surface != null && _surface.Ready && _surface.FloorPlane != null)
+            {
+                var floor = _surface.FloorPlane;
+                var plane = new Plane(floor.forward, floor.position);
+                if (!plane.Raycast(ray, out float distance) || distance < 0) return false;
+                point = ray.GetPoint(distance);
+            }
+            else if (_surface != null && _surface.Ready && _surface.MazeCollider != null &&
                 _surface.MazeCollider.Raycast(ray, out var hit, float.PositiveInfinity)) point = hit.point;
             else
             {
@@ -599,7 +674,20 @@ namespace Herbalist.Levels
                     if(_refillMarkers[i]!=null)_refillMarkers[i].gameObject.SetActive(
                         _definition.useRefillVolumeRules && Active && state.Phase==MazePhase.Running &&
                         i<32 && (state.CollectedRefillMask&(1<<i))==0);
-            if (UsesTube && _tube != null)
+            if (UsesFluid && _fluid != null)
+            {
+                bool visible = Active && state.Phase == MazePhase.Running;
+                if (_sapVisual != null) _sapVisual.gameObject.SetActive(false);
+                if (Online && !HasStateAuthority)
+                {
+                    _fluidSnapshot.Clear();
+                    for (int i = 0; i < FluidCount; i++) _fluidSnapshot.Add(FluidCells[i]);
+                    _fluid.ReadSnapshot(_fluidSnapshot);
+                }
+                if (visible) _trailView.PresentField(_fluid, _surface);
+                else _trailView.Clear();
+            }
+            else if (UsesTube && _tube != null)
             {
                 bool visible = Active && state.Phase == MazePhase.Running;
                 if (_sapVisual != null) _sapVisual.gameObject.SetActive(false);
@@ -654,6 +742,8 @@ namespace Herbalist.Levels
                     transform.TransformVector(new Vector3(delta.x, delta.y, 0)).magnitude : float.PositiveInfinity;
                 if (UsesTube && _tube != null && Active && state.Phase == MazePhase.Running)
                     distance = _tube.Distance(_surfaceLeaks[i]) * transform.TransformVector(Vector3.right).magnitude;
+                if (UsesFluid && _fluid != null && Active && state.Phase == MazePhase.Running)
+                    distance = _fluid.Distance(_surfaceLeaks[i]) * transform.TransformVector(Vector3.right).magnitude;
                 _leaks[i].Present(((Online?LeakMask:_leakMask)&(1<<i))!=0, distance);
             }
             if(_status!=null)

@@ -20,11 +20,28 @@ namespace Herbalist.Levels
         [Min(1)] public float volumePerLocalArea = 50f;
         [Tooltip("Pressure spread in navigation cells. Larger values make a wider pool.")]
         [Min(1)] public float pressureCells = 4f;
+        [Tooltip("Flow fills this transverse width before extending; narrow channels and low volume reduce it.")]
+        [Min(0)] public float minimumFlowWidthWorld = 1.2f;
+        [Range(.1f, 1)] public float minimumFlowDensity = .6f;
         [Min(.01f)] public float grabRadiusWorld = 1.5f;
         [Range(.001f, .25f)] public float surfaceThreshold = .04f;
         [Min(.001f)] public float simulationStep = .008f;
         [Tooltip("Rebuild the attraction field after the grabbed point moves this many navigation cells.")]
         [Min(1)] public float potentialRefreshDistance = 3f;
+
+        [Tooltip("Bounds flow work even after a long frame or a large input jump.")]
+        [Min(1)] public int maximumTransfersPerTick = 48;
+        [Min(.016f)] public float fluidRenderInterval = .05f;
+        [Min(0)] public float fluidSurfaceLiftWorld = .025f;
+
+        [Header("Continuous rounded water outline")]
+        [Min(0)] public float outlineBlendRadiusWorld = .45f;
+        [Range(1, 16)] public int outlineBlendPasses = 12;
+        [Range(.05f, .8f)] public float outlineThreshold = .35f;
+        [Range(1, 3)] public int outlineSubdivisions = 2;
+        [Min(.01f)] public float waterUvScale = .25f;
+        [Min(0)] public float outlineWallInsetWorld = .04f;
+        [Min(1024)] public int outlineGeometryCacheLimit = 32768;
 
         [Header("Water boundary rounding (presentation)")]
         [Min(0)] public float surfaceRoundRadiusWorld = .8f;
