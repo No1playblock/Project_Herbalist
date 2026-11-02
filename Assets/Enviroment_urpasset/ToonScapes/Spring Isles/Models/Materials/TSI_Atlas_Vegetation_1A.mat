@@ -12,12 +12,14 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - _ENABLECOLORTINT_ON
   - _ENABLESECONDARYHIGHLIGHTS_ON
   - _ENABLESUBSURFACEDISTORTION_ON
   - _ENABLEWIND_ON
   - _ENVIRONMENTREFLECTIONS_OFF
   m_InvalidKeywords:
   - _ENABLESPECULARHIGHLIGHTS_ON
+  - _ENABLETOPHIGHLIGHTS_ON
   - _GLOSSYREFLECTIONS_OFF
   - _GRASSDISTANCEFADEENABLE_ON
   - _NORMALMAP
@@ -166,18 +168,18 @@ Material:
     - _DirectionBias: 1
     - _DistanceFade1: 12
     - _DistortionAmount: 0.548
-    - _DistortionScale: 0.596
+    - _DistortionScale: 0.604
     - _DstBlend: 0
     - _EdgeHighlights: 0.45
     - _EmissionIntensity: 8
     - _EmissionIntensity1: 2.27
-    - _EnableColorTint: 0
+    - _EnableColorTint: 1
     - _EnableEmission: 0
     - _EnableRimLighting: 0
     - _EnableSecondaryHighlights: 1
     - _EnableSpecularHighlights: 1
     - _EnableSubsurfaceDistortion: 1
-    - _EnableTopHighlights: 0
+    - _EnableTopHighlights: 1
     - _EnableWind: 1
     - _EnvironmentReflections: 0
     - _FlickerFrequency: 3
@@ -227,15 +229,15 @@ Material:
     - _SecondColorOffset: 1
     - _SecondColorOverlayType: 0
     - _SecondarySmoothness: 1
-    - _SecondarySpecularIntensity: 0.596
-    - _SecondarySpecularSize: 0.562
+    - _SecondarySpecularIntensity: 0.528
+    - _SecondarySpecularSize: 0.57
     - _Shading: 0
     - _Smoothness: 0
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 0
     - _SpecularInfluence: 0.5
     - _SpecularIntensity: 0.5
-    - _SpecularIntensity1: 0.315
+    - _SpecularIntensity1: 0.478
     - _SpecularOcclusion: 1
     - _SpecularSize: 0.1
     - _SpecularSmoothness: 0.5
@@ -273,11 +275,11 @@ Material:
     - _RimLightColor: {r: 1, g: 1, b: 1, a: 1}
     - _SecondColor: {r: 0, g: 0, b: 0, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
-    - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
+    - _SpecularColor: {r: 0.14943041, g: 0.4339623, b: 0.162573, a: 1}
     - _SpecularTint: {r: 1, g: 1, b: 1, a: 1}
-    - _SubsurfaceTint: {r: 0.40066588, g: 0.5377358, b: 0, a: 1}
+    - _SubsurfaceTint: {r: 0.07908564, g: 0.24528301, b: 0.070576705, a: 1}
     - _TopColor: {r: 1, g: 0, b: 0.24241966, a: 0}
-    - _TopHighlightsColor: {r: 0.6792453, g: 0.574707, b: 0.31719473, a: 0.11372549}
+    - _TopHighlightsColor: {r: 0.11294755, g: 0.3773585, b: 0.10857955, a: 0.11372549}
     - _WindDirection: {r: 0.25, g: 0, b: 0.15, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
