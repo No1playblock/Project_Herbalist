@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: MAT_SapStream_Reference
+  m_Shader: {fileID: 4800000, guid: d8b63c3bf58b40998c626fd4693446a1, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 1
+  m_CustomRenderQueue: 3000
+  stringTagMap:
+    RenderType: Transparent
+  disabledShaderPasses:
+  - DepthOnly
+  - SHADOWCASTER
+  - MOTIONVECTORS
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BeamMask:
+        m_Texture: {fileID: 2800000, guid: e6e6690846fbce94e8a3214453857087, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BeamPattern:
+        m_Texture: {fileID: 2800000, guid: 54b541950f65b994ea864fbfe5862a39, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BeamFlowSpeed: 0.1
+    - _BeamPatternStrength: 0.242
+    - _BeamPatternTiling: 1.7
+    - _Cull: 2
+    - _FlowAmount: 0.086
+    - _FlowSpeed: 1
+    - _FoamAmount: 0
+    - _FoamCoverage: 0.159
+    - _FoamScale: 8.6
+    - _FresnelPower: 2.79
+    - _GlowStrength: 1.73
+    - _PatternScale: 18
+    m_Colors:
+    - _BaseColor: {r: 0.255, g: 0.47, b: 0.95, a: 0.94}
+    - _CoreColor: {r: 0.6396227, g: 0.786026, b: 1, a: 1}
+    - _FoamColor: {r: 0.88, g: 0.96, b: 1, a: 0.72156864}
+    - _RimColor: {r: 0.16, g: 0.4, b: 0.85, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
