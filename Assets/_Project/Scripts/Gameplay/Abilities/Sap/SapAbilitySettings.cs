@@ -7,6 +7,18 @@ namespace Herbalist.Abilities
     public sealed class SapAbilitySettings : ScriptableObject
     {
         public SapDeposit offlinePrefab;
+        [Header("Water orbit (world units)")]
+        public bool orbitEnabled = true;
+        public Vector3 orbitCenterOffset = new Vector3(0f, 0.95f, 0f);
+        [Min(0.1f)] public float orbitRadius = 0.75f;
+        [Min(0.01f)] public float orbitTubeRadius = 0.07f;
+        [Tooltip("Seconds per progressive unwinding step. Continuous use keeps shortening the remaining arc.")]
+        [Min(0.01f)] public float orbitUnwindDuration = 4f;
+        [Min(0.01f)] public float orbitRestoreDuration = .45f;
+        [Tooltip("Initial unwinding rate per duration, not a maximum opening angle.")]
+        [Range(1f, 360f)] public float orbitUnwindAngle = 360f;
+        [Min(0f)] public float orbitRipple = 0.025f;
+        [Min(0f)] public float orbitFlowSpeed = 3f;
         [Header("Hose control")]
         public Vector3 hoseHoverOffset = new Vector3(0f, 1.15f, 0.55f);
         [Tooltip("Stream length growth speed while the hose button is held, in meters per second.")]
