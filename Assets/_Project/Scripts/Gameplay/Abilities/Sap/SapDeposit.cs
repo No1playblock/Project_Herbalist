@@ -72,7 +72,7 @@ public void SetStream(Vector3 start, bool active)
             HoseStartTime = 0f;
         }
         public void BeginExtraction(Vector3 sourcePoint) { State = SapState.Extracting; SetStream(sourcePoint, true); RefreshVisual(); }
-        public void SetHeld() { if (State == SapState.Extracting) State = SapState.Controlled; }
+        public void SetHeld() { if (State == SapState.Extracting) { State = SapState.Controlled; RefreshVisual(); } }
         public SapState State { get; private set; }
         public SapReceiver Receiver { get; private set; }
         public bool IsPlaced => State == SapState.Attached;
@@ -171,7 +171,8 @@ public void SetStream(Vector3 start, bool active)
                 (!hoseMark || groundHoseMark);
             bool projected = attached && surfaceMark != null && surfaceMark.Available &&
                 (!groundHoseMark || !raised);
-            visual.gameObject.SetActive(active && !projected && !raised);
+            visual.gameObject.SetActive(active && !projected && !raised &&
+                !(settings.orbitEnabled && State == SapState.Controlled));
             visual.localScale = IsPlaced ? Vector3.Scale(settings.attachedScale, new Vector3(markScale, markScale, 1)) : settings.controlledScale;
             if (surfaceMark != null) surfaceMark.SetVisible(projected, settings, markScale, absorptionProgress);
             if (surfaceVolume != null) surfaceVolume.SetVisible(raised, settings, markScale, absorptionProgress);

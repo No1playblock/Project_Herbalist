@@ -47,6 +47,15 @@ namespace Herbalist.Abilities
             }
         }
         public bool Recovering { get; private set; }
+        public bool RecallOldestInstalled()
+        {
+            LeafProjectile oldest = null;
+            foreach (var leaf in leaves)
+                if (leaf != null && leaf.Installed && (oldest == null || leaf.InstalledAt < oldest.InstalledAt)) oldest = leaf;
+            if (oldest == null) return false;
+            oldest.BeginReturn();
+            return true;
+        }
         public uint FeedbackSequence { get; private set; }
         public uint CatchSequence { get; private set; }
         public void ApplyCatchSequence(uint sequence) => CatchSequence = sequence;

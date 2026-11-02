@@ -94,8 +94,8 @@ namespace Herbalist.Levels
                     return;
                 }
                 var destination = _stations[i + 1].position;
-                destination.y = mazeCollider.bounds.min.y - standingOffset;
-                UnityEditor.Undo.RecordObject(_stations[i + 1], "Align raft station to maze bottom");
+                destination.y = mazeCollider.bounds.center.y - standingOffset;
+                UnityEditor.Undo.RecordObject(_stations[i + 1], "Align raft station to maze midpoint");
                 _stations[i + 1].position = destination;
                 UnityEditor.EditorUtility.SetDirty(_stations[i + 1]);
             }
@@ -122,11 +122,11 @@ namespace Herbalist.Levels
             UnityEditor.EditorUtility.SetDirty(this);
         }
 #endif
-        private void OnEnable() => _screen.SetOverride(this, PlayScreenMode.Personal);
+        private void OnEnable() { if (_screen != null) _screen.SetOverride(this, null); }
         public override void Spawned()
         {
-            // Fusion may disable scene objects while attaching them on a joining peer.
-            _screen.SetOverride(this, PlayScreenMode.Personal);
+            // Keep each peer's preferred Tab view when Fusion reattaches scene objects.
+            if (_screen != null) _screen.SetOverride(this, null);
             if (HasStateAuthority) { Current = -1; Phase = 0; }
         }
         public override void FixedUpdateNetwork() { if (HasStateAuthority) Tick(Runner.DeltaTime); }

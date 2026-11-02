@@ -18,6 +18,7 @@ Shader "Herbalist/Sap Flow"
         _BeamMask ("Water Beam Mask", 2D) = "gray" {}
         _BeamPatternStrength ("Water Beam Pattern Strength", Range(0, 1)) = 0.55
         _BeamPatternTiling ("Water Beam Lengthwise Tiling", Range(1, 32)) = 8
+        _BeamFlowSpeed ("Water Beam Flow Speed", Float) = 0.25
         _GlowStrength ("Water Beam Glow", Range(1, 4)) = 2
     }
 
@@ -62,6 +63,7 @@ Shader "Herbalist/Sap Flow"
                 float _FoamScale;
                 float _BeamPatternStrength;
                 float _BeamPatternTiling;
+                float _BeamFlowSpeed;
                 float _GlowStrength;
             CBUFFER_END
 
@@ -106,7 +108,8 @@ Shader "Herbalist/Sap Flow"
                     + sin(phase * 9.1 - around * 7.0) * 0.08;
                 float filament = smoothstep(0.28, 0.55, streakWave + tornEdge);
                 float ripple = 0.5 + 0.5 * sin(phase * 1.35 + around * 3.0);
-                float2 beamUV = float2(input.uv.x * _BeamPatternTiling - _Time.y * 2.0, input.uv.y);
+                // Scroll in path UV units before tiling so density does not change travel speed.
+                float2 beamUV = float2((input.uv.x - _Time.y * _BeamFlowSpeed) * _BeamPatternTiling, input.uv.y);
                 float3 beamPattern = SAMPLE_TEXTURE2D(_BeamPattern, sampler_BeamPattern, beamUV).rgb;
                 float3 beamMask = SAMPLE_TEXTURE2D(_BeamMask, sampler_BeamMask, beamUV).rgb;
                 float pattern = dot(beamPattern, float3(0.299, 0.587, 0.114));

@@ -426,6 +426,8 @@ private void ConfigureCoreLine()
 
 private float GetHoverBlobDiameter(SapAbilitySettings settings)
         {
+            if (settings.orbitEnabled && sap.HoseStream)
+                return settings.orbitTubeRadius * 2f;
             if (_assetBallCoreParticles != null && _assetBallCoreParticles.GetParticles(_assetBallCoreSample) > 0)
             {
                 Vector3 size = _assetBallCoreSample[0].GetCurrentSize3D(_assetBallCoreParticles);

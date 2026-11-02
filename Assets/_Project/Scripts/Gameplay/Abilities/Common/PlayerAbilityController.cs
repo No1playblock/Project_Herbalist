@@ -86,6 +86,7 @@ namespace Herbalist.Abilities
             if (Herbalist.GameUI.GameplayPause.IsPaused) { lastCycle = cycle; lastUse = use; return; }
             Leaf.Tick(dt, aim);
             uint steps = unchecked(cycle - lastCycle); lastCycle = cycle;
+            uint uses = unchecked(use - lastUse);
             lastUse = use;
             if (_cycleReceiver != null)
             {
@@ -95,6 +96,7 @@ namespace Herbalist.Abilities
                 if (consumed) return;
             }
             if(_inputLocks.Count>0)return;
+            if (uses != 0 && Unlocked && Kind == PlayerAbilityKind.Leaf) Leaf.RecallOldestInstalled();
             var rules = Herbalist.Levels.StageLevel.Instance != null ? Herbalist.Levels.StageLevel.Instance.abilityRules : null;
             if (steps != 0 && Unlocked && Kind == PlayerAbilityKind.Leaf &&
                 Herbalist.Levels.ExteriorJumpPad.TryGetLeafInstallTarget(GetComponent<Herbalist.StageOne.StageActor>(), out var socket))

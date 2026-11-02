@@ -16,6 +16,7 @@ public static class SapHoseChecks
         {
             var source = AssetDatabase.LoadAssetAtPath<SapAbilitySettings>("Assets/_Project/Data/Abilities/Sap/SO_SapAbilitySettings.asset");
             var settings = UnityEngine.Object.Instantiate(source); objects.Add(settings);
+            settings.hoseGrowthPerSecond = .35f;
             var root = new GameObject("HoseCheckTemporary"); objects.Add(root);
             Vector3 origin = new Vector3(10000, 10000, 10000);
             var wall = GameObject.CreatePrimitive(PrimitiveType.Cube); objects.Add(wall);
@@ -51,8 +52,7 @@ public static class SapHoseChecks
             var decal = marks[0].GetComponentInChildren<SapSurfaceMarkPresentation>(true);
             Require(decal != null && decal.Available && decal.gameObject.activeInHierarchy, "authored surface decal presentation");
             var volume = marks[0].GetComponentInChildren<SapSurfaceVolumePresentation>(true);
-            Require(volume != null && volume.Available && volume.gameObject.activeInHierarchy, "authored raised surface volume");
-            Require(Mathf.Approximately(volume.transform.localScale.z, settings.surfaceVolumeThickness), "configured liquid thickness");
+            Require(volume != null && volume.Available && !volume.gameObject.activeSelf, "wall uses decal without ground volume");
             Require(!marks[0].Visual.gameObject.activeSelf, "legacy blob hidden while decal is active");
             float first = marks[0].MarkScale;
             marks[0].Tick(4);
@@ -127,10 +127,27 @@ public static class SapHoseChecks
             sap.TickContextual(new Ray(playerGo.transform.position + Vector3.up, Vector3.up), false, .1f);
             Require(sap.Held == null, "contextual water stops on release");
             player.View.SetBodyYaw(30);
-            var hoverA = sap.HoverPosition(new Ray(origin, Vector3.forward));
-            var hoverB = sap.HoverPosition(new Ray(origin, Vector3.right));
-            Require(Vector3.Distance(hoverA, hoverB) < .001f, "body-relative hover independent of camera");
-            Require(Mathf.Abs((hoverA-playerGo.transform.position).y - settings.hoseHoverOffset.y) < .001f, "chest height");
+            var hoverA = sap.HoverPosition(new Ray(sap.OrbitCenter, Vector3.forward));
+            var hoverB = sap.HoverPosition(new Ray(sap.OrbitCenter, Vector3.right));
+            Require(Vector3.Distance(hoverA, hoverB) > .1f, "outlet follows aim around orbit");
+            Require(Mathf.Abs((hoverA-playerGo.transform.position).y - sap.Settings.orbitCenterOffset.y) < .001f, "waist orbit height");
+            playerGo.transform.position = origin + Vector3.right * 200;
+            player.View.SetBodyYaw(0);
+            foreach (var direction in new[] { Vector3.back, Vector3.left, Vector3.right, Vector3.forward, Vector3.up, Vector3.down })
+            {
+                sap.TickContextual(new Ray(sap.OrbitCenter, direction), true, .1f);
+                Require(sap.Spraying && sap.Held != null && sap.Held.HoseStream, "omnidirectional spray " + direction);
+                Require(Mathf.Abs(Mathf.DeltaAngle(player.View.BodyYaw, 0)) < .01f, "preserved body yaw");
+                Require(!sap.Held.Visual.gameObject.activeSelf, "held orb hidden");
+                Require(Mathf.Abs(Vector3.Distance(sap.Held.StreamOrigin, sap.OrbitCenter) - sap.Settings.orbitRadius) < .001f,
+                    "stream starts at orbit edge, never body center");
+                var streamPresentation = sap.Held.GetComponent<SapStreamPresentation>();
+                float diameter = (float)typeof(SapStreamPresentation).GetMethod("GetHoverBlobDiameter", privateInstance)
+                    .Invoke(streamPresentation, new object[] { sap.Settings });
+                Require(Mathf.Abs(diameter - sap.Settings.orbitTubeRadius * 2f) < .001f,
+                    "stream and orbit share the same diameter");
+            }
+            sap.Cancel();
 
             var leafAbility = playerGo.GetComponent<LeafThrowAbility>();
             leafAbility.Configure(() => {
@@ -164,7 +181,7 @@ public static class SapHoseChecks
             Require(port.Consume() > 0 && marks.Count == beforePortMarks,
                 "aimed ballistic stream feeds the actual port hit");
 
-            return "PASS: contextual air fire, ballistic rise/fall, floor and port hits, wall hit, merge/growth/cap, release, refreshed expiry, body-fixed chest hover, leaf-facing, independent water/leaf lifetimes, near-to-far spray";
+            return "PASS: omnidirectional orbit spray, unchanged body yaw, hidden orb, ballistic rise/fall, floor and port hits, wall hit, merge/growth/cap, release, refreshed expiry, leaf-facing, independent water/leaf lifetimes, near-to-far spray";
         }
         finally
         {

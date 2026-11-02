@@ -163,10 +163,14 @@ namespace Herbalist.StageOne
         }
         private bool IsInside(StageActor actor)
         {
-            if (actor == null) return false;
-            Vector3 point = interior.transform.InverseTransformPoint(actor.transform.position + settings.interactionOffset) - interior.center;
-            var half = interior.size * .5f;
-            return Mathf.Abs(point.x) <= half.x && Mathf.Abs(point.y) <= half.y && Mathf.Abs(point.z) <= half.z;
+            if (actor == null || !actor.Available || interior == null ||
+                !interior.enabled || !interior.gameObject.activeInHierarchy) return false;
+            var controller = actor.GetComponent<CharacterController>();
+            if (controller == null || !controller.enabled) return false;
+            // Evaluate current contact every tick: the first player can wait for the
+            // second, without relying on enter events or a point inside the body.
+            return Physics.ComputePenetration(interior, interior.transform.position, interior.transform.rotation,
+                controller, controller.transform.position, controller.transform.rotation, out _, out _);
         }
         private bool Reach(StageActor actor, Vector3 target)
         {

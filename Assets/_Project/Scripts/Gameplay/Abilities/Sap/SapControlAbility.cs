@@ -36,20 +36,10 @@ namespace Herbalist.Abilities
             Spraying = false;
             if (Herbalist.GameUI.GameplayPause.IsPaused || settings == null || create == null) return;
             // Use the same eligible inlet as the authored injection prompt.
-            // Turn before resolving the body-relative hose origin.
             Vector3 inletPoint = default;
             bool aimingAtInlet = useHeld && SapInjectionPort.TryInteractionHint(
                 GetComponent<Herbalist.StageOne.StageActor>(), out inletPoint);
-            if (aimingAtInlet)
-            {
-                Vector3 facing = Vector3.ProjectOnPlane(inletPoint - transform.position, Vector3.up);
-                if (facing.sqrMagnitude > .000001f)
-                {
-                    float yaw = Quaternion.LookRotation(facing).eulerAngles.y;
-                    player.View.SetBodyYaw(yaw);
-                    FacingRequested?.Invoke(yaw);
-                }
-            }
+            if (aimingAtInlet) aim = new Ray(aim.origin, (inletPoint - aim.origin).normalized);
             Vector3 origin = HoverPosition(aim);
             if (aimingAtInlet) aim = new Ray(origin, (inletPoint - origin).normalized);
             if (!useHeld)
@@ -68,7 +58,7 @@ namespace Herbalist.Abilities
             }
             held.transform.position = origin;
             Controlling = true; CanPlace = true;
-            Spraying = aimingAtInlet || player.Tuning.CanAimWithHead(player.View.BodyYaw, aim.direction);
+            Spraying = true;
             hose.Tick(held, aim, Spraying,
                 dt, settings, CreateHoseMark);
         }
@@ -76,8 +66,20 @@ namespace Herbalist.Abilities
         { create = factory; destroy = release; externalTick = network; }
         public Vector3 HoverPosition(Ray aim)
         {
+            if (settings.orbitEnabled)
+            {
+                Vector3 center = OrbitCenter;
+                Vector3 target = aim.GetPoint(settings.controlRange + Vector3.Distance(aim.origin, center));
+                if (Physics.Raycast(aim, out var hit, settings.controlRange + Vector3.Distance(aim.origin, center),
+                    settings.collisionMask, QueryTriggerInteraction.Ignore)) target = hit.point;
+                Vector3 radial = Vector3.ProjectOnPlane(target - center, Vector3.up);
+                if (radial.sqrMagnitude < .000001f) radial = Vector3.ProjectOnPlane(aim.direction, Vector3.up);
+                if (radial.sqrMagnitude < .000001f) radial = Vector3.forward;
+                return center + radial.normalized * settings.orbitRadius;
+            }
             return transform.position + Quaternion.Euler(0, player.View.BodyYaw, 0) * settings.hoseHoverOffset;
         }
+        public Vector3 OrbitCenter => transform.position + settings.orbitCenterOffset;
         public void Toggle()
         {
             if (Controlling) { Cancel(); return; }
@@ -112,7 +114,7 @@ namespace Herbalist.Abilities
             held.transform.position = next;
             if (Vector3.Distance(next, hover) <= settings.arrivalTolerance) held.SetHeld();
             CanPlace = Ready;
-            Spraying = Ready && use && player.Tuning.CanAimWithHead(player.View.BodyYaw, aim.direction);
+            Spraying = Ready && use;
             hose.Tick(held, aim, Spraying,
                 dt, settings, CreateHoseMark);
         }
