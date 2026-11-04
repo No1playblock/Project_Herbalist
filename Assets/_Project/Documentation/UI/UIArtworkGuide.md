@@ -41,6 +41,20 @@ Play 중 변경은 종료하면 사라진다. 수정은 Play를 종료한 다음
 
 `Art_Texture_…`는 기존 **RawImage**이므로 **Texture** 칸을 교체한다. 일시정지 화면의 `PauseBackdrop`은 게임 화면 캡처용이므로 교체하지 않는다. 타이틀 뒤의 실제 3D 맵과 카메라는 UI 원화 슬롯과 별개다.
 
+## 조작 안내의 키캡 이미지
+
+`Herbalist > UI Art > 06 Control Keycaps`에서 `SO_ControlKeycaps`를 연다.
+
+1. W/A/S/D, Space, E/R/F, Tab 등 **Keys의 해당 Image** 칸에 개별 키캡 Sprite를 넣는다. 한 장의 시트라면 Sprite Editor에서 먼저 잘라서 넣는다.
+2. Inspector 아래 **Rebuild Keycap Images**를 누른다. Sprite를 교체하거나 제거한 후에도 다시 누른다.
+3. **Image Scale**로 문장 안 키캡의 공통 크기를 조정한다. 문구의 위치·줄바꿈·글자 크기는 기존 TMP/RectTransform에서 조정한다. Space와 Tab은 원화의 가로세로 비율을 유지한다.
+
+H 도움말, 하단 H 안내, 채집·전달·제조, 천 잡기/놓기, 수액 주입/잎 설치, 능력 설명, 채집 도감의 방향키와 제조 부채질 안내에 적용된다. 1~3스테이지가 같은 설정을 공유하므로 키캡 원화는 한 번만 연결한다.
+
+이미지가 비어 있는 키는 기존 텍스트를 표시한다. 제공되지 않은 H/Esc/Q/마우스 버튼 그림을 임의로 만들 필요는 없다. 키 이름은 현재 입력 바인딩의 표시명을 사용하며, `SpaceBar`/`Space Bar` → `Space`, `Escape` → `Esc` 같은 별칭은 **Aliases**에서 추가할 수 있다. 새로운 키 이미지는 Keys에 항목을 추가한다. 문장 안 `WASD`는 W/A/S/D 각각의 키캡으로 표시된다.
+
+이는 기존 UGUI TMP 텍스트 안에 이미지를 표시하는 방식이다. 별도 런타임 UI 생성은 없다. 원본 Sprite는 그대로 두고 에디터에서 `TMP_ControlKeycaps`와 `T_ControlKeycaps.png`를 갱신한다. 생성 파일을 직접 편집하지 않는다. 현재 원화는 연결하지 않은 상태다.
+
 ## 위치·크기 조정
 
 - 기준 화면은 **1280×720**, Canvas는 Scale With Screen Size / Match 0.5다. Canvas 설정은 이미 맞춰져 있다.
