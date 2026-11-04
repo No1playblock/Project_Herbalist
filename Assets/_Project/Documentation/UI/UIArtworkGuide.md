@@ -43,17 +43,19 @@ Play 중 변경은 종료하면 사라진다. 수정은 Play를 종료한 다음
 
 ## 조작 안내의 키캡 이미지
 
-`Herbalist > UI Art > 06 Control Keycaps`에서 `SO_ControlKeycaps`를 연다.
+`Herbalist > UI Art > 02 Player HUD`에서 `PF_PlayerHud`를 연다. 조작 안내는 **UGUI Image와 TMP 텍스트를 별도 오브젝트로 조합**한 구조다.
 
-1. W/A/S/D, Space, E/R/F, Tab 등 **Keys의 해당 Image** 칸에 개별 키캡 Sprite를 넣는다. 한 장의 시트라면 Sprite Editor에서 먼저 잘라서 넣는다.
-2. Inspector 아래 **Rebuild Keycap Images**를 누른다. Sprite를 교체하거나 제거한 후에도 다시 누른다.
-3. **Image Scale**로 문장 안 키캡의 공통 크기를 조정한다. 문구의 위치·줄바꿈·글자 크기는 기존 TMP/RectTransform에서 조정한다. Space와 Tab은 원화의 가로세로 비율을 유지한다.
+1. 도움말은 `HelpPanel / Keys / ControlRows`에서 원하는 `Control_…` 행을 고른다.
+2. `Keycaps / Key_W` 등 키 오브젝트 아래 **Art_Keycap > Image > Source Image**에 해당 Sprite를 넣는다. 시트 원화는 먼저 Sprite Editor에서 잘라서 넣는다.
+3. 설명의 글꼴·크기는 같은 행의 **Description (TMP)**에서 조정한다. 키 그림의 위치·여백은 `Art_Keycap` RectTransform, 키가 차지하는 너비는 부모 `Key_…`의 Layout Element에서 조정한다.
 
-H 도움말, 하단 H 안내, 채집·전달·제조, 천 잡기/놓기, 수액 주입/잎 설치, 능력 설명, 채집 도감의 방향키와 제조 부채질 안내에 적용된다. 1~3스테이지가 같은 설정을 공유하므로 키캡 원화는 한 번만 연결한다.
+하단 H 안내는 `HelpHint / ControlHint`, 채집·전달 안내는 `Interaction / Text / ControlHint`, 천 안내는 `ClothInteraction / Text / ControlHint`, 수액·잎 설치 안내는 `SapInjectionInteraction / Text / ControlHint`다. 제조 부채질은 `BrewingHud` 아래 `FanPromptText / ControlHint`를 찾는다. 모두 `Keycaps`와 `Description`으로 분리되어 있다.
 
-이미지가 비어 있는 키는 기존 텍스트를 표시한다. 제공되지 않은 H/Esc/Q/마우스 버튼 그림을 임의로 만들 필요는 없다. 키 이름은 현재 입력 바인딩의 표시명을 사용하며, `SpaceBar`/`Space Bar` → `Space`, `Escape` → `Esc` 같은 별칭은 **Aliases**에서 추가할 수 있다. 새로운 키 이미지는 Keys에 항목을 추가한다. 문장 안 `WASD`는 W/A/S/D 각각의 키캡으로 표시된다.
+이미지가 없으면 같은 위치의 **KeyTextFallback**을 표시한다. 입력 바인딩이 변경되면 기존 키 그림을 잘못 표시하지 않고 변경된 키 이름을 보여 준다. W/A/S/D는 각기 별도 Image다. 안내 문구·입력 액션과 솔로 전용 표시 조건은 기존 설정을 사용한다.
 
-이는 기존 UGUI TMP 텍스트 안에 이미지를 표시하는 방식이다. 별도 런타임 UI 생성은 없다. 원본 Sprite는 그대로 두고 에디터에서 `TMP_ControlKeycaps`와 `T_ControlKeycaps.png`를 갱신한다. 생성 파일을 직접 편집하지 않는다. 현재 원화는 연결하지 않은 상태다.
+그림을 연결하면 편집 화면에서도 확인할 수 있다. 모든 행과 이미지·텍스트는 재생 전에 저장되어 있으며 런타임에 UI를 생성하지 않는다. 원화는 아직 연결하지 않았다. 앞서 추가했던 TMP Sprite 변환 라이브러리와 Rebuild 방식은 제거했다.
+
+공통 프리팹 수정은 1스테이지에 적용된다. 2·3스테이지는 아래 설명처럼 씬 내부 HUD의 같은 구조를 수정한다. 원본 Sprite는 여러 Image에서 함께 사용할 수 있다.
 
 ## 위치·크기 조정
 
