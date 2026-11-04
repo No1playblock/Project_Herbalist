@@ -16,6 +16,7 @@ namespace Herbalist.Levels
         [SerializeField] private LeafInstallTarget[] _sockets;
         [SerializeField] private Transform[] _leafCenters;
         [SerializeField] private GameObject[] _jets;
+        [SerializeField] private bool _recallLeafAfterLaunch;
         [Networked] private float Charge0 { get; set; }
         [Networked] private float Charge1 { get; set; }
         [Networked] private float LaunchDelayRemaining { get; set; }
@@ -95,6 +96,8 @@ namespace Herbalist.Levels
         private void OnEnable() { ActivePads.Add(this); }
         private void Awake()
         {
+            // Disabled placeholders from imported reference maps must not initialize missing links.
+            if (!enabled) return;
             _voiceSource = GetComponent<AudioSource>();
             if (_voiceSource == null) _voiceSource = gameObject.AddComponent<AudioSource>();
             _voiceSource.playOnAwake = false;
@@ -115,7 +118,7 @@ namespace Herbalist.Levels
             if (_voiceSource != null) _voiceSource.Stop();
             _lastVoiceCountdown = 0;
         }
-        public override void FixedUpdateNetwork() { if (HasStateAuthority) Tick(Runner.DeltaTime); }
+        public override void FixedUpdateNetwork() { if (isActiveAndEnabled && HasStateAuthority) Tick(Runner.DeltaTime); }
         private void Update()
         {
             if (!Online && Authority) Tick(Time.deltaTime);
@@ -206,7 +209,9 @@ namespace Herbalist.Levels
                         actor.Abilities.SetInputLock(this, true);
                     }
             // Launch on eruption, while the leaf and water jet are still at their starting height.
+            bool launchedRider = _riders != 0;
             ReleaseRiders(true);
+            if (_recallLeafAfterLaunch && launchedRider && leaf != null) leaf.BeginReturn();
         }
         private void ReleaseRiders(bool launch)
         {

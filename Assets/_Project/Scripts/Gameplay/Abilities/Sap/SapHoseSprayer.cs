@@ -8,6 +8,7 @@ namespace Herbalist.Abilities
         private float _reach;
         private float _retractedLength;
         private Vector3 _lastDirection = Vector3.forward;
+        private readonly Collider[] _originOverlaps = new Collider[16];
 
         public void Reset()
         {
@@ -19,6 +20,23 @@ public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySett
         {
             Vector3 origin = held.transform.position;
             float deltaTime = Mathf.Max(0f, dt);
+
+            // Raycasts do not report a collider that already contains their origin. A nearby
+            // inlet can surround the ring's emission point, especially with large socket art.
+            if (firing)
+            {
+                int count = Physics.OverlapSphereNonAlloc(origin, .001f, _originOverlaps,
+                    settings.collisionMask, QueryTriggerInteraction.Ignore);
+                for (int i = 0; i < count; i++)
+                {
+                    var collider = _originOverlaps[i];
+                    var inlet = collider.GetComponentInParent<SapInjectionPort>();
+                    if (inlet == null || (collider.ClosestPoint(origin) - origin).sqrMagnitude > .000001f || !inlet.Inject(deltaTime)) continue;
+                    _reach = 0; _retractedLength = 0;
+                    held.SetHoseStream(origin, false, aim.direction * settings.hoseLaunchSpeed, 0, 0, false, Vector3.up);
+                    return;
+                }
+            }
 
             if (firing)
             {
@@ -73,7 +91,12 @@ public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySett
                     impact = hit.collider.GetComponentInParent<SapInjectionPort>() == null;
                     impactNormal = hit.normal;
                     _reach = Mathf.Min(_reach, travelTime * settings.hoseLaunchSpeed);
-                    if (firing) SapDeposit.ApplyHoseHit(hit, settings, deltaTime, createMark);
+                    if (firing)
+                    {
+                        var cloth = hit.collider.GetComponentInParent<Herbalist.Levels.HangingCloth>();
+                        if (cloth == null || !cloth.PushWithWater(step.normalized, deltaTime))
+                            SapDeposit.ApplyHoseHit(hit, settings, deltaTime, createMark);
+                    }
                     break;
                 }
                 previous = next;

@@ -12,6 +12,8 @@ namespace Herbalist.Abilities
         [Tooltip("Installed visual local scale. Zero uses the ability's shared scale.")]
         [SerializeField] private Vector3 _installedVisualScale;
         [SerializeField] private bool _singleOccupant;
+        [Tooltip("Keep an installed leaf until its owning mechanism consumes it or the player recalls it.")]
+        [SerializeField] private bool _keepLeafUntilUsed;
         [FormerlySerializedAs("_uprightOnInstall"), SerializeField] private bool _perpendicularToSurfaceOnInstall;
         [FormerlySerializedAs("onPinned"), SerializeField] private UnityEvent onInstalled = new UnityEvent();
         [SerializeField] private UnityEvent onReleased = new UnityEvent();
@@ -19,6 +21,7 @@ namespace Herbalist.Abilities
         private static readonly Dictionary<int, LeafInstallTarget> targets = new();
         public int Id => targetId;
         public bool HasSocket => socket != null;
+        public bool KeepsLeafUntilUsed => _keepLeafUntilUsed;
         public Transform Socket => socket;
         public Vector3 SocketPosition => socket != null ? socket.position : transform.position;
         public Quaternion SocketRotation => socket != null ? socket.rotation : transform.rotation;
@@ -40,7 +43,8 @@ namespace Herbalist.Abilities
         }
         private void OnDisable() { if (targets.TryGetValue(targetId, out var current) && current == this) targets.Remove(targetId); }
         public static LeafInstallTarget Find(int id) => targets.TryGetValue(id, out var target) ? target : null;
-        public bool CanInstall => isActiveAndEnabled && (!_singleOccupant || !HasLeaf);
+        public bool CanInstall => isActiveAndEnabled && (!_singleOccupant || !HasLeaf) &&
+            (!TryGetComponent<Herbalist.Levels.StageOneTargetGate>(out var gate) || gate.AllowsInstallation);
         public Vector3 Position(Vector3 hit, Vector3 normal, float offset) => socket != null ? socket.position : hit + normal * offset;
         public Quaternion Rotation(Vector3 normal, Vector3 heading)
         {

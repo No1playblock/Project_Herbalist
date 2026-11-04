@@ -41,6 +41,7 @@ namespace Herbalist.Abilities
                 GetComponent<Herbalist.StageOne.StageActor>(), out inletPoint);
             if (aimingAtInlet) aim = new Ray(aim.origin, (inletPoint - aim.origin).normalized);
             Vector3 origin = HoverPosition(aim);
+            if (aimingAtInlet && settings.orbitEnabled) origin = ResolveInletOrigin(origin, inletPoint);
             if (aimingAtInlet) aim = new Ray(origin, (inletPoint - origin).normalized);
             if (!useHeld)
             {
@@ -61,6 +62,25 @@ namespace Herbalist.Abilities
             Spraying = true;
             hose.Tick(held, aim, Spraying,
                 dt, settings, CreateHoseMark);
+        }
+        private Vector3 ResolveInletOrigin(Vector3 preferred, Vector3 inletPoint)
+        {
+            // A large ring can intersect the tree at close range. Select the nearest clear
+            // point on that same ring, preserving its radius and the authoritative hit test.
+            Vector3 radial = preferred - OrbitCenter;
+            const int samples = 24;
+            for (int i = 0; i < samples; i++)
+            {
+                int step = (i + 1) / 2 * (i % 2 == 0 ? 1 : -1);
+                Vector3 candidate = OrbitCenter + Quaternion.AngleAxis(step * 360f / samples, Vector3.up) * radial;
+                Vector3 direction = inletPoint - candidate;
+                if (direction.sqrMagnitude < .000001f) return candidate;
+                if (!Physics.Raycast(candidate, direction.normalized, out var hit, direction.magnitude + settings.radius,
+                    settings.collisionMask, QueryTriggerInteraction.Ignore)) continue;
+                var inlet = hit.collider.GetComponentInParent<SapInjectionPort>();
+                if (inlet != null && (inlet.InteractionPoint - inletPoint).sqrMagnitude < .0001f) return candidate;
+            }
+            return preferred;
         }
         public void Configure(Func<SapDeposit> factory, Action<SapDeposit> release, bool network)
         { create = factory; destroy = release; externalTick = network; }
