@@ -65,7 +65,7 @@ namespace Herbalist.GameUI
                 jumpPadCountdown.gameObject.SetActive(show);
                 if (show) jumpPadCountdown.text = string.Format(settings.jumpPadCountdownFormat, remaining);
             }
-            helpHint.text=string.Format(settings.controlHintFormat, settings.helpAction.action.GetBindingDisplayString(), settings.helpHint);
+            settings.PresentControlText(helpHint, string.Format(settings.controlHintFormat, settings.helpAction.action.GetBindingDisplayString(), settings.helpHint));
             helpPanel.SetActive(local&&expanded&&!mazeView);
             if(local&&expanded)
             {
@@ -75,7 +75,7 @@ namespace Herbalist.GameUI
                 foreach(var h in settings.controls)
                     if(h.action!=null && (!h.offlineTestOnly || offlineTest))
                         lines.AppendLine(string.Format(settings.controlHintFormat, h.action.action.GetBindingDisplayString(), h.label));
-                helpText.text=lines.ToString();
+                settings.PresentControlText(helpText, lines.ToString());
             }
             var ability=view.GetComponent<PlayerAbilityController>();
             if (_mazeVolumeDisplay != null)
@@ -108,6 +108,7 @@ namespace Herbalist.GameUI
             reticle.SetActive(!mazeView&&local&&ability!=null&&ability.Unlocked&&(rules != null || ability.Kind!=PlayerAbilityKind.Sap || ability.Sap.Controlling));
             abilityText.text=ability!=null&&ability.Unlocked?(ability.Kind==PlayerAbilityKind.Sap?settings.sapText:settings.leafText):"";
             if (rules != null && ability != null && ability.Unlocked) abilityText.text = ability.Kind == PlayerAbilityKind.Sap ? rules.sapInstructions : rules.leafInstructions;
+            settings.PresentControlText(abilityText, abilityText.text);
             pocket.text="";
             var flow=StageOneFlow.Instance;
             var actor=view.GetComponent<StageActor>();
@@ -139,7 +140,7 @@ namespace Herbalist.GameUI
             prompt.SetActive(false);
             if(!clothHint&&local&&flow!=null&&actor!=null&&flow.TryInteractionHint(actor,out var point,out bool transfer))
             {
-                promptText.text=string.Format(settings.controlHintFormat, actor.Binding(0), flow.IsCraftHint(actor)?settings.craftText:transfer?settings.giveText:settings.gatherText);
+                settings.PresentControlText(promptText, string.Format(settings.controlHintFormat, actor.Binding(0), flow.IsCraftHint(actor)?settings.craftText:transfer?settings.giveText:settings.gatherText));
                 Position(prompt.GetComponent<RectTransform>(),view.Camera,point+promptOffset);
             }
             if (clothPrompt != null)
@@ -147,9 +148,9 @@ namespace Herbalist.GameUI
                 clothPrompt.SetActive(false);
                 if (clothHint)
                 {
-                    clothPromptText.text = releasing
+                    settings.PresentControlText(clothPromptText, releasing
                         ? string.Format(settings.alternativeControlHintFormat, actor.Binding(0), actor.JumpBinding, settings.clothReleaseText)
-                        : string.Format(settings.controlHintFormat, actor.Binding(0), settings.clothGrabText);
+                        : string.Format(settings.controlHintFormat, actor.Binding(0), settings.clothGrabText));
                     Position((RectTransform)clothPrompt.transform, view.Camera, clothPoint + promptOffset);
                 }
             }
@@ -158,13 +159,13 @@ namespace Herbalist.GameUI
                 sapPrompt.SetActive(false);
                 if (local && actor != null && SapInjectionPort.TryInteractionHint(actor, out var portPoint))
                 {
-                    sapPromptText.text = string.Format(settings.controlHintFormat, ability.Input.CycleBinding, settings.sapInjectText);
+                    settings.PresentControlText(sapPromptText, string.Format(settings.controlHintFormat, ability.Input.CycleBinding, settings.sapInjectText));
                     Position((RectTransform)sapPrompt.transform, view.Camera, portPoint + promptOffset);
                 }
                 else if (local && actor != null &&
                     ExteriorJumpPad.TryLeafInstallHint(actor, out var leafPoint))
                 {
-                    sapPromptText.text = string.Format(settings.controlHintFormat, ability.Input.CycleBinding, settings.leafInstallText);
+                    settings.PresentControlText(sapPromptText, string.Format(settings.controlHintFormat, ability.Input.CycleBinding, settings.leafInstallText));
                     Position((RectTransform)sapPrompt.transform, view.Camera, leafPoint + promptOffset);
                 }
             }

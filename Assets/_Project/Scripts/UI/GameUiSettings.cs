@@ -6,6 +6,14 @@ namespace Herbalist.GameUI
     [CreateAssetMenu(menuName="Herbalist/Game UI Settings")]
     public sealed class GameUiSettings : ScriptableObject
     {
+        [SerializeField] private ControlKeycapLibrary _keycaps;
+        public ControlKeycapLibrary Keycaps => _keycaps;
+        public void PresentControlText(TMPro.TMP_Text target, string text)
+        {
+            if (target == null) return;
+            if (_keycaps != null) _keycaps.Present(target, text);
+            else target.text = text;
+        }
         public string[] roleNames = { "두영", "소담" };
         public string[] roleDescriptions = { "약초를 발견하고 채집합니다", "전달받은 약초로 약제를 만듭니다" };
         public string selectText="선택하기", selectedText="선택 취소", occupiedText="상대가 선택함";

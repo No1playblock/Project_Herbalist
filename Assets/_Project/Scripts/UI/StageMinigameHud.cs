@@ -63,7 +63,7 @@ namespace Herbalist.GameUI
             if (role == CharacterRole.Duyeong)
             {
                 title.text = copy.gatherDuyeongTitle;
-                body.text = copy.gatherDuyeongBody;
+                _hud.settings.PresentControlText(body, copy.gatherDuyeongBody);
                 progress.text = string.Format(copy.gatherProgressFormat, flow.MinigameSteps);
                 return;
             }
@@ -77,7 +77,7 @@ namespace Herbalist.GameUI
                 foreach (var step in herb.harvestingSteps) text.Append(DirectionLabel(step)).Append(' ');
                 text.Append("\n\n");
             }
-            body.text = text.ToString();
+            _hud.settings.PresentControlText(body, text.ToString());
             progress.text = copy.gatherSodamProgress;
         }
         private void ShowCrafting(StageOneFlow flow, CharacterRole role)
@@ -90,7 +90,7 @@ namespace Herbalist.GameUI
             if (brewingGaugeLabel != null) brewingGaugeLabel.text = string.Format(copy.brewingGaugeFormat, flow.CraftingGauge);
             if (brewingTime != null) brewingTime.text = string.Format(copy.brewingTimeFormat, Mathf.Max(0, recipe.timeLimit - flow.MinigameTime));
             if (fanPrompt != null) fanPrompt.SetActive(sodam);
-            if (fanPromptText != null) fanPromptText.text = copy.fanPrompt;
+            if (fanPromptText != null) _hud.settings.PresentControlText(fanPromptText, copy.fanPrompt);
             if (targetTemperatureBand != null)
             {
                 targetTemperatureBand.gameObject.SetActive(sodam);
