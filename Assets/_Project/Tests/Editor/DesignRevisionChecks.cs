@@ -29,7 +29,10 @@ namespace Herbalist.Editor
                 var scene = EditorSceneManager.OpenScene(path);
                 var level = Object.FindFirstObjectByType<StageLevel>();
                 Check(level != null && level.abilityRules != null && level.abilityRules.contextualUse, "stage rules " + path);
-                Check(level.abilityRules.leaf.permanentInstallation && level.abilityRules.leaf.installedCapacity && level.abilityRules.leaf.rangeHeightMultiplier == 3, "leaf rules");
+                if (path == CurrentStagePaths.StageOne)
+                    Check(!level.abilityRules.leaf.permanentInstallation && level.abilityRules.leaf.installedCapacity && level.abilityRules.leaf.lifetime == 5, "imported stage one leaf rules");
+                else
+                    Check(level.abilityRules.leaf.permanentInstallation && level.abilityRules.leaf.installedCapacity && level.abilityRules.leaf.rangeHeightMultiplier == 3, "leaf rules");
                 Check(Object.FindFirstObjectByType<Herbalist.GameUI.GameOverlayHud>() != null && Object.FindFirstObjectByType<Camera>() != null, "authored UI/camera");
                 foreach (var root in scene.GetRootGameObjects())
                     foreach (var t in root.GetComponentsInChildren<Transform>(true)) Check(GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(t.gameObject) == 0, "missing script " + t.name);

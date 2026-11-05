@@ -54,6 +54,9 @@ MonoBehaviour:
   pauseHint: "\uC77C\uC2DC\uC815\uC9C0"
   helpHint: "\uD0A4 \uD655\uC778"
   emptyPocket: "\uBE48\uC190"
+  controlHintFormat: <b>{0}</b>  {1}
+  alternativeControlHintFormat: <b>{0}</b> / <b>{1}</b>  {2}
+  jumpPadCountdownFormat: "\uC810\uD504\uB300 \uBC1C\uC0AC\uAE4C\uC9C0 <b>{0:0.0}</b>\uCD08"
   pauseAction: {fileID: 11400000, guid: 5b7edeeb78164d64fa1b204555605a92, type: 2}
   helpAction: {fileID: 11400000, guid: d555e369d4bedfb45bafdc525a3c53ee, type: 2}
   controls:
@@ -101,7 +104,4 @@ MonoBehaviour:
   objectiveHoldDuration: 5
   objectiveFadeDuration: 1
   menuScene: Assets/_Project/Scenes/01_Title/MainMenu.unity
-  soloScene: Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference_CharacterBranch.unity
-  controlHintFormat: '<b>{0}</b>  {1}'
-  alternativeControlHintFormat: '<b>{0}</b> / <b>{1}</b>  {2}'
-  jumpPadCountdownFormat: '점프대 발사까지 <b>{0:0.0}</b>초'
+  soloScene: Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference_CharacterBranch_DevelopStage1_Reference.unity

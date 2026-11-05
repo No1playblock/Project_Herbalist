@@ -62,8 +62,8 @@ namespace Herbalist.Abilities
             _renderer.enabled = visible;
             if (!visible) { _unwind = 0f; return; }
             _time += dt * settings.orbitFlowSpeed;
-            // Keep consuming the remaining arc rather than stopping at a fixed opening angle.
-            if (sap.Spraying) _unwind = 1f - (1f - _unwind) * Mathf.Exp(-dt *
+            // Consume the arc at a constant rate, matching restoration when durations match.
+            if (sap.Spraying) _unwind = Mathf.MoveTowards(_unwind, 1f, dt *
                 settings.orbitUnwindAngle / (360f * Mathf.Max(.01f, settings.orbitUnwindDuration)));
             else _unwind = Mathf.MoveTowards(_unwind, 0f, dt / Mathf.Max(.01f, settings.orbitRestoreDuration));
             Vector3 center = sap.OrbitCenter;

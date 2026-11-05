@@ -23,7 +23,7 @@
 
 수액 능력이 해금되고 선택되어 있으면 플레이어 프리팹의 `WaterOrbit`가 상시 표시된다. 분사 중 고리의 일부가 서서히 열리고, 멈추면 다시 닫힌다. 조종 중 앞쪽 구체는 숨긴다. 기존 재바인딩 입력과 스테이지별 사용 방식은 유지하며, contextualUse 스테이지에서는 R을 누르는 동안 분사한다. 몸의 전방/머리 회전 각도 제한 없이 후방·측면·상하로 조준할 수 있고, 주입구 사용도 몸을 강제로 회전시키지 않는다.
 
-`SapAbilitySettings`의 `orbitCenterOffset`, `orbitRadius`, `orbitTubeRadius`는 월드 단위다. `orbitUnwindDuration`, `orbitUnwindAngle`로 분사 지속 시간에 따른 고리 소모 속도를, `orbitRestoreDuration`으로 버튼을 놓은 뒤 복원 시간을 조절한다. 고리의 남은 길이는 계속 줄어들며 기존 110도 열림 제한을 사용하지 않는다. `orbitRipple`, `orbitFlowSpeed`는 표면 움직임 설정이다. 확대 캐릭터용 `SO_ModelingSap`에는 별도 크기를 직렬화했다. `orbitEnabled`를 끄면 기존 구체/가슴 위치 연출로 돌아간다. 발사 방향 제한 해제는 유지된다.
+`SapAbilitySettings`의 `orbitCenterOffset`, `orbitRadius`, `orbitTubeRadius`는 월드 단위다. `orbitUnwindDuration`, `orbitUnwindAngle`로 분사 지속 시간에 따른 고리 소모 속도를, `orbitRestoreDuration`으로 버튼을 놓은 뒤 복원 시간을 조절한다. 고리의 남은 길이는 일정한 속도로 줄어들며 기존 110도 열림 제한을 사용하지 않는다. 현재 세 수액 설정 모두 소모/복원 시간을 0.45초, 소모 각도를 360도로 맞춰 줄어드는 속도와 다시 채워지는 속도가 같다. `orbitRipple`, `orbitFlowSpeed`는 표면 움직임 설정이다. 확대 캐릭터용 `SO_ModelingSap`에는 별도 크기를 직렬화했다. `orbitEnabled`를 끄면 기존 구체/가슴 위치 연출로 돌아간다. 발사 방향 제한 해제는 유지된다.
 
 `SapOrbitPresentation`은 기존 해금/선택/분사 복제 상태와 시선 정보를 읽는 연출이다. 충돌·주입·물 자국 수명은 기존 Host 시뮬레이션을 사용하며, 새로운 네트워크 필드는 추가하지 않았다. `Herbalist/Abilities/Apply Water Orbit`는 플레이어 프리팹 연결을 재적용한다. 씬에 직접 작성된 플레이어는 씬의 `WaterOrbit`와 컴포넌트 참조를 보존한다.
 

@@ -26,6 +26,7 @@ namespace Herbalist.GameUI
         [SerializeField] private TMP_Text brewingTime;
         [SerializeField] private GameObject fanPrompt;
         [SerializeField] private TMP_Text fanPromptText;
+        [SerializeField] private ControlHintView _fanHint;
         [SerializeField] private StageMinigameUiText copy;
         private PlayerHud _hud;
         private PlayScreenController _screen;
@@ -90,7 +91,10 @@ namespace Herbalist.GameUI
             if (brewingGaugeLabel != null) brewingGaugeLabel.text = string.Format(copy.brewingGaugeFormat, flow.CraftingGauge);
             if (brewingTime != null) brewingTime.text = string.Format(copy.brewingTimeFormat, Mathf.Max(0, recipe.timeLimit - flow.MinigameTime));
             if (fanPrompt != null) fanPrompt.SetActive(sodam);
-            if (fanPromptText != null) fanPromptText.text = copy.fanPrompt;
+            var craftingView = _screen != null ? _screen.ViewForSlot(_hud.slot) : null;
+            var craftingActor = craftingView != null ? craftingView.GetComponent<StageActor>() : null;
+            if (_fanHint != null) _fanHint.Present(craftingActor != null ? craftingActor.JumpBinding : string.Empty, copy.fanActionText);
+            else if (fanPromptText != null) fanPromptText.text = copy.fanPrompt;
             if (targetTemperatureBand != null)
             {
                 targetTemperatureBand.gameObject.SetActive(sodam);

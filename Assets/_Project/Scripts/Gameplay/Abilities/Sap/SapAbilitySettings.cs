@@ -12,10 +12,10 @@ namespace Herbalist.Abilities
         public Vector3 orbitCenterOffset = new Vector3(0f, 0.95f, 0f);
         [Min(0.1f)] public float orbitRadius = 0.75f;
         [Min(0.01f)] public float orbitTubeRadius = 0.07f;
-        [Tooltip("Seconds per progressive unwinding step. Continuous use keeps shortening the remaining arc.")]
-        [Min(0.01f)] public float orbitUnwindDuration = 4f;
+        [Tooltip("Seconds to unwind orbitUnwindAngle degrees at a constant rate. Match restore duration and use 360 degrees for equal drain/refill speeds.")]
+        [Min(0.01f)] public float orbitUnwindDuration = .45f;
         [Min(0.01f)] public float orbitRestoreDuration = .45f;
-        [Tooltip("Initial unwinding rate per duration, not a maximum opening angle.")]
+        [Tooltip("Degrees unwound per duration, not a maximum opening angle.")]
         [Range(1f, 360f)] public float orbitUnwindAngle = 360f;
         [Min(0f)] public float orbitRipple = 0.025f;
         [Min(0f)] public float orbitFlowSpeed = 3f;

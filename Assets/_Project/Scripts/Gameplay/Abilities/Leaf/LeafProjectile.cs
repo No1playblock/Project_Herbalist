@@ -64,7 +64,7 @@ namespace Herbalist.Abilities
                 progress = Mathf.Min(1, progress + dt / duration);
                 Vector3 next = Vector3.Lerp(start, destination, progress) + curveRight * (Mathf.Sin(progress * Mathf.PI) * settings.curveWidth);
                 Vector3 delta = next - transform.position;
-                if (delta.sqrMagnitude > 0.000001f && Physics.SphereCast(transform.position, settings.collisionRadius, delta.normalized, out var hit, delta.magnitude, settings.hitMask, QueryTriggerInteraction.Ignore))
+                if (delta.sqrMagnitude > 0.000001f && Herbalist.Levels.StageOneLeafZone.Cast(new Ray(transform.position, delta.normalized), settings.collisionRadius, delta.magnitude, settings.hitMask, out var hit))
                 {
                     var target = hit.collider.GetComponentInParent<LeafInstallTarget>();
                     if (target != null && target.CanInstall) Install(target, hit.point, hit.normal, delta);
@@ -85,7 +85,8 @@ namespace Herbalist.Abilities
                 if (Target.ExactSocketPlacement)
                     transform.SetPositionAndRotation(Target.SocketPosition, Target.SocketRotation);
                 else transform.SetPositionAndRotation(Target.transform.TransformPoint(localPosition), rotation);
-                if (State == LeafState.Installed && !settings.permanentInstallation) { remaining -= dt; if (remaining <= 0) BeginReturn(); }
+                if (State == LeafState.Installed && !settings.permanentInstallation && !Target.KeepsLeafUntilUsed)
+                { remaining -= dt; if (remaining <= 0) BeginReturn(); }
             }
             else if (State == LeafState.Returning)
             {

@@ -33,6 +33,7 @@ namespace Herbalist.GameUI
         public string brewingGaugeFormat;
         public string brewingTimeFormat;
         public string fanPrompt;
+        public string fanActionText = "부채질하기";
         public string stepUp, stepLeft, stepDown, stepRight;
     }
 }

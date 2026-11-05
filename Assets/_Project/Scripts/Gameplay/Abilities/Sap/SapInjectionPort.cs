@@ -9,6 +9,8 @@ namespace Herbalist.Abilities
         private static readonly HashSet<SapInjectionPort> ActivePorts = new();
         [SerializeField, Min(.01f)] private float _unitsPerSecond = 1;
         [SerializeField, Min(.1f)] private float _hintRange = 4f;
+        [SerializeField] private Transform _aimPoint;
+        public Vector3 InteractionPoint => _aimPoint != null ? _aimPoint.position : transform.position;
         private float _pending;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetPorts() => ActivePorts.Clear();
@@ -26,10 +28,10 @@ namespace Herbalist.Abilities
             foreach (var port in ActivePorts)
             {
                 float range = Mathf.Min(port._hintRange, ability.Sap.Settings.controlRange);
-                float distance = Vector3.Distance(actor.transform.position, port.transform.position);
+                float distance = Vector3.Distance(actor.transform.position, port.InteractionPoint);
                 if (distance > range || distance >= nearest) continue;
                 nearest = distance;
-                point = port.transform.position;
+                point = port.InteractionPoint;
                 found = true;
             }
             return found;

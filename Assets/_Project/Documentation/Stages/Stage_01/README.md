@@ -1,5 +1,7 @@
 # Stage 1 map
 
+2026-11-03 기믹 수정: 전용 5초 잎 설정, 일반 버섯 24곳의 잎 설치 구역 전환, 이끼/나무 접촉 복귀 판정, 실제 천 3개의 수액 구동 및 협동 1·2·5 배치를 적용했다. 협동 4의 대체는 보류한다. 변경 위치와 검증 범위는 [GimmickRevision_20261103.md](GimmickRevision_20261103.md)를 참고한다. 아래 영구 잎/방향키 천 조작 설명 중 충돌하는 부분은 이번 스테이지 1 설정에서 대체된다.
+
 2026-10-28 전환 접촉/Cloth 복원: `StageOneFlow`는 매 프레임 Host에서 각 플레이어의 CharacterController와 `Stage2Transition_Summit` BoxCollider의 실제 겹침을 검사한다. 두 사람의 진입 시각은 달라도 되며, 먼저 온 사람이 영역에 닿은 상태에서 두 번째 사람이 닿으면 전환한다. 벗어난 사람의 과거 접촉은 누적하지 않는다. 기존 포션/입구 조건은 유지한다. 이전에는 `interactionOffset` 기준점만 검사하여 몸이 닿아 있어도 입장으로 계산되지 않을 수 있었다. Play 회귀 검사 `Herbalist.Editor.StageOneArrivalChecks.Run()`에서 실제/회전된 영역, 두 진입 순서, 대기/이탈, 기준점 밖의 몸 접촉을 확인했다.
 
 천 9개는 아래 10/27 롤백을 대체하여 `ClothAppearance`와 Unity Cloth를 다시 사용한다. 배치에 맞춰 구운 메쉬를 사용하면서 작은 원본 모델의 SkinnedMeshRenderer bounds를 유지하면 천과 다른 위치를 컬링하게 된다. 각 외형의 bounds를 해당 메쉬에 맞추고 흔들림 여유를 추가했으며 `updateWhenOffscreen`을 켜고 동적 occlusion을 껐다. 3개 HangingCloth의 원래 MeshFilter는 앵커 계산용으로 유지하고 기존 MeshRenderer만 비활성화했다. Play에서 천 9개의 개별 앞/뒷면 렌더링, 각 64개 고정점의 위치 유지와 나머지 정점의 움직임, 콘솔 오류 0개를 확인했다.
@@ -26,7 +28,9 @@
 
 캐릭터·카메라·버섯/나뭇가지 점프대의 수정 위치와 Inspector 값 설명은 [CharacterAndJumpPadTuning.md](CharacterAndJumpPadTuning.md)를 참고하세요.
 
-Current Stage 1 player scene: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference_CharacterBranch.unity`. The Main Menu solo route and multiplayer lobby both load this map. It uses two `PF_Player` offline instances, including their `StageActor` and held-item presentation, plus `PlayerSpawnLayout` with `PF_Stage01ModelingNetworkPlayer` and two spawn points for Fusion sessions. It also has the shared game overlay, the two slot-specific player HUDs, the play-screen controller, cursor capture/release behavior, and the Input System UI event module. The `StageLevel` points to `Stage_02_Mazes`.
+Current Stage 1 player scene: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference_CharacterBranch_DevelopStage1_Reference.unity`. The Main Menu solo route and multiplayer lobby both load this map. It uses two `PF_Player` offline instances, including their `StageActor` and held-item presentation, plus `PlayerSpawnLayout` with `PF_Stage01ModelingNetworkPlayer` and two spawn points for Fusion sessions. It also has the shared game overlay, the two slot-specific player HUDs, the play-screen controller, cursor capture/release behavior, and the Input System UI event module. The `StageLevel` points to `Stage_02_Mazes`.
+
+2026-11-03 imported-map revision: original decorative placement is preserved. New bindings live under `Stage1_DocumentGimmicks`; ordinary leaf platforms recall after their first footstep, four cloths allow one rider once, two mushrooms grow while receiving water, a connected inlet clears the cooperative obstacle, and a leaf button lowers the authored branch. See [ImportedMapGimmicks_20261103.md](ImportedMapGimmicks_20261103.md) for the current rules, exact scene, validation and remaining full-route play checks. This revision supersedes the earlier scene-replacement and fixed-five-second-only leaf presentation notes for the current main map.
 
 2026-10-27 시작 바닥 충돌 수정: CharacterBranch의 Terrain은 `Default` 레이어를 사용한다. 기존 `StageTreeCamera`(22)는 Player(8)와 충돌하지 않아 네트워크 캐릭터가 두 시작점 모두에서 바닥을 통과했다. 솔로 캐릭터의 별도 레이어는 충돌하므로 메인 솔로 시작에서는 정상 착지했다. 시작 좌표를 유지한 채 Terrain 레이어만 변경했다. Player 레이어의 실제 크기 캡슐(높이 4.86, 반지름 0.81)로 수정 전 두 슬롯의 낙하를 재현하고 수정 후 두 슬롯 착지를 확인했다. 두 프로세스 Host/Client 재접속 검사는 별도다. 카메라 전용 Seonang 메시와 전체 레이어 충돌 행렬은 유지한다.
 
