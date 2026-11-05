@@ -170,7 +170,9 @@ namespace Herbalist.Editor
             for (int i=0; i<2; i++)
             {
                 var growth = Mechanism("Sap_1_GrowingMushroom_"+(i+1)+"_RoutePage6", StageOneDocumentMechanismKind.GrowingMushrooms);
-                Array(growth, "_movingArt", new[] { At("DesignStage1_Traversal/StaticPlatforms/04_Musroom ("+(15+i)+")") }); Set(growth, "_grownScale", 6f);
+                var mushroom = At("DesignStage1_Traversal/StaticPlatforms/04_Musroom ("+(15+i)+")");
+                Safe.Remove(mushroom.GetComponent<Collider>());
+                Array(growth, "_movingArt", new[] { mushroom }); Set(growth, "_grownScale", 6f);
                 var sourceId = i==0 ? 1068282342UL : 1063571562UL;
                 Set(growth,"_port",PortAt(_original.First(t=>GlobalObjectId.GetGlobalObjectIdSlow(t).targetObjectId==sourceId)));
             }
@@ -351,7 +353,7 @@ namespace Herbalist.Editor
             }
             var lower=root.GetComponentsInChildren<StageOneDocumentMechanism>().First(m=>m.Kind==StageOneDocumentMechanismKind.LowerBranch);
             Array(lower,"_movingArt",new[]{branch.parent,marker});
-            Set(lower,"_requiredCloth",root.GetComponentsInChildren<HangingCloth>().First(c=>c.name=="Coop_4_SingleUseCloth"));
+            Set(lower,"_requiredCloth",null);
             var target=(LeafInstallTarget)new SerializedObject(lower).FindProperty("_leafTarget").objectReferenceValue;
             var gate=target.GetComponent<StageOneTargetGate>();if(gate==null)gate=target.gameObject.AddComponent<StageOneTargetGate>();
             Set(gate,"_mechanism",lower);Set(gate,"_requiresCompleted",false);

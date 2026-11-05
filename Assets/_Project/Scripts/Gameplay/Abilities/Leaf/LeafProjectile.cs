@@ -1,4 +1,5 @@
 using System;
+using Herbalist.Levels;
 using UnityEngine;
 using UnityEngine.Serialization;
 namespace Herbalist.Abilities
@@ -67,7 +68,12 @@ namespace Herbalist.Abilities
                 if (delta.sqrMagnitude > 0.000001f && Herbalist.Levels.StageOneLeafZone.Cast(new Ray(transform.position, delta.normalized), settings.collisionRadius, delta.magnitude, settings.hitMask, out var hit))
                 {
                     var target = hit.collider.GetComponentInParent<LeafInstallTarget>();
-                    if (target != null && target.CanInstall) Install(target, hit.point, hit.normal, delta);
+                    if (target != null && target.TryGetComponent<StageOneTargetGate>(out var gate) && gate.TryHitBranch())
+                    {
+                        transform.position += delta.normalized * hit.distance;
+                        BeginMissReturn(hit.normal);
+                    }
+                    else if (target != null && target.CanInstall) Install(target, hit.point, hit.normal, delta);
                     else BeginMissReturn(hit.normal);
                 }
                 else
@@ -86,7 +92,12 @@ namespace Herbalist.Abilities
                     transform.SetPositionAndRotation(Target.SocketPosition, Target.SocketRotation);
                 else transform.SetPositionAndRotation(Target.transform.TransformPoint(localPosition), rotation);
                 if (State == LeafState.Installed && !settings.permanentInstallation && !Target.KeepsLeafUntilUsed)
-                { remaining -= dt; if (remaining <= 0) BeginReturn(); }
+                {
+                    remaining -= dt;
+                    if (remaining <= 0 &&
+                        (!Target.TryGetComponent<StageOneLeafUse>(out var use) || !use.DefersExpiry(this)))
+                        BeginReturn();
+                }
             }
             else if (State == LeafState.Returning)
             {

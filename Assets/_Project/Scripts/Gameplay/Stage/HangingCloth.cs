@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Fusion;
+using Herbalist.Abilities;
 using UnityEngine;
 using Herbalist.Player;
 using Herbalist.StageOne;
@@ -15,6 +16,9 @@ namespace Herbalist.Levels
         [SerializeField] private Transform _authoredVisual;
         [SerializeField] private HangingClothSettings _settings;
         [SerializeField] private bool _waterDriven;
+        [SerializeField] private SapInjectionPort _loweringPort;
+        [SerializeField, Min(0)] private float _raisedMeters = 2f;
+        [SerializeField, Min(.01f)] private float _lowerSeconds = 1f;
         [Header("Optional stage-one authored-art binding")]
         [SerializeField] private Transform _externalVisualRoot;
         [SerializeField] private Transform _externalAnchor;
@@ -35,21 +39,25 @@ namespace Herbalist.Levels
         [Networked] private int Rider1 { get; set; }
         [Networked] private NetworkBool Used { get; set; }
         [Networked] private float Retraction { get; set; }
+        [Networked] private float Deployment { get; set; }
         private bool _used;
         private float _retraction;
+        private float _deployment;
         private Vector3 _externalRestPosition, _externalRestScale;
         private Quaternion _externalRestRotation;
         private Vector3 _anchorTop, _anchorRest;
         private Quaternion _anchorRotation;
         public bool WasUsed => Online ? Used : _used;
-        private bool CanBoard => !_singleUse || !WasUsed;
+        private float DeploymentProgress => Online && !HasStateAuthority ? Deployment : _deployment;
+        private bool CanBoard => (_loweringPort == null || DeploymentProgress >= 1f) && (!_singleUse || !WasUsed);
         private Vector2 _angles, _velocity, _drive, _heldInput;
         private Vector2 _waterImpulse;
         public bool WaterDriven => _waterDriven;
         // Called only by the authoritative hose simulation, with its actual impact direction.
         public bool PushWithWater(Vector3 direction, float seconds)
         {
-            if (!_waterDriven || !isActiveAndEnabled || !Authority || _settings == null ||
+            if (!_waterDriven || (_loweringPort != null && DeploymentProgress < 1f) ||
+                !isActiveAndEnabled || !Authority || _settings == null ||
                 Herbalist.GameUI.GameplayPause.IsPaused || seconds <= 0 || float.IsNaN(seconds) || float.IsInfinity(seconds)) return false;
             Vector3 planar = Vector3.ProjectOnPlane(direction, Vector3.up);
             if (planar.sqrMagnitude < .000001f) return true;
@@ -104,6 +112,7 @@ namespace Herbalist.Levels
             _restGripOffset = _knot != null ? _knot.position - _fixedVisualTop : Vector3.zero;
             if (_restGripOffset.sqrMagnitude < .0001f)
                 _restGripOffset = transform.TransformVector(Vector3.down * _length);
+            if (_loweringPort != null) Present(Vector2.zero, false, Vector3.zero, 0f, Vector2.zero);
         }
         private void OnEnable() => Cloths.Add(this);
         public static bool TryInteractionHint(StageActor actor, out Vector3 point, out bool release)
@@ -136,7 +145,7 @@ namespace Herbalist.Levels
             point = nearest._knot.position;
             return true;
         }
-        public override void Spawned() { if (HasStateAuthority) { Rider0 = Rider1 = -1; Angles = Vector2.zero; BendActive = false; BendPoint = Vector3.zero; BendLength = 0; BendAngles = Vector2.zero; Used = false; Retraction = 0; } }
+        public override void Spawned() { if (HasStateAuthority) { Rider0 = Rider1 = -1; Angles = Vector2.zero; BendActive = false; BendPoint = Vector3.zero; BendLength = 0; BendAngles = Vector2.zero; Used = false; Retraction = 0; Deployment = 0; } }
         public override void FixedUpdateNetwork() { if (isActiveAndEnabled && HasStateAuthority) Tick(Runner.DeltaTime); }
         public static bool IsRiding(StageActor actor)
         {
@@ -227,6 +236,13 @@ namespace Herbalist.Levels
         public void Tick(float dt)
         {
             if (!Authority || Herbalist.GameUI.GameplayPause.IsPaused || dt <= 0) return;
+            if (_loweringPort != null)
+            {
+                float injected = _loweringPort.Consume();
+                if (injected > 0f || _deployment > 0f)
+                    _deployment = Mathf.MoveTowards(_deployment, 1f, dt / _lowerSeconds);
+                if (Online) Deployment = _deployment;
+            }
             RefreshAnchor();
             for (int i = 0; i < 2; i++) if (_riders[i] != null && !_riders[i].Available) Detach(i);
             if (_singleUse && _used && !HasRider) _retraction = Mathf.MoveTowards(_retraction, 1, dt / _retractSeconds);
@@ -365,12 +381,14 @@ namespace Herbalist.Levels
         {
             RefreshAnchor();
             Quaternion baseRotation = Quaternion.Euler(primary.x, 0, primary.y);
+            float extension = _loweringPort == null ? 1f :
+                Mathf.Max(.001f, 1f - _raisedMeters * (1f - DeploymentProgress) / _restGripOffset.magnitude);
             Vector3 knot = bent ? point + Quaternion.Euler(secondary.x, 0, secondary.y) * baseRotation * (_restGripOffset.normalized * lowerLength)
-                                 : _fixedVisualTop + baseRotation * _restGripOffset;
+                                 : _fixedVisualTop + baseRotation * _restGripOffset * extension;
             if (_externalVisualRoot != null)
             {
                 transform.SetPositionAndRotation(_fixedVisualTop, baseRotation);
-                float scale = Mathf.Max(.001f, 1f - (Online && !HasStateAuthority ? Retraction : _retraction));
+                float scale = Mathf.Max(.001f, (1f - (Online && !HasStateAuthority ? Retraction : _retraction)) * extension);
                 _externalVisualRoot.rotation = baseRotation * _externalRestRotation;
                 _externalVisualRoot.position = _fixedVisualTop + baseRotation * (_externalRestPosition - _fixedVisualTop) * scale;
                 _externalVisualRoot.localScale = _externalRestScale * scale;

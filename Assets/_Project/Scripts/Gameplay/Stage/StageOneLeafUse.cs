@@ -1,4 +1,5 @@
 using Herbalist.Abilities;
+using Herbalist.Networking;
 using Herbalist.StageOne;
 using UnityEngine;
 
@@ -10,6 +11,7 @@ namespace Herbalist.Levels
     {
         [SerializeField, Min(0)] private float _returnDelay = .06f;
         [SerializeField, Min(.01f)] private float _standingTolerance = .35f;
+        [SerializeField] private bool _recallAfterLeaving;
         private LeafInstallTarget _target;
         private LeafProjectile _leaf;
         private float _remaining;
@@ -21,11 +23,30 @@ namespace Herbalist.Levels
             var leaf = _target.InstalledLeaf;
             if (leaf != _leaf) { _leaf = leaf; _stepped = false; _remaining = _returnDelay; }
             if (leaf == null) return;
-            if (!_stepped)
-                foreach (var actor in StageActor.All)
-                    if (actor.Available && leaf.Supports(actor.GetComponent<CharacterController>(), _standingTolerance))
-                    { _stepped = true; break; }
+            if (FusionLobbySession.Instance is { HasNetworkSession: true } && IsOccupied(leaf, leafAbilityOnly: true))
+            {
+                leaf.BeginReturn();
+                return;
+            }
+            bool occupied = (!_stepped || _recallAfterLeaving) && IsOccupied(leaf);
+            if (occupied)
+            {
+                _stepped = true;
+                if (_recallAfterLeaving) { _remaining = _returnDelay; return; }
+            }
             if (_stepped && (_remaining -= dt) <= 0) leaf.BeginReturn();
+        }
+        public bool DefersExpiry(LeafProjectile leaf) => isActiveAndEnabled && _recallAfterLeaving &&
+            ((_leaf == leaf && _stepped) || IsOccupied(leaf));
+
+        private bool IsOccupied(LeafProjectile leaf, bool leafAbilityOnly = false)
+        {
+            foreach (var actor in StageActor.All)
+                if (actor.Available && !HangingCloth.IsRiding(actor) &&
+                    (!leafAbilityOnly || actor.Abilities is { Unlocked: true, Kind: PlayerAbilityKind.Leaf }) &&
+                    leaf.Supports(actor.GetComponent<CharacterController>(), _standingTolerance))
+                    return true;
+            return false;
         }
         private void Update() => Tick(Time.deltaTime);
     }

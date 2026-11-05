@@ -7,16 +7,23 @@ namespace Herbalist.Levels
     {
         [SerializeField] private LineRenderer _stream;
         [SerializeField] private ParticleSystem _sprayDroplets;
+        [SerializeField] private ParticleSystem _sprayTemplate;
 
         private SapJumpPadSettings _settings;
         private Vector3[] _pathPoints;
         private float _flowTime;
         private float _sprayBudget;
 
-        public void Initialize(SapJumpPadSettings settings)
+        public void Initialize(SapJumpPadSettings settings, float width = 0f)
         {
             _settings = settings;
             if (_stream == null || _settings == null) return;
+            if (_sprayDroplets == null && _sprayTemplate != null)
+            {
+                _sprayDroplets = Instantiate(_sprayTemplate, transform);
+                var main = _sprayDroplets.main;
+                main.simulationSpace = ParticleSystemSimulationSpace.World;
+            }
 
             _pathPoints = new Vector3[Mathf.Max(6, _settings.waterStreamSegments) + 1];
             // Match the ability stream's LineRenderer setup. Its material is authored in the scene.
@@ -26,7 +33,7 @@ namespace Herbalist.Levels
             _stream.startWidth = 1f;
             _stream.endWidth = 1f;
             _stream.widthCurve = AnimationCurve.Constant(0f, 1f, 1f);
-            _stream.widthMultiplier = _settings.waterStreamWidth;
+            _stream.widthMultiplier = width > 0f ? width : _settings.waterStreamWidth;
             _stream.numCapVertices = 5;
             _stream.numCornerVertices = 4;
             _stream.colorGradient = new Gradient
@@ -36,7 +43,10 @@ namespace Herbalist.Levels
             };
         }
 
-        public void Present(Vector3 start, Vector3 end)
+        internal static Vector3 PathPoint(Vector3 start, Vector3 end, float t, float rise, float drop)
+            => Vector3.Lerp(start, end, t) + Vector3.up * (rise * t * (1f - t) - drop * t * t);
+
+        public void Present(Vector3 start, Vector3 end, float rise = 0f, float drop = 0f)
         {
             if (_stream == null || _settings == null) return;
             if (_pathPoints == null) Initialize(_settings);
@@ -56,7 +66,7 @@ namespace Herbalist.Levels
                 float t = (float)i / (_pathPoints.Length - 1);
                 float envelope = Mathf.Max(0f, Mathf.Sin(Mathf.PI * t));
                 float phase = _flowTime * 2.4f + t * 5.6f;
-                _pathPoints[i] = Vector3.Lerp(start, end, t)
+                _pathPoints[i] = PathPoint(start, end, t, rise, drop)
                     + side * (Mathf.Sin(phase) * sway * envelope)
                     + lift * (Mathf.Sin(phase * .73f + 1.2f) * sway * .34f * envelope);
             }

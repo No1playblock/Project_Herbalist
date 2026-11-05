@@ -17,7 +17,6 @@ namespace Herbalist.Editor
         private static int _id;
         private static Material _water, _marker;
         private static SapJumpPadSettings _flowSettings;
-        private static readonly List<Collider> _hazards = new();
 
         private static Transform New(string name, Transform parent, Vector3 position)
         { var t = new GameObject(name).transform; t.SetParent(parent, false); t.position = position; return t; }
@@ -44,6 +43,10 @@ namespace Herbalist.Editor
             _flowSettings = Object.Instantiate(AssetDatabase.LoadAssetAtPath<SapJumpPadSettings>("Assets/_Project/Data/Stages/Stage_01/SO_ModelingMushroomJumpPad.asset"));
             _flowSettings.name = "SO_StageOneOutletWaterPresentation";
             _flowSettings.waterStreamWidth = .55f; _flowSettings.waterStreamSway = 0;
+            _flowSettings.waterSprayDropsPerMeterPerSecond = 8f;
+            _flowSettings.waterSprayDropSize = new Vector2(.07f, .16f);
+            _flowSettings.waterSprayForwardSpeed = 7f;
+            _flowSettings.waterSprayMaxDropsPerFrame = 16;
             AssetDatabase.CreateAsset(_flowSettings, "Assets/_Project/Data/Stages/Stage_01/" + _flowSettings.name + ".asset");
             var correction = New("OutletCorrections_20261104", root, Vector3.zero);
 
@@ -72,7 +75,6 @@ namespace Herbalist.Editor
             // Photo 2: only the three 04_Musroom steps, not the adjacent large 03_Mushroom caps.
             var tree = all.First(t => t.name == "seonag_tree").GetComponent<MeshCollider>();
             var route = New("Photo2_MushroomRoute_LeafBlockedOutlets", correction, Vector3.zero);
-            _hazards.Clear();
             var names = new[] { "04_Musroom (10)", "04_Musroom (11)", "04_Musroom (6)" };
             foreach (string name in names)
             {
@@ -96,7 +98,6 @@ namespace Herbalist.Editor
                 float length = Mathf.Clamp(Vector3.Distance(source, desired) + renderer.bounds.size.magnitude * .12f + 1, 4, 22);
                 var stream = Stream("BlockingWaterStream", plugPosition, plugPosition + normal * length, mechanismRoot, true);
                 Set(mechanism, "_jet", stream); SetArray(mechanism, "_obstacleColliders", new[] { stream.GetComponent<Collider>() });
-                _hazards.Add(stream.GetComponent<Collider>());
             }
             // Same authoritative progress that moves the stone also triggers the visible outlet.
             var eject = root.GetComponentsInChildren<StageOneDocumentMechanism>().First(m => m.Kind == StageOneDocumentMechanismKind.EjectObstacle);
@@ -114,7 +115,7 @@ namespace Herbalist.Editor
                 var c = bare.GetArrayElementAtIndex(i).objectReferenceValue as Collider;
                 if (c != null && !c.transform.IsChildOf(wrong)) colliders.Add(c);
             }
-            colliders.AddRange(_hazards); SetArray(traversal, "_bareTrees", colliders.ToArray());
+            SetArray(traversal, "_bareTrees", colliders.ToArray());
             AssetDatabase.SaveAssets(); EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene);
             return "Photo1 paired branch pad; Photo2 three horizontal leaf-blocked outlets; Coop1 stone outlet water cue. Imported model transforms untouched.";
         }
@@ -139,6 +140,8 @@ namespace Herbalist.Editor
                 target.transform.SetPositionAndRotation(source + direction * .15f, mouth.rotation);
                 target.Socket.SetPositionAndRotation(target.transform.position, Quaternion.FromToRotation(Vector3.up, direction));
                 HorizontalStream(stream, source, direction);
+                var fixedStream = stream.GetComponent<StageOneFixedWaterStream>();
+                if (Read<CapsuleCollider>(fixedStream, "_pushVolume") != null) RefreshOutletPreview(fixedStream);
             }
             var eject = root.GetComponentsInChildren<StageOneDocumentMechanism>().First(m => m.Kind == StageOneDocumentMechanismKind.EjectObstacle);
             var ejectStream = Read<GameObject>(eject, "_jet").transform;
@@ -206,8 +209,25 @@ namespace Herbalist.Editor
             {
                 var capsule = t.gameObject.AddComponent<CapsuleCollider>(); capsule.direction = 2; capsule.radius = .35f;
                 capsule.height = Vector3.Distance(start, end) + capsule.radius * 2; capsule.center = Vector3.forward * Vector3.Distance(start, end) * .5f;
+                capsule.isTrigger = true;
+                Set(fixedStream, "_pushVolume", capsule);
+                var pad = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/InteractiveObjects/Stages/Stage_01/PF_MushroomJumpPad.prefab");
+                var spray = Read<ParticleSystem>(pad.GetComponentInChildren<MushroomWaterJetPresentation>(true), "_sprayDroplets");
+                Set(presentation, "_sprayTemplate", spray);
+                RefreshOutletPreview(fixedStream);
             }
             return t.gameObject;
+        }
+
+        public static void RefreshOutletPreview(StageOneFixedWaterStream outlet)
+        {
+            var line = outlet.GetComponent<LineRenderer>();
+            var settings = Read<SapJumpPadSettings>(outlet, "_presentationSettings");
+            int segments = Mathf.Max(6, settings.waterStreamSegments);
+            Undo.RecordObject(line, "Preview curved water outlet");
+            line.widthMultiplier = new SerializedObject(outlet).FindProperty("_outletWidth").floatValue;
+            line.positionCount = segments + 1;
+            for (int i = 0; i <= segments; i++) line.SetPosition(i, outlet.GetPathPoint((float)i / segments));
         }
     }
 }
