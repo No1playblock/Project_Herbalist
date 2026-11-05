@@ -68,7 +68,8 @@ Play 중 변경은 종료하면 사라진다. 수정은 Play를 종료한 다음
 ## 그림을 준비할 때
 
 - 버튼·프레임·아이콘·일러스트는 투명 PNG로 각각 준비한다. 버튼 글자는 기존 TMP 텍스트를 사용하므로 그림에 중복해서 넣지 않는다.
-- 일반 `Art_…`의 Image Color는 흰색으로 준비되어 있다. 버튼의 마우스 오버·클릭·비활성 색은 기존 Button 설정으로 작동한다.
+- 일반 `Art_…`의 Image Color는 흰색으로 준비되어 있다.
+- 메인 메뉴와 공통 옵션 창의 닫기 버튼은 Sprite Swap으로 설정되어 있다. 기본 그림은 자식 `Art_…`의 **Image → Source Image**, 호버 그림은 부모의 **Button → Highlighted Sprite**에 넣는다. 누르는 중에도 호버 그림을 유지하려면 **Pressed Sprite**에도 같은 그림을 넣는다. 비활성 상태를 구분하려면 **Disabled Sprite**에 별도 그림을 넣는다.
 - `Art_StateTint_…`는 잎의 보유/설치/회수 상태에 따라 색이 바뀐다. 흰색 또는 밝은 단색 아이콘을 넣으면 상태 색이 잘 보인다. 상태 색 자체는 개발 담당자가 `SO_GameUiSettings`에서 조정한다.
 - `Art_Fill_…`는 게이지다. **Image Type = Filled**, Fill Method / Origin과 스크립트 연결을 유지한다.
 - Raycast Target, Button, Slider, 제어 스크립트는 이미 연결되어 있다. 해당 설정과 비활성인 원래 Graphic은 그대로 둔다.
