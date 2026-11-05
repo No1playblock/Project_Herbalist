@@ -15,13 +15,13 @@ MonoBehaviour:
   active: 1
   postExposure:
     m_OverrideState: 1
-    m_Value: 2.48
+    m_Value: 2.22
   contrast:
     m_OverrideState: 1
     m_Value: 100
   colorFilter:
     m_OverrideState: 1
-    m_Value: {r: 1, g: 0.89921975, b: 0.86300004, a: 1}
+    m_Value: {r: 0.764151, g: 0.66120833, b: 0.61636704, a: 1}
   hueShift:
     m_OverrideState: 0
     m_Value: 0
@@ -56,7 +56,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b2db86121404754db890f4c8dfe81b2, type: 3}
   m_Name: Bloom
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.Bloom
-  active: 0
+  active: 1
   skipIterations:
     m_OverrideState: 0
     m_Value: 1
@@ -115,7 +115,7 @@ MonoBehaviour:
     m_Value: {x: 0.5, y: 0.5}
   intensity:
     m_OverrideState: 1
-    m_Value: 0.2
+    m_Value: 0.425
   smoothness:
     m_OverrideState: 0
     m_Value: 0.2
