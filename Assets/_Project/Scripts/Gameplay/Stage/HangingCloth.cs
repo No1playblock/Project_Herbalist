@@ -21,6 +21,7 @@ namespace Herbalist.Levels
         [SerializeField, Min(.01f)] private float _lowerSeconds = 1f;
         [Header("Optional stage-one authored-art binding")]
         [SerializeField] private Transform _externalVisualRoot;
+        [SerializeField] private Transform _waterHitProxy;
         [SerializeField] private Transform _externalAnchor;
         [SerializeField] private StageOneDocumentMechanism _deploymentMechanism;
         [SerializeField] private Transform _deployedGrip;
@@ -47,6 +48,7 @@ namespace Herbalist.Levels
         private float _retraction;
         private float _deployment;
         private Vector3 _externalRestPosition, _externalRestScale;
+        private Vector3 _hitProxyRestPosition, _hitProxyRestScale;
         private Quaternion _externalRestRotation;
         private Vector3 _anchorTop, _anchorRest;
         private Vector3 _anchorGrip;
@@ -96,6 +98,11 @@ namespace Herbalist.Levels
             _authoredRootRotation = transform.rotation;
             if (_knot != null) _authoredGripLocalPosition = _knot.localPosition;
             if (_cloth != null) _clothSize = new Vector2(_cloth.localScale.x, _cloth.localScale.z);
+            if (_waterHitProxy != null)
+            {
+                _hitProxyRestPosition = _waterHitProxy.localPosition;
+                _hitProxyRestScale = _waterHitProxy.localScale;
+            }
             if (_authoredVisual != null && _authoredVisual.TryGetComponent(out MeshFilter meshFilter) && meshFilter.sharedMesh != null)
             {
                 Bounds bounds = meshFilter.sharedMesh.bounds;
@@ -407,6 +414,7 @@ namespace Herbalist.Levels
                 _externalVisualRoot.rotation = visualRotation * _externalRestRotation;
                 _externalVisualRoot.position = _fixedVisualTop + visualRotation * (_externalRestPosition - _fixedVisualTop) * scale;
                 _externalVisualRoot.localScale = _externalRestScale * scale;
+                ScaleWaterHitProxy(scale);
                 _knot.position = knot;
             }
             else if (_authoredVisual != null)
@@ -437,6 +445,12 @@ namespace Herbalist.Levels
                 _restGripOffset = Vector3.Lerp(_carriedGripOffset, _deployedGrip.position - _fixedVisualTop,
                     _deploymentMechanism.Progress);
             }
+        }
+        private void ScaleWaterHitProxy(float scale)
+        {
+            if (_waterHitProxy == null) return;
+            _waterHitProxy.localPosition = _hitProxyRestPosition * scale;
+            _waterHitProxy.localScale = _hitProxyRestScale * scale;
         }
         private void SetSegment(Transform segment, Vector3 start, Vector3 end)
         {
@@ -476,6 +490,7 @@ namespace Herbalist.Levels
             {
                 _externalVisualRoot.SetPositionAndRotation(_externalRestPosition, _externalRestRotation);
                 _externalVisualRoot.localScale = _externalRestScale;
+                ScaleWaterHitProxy(1f);
             }
             if (_authoredVisual != null)
             {
