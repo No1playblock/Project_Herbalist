@@ -157,7 +157,7 @@ namespace Herbalist.Abilities
             float maxDistance = settings.range;
             float aimRayDistance = maxDistance + Vector3.Distance(aim.origin, origin);
             Vector3 aimPoint = aim.GetPoint(aimRayDistance);
-            if (Herbalist.Levels.StageOneLeafZone.Cast(aim, 0, Mathf.Infinity, settings.hitMask, out var hit))
+            if (Herbalist.Levels.StageOneLeafZone.Cast(aim, 0, Mathf.Infinity, settings.hitMask, out var hit, transform))
                 aimPoint = hit.point + aim.direction * settings.collisionRadius;
             Vector3 towardAim = aimPoint - origin;
             if (towardAim.sqrMagnitude < 0.000001f) towardAim = aim.direction;

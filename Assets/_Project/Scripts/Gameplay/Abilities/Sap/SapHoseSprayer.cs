@@ -1,4 +1,6 @@
 using System;
+using Herbalist.Levels;
+using Herbalist.Player;
 using UnityEngine;
 namespace Herbalist.Abilities
 {
@@ -9,6 +11,9 @@ namespace Herbalist.Abilities
         private float _retractedLength;
         private Vector3 _lastDirection = Vector3.forward;
         private readonly Collider[] _originOverlaps = new Collider[16];
+        private readonly Transform _owner;
+
+        public SapHoseSprayer(Transform owner = null) => _owner = owner;
 
         public void Reset()
         {
@@ -16,20 +21,31 @@ namespace Herbalist.Abilities
             _retractedLength = 0f;
             _lastDirection = Vector3.forward;
         }
-public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySettings settings, Func<SapDeposit> createMark)
+        public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySettings settings, Func<SapDeposit> createMark)
         {
             Vector3 origin = held.transform.position;
             float deltaTime = Mathf.Max(0f, dt);
 
             // Raycasts do not report a collider that already contains their origin. A nearby
             // inlet can surround the ring's emission point, especially with large socket art.
-            if (firing)
+            if (firing || _owner != null)
             {
+                int mask = settings.collisionMask;
+                if (_owner != null) mask |= StageOneLeafZone.PlayerLayers;
                 int count = Physics.OverlapSphereNonAlloc(origin, .001f, _originOverlaps,
-                    settings.collisionMask, QueryTriggerInteraction.Ignore);
+                    mask, QueryTriggerInteraction.Ignore);
+                for (int i = 0; _owner != null && i < count; i++)
+                {
+                    var collider = _originOverlaps[i];
+                    if (collider.transform.IsChildOf(_owner) || collider.GetComponentInParent<PlayerController>() == null) continue;
+                    Reset();
+                    held.SetStream(origin, false);
+                    return;
+                }
                 for (int i = 0; i < count; i++)
                 {
                     var collider = _originOverlaps[i];
+                    if (!firing || (settings.collisionMask.value & (1 << collider.gameObject.layer)) == 0) continue;
                     var inlet = collider.GetComponentInParent<SapInjectionPort>();
                     if (inlet == null || (collider.ClosestPoint(origin) - origin).sqrMagnitude > .000001f || !inlet.Inject(deltaTime)) continue;
                     _reach = 0; _retractedLength = 0;
@@ -42,8 +58,8 @@ public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySett
             {
                 _retractedLength = 0f;
                 Vector3 target = aim.GetPoint(settings.controlRange + Vector3.Distance(aim.origin, origin));
-                bool hasTarget = Physics.Raycast(aim, out var aimHit, settings.controlRange + Vector3.Distance(aim.origin, origin),
-                    settings.collisionMask, QueryTriggerInteraction.Ignore);
+                bool hasTarget = StageOneLeafZone.Cast(aim, 0f, settings.controlRange + Vector3.Distance(aim.origin, origin),
+                    settings.collisionMask, out var aimHit, _owner, includeLeafZones: false);
                 if (hasTarget)
                     target = aimHit.point;
 
@@ -82,8 +98,8 @@ public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySett
                 float nextTime = travelTime * i / segments;
                 Vector3 next = Position(origin, launchVelocity, settings.hoseGravity, nextTime);
                 Vector3 step = next - previous;
-                if (step.sqrMagnitude > 0.000001f && Physics.Raycast(previous, step.normalized, out var hit,
-                    step.magnitude, settings.collisionMask, QueryTriggerInteraction.Ignore))
+                if (step.sqrMagnitude > 0.000001f && StageOneLeafZone.Cast(new Ray(previous, step.normalized), 0f,
+                    step.magnitude, settings.collisionMask, out var hit, _owner, includeLeafZones: false))
                 {
                     float previousTime = travelTime * (i - 1) / segments;
                     travelTime = Mathf.Lerp(previousTime, nextTime, hit.distance / step.magnitude);
@@ -91,7 +107,7 @@ public void Tick(SapDeposit held, Ray aim, bool firing, float dt, SapAbilitySett
                     impact = hit.collider.GetComponentInParent<SapInjectionPort>() == null;
                     impactNormal = hit.normal;
                     _reach = Mathf.Min(_reach, travelTime * settings.hoseLaunchSpeed);
-                    if (firing)
+                    if (firing && hit.collider.GetComponentInParent<PlayerController>() == null)
                     {
                         var cloth = hit.collider.GetComponentInParent<Herbalist.Levels.HangingCloth>();
                         if (cloth == null || !cloth.PushWithWater(step.normalized, deltaTime))

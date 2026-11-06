@@ -65,7 +65,7 @@ namespace Herbalist.Abilities
                 progress = Mathf.Min(1, progress + dt / duration);
                 Vector3 next = Vector3.Lerp(start, destination, progress) + curveRight * (Mathf.Sin(progress * Mathf.PI) * settings.curveWidth);
                 Vector3 delta = next - transform.position;
-                if (delta.sqrMagnitude > 0.000001f && Herbalist.Levels.StageOneLeafZone.Cast(new Ray(transform.position, delta.normalized), settings.collisionRadius, delta.magnitude, settings.hitMask, out var hit))
+                if (delta.sqrMagnitude > 0.000001f && Herbalist.Levels.StageOneLeafZone.Cast(new Ray(transform.position, delta.normalized), settings.collisionRadius, delta.magnitude, settings.hitMask, out var hit, owner))
                 {
                     var target = hit.collider.GetComponentInParent<LeafInstallTarget>();
                     if (target != null && target.TryGetComponent<StageOneTargetGate>(out var gate) && gate.TryHitBranch())
@@ -74,7 +74,12 @@ namespace Herbalist.Abilities
                         BeginMissReturn(hit.normal);
                     }
                     else if (target != null && target.CanInstall) Install(target, hit.point, hit.normal, delta);
-                    else BeginMissReturn(hit.normal);
+                    else
+                    {
+                        if (hit.collider.GetComponentInParent<Herbalist.Player.PlayerController>() != null)
+                            transform.position += delta.normalized * hit.distance;
+                        BeginMissReturn(hit.normal);
+                    }
                 }
                 else
                 {

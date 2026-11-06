@@ -26,7 +26,7 @@ namespace Herbalist.Abilities
         public event Action<float> FacingRequested;
         private void Awake()
         {
-            player = GetComponent<PlayerController>(); hose = new SapHoseSprayer();
+            player = GetComponent<PlayerController>(); hose = new SapHoseSprayer(transform);
             var rules = Herbalist.Levels.StageLevel.Instance != null ? Herbalist.Levels.StageLevel.Instance.abilityRules : null;
             if (rules != null && rules.sap != null) settings = rules.sap;
         }
