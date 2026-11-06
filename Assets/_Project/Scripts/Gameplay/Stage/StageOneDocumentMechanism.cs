@@ -65,7 +65,9 @@ namespace Herbalist.Levels
         public override void Spawned() { if (HasStateAuthority) { Amount = 0; Completed = false; } }
         private bool CanActivate()
         {
-            if (_requiredCloth != null && !_requiredCloth.WasUsed) return false;
+            if (_requiredCloth != null &&
+                (_kind == StageOneDocumentMechanismKind.LowerBranch ? !_requiredCloth.HasRetracted : !_requiredCloth.WasUsed))
+                return false;
             if (_activationArea == null) return true;
             foreach (var actor in StageActor.All)
                 if (actor.Available &&

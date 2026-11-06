@@ -132,7 +132,7 @@ namespace Herbalist.Editor
                 if (!keep.Contains(mechanism.name)) { Object.DestroyImmediate(mechanism.gameObject); removed++; continue; }
                 var mouth = mechanism.transform.Find("TreeOutlet");
                 var stream = Read<GameObject>(mechanism, "_jet").transform;
-                Vector3 direction = Vector3.ProjectOnPlane(stream.forward, Vector3.up).normalized;
+                Vector3 direction = Vector3.ProjectOnPlane(stream.Find("FlowEnd").position - stream.Find("FlowSource").position, Vector3.up).normalized;
                 if (direction.sqrMagnitude < .001f) throw new InvalidOperationException("No horizontal outlet direction: " + mechanism.name);
                 mouth.rotation = Quaternion.LookRotation(direction, Vector3.up);
                 var aim = mouth.Find("InjectionAimPoint"); Vector3 source = aim != null ? aim.position : mouth.position;
@@ -162,9 +162,11 @@ namespace Herbalist.Editor
         private static void HorizontalStream(Transform stream, Vector3 source, Vector3 direction)
         {
             float length = Vector3.Distance(stream.Find("FlowSource").position, stream.Find("FlowEnd").position);
-            stream.SetPositionAndRotation(source, Quaternion.LookRotation(direction, Vector3.up));
+            var line = stream.GetComponent<LineRenderer>();
+            stream.SetPositionAndRotation(source, line.alignment == LineAlignment.TransformZ
+                ? Quaternion.LookRotation(Vector3.down, direction) : Quaternion.LookRotation(direction, Vector3.up));
             stream.Find("FlowSource").position = source; stream.Find("FlowEnd").position = source + direction * length;
-            stream.GetComponent<LineRenderer>().SetPositions(new[] { source, source + direction * length });
+            line.SetPositions(new[] { source, source + direction * length });
         }
         private static Vector3 SurfaceTop(Collider collider, Bounds bounds)
         {
@@ -224,10 +226,22 @@ namespace Herbalist.Editor
             var line = outlet.GetComponent<LineRenderer>();
             var settings = Read<SapJumpPadSettings>(outlet, "_presentationSettings");
             int segments = Mathf.Max(6, settings.waterStreamSegments);
+            var points = new Vector3[segments + 1];
+            for (int i = 0; i <= segments; i++)
+            {
+                var point = outlet.GetPathPoint((float)i / segments);
+                if (!float.IsFinite(point.x) || !float.IsFinite(point.y) || !float.IsFinite(point.z))
+                    throw new InvalidOperationException("Invalid water outlet preview point: " + outlet.name);
+                points[i] = point;
+            }
+            var data = new SerializedObject(outlet);
+            float mouth = data.FindProperty("_outletWidth").floatValue;
             Undo.RecordObject(line, "Preview curved water outlet");
-            line.widthMultiplier = new SerializedObject(outlet).FindProperty("_outletWidth").floatValue;
-            line.positionCount = segments + 1;
-            for (int i = 0; i <= segments; i++) line.SetPosition(i, outlet.GetPathPoint((float)i / segments));
+            line.widthMultiplier = Mathf.Max(mouth, data.FindProperty("_sprayWidth").floatValue);
+            line.widthCurve = AnimationCurve.Linear(0f, mouth / line.widthMultiplier, 1f, 1f);
+            if (line.alignment == LineAlignment.TransformZ) line.numCapVertices = 0;
+            line.positionCount = points.Length;
+            line.SetPositions(points);
         }
     }
 }

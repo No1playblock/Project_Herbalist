@@ -33,14 +33,14 @@ namespace Herbalist.Editor
                 {
                     var target = Read<LeafInstallTarget>(mechanism, "_leafTarget"); var stream = Read<GameObject>(mechanism, "_jet");
                     Check(stream.activeSelf && !target.KeepsLeafUntilUsed && target.GetComponent<StageOneLeafUse>() == null, "Outlet open; plug is not a first-footstep platform.");
-                    Vector3 outward = stream.transform.forward;
+                    var outlet = stream.GetComponent<StageOneFixedWaterStream>();
+                    Vector3 outward = Vector3.ProjectOnPlane(outlet.GetPathPoint(1) - outlet.GetPathPoint(0), Vector3.up).normalized;
                     Check(Mathf.Abs(Vector3.Dot(outward, Vector3.up)) < .0001f, "Water is perpendicular to the vertical trunk: " + mechanism.name);
                     Physics.SyncTransforms();
                     Check(StageOneLeafZone.Cast(new Ray(target.SocketPosition + outward * 10, -outward), settings.leaf.collisionRadius,
                         12, settings.leaf.hitMask, out var hit) && hit.collider.GetComponentInParent<LeafInstallTarget>() == target, "Leaf reaches outlet through active water: " + mechanism.name);
-                    var outlet = stream.GetComponent<StageOneFixedWaterStream>();
-                    Check(outlet.GetPathPoint(.25f).y > outlet.GetPathPoint(0).y &&
-                        outlet.GetPathPoint(1).y < outlet.GetPathPoint(0).y, "Water rises slightly and curves down.");
+                    Check(outlet.GetPathPoint(.5f).y > (outlet.GetPathPoint(0).y + outlet.GetPathPoint(1).y) * .5f,
+                        "The water sheet arches over the cap.");
                     var point = outlet.GetPathPoint(.9f);
                     var cc = actor.GetComponent<CharacterController>(); player.Motor.Teleport(point - actor.transform.TransformVector(cc.center)); Physics.SyncTransforms();
                     player.Motor.ResetMotion();

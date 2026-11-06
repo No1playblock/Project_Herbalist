@@ -12,6 +12,7 @@ namespace Herbalist.Levels
         [SerializeField] private Collider[] _bareTrees;
         [SerializeField] private BoxCollider[] _mossAreas;
         [SerializeField] private Collider[] _checkpointSurfaces;
+        [SerializeField] private Collider[] _cameraPassThrough = System.Array.Empty<Collider>();
         [SerializeField] private Transform[] _starts;
         [SerializeField] private BoxCollider _forestExitCheckpoint;
         [SerializeField] private Transform _forestExitRecoveryPoint;
@@ -25,6 +26,20 @@ namespace Herbalist.Levels
         private readonly Dictionary<StageActor, float> _grace = new();
         private readonly HashSet<StageActor> _forestExitReached = new();
         private readonly Collider[] _overlaps = new Collider[128];
+        private static readonly HashSet<Collider> CameraPassThrough = new();
+        public static bool IgnoresCamera(Collider collider) => CameraPassThrough.Contains(collider);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetCameraPassThrough() => CameraPassThrough.Clear();
+        private void OnEnable()
+        {
+            foreach (var collider in _cameraPassThrough)
+                if (collider != null) CameraPassThrough.Add(collider);
+        }
+        private void OnDisable()
+        {
+            foreach (var collider in _cameraPassThrough) CameraPassThrough.Remove(collider);
+        }
         public bool Authority => StageOneFlow.Instance != null && StageOneFlow.Instance.Authority;
         private void Start()
         {

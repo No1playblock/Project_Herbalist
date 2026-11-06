@@ -353,7 +353,8 @@ namespace Herbalist.Editor
             }
             var lower=root.GetComponentsInChildren<StageOneDocumentMechanism>().First(m=>m.Kind==StageOneDocumentMechanismKind.LowerBranch);
             Array(lower,"_movingArt",new[]{branch.parent,marker});
-            Set(lower,"_requiredCloth",null);
+            if (root.transform.Find("Coop_4_ReplacementCloth") == null)
+                Set(lower,"_requiredCloth",null);
             var target=(LeafInstallTarget)new SerializedObject(lower).FindProperty("_leafTarget").objectReferenceValue;
             var gate=target.GetComponent<StageOneTargetGate>();if(gate==null)gate=target.gameObject.AddComponent<StageOneTargetGate>();
             Set(gate,"_mechanism",lower);Set(gate,"_requiresCompleted",false);

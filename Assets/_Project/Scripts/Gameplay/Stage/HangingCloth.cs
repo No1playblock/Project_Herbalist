@@ -22,6 +22,9 @@ namespace Herbalist.Levels
         [Header("Optional stage-one authored-art binding")]
         [SerializeField] private Transform _externalVisualRoot;
         [SerializeField] private Transform _externalAnchor;
+        [SerializeField] private StageOneDocumentMechanism _deploymentMechanism;
+        [SerializeField] private Transform _deployedGrip;
+        [SerializeField, Min(0)] private float _releaseGravityOverride;
         [SerializeField] private bool _singleUse;
         [SerializeField, Range(1, 2)] private int _riderCapacity = 2;
         [SerializeField, Min(.01f)] private float _retractSeconds = 1.5f;
@@ -46,10 +49,14 @@ namespace Herbalist.Levels
         private Vector3 _externalRestPosition, _externalRestScale;
         private Quaternion _externalRestRotation;
         private Vector3 _anchorTop, _anchorRest;
+        private Vector3 _anchorGrip;
+        private Vector3 _carriedGripOffset;
         private Quaternion _anchorRotation;
         public bool WasUsed => Online ? Used : _used;
+        public bool HasRetracted => (Online ? Retraction : _retraction) >= 1f;
         private float DeploymentProgress => Online && !HasStateAuthority ? Deployment : _deployment;
-        private bool CanBoard => (_loweringPort == null || DeploymentProgress >= 1f) && (!_singleUse || !WasUsed);
+        private bool CanBoard => (_loweringPort == null || DeploymentProgress >= 1f) &&
+            (_deploymentMechanism == null || _deploymentMechanism.Progress >= 1f) && (!_singleUse || !WasUsed);
         private Vector2 _angles, _velocity, _drive, _heldInput;
         private Vector2 _waterImpulse;
         public bool WaterDriven => _waterDriven;
@@ -112,6 +119,8 @@ namespace Herbalist.Levels
             _restGripOffset = _knot != null ? _knot.position - _fixedVisualTop : Vector3.zero;
             if (_restGripOffset.sqrMagnitude < .0001f)
                 _restGripOffset = transform.TransformVector(Vector3.down * _length);
+            if (_deploymentMechanism != null && _externalAnchor != null)
+                _anchorGrip = _externalAnchor.InverseTransformVector(_restGripOffset);
             if (_loweringPort != null) Present(Vector2.zero, false, Vector3.zero, 0f, Vector2.zero);
         }
         private void OnEnable() => Cloths.Add(this);
@@ -389,8 +398,14 @@ namespace Herbalist.Levels
             {
                 transform.SetPositionAndRotation(_fixedVisualTop, baseRotation);
                 float scale = Mathf.Max(.001f, (1f - (Online && !HasStateAuthority ? Retraction : _retraction)) * extension);
-                _externalVisualRoot.rotation = baseRotation * _externalRestRotation;
-                _externalVisualRoot.position = _fixedVisualTop + baseRotation * (_externalRestPosition - _fixedVisualTop) * scale;
+                var visualRotation = baseRotation;
+                if (_deploymentMechanism != null && _carriedGripOffset.sqrMagnitude > .0001f)
+                {
+                    visualRotation *= Quaternion.FromToRotation(_carriedGripOffset, _restGripOffset);
+                    scale *= _restGripOffset.magnitude / _carriedGripOffset.magnitude;
+                }
+                _externalVisualRoot.rotation = visualRotation * _externalRestRotation;
+                _externalVisualRoot.position = _fixedVisualTop + visualRotation * (_externalRestPosition - _fixedVisualTop) * scale;
                 _externalVisualRoot.localScale = _externalRestScale * scale;
                 _knot.position = knot;
             }
@@ -416,6 +431,12 @@ namespace Herbalist.Levels
             _fixedVisualTop = _externalAnchor.TransformPoint(_anchorTop);
             _externalRestPosition = _externalAnchor.TransformPoint(_anchorRest);
             _externalRestRotation = _externalAnchor.rotation * _anchorRotation;
+            if (_deploymentMechanism != null && _deployedGrip != null)
+            {
+                _carriedGripOffset = _externalAnchor.TransformVector(_anchorGrip);
+                _restGripOffset = Vector3.Lerp(_carriedGripOffset, _deployedGrip.position - _fixedVisualTop,
+                    _deploymentMechanism.Progress);
+            }
         }
         private void SetSegment(Transform segment, Vector3 start, Vector3 end)
         {
@@ -432,8 +453,9 @@ namespace Herbalist.Levels
                                         : Position(_angles + _velocity * .01f, _bendAngles, side) - Position(_angles, _bendAngles, side)) / .01f * _settings.releaseSpeed;
             player.ClearMovementReceiver(this); player.ClearTransport(this); player.Motor.SetMovementLock(this, false); actor.Abilities.SetInputLock(this, false);
             var net = actor.GetComponent<NetworkPlayer>();
-            if (net != null && net.Object != null && net.Object.IsValid && net.HasStateAuthority) { net.SetTransportAuthoritatively(false, actor.transform.position); net.LaunchAuthoritatively(velocity, player.Tuning.gravity, true); }
-            else if (!Online) player.Motor.Launch(velocity, player.Tuning.gravity, true);
+            float gravity = _releaseGravityOverride > 0f ? _releaseGravityOverride : player.Tuning.gravity;
+            if (net != null && net.Object != null && net.Object.IsValid && net.HasStateAuthority) { net.SetTransportAuthoritatively(false, actor.transform.position); net.LaunchAuthoritatively(velocity, gravity, true); }
+            else if (!Online) player.Motor.Launch(velocity, gravity, true);
             _riders[side] = null;
             if (side == 0 && _riders[1] != null)
             {

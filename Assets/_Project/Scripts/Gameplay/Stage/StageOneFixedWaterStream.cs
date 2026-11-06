@@ -14,6 +14,7 @@ namespace Herbalist.Levels
         [SerializeField] private Transform _end;
         [SerializeField] private CapsuleCollider _pushVolume;
         [SerializeField, Min(.01f)] private float _outletWidth = 1.1f;
+        [SerializeField, Min(0)] private float _sprayWidth = 6f;
         [SerializeField, Min(0)] private float _arcRise = 1.6f;
         [SerializeField, Min(0)] private float _arcDrop = 2.2f;
         [SerializeField, Min(0)] private float _pushSpeed = 9f;
@@ -28,7 +29,8 @@ namespace Herbalist.Levels
         private void Awake()
         {
             _presentation = GetComponent<MushroomWaterJetPresentation>();
-            _presentation.Initialize(_presentationSettings, _pushVolume != null ? _outletWidth : 0f);
+            _presentation.Initialize(_presentationSettings, _pushVolume != null ? _outletWidth : 0f,
+                _pushVolume != null ? _sprayWidth : 0f);
         }
         private void LateUpdate()
         {

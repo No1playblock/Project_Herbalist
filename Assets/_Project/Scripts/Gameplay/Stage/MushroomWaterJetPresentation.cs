@@ -13,8 +13,9 @@ namespace Herbalist.Levels
         private Vector3[] _pathPoints;
         private float _flowTime;
         private float _sprayBudget;
+        private float _fanSpread;
 
-        public void Initialize(SapJumpPadSettings settings, float width = 0f)
+        public void Initialize(SapJumpPadSettings settings, float width = 0f, float fanWidth = 0f)
         {
             _settings = settings;
             if (_stream == null || _settings == null) return;
@@ -32,9 +33,11 @@ namespace Herbalist.Levels
             _stream.positionCount = _pathPoints.Length;
             _stream.startWidth = 1f;
             _stream.endWidth = 1f;
-            _stream.widthCurve = AnimationCurve.Constant(0f, 1f, 1f);
-            _stream.widthMultiplier = width > 0f ? width : _settings.waterStreamWidth;
-            _stream.numCapVertices = 5;
+            float mouthWidth = width > 0f ? width : _settings.waterStreamWidth;
+            _stream.widthMultiplier = Mathf.Max(mouthWidth, fanWidth);
+            _stream.widthCurve = AnimationCurve.Linear(0f, mouthWidth / _stream.widthMultiplier, 1f, 1f);
+            _fanSpread = _stream.widthMultiplier - mouthWidth;
+            _stream.numCapVertices = _stream.alignment == LineAlignment.TransformZ ? 0 : 5;
             _stream.numCornerVertices = 4;
             _stream.colorGradient = new Gradient
             {
@@ -93,10 +96,13 @@ namespace Herbalist.Levels
                 if (tangent.sqrMagnitude < .0001f) continue;
                 Vector3 side = Vector3.Cross(tangent, Vector3.up);
                 if (side.sqrMagnitude < .0001f) side = Vector3.Cross(tangent, Vector3.right);
+                side.Normalize();
+                float lateral = Random.Range(-1f, 1f) * _fanSpread * .5f;
+                Vector3 fanOffset = side * lateral * (pathPosition / (_pathPoints.Length - 1));
                 side = Quaternion.AngleAxis(Random.Range(0f, 360f), tangent) * side.normalized;
                 var particle = new ParticleSystem.EmitParams
                 {
-                    position = Vector3.Lerp(_pathPoints[index], _pathPoints[index + 1], pathPosition - index),
+                    position = Vector3.Lerp(_pathPoints[index], _pathPoints[index + 1], pathPosition - index) + fanOffset,
                     velocity = tangent * _settings.waterSprayForwardSpeed +
                         side * Random.Range(_settings.waterSpraySideSpeed.x, _settings.waterSpraySideSpeed.y),
                     startSize = Random.Range(_settings.waterSprayDropSize.x, _settings.waterSprayDropSize.y)
