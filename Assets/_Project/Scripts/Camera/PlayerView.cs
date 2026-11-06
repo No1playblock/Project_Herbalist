@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
+using Herbalist.Levels;
 using Herbalist.Presentation;
 
 namespace Herbalist.Player
@@ -19,6 +21,8 @@ namespace Herbalist.Player
         private float _baseOrthographicSize;
         private float _baseFieldOfView;
         private float _baseFarClipPlane;
+        private bool _basePostProcessing;
+        private bool _stagePostProcessing;
         private CharacterRole _zoomRole = CharacterRole.Sodam;
         private float _zoomMultiplier = 1f;
         private readonly RaycastHit[] _cameraHits = new RaycastHit[16];
@@ -54,6 +58,8 @@ namespace Herbalist.Player
             _baseOrthographicSize = playerCamera.orthographicSize;
             _baseFieldOfView = playerCamera.fieldOfView;
             _baseFarClipPlane = playerCamera.farClipPlane;
+            if (playerCamera.TryGetComponent(out UniversalAdditionalCameraData cameraData))
+                _basePostProcessing = cameraData.renderPostProcessing;
             LoadZoom();
             initialized = true;
             return true;
@@ -129,6 +135,12 @@ namespace Herbalist.Player
             Quaternion target = headRest * tuning.ResolveHeadLook(body.eulerAngles.y, Yaw, Pitch);
             headPivot.localRotation = Quaternion.RotateTowards(headPivot.localRotation, target, tuning.headTurnSpeed * deltaTime);
             if (!playerCamera.enabled) return;
+            bool stagePostProcessing = StageLevel.Instance != null && StageLevel.Instance.PlayerCameraPostProcessing;
+            if (_stagePostProcessing != stagePostProcessing)
+            {
+                _stagePostProcessing = stagePostProcessing;
+                playerCamera.GetUniversalAdditionalCameraData().renderPostProcessing = _basePostProcessing || stagePostProcessing;
+            }
             if (_cameraOverride != null)
             {
                 var mazeFrame = _cameraOverride.GetComponent<MazeCameraFrame>();

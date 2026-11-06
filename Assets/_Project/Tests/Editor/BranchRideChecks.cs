@@ -141,8 +141,9 @@ namespace Herbalist.Editor
                 results.Add("authoritative injection, one activation per burst and re-arm");
                 Reset(flow);Board();OpenAll();
                 var surfaces=Get<LeafInstallTarget[]>(flow,"_leafSurfaces");
-                var leafTarget=surfaces.First(s=>s.transform.position.x<6);
-                var stopPoint=flow.Track[0].Sample(5,out _);var leaf=Install(leafTarget,stopPoint);
+                var stopPoint=flow.Track[0].Sample(5,out _);
+                var leafTarget=surfaces.OrderBy(s=>Vector3.Distance(s.transform.position,stopPoint)).First();
+                var leaf=Install(leafTarget,stopPoint);
                 for(int n=0;n<120;n++)flow.Tick(.02f);
                 Check(flow.PresentationBlockedByLeaf,"path-installed leaf stops carrier");var stopped=flow.Position;
                 flow.Tick(.3f);Check(Vector3.Distance(stopped,flow.Position)<.001f,"stop persists while installed");

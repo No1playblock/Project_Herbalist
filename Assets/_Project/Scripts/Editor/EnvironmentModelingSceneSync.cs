@@ -15,7 +15,7 @@ namespace Herbalist.Editor
     {
         private const string Import = "Assets/_Project/Art/Environments/EnvironmentModelingImport_20261103/";
         private const string Stage2 = "Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Mazes.unity";
-        private const string Stage3 = "Assets/_Project/Scenes/Stages/Stage_03/Stage_03_BranchRide.unity";
+        private const string Stage3 = CurrentStagePaths.BranchRideBlockout;
         private const string Reference2 = "Assets/_Project/Scenes/Stages/Stage_02/Stage_02_EnvironmentModeling_Reference.unity";
         private const string Reference3 = "Assets/_Project/Scenes/Stages/Stage_03/Stage_03_EnvironmentModeling_Reference.unity";
 
