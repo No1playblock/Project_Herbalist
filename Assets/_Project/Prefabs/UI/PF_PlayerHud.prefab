@@ -2914,6 +2914,7 @@ GameObject:
   - component: {fileID: 4391904400509629267}
   - component: {fileID: 4350513366968904656}
   - component: {fileID: 5908113501961775082}
+  - component: {fileID: 3057764384623245846}
   m_Layer: 0
   m_Name: Art_BrewingPotAndFire
   m_TagString: Untagged
@@ -2968,7 +2969,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: f722ccce04217a94c83b7d8337923f25, type: 3}
+  m_Sprite: {fileID: -6180242403929016496, guid: a58f7d793cd73054cbe99569d1a764c4, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -2978,6 +2979,25 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &3057764384623245846
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1407388384756158822}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 994061429f3509549bd5e0afb6a232b3, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.GameUI.BrewingPotRattle
+  _frames:
+  - {fileID: -6180242403929016496, guid: a58f7d793cd73054cbe99569d1a764c4, type: 3}
+  - {fileID: -4099002928545584888, guid: a58f7d793cd73054cbe99569d1a764c4, type: 3}
+  - {fileID: 757537607423794705, guid: a58f7d793cd73054cbe99569d1a764c4, type: 3}
+  - {fileID: -7390250674825472830, guid: a58f7d793cd73054cbe99569d1a764c4, type: 3}
+  _framesPerSecond: 14
+  _rattleSeconds: 0.55
 --- !u!1 &1421761457147787904
 GameObject:
   m_ObjectHideFlags: 0
@@ -18690,6 +18710,7 @@ MonoBehaviour:
   body: {fileID: 979877758143582260}
   progress: {fileID: 167322625833762428}
   brewingHud: {fileID: 5565832028324923744}
+  _potRattle: {fileID: 3057764384623245846}
   brewingGaugeFill: {fileID: 4950371814549536586}
   targetTemperatureBand: {fileID: 2018508445973852693}
   currentTemperatureMarker: {fileID: 6189479380755070555}

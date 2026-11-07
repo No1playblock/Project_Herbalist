@@ -16,6 +16,7 @@ namespace Herbalist.GameUI
         [SerializeField] private TMP_Text body;
         [SerializeField] private TMP_Text progress;
         [SerializeField] private GameObject brewingHud;
+        [SerializeField] private BrewingPotRattle _potRattle;
         [SerializeField] private Image brewingGaugeFill;
         [SerializeField] private RectTransform targetTemperatureBand;
         [SerializeField] private RectTransform currentTemperatureMarker;
@@ -40,6 +41,8 @@ namespace Herbalist.GameUI
                 view != null && view.GetComponent<PlayerController>().LocallyControlled;
             bool gathering = visible && flow.Minigame == StageMinigameKind.Gathering;
             bool crafting = visible && flow.Minigame == StageMinigameKind.Crafting;
+            if (_potRattle != null)
+                _potRattle.Present(flow, crafting ? view.GetComponent<StageActor>() : null, crafting);
             if (_screen != null && _craftingViewOverride != crafting)
             {
                 _screen.SetOverride(this, crafting ? PlayScreenMode.Personal : (PlayScreenMode?)null);
