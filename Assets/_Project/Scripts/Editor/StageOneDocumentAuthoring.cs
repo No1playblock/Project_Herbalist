@@ -265,7 +265,7 @@ namespace Herbalist.Editor
             var root=scene.GetRootGameObjects().First(x=>x.name=="Stage1_DocumentGimmicks").transform;
             foreach (var source in scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<Herbalist.StageOne.HerbSource>(true)))
             {
-                var art=scene.GetRootGameObjects().First(x=>x.name==(source.name.StartsWith("Leaf") ? "herb" : "flower"));
+                var art=scene.GetRootGameObjects().First(x=>x.name==(source.name.StartsWith("Leaf") ? "herb" : "ground_flower"));
                 var nearest=art.GetComponentsInChildren<Renderer>(true).Where(r=>r.enabled).OrderBy(r=>Vector3.Distance(r.bounds.center,art.transform.position)).First();
                 var lod=nearest.GetComponentInParent<LODGroup>();
                 source.visual=lod!=null?lod.gameObject:nearest.gameObject;
