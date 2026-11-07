@@ -14,8 +14,12 @@ namespace Herbalist.Levels
         private float _flowTime;
         private float _sprayBudget;
         private float _fanSpread;
+        private const int ConeSides = 12;
+        private Mesh _cone;
+        private Vector3[] _coneVertices;
+        private float _coneMouth;
 
-        public void Initialize(SapJumpPadSettings settings, float width = 0f, float fanWidth = 0f)
+        public void Initialize(SapJumpPadSettings settings, float width = 0f, float fanWidth = 0f, bool conical = false)
         {
             _settings = settings;
             if (_stream == null || _settings == null) return;
@@ -44,6 +48,7 @@ namespace Herbalist.Levels
                 colorKeys = new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
                 alphaKeys = new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) }
             };
+            if (conical) InitializeCone(mouthWidth);
         }
 
         internal static Vector3 PathPoint(Vector3 start, Vector3 end, float t, float rise, float drop)
@@ -73,8 +78,60 @@ namespace Herbalist.Levels
                     + side * (Mathf.Sin(phase) * sway * envelope)
                     + lift * (Mathf.Sin(phase * .73f + 1.2f) * sway * .34f * envelope);
             }
-            _stream.SetPositions(_pathPoints);
+            if (_cone == null) _stream.SetPositions(_pathPoints);
+            else PresentCone(side, lift);
             PresentDroplets(dt);
+        }
+
+        private void InitializeCone(float mouthWidth)
+        {
+            _coneMouth = mouthWidth;
+            _stream.enabled = false;
+            if (_cone != null) return;
+            _cone = new Mesh { name = "Conical water spray" };
+            _cone.MarkDynamic();
+            _coneVertices = new Vector3[_pathPoints.Length * (ConeSides + 1)];
+            var uv = new Vector2[_coneVertices.Length];
+            var triangles = new int[(_pathPoints.Length - 1) * ConeSides * 6];
+            int index = 0;
+            for (int ring = 0; ring < _pathPoints.Length; ring++)
+            for (int side = 0; side <= ConeSides; side++)
+            {
+                int a = ring * (ConeSides + 1) + side;
+                uv[a] = new Vector2((float)ring / (_pathPoints.Length - 1), (float)side / ConeSides);
+                if (ring == _pathPoints.Length - 1 || side == ConeSides) continue;
+                int b = a + ConeSides + 1;
+                triangles[index++] = a; triangles[index++] = a + 1; triangles[index++] = b;
+                triangles[index++] = a + 1; triangles[index++] = b + 1; triangles[index++] = b;
+            }
+            _cone.vertices = _coneVertices;
+            _cone.uv = uv;
+            _cone.triangles = triangles;
+            var spray = new GameObject("Conical Water Mesh", typeof(MeshFilter), typeof(MeshRenderer));
+            spray.layer = gameObject.layer;
+            spray.transform.SetParent(transform, false);
+            spray.GetComponent<MeshFilter>().sharedMesh = _cone;
+            var renderer = spray.GetComponent<MeshRenderer>();
+            renderer.sharedMaterial = _stream.sharedMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+
+        private void PresentCone(Vector3 side, Vector3 lift)
+        {
+            var worldToLocal = transform.worldToLocalMatrix;
+            for (int ring = 0; ring < _pathPoints.Length; ring++)
+            {
+                float radius = (_coneMouth + _fanSpread * ring / (_pathPoints.Length - 1)) * .5f;
+                for (int edge = 0; edge <= ConeSides; edge++)
+                {
+                    float angle = edge * (2f * Mathf.PI / ConeSides);
+                    var point = _pathPoints[ring] + radius * (Mathf.Cos(angle) * side + Mathf.Sin(angle) * lift);
+                    _coneVertices[ring * (ConeSides + 1) + edge] = worldToLocal.MultiplyPoint3x4(point);
+                }
+            }
+            _cone.vertices = _coneVertices;
+            _cone.RecalculateNormals();
+            _cone.RecalculateBounds();
         }
 
         private void PresentDroplets(float dt)
@@ -97,8 +154,9 @@ namespace Herbalist.Levels
                 Vector3 side = Vector3.Cross(tangent, Vector3.up);
                 if (side.sqrMagnitude < .0001f) side = Vector3.Cross(tangent, Vector3.right);
                 side.Normalize();
+                Vector3 fanDirection = _cone != null ? Quaternion.AngleAxis(Random.Range(0f, 360f), tangent) * side : side;
                 float lateral = Random.Range(-1f, 1f) * _fanSpread * .5f;
-                Vector3 fanOffset = side * lateral * (pathPosition / (_pathPoints.Length - 1));
+                Vector3 fanOffset = fanDirection * lateral * (pathPosition / (_pathPoints.Length - 1));
                 side = Quaternion.AngleAxis(Random.Range(0f, 360f), tangent) * side.normalized;
                 var particle = new ParticleSystem.EmitParams
                 {
@@ -116,6 +174,11 @@ namespace Herbalist.Levels
             _sprayBudget = 0f;
             if (_sprayDroplets != null)
                 _sprayDroplets.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+
+        private void OnDestroy()
+        {
+            if (_cone != null) Destroy(_cone);
         }
     }
 }

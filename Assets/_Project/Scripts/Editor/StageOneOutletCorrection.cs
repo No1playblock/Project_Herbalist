@@ -50,21 +50,21 @@ namespace Herbalist.Editor
             AssetDatabase.CreateAsset(_flowSettings, "Assets/_Project/Data/Stages/Stage_01/" + _flowSettings.name + ".asset");
             var correction = New("OutletCorrections_20261104", root, Vector3.zero);
 
-            // Photo 1: left opening takes the leaf; the former wrong jet opening takes water.
+            // Photo 1: upper opening takes the leaf and the lower opening takes water.
             var wrong = root.Find("Leaf_1_BlockingEruption");
             var wrongMechanism = wrong.GetComponent<StageOneDocumentMechanism>();
             var oldPlug = Read<LeafInstallTarget>(wrongMechanism, "_leafTarget");
-            var rightOpening = oldPlug.SocketPosition;
+            var upperOpening = oldPlug.SocketPosition;
             var leftSource = all.First(t => t.name == "WallWaterInlet (2)").GetComponent<SapInjectionPort>();
-            Vector3 leftOpening = leftSource.InteractionPoint;
+            Vector3 lowerOpening = leftSource.InteractionPoint;
             wrong.gameObject.SetActive(false);
-            var pair = New("Photo1_Branch_LeftLeaf_RightWater", correction, leftOpening);
+            var pair = New("Photo1_Branch_UpperLeaf_LowerWater", correction, upperOpening);
             pair.gameObject.AddComponent<NetworkObject>(); var pad = pair.gameObject.AddComponent<ExteriorJumpPad>();
-            var target = Target("LeftHole_LeafLaunchSocket", leftOpening, Vector3.up, pair, true);
-            var inlet = New("RightHole_WaterInlet", pair, rightOpening).gameObject.AddComponent<SapInjectionPort>();
+            var target = Target("UpperHole_LeafLaunchSocket", upperOpening, Vector3.up, pair, true);
+            var inlet = New("LowerHole_WaterInlet", pair, lowerOpening).gameObject.AddComponent<SapInjectionPort>();
             var inletHit = inlet.gameObject.AddComponent<SphereCollider>(); inletHit.radius = 1.1f;
-            var aim = New("InjectionAimPoint", inlet.transform, rightOpening + Vector3.up * .35f); Set(inlet, "_aimPoint", aim);
-            var jet = New("LeftHole_LaunchWaterJet", pair, leftOpening).gameObject;
+            var aim = New("InjectionAimPoint", inlet.transform, lowerOpening + Vector3.up * .35f); Set(inlet, "_aimPoint", aim);
+            var jet = New("UpperHole_LaunchWaterJet", pair, upperOpening).gameObject;
             var line = jet.AddComponent<LineRenderer>(); line.sharedMaterial = _water;
             Set(jet.AddComponent<MushroomWaterJetPresentation>(), "_stream", line); jet.SetActive(false);
             Set(pad, "_settings", AssetDatabase.LoadAssetAtPath<SapJumpPadSettings>("Assets/_Project/Data/Stages/Stage_01/SO_ModelingMushroomJumpPad.asset"));

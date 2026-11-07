@@ -30,7 +30,7 @@ namespace Herbalist.Levels
         {
             _presentation = GetComponent<MushroomWaterJetPresentation>();
             _presentation.Initialize(_presentationSettings, _pushVolume != null ? _outletWidth : 0f,
-                _pushVolume != null ? _sprayWidth : 0f);
+                _pushVolume != null ? _sprayWidth : 0f, conical: _pushVolume != null);
         }
         private void LateUpdate()
         {

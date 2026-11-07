@@ -160,9 +160,9 @@ namespace Herbalist.Editor
             level.abilityRules = rules; EditorUtility.SetDirty(rules); EditorUtility.SetDirty(leaf);
             var cube = At("Tree_playobject/Cube");
             var c1 = Cloth("Coop_1_SingleUseCloth", At("movefabric (2)"), false);
-            Cloth("Coop_2_WaterCloth", At("Tree_playobject/movefabric (1)"), true);
+            Cloth("Coop_2_WaterCloth", At("Tree_playobject/movefabric (1)"), false);
             Cloth("Coop_4_SingleUseCloth", At("Tree_playobject/movefabric (4)"), false, cube);
-            Cloth("Coop_5_WaterCloth", At("Tree_playobject/movefabric (3)"), true);
+            Cloth("Coop_5_WaterCloth", At("Tree_playobject/movefabric (3)"), false);
 
             var mushrooms = _original.Select(t => t.GetComponent<MeshRenderer>()).Where(r => r != null && r.enabled && r.gameObject.activeInHierarchy &&
                 (r.name.StartsWith("03_Mushroom") || r.name.StartsWith("04_Musroom") || r.name.StartsWith("MushroomVisual")) && r.GetComponent<MeshFilter>().sharedMesh != null).ToArray();
@@ -265,7 +265,7 @@ namespace Herbalist.Editor
             var root=scene.GetRootGameObjects().First(x=>x.name=="Stage1_DocumentGimmicks").transform;
             foreach (var source in scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<Herbalist.StageOne.HerbSource>(true)))
             {
-                var art=scene.GetRootGameObjects().First(x=>x.name==(source.name.StartsWith("Leaf") ? "flower" : "herb"));
+                var art=scene.GetRootGameObjects().First(x=>x.name==(source.name.StartsWith("Leaf") ? "herb" : "flower"));
                 var nearest=art.GetComponentsInChildren<Renderer>(true).Where(r=>r.enabled).OrderBy(r=>Vector3.Distance(r.bounds.center,art.transform.position)).First();
                 var lod=nearest.GetComponentInParent<LODGroup>();
                 source.visual=lod!=null?lod.gameObject:nearest.gameObject;
