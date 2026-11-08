@@ -110,6 +110,13 @@ namespace Herbalist.Editor
                 for(int i=0;i<2;i++)actors[i].GetComponent<PlayerController>().Motor.Teleport(respawns[i].position);
                 Check(BranchRideFlow.TryBoard(actors[0],out _),"first rider boards");
                 Check(BranchRideFlow.TryBoard(actors[1],out _),"second rider boards");
+                Check(flow.CurrentPhase==BranchRidePhase.Boarding,"paired riders wait for boarding animations");
+                var before=flow.Position;
+                float delay=Get<float[]>(flow,"_boardingRemaining").Max();
+                flow.Tick(Mathf.Max(0,delay-.01f));
+                Check(flow.CurrentPhase==BranchRidePhase.Boarding&&Vector3.Distance(before,flow.Position)<.001f,"no departure before the last boarding animation finishes");
+                flow.Tick(.03f);
+                Check(flow.CurrentPhase==BranchRidePhase.Riding,"departure follows boarding animations");
             }
             void OpenAll()
             {foreach(var toggle in switches)toggle.Port.Inject(.3f);flow.Tick(.8f);}
@@ -121,6 +128,14 @@ namespace Herbalist.Editor
             }
             try
             {
+                Reset(flow);
+                for(int i=0;i<2;i++)actors[i].GetComponent<PlayerController>().Motor.Teleport(respawns[i].position);
+                int priorFailures=flow.FailureCount;
+                actors[0].GetComponent<PlayerController>().Motor.Teleport(respawns[0].position+Vector3.down*(Get<float>(flow,"_unmountedFallMargin")+1));
+                flow.Tick(.02f);
+                Check(Vector3.Distance(actors[0].transform.position,respawns[0].position)<.1f,"unmounted fall restores the fallen actor");
+                Check(Vector3.Distance(actors[1].transform.position,respawns[1].position)<.1f&&flow.FailureCount==priorFailures,"unmounted fall preserves the partner and ride state");
+                results.Add("unmounted fall recovery without resetting partner");
                 Reset(flow);
                 actors[0].GetComponent<PlayerController>().Motor.Teleport(respawns[0].position);
                 Check(BranchRideFlow.TryBoard(actors[0],out _),"first rider accepted");var before=flow.Position;flow.Tick(1);
@@ -144,6 +159,9 @@ namespace Herbalist.Editor
                 var stopPoint=flow.Track[0].Sample(5,out _);
                 var leafTarget=surfaces.OrderBy(s=>Vector3.Distance(s.transform.position,stopPoint)).First();
                 var leaf=Install(leafTarget,stopPoint);
+                var renderers=leaf.GetComponentsInChildren<Renderer>();
+                Check(renderers.Any(r=>r.enabled&&r.gameObject.activeInHierarchy),"installed leaf has active visible renderer");
+                Check(renderers.All(r=>r.bounds.size.magnitude<40),"installed leaf does not use obsolete hundredfold scale");
                 for(int n=0;n<120;n++)flow.Tick(.02f);
                 Check(flow.PresentationBlockedByLeaf,"path-installed leaf stops carrier");var stopped=flow.Position;
                 flow.Tick(.3f);Check(Vector3.Distance(stopped,flow.Position)<.001f,"stop persists while installed");

@@ -35,6 +35,8 @@ namespace Herbalist.Levels
         [SerializeField, Min(.1f)] private float _collisionRadius = 1.1f;
         [SerializeField, Min(.1f)] private float _dropGravity = 14;
         [SerializeField, Min(.1f)] private float _failureDuration = 1.1f;
+        [SerializeField, Min(0)] private float _boardingAnimationGraceSeconds = .15f;
+        [SerializeField, Min(.1f)] private float _unmountedFallMargin = 8f;
         [SerializeField] private Vector3[] _riderOffsets = { new(-1.5f, .25f, 0), new(1.5f, .25f, 0) };
         [SerializeField] private string _boardText = "부적에 탑승했습니다. 두 명이 탑승하면 출발합니다.";
         [SerializeField] private string _waitingText = "두 명 모두 E로 부적에 탑승하세요.";
@@ -55,6 +57,7 @@ namespace Herbalist.Levels
         [Networked] private int Failures { get; set; }
         private static readonly HashSet<BranchRideFlow> Active = new();
         private readonly StageActor[] _riders = new StageActor[2];
+        private readonly float[] _boardingRemaining = new float[2];
         private readonly List<LeafProjectile> _leaves = new();
         private int _mask, _segment, _branchMask, _failures;
         private float _distance, _stoneClock, _fallTime, _failureBanner;
@@ -109,8 +112,14 @@ namespace Herbalist.Levels
                 if (controller == null || controller.Motor.MovementLocked) continue;
                 flow._riders[slot] = actor;
                 flow._mask |= 1 << slot;
+                var animation = actor.GetComponent<SodamAnimationPresentation>();
+                var profile = animation != null ? animation.Profile : null;
+                float boarding = profile?.Find(SodamPose.TalismanBoard)?.durationSeconds ?? 0;
+                var character = actor.GetComponent<PlayerCharacterPresentation>();
+                if (character != null && !character.IsSodamActive)
+                    boarding += profile?.Find(SodamPose.TalismanKneel)?.durationSeconds ?? 0;
+                flow._boardingRemaining[slot] = boarding + flow._boardingAnimationGraceSeconds;
                 flow.Carry(actor, slot);
-                if (flow._mask == 3) flow._phase = BranchRidePhase.Riding;
                 flow.Publish();
                 feedback = flow._boardText;
                 return true;
@@ -128,6 +137,7 @@ namespace Herbalist.Levels
         public void Tick(float dt)
         {
             if (!Authority || !Configured || Herbalist.GameUI.GameplayPause.IsPaused || dt <= 0) return;
+            RecoverUnmountedActors();
             while (dt > 0) { float step = Mathf.Min(.02f, dt); Simulate(step); dt -= step; }
             Publish();
         }
@@ -150,7 +160,14 @@ namespace Herbalist.Levels
                 _turns[i] = Mathf.MoveTowards(_turns[i], (_branchMask & (1 << i)) != 0 ? 1 : 0, dt / _switches[i].RotationDuration);
                 _switches[i].Present(_turns[i]);
             }
-            if (_phase != BranchRidePhase.Riding) { CarryRiders(); return; }
+            if (_phase != BranchRidePhase.Riding)
+            {
+                for (int i = 0; i < 2; i++) _boardingRemaining[i] = Mathf.Max(0, _boardingRemaining[i] - dt);
+                CarryRiders();
+                if (_mask == 3 && _boardingRemaining[0] <= 0 && _boardingRemaining[1] <= 0)
+                    _phase = BranchRidePhase.Riding;
+                return;
+            }
             GatherLeaves();
             Vector3 previous = _carrierPosition;
             _blocked = false;
@@ -159,6 +176,19 @@ namespace Herbalist.Levels
             _stoneClock += dt;
             if (_phase == BranchRidePhase.Riding) ResolveStones(previousClock, previous);
             CarryRiders();
+        }
+        private void RecoverUnmountedActors()
+        {
+            if (_phase == BranchRidePhase.Complete || _respawns == null) return;
+            foreach (var actor in StageActor.All)
+            {
+                if (actor == null || !actor.Available || actor.Slot < 0 || actor.Slot >= _respawns.Length) continue;
+                int slot = actor.Slot;
+                if (_riders[slot] == actor || _respawns[slot] == null ||
+                    actor.transform.position.y >= _respawns[slot].position.y - _unmountedFallMargin) continue;
+                actor.Abilities?.Sap?.Cancel();
+                Teleport(actor, _respawns[slot].position);
+            }
         }
         private void GatherLeaves()
         {
@@ -263,6 +293,7 @@ namespace Herbalist.Levels
             GatherLeaves(); foreach (var leaf in _leaves) if (leaf != null) leaf.Finish();
             if (failure) { _failures++; _failureBanner = 4; }
             _mask = _segment = _branchMask = 0; _distance = _stoneClock = _fallTime = 0;
+            System.Array.Clear(_boardingRemaining, 0, _boardingRemaining.Length);
             _phase = BranchRidePhase.Boarding; _turns = Vector4.zero; _blocked = false;
             foreach (var toggle in _switches) { toggle.ResetInput(); toggle.Present(0); }
             _carrierPosition = _track[0].Sample(0, out var heading) + Vector3.up * _carrierHeight;
