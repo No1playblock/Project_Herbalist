@@ -63,7 +63,7 @@ MonoBehaviour:
     clips:
     - {fileID: 8300000, guid: 99d2002230d5d5c4fa171b1583e2fe88, type: 3}
     lightClip: {fileID: 0}
-    volume: 0.5
+    volume: 0.175
     spatialBlend: 0
     minDistance: 5
     maxDistance: 100
@@ -151,12 +151,7 @@ MonoBehaviour:
   - id: 10
     label: "\uD759\uBC14\uB2E5 \uBC1C\uC18C\uB9AC"
     clips:
-    - {fileID: 8300000, guid: 8c611024ec10c4549becec164beef3cb, type: 3}
-    - {fileID: 8300000, guid: 4ee7657bfcf6cf049afbd1b964a771ef, type: 3}
-    - {fileID: 8300000, guid: dc36ddfc91e859144b76c585925a64d1, type: 3}
-    - {fileID: 8300000, guid: 71bd6232748bb3c469991043556e6dd3, type: 3}
-    - {fileID: 8300000, guid: 2bf375a4f48521646a65f552171269fc, type: 3}
-    - {fileID: 8300000, guid: 0dd4a42ba70472c45b623750c94108b8, type: 3}
+    - {fileID: 8300000, guid: add9405c85672684b8dc17fcdddd1124, type: 3}
     lightClip: {fileID: 0}
     volume: 0.5
     spatialBlend: 1
@@ -211,9 +206,9 @@ MonoBehaviour:
   - id: 13
     label: "\uC18C\uB2F4 \uC810\uD504 \uB3C4\uC57D"
     clips:
-    - {fileID: 8300000, guid: 0c714a0653843c348bc04d278be3fc1d, type: 3}
+    - {fileID: 8300000, guid: 74de8d98ce283bf4485426734cfd3501, type: 3}
     lightClip: {fileID: 0}
-    volume: 0.3
+    volume: 0.15
     spatialBlend: 1
     minDistance: 5
     maxDistance: 100
@@ -228,7 +223,7 @@ MonoBehaviour:
     clips:
     - {fileID: 8300000, guid: 9178310bdd0401f4c8fe9de3ba370da9, type: 3}
     lightClip: {fileID: 0}
-    volume: 0.3
+    volume: 0.15
     spatialBlend: 1
     minDistance: 5
     maxDistance: 100
@@ -241,8 +236,8 @@ MonoBehaviour:
   - id: 15
     label: "\uD759 \uCC29\uC9C0"
     clips:
-    - {fileID: 8300000, guid: f6ab9f2df8f98d643bd6298bb32c851e, type: 3}
-    lightClip: {fileID: 8300000, guid: dee131889bed4fa4d8cd4ae527aafdc4, type: 3}
+    - {fileID: 8300000, guid: 438ae54719a2c4945954bb075d8d9534, type: 3}
+    lightClip: {fileID: 0}
     volume: 0.5
     spatialBlend: 1
     minDistance: 5
@@ -318,7 +313,7 @@ MonoBehaviour:
     clips:
     - {fileID: 8300000, guid: e65e4790f171c6844989d8a62034b13d, type: 3}
     lightClip: {fileID: 0}
-    volume: 0.5
+    volume: 0.125
     spatialBlend: 0
     minDistance: 5
     maxDistance: 100
@@ -333,7 +328,7 @@ MonoBehaviour:
     clips:
     - {fileID: 8300000, guid: ad4c97bcd8feee3438f4af922a774eb3, type: 3}
     lightClip: {fileID: 0}
-    volume: 0.5
+    volume: 0.25
     spatialBlend: 0
     minDistance: 5
     maxDistance: 100
@@ -408,11 +403,11 @@ MonoBehaviour:
     clips:
     - {fileID: 8300000, guid: 207a9b2f86360384982738e748648a54, type: 3}
     lightClip: {fileID: 0}
-    volume: 0.5
+    volume: 0.175
     spatialBlend: 0
     minDistance: 5
     maxDistance: 100
-    cooldown: 0.12
+    cooldown: 0
     pitchRange: {x: 0.97, y: 1.03}
     loop: 0
     pauseWithGameplay: 1
@@ -453,7 +448,7 @@ MonoBehaviour:
     clips:
     - {fileID: 8300000, guid: 22f8fd51d713a854a872deb20054fd0f, type: 3}
     lightClip: {fileID: 0}
-    volume: 0.5
+    volume: 0.175
     spatialBlend: 1
     minDistance: 5
     maxDistance: 100
@@ -498,7 +493,7 @@ MonoBehaviour:
     clips:
     - {fileID: 8300000, guid: 2e40122d641c23d429c8a7b61452681b, type: 3}
     lightClip: {fileID: 0}
-    volume: 0.5
+    volume: 0.065
     spatialBlend: 1
     minDistance: 5
     maxDistance: 100
@@ -886,6 +881,8 @@ MonoBehaviour:
   footstepSoundId: 10
   fallingWindEnabled: 0
   stepDistanceInHeights: 0.4
+  footContactInHeights: 0.025
+  footLiftInHeights: 0.05
   movementThreshold: 0.15
   strongLandingSpeed: 8
   fallingWindSpeed: 8

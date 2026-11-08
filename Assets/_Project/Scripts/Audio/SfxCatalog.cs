@@ -31,7 +31,11 @@ namespace Herbalist.Audio
         [Tooltip("Shared walking sound for every ground surface.")]
         public int footstepSoundId = 10;
         public bool fallingWindEnabled;
-        [Min(.05f)] public float stepDistanceInHeights = .4f;
+        [HideInInspector, Min(.05f)] public float stepDistanceInHeights = .4f; // Legacy serialized compatibility.
+        [Tooltip("Foot sole distance from ground, relative to controller height, for a footfall.")]
+        [Min(.001f)] public float footContactInHeights = .025f;
+        [Tooltip("A planted foot must lift this far before another footfall is allowed.")]
+        [Min(.001f)] public float footLiftInHeights = .05f;
         [Min(.01f)] public float movementThreshold = .15f;
         [Min(.1f)] public float strongLandingSpeed = 8;
         [Min(.1f)] public float fallingWindSpeed = 8;
