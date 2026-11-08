@@ -56,6 +56,16 @@ namespace Herbalist.Abilities
             oldest.BeginReturn();
             return true;
         }
+        public void RecallAll()
+        {
+            // Cancel delayed throws so an old maze cannot receive a new leaf after clear.
+            _preparingThrow = false; _preparationRemaining = 0;
+            _preparedSocket = _pendingSocket = null;
+            _socketThrow = _pendingSocketThrow = false;
+            pendingThrow = false; pendingRecovery = null; Recovering = false;
+            foreach (var leaf in leaves)
+                if (leaf != null) leaf.BeginReturn();
+        }
         public uint FeedbackSequence { get; private set; }
         public uint CatchSequence { get; private set; }
         public float CatchElapsed { get; private set; }

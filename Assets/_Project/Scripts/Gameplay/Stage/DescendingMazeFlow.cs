@@ -176,6 +176,8 @@ namespace Herbalist.Levels
                 }
                 if (_mazes[_current].State.Phase == MazePhase.Solved)
                 {
+                    foreach (var actor in StageActor.All)
+                        if (actor != null) actor.Abilities?.Leaf?.RecallAll();
                     _mazes[_current].SetPlayable(false);
                     if (_current == _mazes.Length - 1) _current = _mazes.Length;
                     else
