@@ -58,8 +58,15 @@ namespace Herbalist.Abilities
         }
         public uint FeedbackSequence { get; private set; }
         public uint CatchSequence { get; private set; }
+        public float CatchElapsed { get; private set; }
         public void ApplyCatchSequence(uint sequence) => CatchSequence = sequence;
-        private void OnCatchApproaching() => CatchSequence++;
+        public void ApplyCatchPresentation(uint sequence, float elapsed)
+        { CatchSequence = sequence; CatchElapsed = elapsed; }
+        private void OnCatchApproaching(float remainingSeconds)
+        {
+            CatchSequence++;
+            CatchElapsed = Mathf.Max(0f, settings.catchAnticipationSeconds - remainingSeconds);
+        }
         public bool RangeRejected { get; private set; }
         private void Awake()
         {
@@ -80,6 +87,7 @@ namespace Herbalist.Abilities
             if (Herbalist.GameUI.GameplayPause.IsPaused) return;
             cooldown = Mathf.Max(0, cooldown - dt);
             ThrowElapsed += dt;
+            CatchElapsed += dt;
             if (pendingThrow) pendingAim = aim;
             if (_preparingThrow)
             {

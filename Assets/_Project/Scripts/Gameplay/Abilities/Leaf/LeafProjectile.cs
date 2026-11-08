@@ -22,7 +22,7 @@ namespace Herbalist.Abilities
         private float _returnElapsed, _flightSpinAngle;
         private bool _turningAfterMiss;
         private bool _catchAnnounced;
-        public event Action CatchApproaching;
+        public event Action<float> CatchApproaching;
         private bool initialized, externalTick;
         private Vector3 _installedVisualScale;
         private bool _visualScaleCaptured;
@@ -133,7 +133,7 @@ namespace Herbalist.Abilities
                 if (!_catchAnnounced && untilCatch <= settings.catchAnticipationSeconds + dt)
                 {
                     _catchAnnounced = true;
-                    CatchApproaching?.Invoke();
+                    CatchApproaching?.Invoke(Mathf.Max(0f, untilCatch - dt));
                 }
                 Vector3 next = Vector3.MoveTowards(transform.position, catchPoint, speed * dt);
                 Vector3 delta = next - transform.position;

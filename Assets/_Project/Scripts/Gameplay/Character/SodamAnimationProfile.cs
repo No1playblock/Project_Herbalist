@@ -10,7 +10,7 @@ namespace Herbalist.Player
         Drink, Pass, Receive, Sap, LeafThrow, LeafCatch,
         ClothGrab, ClothHang, ClothFall, ClothHardLand, ClothSwingLand,
         TalismanBoard, TalismanSit, TalismanSap, TalismanThrow, TalismanCatch,
-        IdleCameraMoving
+        IdleCameraMoving, GatherSuccess, GatherFailRise, GatherFailWipe, TalismanKneel
     }
 
     [Serializable]

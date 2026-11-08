@@ -39,28 +39,32 @@ namespace Herbalist.Editor
                 Field(presentation, "_character", character); Field(presentation, "_animator", animator);
                 Field(presentation, "_abilities", abilities); Field(presentation, "_restVisualPosition", model.transform.localPosition);
                 Field(presentation, "_profile", AssetDatabase.LoadAssetAtPath<SodamAnimationProfile>("Assets/_Project/Data/Characters/SO_SodamAnimationProfile.asset"));
+                Field(presentation, "_duyeongProfile", AssetDatabase.LoadAssetAtPath<SodamAnimationProfile>("Assets/_Project/Data/Characters/SO_DuyeongAnimationProfile.asset"));
                 var update = typeof(SodamAnimationPresentation).GetMethod("UpdateDuyeongAbilities", BindingFlags.Instance | BindingFlags.NonPublic);
                 Action tick = () => update.Invoke(presentation, null);
                 animator.SetBool("Grounded", true); animator.SetFloat("Speed", 0f); animator.SetFloat("PlaybackDirection", 1f);
                 tick();
                 Field(leaf, "<ThrowSequence>k__BackingField", 1u); tick(); animator.Update(.2f);
-                Check(presentation.CurrentPose == SodamPose.LeafThrow && animator.GetCurrentAnimatorStateInfo(0).IsName("Base Layer.sodam_throw"), "throw sequence drives Duyeong animation");
+                Check(presentation.CurrentPose == SodamPose.LeafThrow && animator.GetCurrentAnimatorStateInfo(0).IsName("Base Layer.dy_throw"), "throw sequence drives Duyeong animation");
                 Field(leaf, "<CatchSequence>k__BackingField", 1u); tick(); animator.Update(.2f);
                 int leg = animator.GetLayerIndex("leg");
-                Check(presentation.CurrentPose == SodamPose.LeafCatch && animator.GetCurrentAnimatorStateInfo(0).IsName("Base Layer.sodam_catch"), "catch sequence drives Duyeong animation");
+                Check(presentation.CurrentPose == SodamPose.LeafCatch && animator.GetCurrentAnimatorStateInfo(0).IsName("Base Layer.dy_catch"), "catch sequence drives Duyeong animation");
                 Check(animator.GetLayerWeight(leg) == 1f && animator.GetCurrentAnimatorStateInfo(leg).IsName("leg.Idle"), "standing catch keeps idle legs");
+                // This Edit-mode check advances Animator manually, independently of Time.deltaTime.
+                Field(presentation, "_oneShotRemaining", 10f);
                 var foot = animator.GetBoneTransform(HumanBodyBones.LeftFoot);
                 var footPosition = model.transform.InverseTransformPoint(foot.position);
                 var upper = animator.GetCurrentAnimatorStateInfo(0);
                 for (int i = 0; i < 15; i++) { tick(); animator.Update(.02f); }
-                Check(Vector3.Distance(footPosition, model.transform.InverseTransformPoint(foot.position)) < .035f, "standing foot does not stride");
+                float footMovement = Vector3.Distance(footPosition, model.transform.InverseTransformPoint(foot.position));
+                Check(footMovement < .035f, "standing foot does not stride (" + footMovement + ", pose=" + presentation.CurrentPose + ")");
                 Check(animator.GetCurrentAnimatorStateInfo(0).normalizedTime > upper.normalizedTime, "catch continues without restart");
                 animator.SetFloat("Speed", 3f); tick(); animator.Update(.2f);
                 Check(animator.GetCurrentAnimatorStateInfo(leg).IsName("leg.Run"), "moving catch runs");
-                animator.SetBool("Grounded", false); tick(); animator.Update(.1f);
+                animator.SetBool("Grounded", false); tick(); animator.Update(.2f);
                 Check(animator.GetCurrentAnimatorStateInfo(leg).IsName("leg.sodam_lower_jump"), "airborne catch uses jump legs");
                 sap.ApplyReplica(true, true, true, true); tick(); animator.Update(.2f);
-                Check(presentation.CurrentPose == SodamPose.Sap && animator.GetCurrentAnimatorStateInfo(0).IsName("Base Layer.water_cannon"), "spray replaces catch with water pose");
+                Check(presentation.CurrentPose == SodamPose.Sap && animator.GetCurrentAnimatorStateInfo(animator.GetLayerIndex("right_arm")).IsName("right_arm.water_cannon"), "spray replaces catch with water pose");
                 sap.ApplyReplica(false, false); animator.SetBool("Grounded", true); animator.SetFloat("Speed", 0f); tick(); animator.Update(.3f);
                 Check(presentation.CurrentPose == null && animator.GetCurrentAnimatorStateInfo(0).IsName("Base Layer.Idle") && animator.GetLayerWeight(leg) == 0f, "spray stop restores Duyeong locomotion and releases overlay");
                 animator.SetFloat("Speed", 3f); animator.Update(.2f); animator.Update(.2f);
