@@ -10,14 +10,20 @@ namespace Herbalist.GameUI
         [SerializeField] private Sprite[] _frames;
         [SerializeField, Min(1f)] private float _framesPerSecond = 14f;
         [SerializeField, Min(.1f)] private float _rattleSeconds = .55f;
+        [SerializeField, Range(0f, 2f)] private float _rattleAngle = .6f;
         private UnityEngine.UI.Image _image;
         private StageActor _actor;
         private int _lastStep;
         private bool _crafting;
         private float _remaining;
         private float _elapsed;
+        private Quaternion _restRotation;
 
-        private void Awake() => _image = GetComponent<UnityEngine.UI.Image>();
+        private void Awake()
+        {
+            _image = GetComponent<UnityEngine.UI.Image>();
+            _restRotation = transform.localRotation;
+        }
 
         public void Present(StageOneFlow flow, StageActor viewer, bool crafting)
         {
@@ -55,14 +61,19 @@ namespace Herbalist.GameUI
             {
                 _elapsed += Time.deltaTime;
                 _remaining = Mathf.Max(0f, _remaining - Time.deltaTime);
-                _image.sprite = _frames[Mathf.FloorToInt(_elapsed * _framesPerSecond) % _frames.Length];
+                // Keep the hearth/steam artwork stable instead of swapping misaligned frames.
+                _image.sprite = _frames[0];
+                float fade = Mathf.Clamp01(_remaining / _rattleSeconds);
+                transform.localRotation = _restRotation * Quaternion.Euler(0, 0,
+                    Mathf.Sin(_elapsed * _framesPerSecond * Mathf.PI * 2f) * _rattleAngle * fade);
             }
-            else _image.sprite = _frames[0];
+            else ResetPose();
         }
 
         private void ResetPose()
         {
             _remaining = _elapsed = 0f;
+            transform.localRotation = _restRotation;
             if (_image != null && _frames != null && _frames.Length > 0) _image.sprite = _frames[0];
         }
 

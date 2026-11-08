@@ -6,6 +6,8 @@ Shader "Herbalist/Sap Flow"
         _CoreColor ("Flow Highlight", Color) = (0.28, 0.72, 1, 1)
         _RimColor ("Wet Edge", Color) = (0.05, 0.5, 1, 0.8)
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 2
+        [Toggle] _ZWrite ("Write Depth", Float) = 0
+        [Toggle] _SolidWater ("Solid Water Volume", Float) = 0
         _FlowSpeed ("Flow Speed", Float) = 2
         _FlowAmount ("Flow Pattern Strength", Range(0, 1)) = 1
         _FresnelPower ("Edge Falloff", Range(0.5, 8)) = 3
@@ -31,7 +33,7 @@ Shader "Herbalist/Sap Flow"
             "RenderType" = "Transparent"
         }
         Blend SrcAlpha OneMinusSrcAlpha
-        ZWrite Off
+        ZWrite [_ZWrite]
         Cull [_Cull]
 
         Pass
@@ -65,6 +67,7 @@ Shader "Herbalist/Sap Flow"
                 float _BeamPatternTiling;
                 float _BeamFlowSpeed;
                 float _GlowStrength;
+                float _SolidWater;
             CBUFFER_END
 
             struct Attributes
@@ -135,6 +138,7 @@ Shader "Herbalist/Sap Flow"
                     * (0.65 + fresnel * 0.35);
                 color = lerp(color, _FoamColor.rgb, foam * _FoamColor.a * 0.45);
                 float alpha = saturate(_BaseColor.a * (0.94 + highlight * 0.06));
+                alpha = lerp(alpha, 1.0, _SolidWater);
                 return half4(color * _GlowStrength, alpha);
             }
             ENDHLSL

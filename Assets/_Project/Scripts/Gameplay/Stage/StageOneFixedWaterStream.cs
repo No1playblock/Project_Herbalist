@@ -7,6 +7,7 @@ namespace Herbalist.Levels
 {
     // Authored outlet geometry, using the same flowing blue stream as the jump pads.
     [RequireComponent(typeof(MushroomWaterJetPresentation))]
+    [ExecuteAlways]
     public sealed class StageOneFixedWaterStream : MonoBehaviour
     {
         [SerializeField] private SapJumpPadSettings _presentationSettings;
@@ -26,15 +27,23 @@ namespace Herbalist.Levels
         public Vector3 GetPathPoint(float t)
             => MushroomWaterJetPresentation.PathPoint(_source.position, _end.position, t, ArcRise, ArcDrop);
 
-        private void Awake()
+        private void Awake() => RefreshPresentation();
+        private void OnEnable() => RefreshPresentation();
+        private void OnValidate() => _presentation = null;
+        public void RefreshPresentation()
         {
+            if (_presentationSettings == null || _source == null || _end == null) return;
             _presentation = GetComponent<MushroomWaterJetPresentation>();
+            // The editor preview uses the same authored mesh renderer as Play.
+            if (!Application.isPlaying && _pushVolume != null && transform.Find("Conical Water Mesh") == null) return;
             _presentation.Initialize(_presentationSettings, _pushVolume != null ? _outletWidth : 0f,
                 _pushVolume != null ? _sprayWidth : 0f, conical: _pushVolume != null);
+            _presentation.Present(_source.position, _end.position, ArcRise, ArcDrop);
         }
         private void LateUpdate()
         {
-            if (_source != null && _end != null) _presentation.Present(_source.position, _end.position, ArcRise, ArcDrop);
+            if (_presentation == null) RefreshPresentation();
+            if (_presentation != null && _source != null && _end != null) _presentation.Present(_source.position, _end.position, ArcRise, ArcDrop);
         }
 
         // Called by the owning outlet's authoritative tick, after leaf-plug state is applied.
@@ -64,14 +73,34 @@ namespace Herbalist.Levels
             float radius = controller.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
             float halfCore = Mathf.Max(0f, controller.height * Mathf.Abs(scale.y) * .5f - radius);
             var center = controller.transform.TransformPoint(controller.center);
-            float combinedRadius = radius + _outletWidth * .5f;
-            for (int i = 0; i <= Segments; i++)
+            // The rendered cone widens along the complete arc. Use continuous
+            // segments against the player's vertical capsule, rather than isolated bubbles.
+            for (int i = 0; i < Segments; i++)
             {
-                var offset = GetPathPoint((float)i / Segments) - center;
-                offset.y -= Mathf.Clamp(offset.y, -halfCore, halfCore);
-                if (offset.sqrMagnitude <= combinedRadius * combinedRadius) return true;
+                float t0 = (float)i / Segments, t1 = (float)(i + 1) / Segments;
+                var a = GetPathPoint(t0);
+                var b = GetPathPoint(t1);
+                // Conservative enclosing radius includes visual sway and the segment's wide end.
+                float width = Mathf.Lerp(_outletWidth, Mathf.Max(_outletWidth, _sprayWidth), t1);
+                float combinedRadius = radius + width * .5f + _presentationSettings.waterStreamSway * 1.5f;
+                float low = 0f, high = 1f;
+                // Squared distance to a vertical line segment is convex along each water segment.
+                for (int j = 0; j < 18; j++)
+                {
+                    float left = Mathf.Lerp(low, high, 1f / 3f), right = Mathf.Lerp(low, high, 2f / 3f);
+                    if (CapsuleDistanceSquared(Vector3.Lerp(a, b, left) - center, halfCore) <
+                        CapsuleDistanceSquared(Vector3.Lerp(a, b, right) - center, halfCore)) high = right;
+                    else low = left;
+                }
+                if (CapsuleDistanceSquared(Vector3.Lerp(a, b, (low + high) * .5f) - center, halfCore) <=
+                    combinedRadius * combinedRadius) return true;
             }
             return false;
+        }
+        private static float CapsuleDistanceSquared(Vector3 offset, float halfCore)
+        {
+            offset.y -= Mathf.Clamp(offset.y, -halfCore, halfCore);
+            return offset.sqrMagnitude;
         }
     }
 }

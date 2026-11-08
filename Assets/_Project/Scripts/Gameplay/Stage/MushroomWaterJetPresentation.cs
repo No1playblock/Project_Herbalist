@@ -8,6 +8,7 @@ namespace Herbalist.Levels
         [SerializeField] private LineRenderer _stream;
         [SerializeField] private ParticleSystem _sprayDroplets;
         [SerializeField] private ParticleSystem _sprayTemplate;
+        [SerializeField] private MeshFilter _conicalSurface;
 
         private SapJumpPadSettings _settings;
         private Vector3[] _pathPoints;
@@ -23,7 +24,7 @@ namespace Herbalist.Levels
         {
             _settings = settings;
             if (_stream == null || _settings == null) return;
-            if (_sprayDroplets == null && _sprayTemplate != null)
+            if (Application.isPlaying && _sprayDroplets == null && _sprayTemplate != null)
             {
                 _sprayDroplets = Instantiate(_sprayTemplate, transform);
                 var main = _sprayDroplets.main;
@@ -58,7 +59,7 @@ namespace Herbalist.Levels
         {
             if (_stream == null || _settings == null) return;
             if (_pathPoints == null) Initialize(_settings);
-            float dt = Herbalist.GameUI.GameplayPause.IsPaused ? 0f : Time.deltaTime;
+            float dt = !Application.isPlaying || Herbalist.GameUI.GameplayPause.IsPaused ? 0f : Time.deltaTime;
             _flowTime += dt;
 
             Vector3 axis = end - start;
@@ -87,12 +88,15 @@ namespace Herbalist.Levels
         {
             _coneMouth = mouthWidth;
             _stream.enabled = false;
-            if (_cone != null) return;
+            if (_cone != null && _coneVertices.Length == _pathPoints.Length * (ConeSides + 1) + 2) return;
+            if (_cone != null) { if (Application.isPlaying) Destroy(_cone); else DestroyImmediate(_cone); }
             _cone = new Mesh { name = "Conical water spray" };
+            if (!Application.isPlaying) _cone.hideFlags = HideFlags.HideAndDontSave;
             _cone.MarkDynamic();
-            _coneVertices = new Vector3[_pathPoints.Length * (ConeSides + 1)];
+            int shellCount = _pathPoints.Length * (ConeSides + 1);
+            _coneVertices = new Vector3[shellCount + 2];
             var uv = new Vector2[_coneVertices.Length];
-            var triangles = new int[(_pathPoints.Length - 1) * ConeSides * 6];
+            var triangles = new int[(_pathPoints.Length - 1) * ConeSides * 6 + ConeSides * 6];
             int index = 0;
             for (int ring = 0; ring < _pathPoints.Length; ring++)
             for (int side = 0; side <= ConeSides; side++)
@@ -104,16 +108,28 @@ namespace Herbalist.Levels
                 triangles[index++] = a; triangles[index++] = a + 1; triangles[index++] = b;
                 triangles[index++] = a + 1; triangles[index++] = b + 1; triangles[index++] = b;
             }
+            // Closed inlet and outlet disks: the water is a filled solid, not an open tube.
+            int last = (_pathPoints.Length - 1) * (ConeSides + 1);
+            for (int edge = 0; edge < ConeSides; edge++)
+            {
+                triangles[index++] = shellCount; triangles[index++] = edge + 1; triangles[index++] = edge;
+                triangles[index++] = shellCount + 1; triangles[index++] = last + edge; triangles[index++] = last + edge + 1;
+            }
+            uv[shellCount] = new Vector2(0, .5f); uv[shellCount + 1] = new Vector2(1, .5f);
             _cone.vertices = _coneVertices;
             _cone.uv = uv;
             _cone.triangles = triangles;
-            var spray = new GameObject("Conical Water Mesh", typeof(MeshFilter), typeof(MeshRenderer));
-            spray.layer = gameObject.layer;
-            spray.transform.SetParent(transform, false);
-            spray.GetComponent<MeshFilter>().sharedMesh = _cone;
-            var renderer = spray.GetComponent<MeshRenderer>();
-            renderer.sharedMaterial = _stream.sharedMaterial;
-            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            if (_conicalSurface == null)
+            {
+                var spray = new GameObject("Conical Water Mesh", typeof(MeshFilter), typeof(MeshRenderer));
+                spray.layer = gameObject.layer;
+                spray.transform.SetParent(transform, false);
+                _conicalSurface = spray.GetComponent<MeshFilter>();
+                var renderer = spray.GetComponent<MeshRenderer>();
+                renderer.sharedMaterial = _stream.sharedMaterial;
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            _conicalSurface.sharedMesh = _cone;
         }
 
         private void PresentCone(Vector3 side, Vector3 lift)
@@ -129,6 +145,9 @@ namespace Herbalist.Levels
                     _coneVertices[ring * (ConeSides + 1) + edge] = worldToLocal.MultiplyPoint3x4(point);
                 }
             }
+            int shellCount = _pathPoints.Length * (ConeSides + 1);
+            _coneVertices[shellCount] = worldToLocal.MultiplyPoint3x4(_pathPoints[0]);
+            _coneVertices[shellCount + 1] = worldToLocal.MultiplyPoint3x4(_pathPoints[_pathPoints.Length - 1]);
             _cone.vertices = _coneVertices;
             _cone.RecalculateNormals();
             _cone.RecalculateBounds();
@@ -178,7 +197,7 @@ namespace Herbalist.Levels
 
         private void OnDestroy()
         {
-            if (_cone != null) Destroy(_cone);
+            if (_cone != null) { if (Application.isPlaying) Destroy(_cone); else DestroyImmediate(_cone); }
         }
     }
 }

@@ -1,5 +1,43 @@
 # 새 맵 기준 기믹 연결 (2026-11-03)
 
+## 2026-11-09 Cloth와 매듭 연결 유지 A안
+
+- 사용자가 Cloth도 유지하기를 요청하고, '상단·매듭 뼈대 고정 / 중간 Cloth 유지 / 기존 잡기·이동 판정 유지' A안을 선택했다. 아래의 Cloth 비활성화 정정은 이 구성으로 대체한다.
+- `Stage1_DocumentGimmicks/ClothSimulations`의 천 5개가 실제 표시용 SkinnedMeshRenderer + 활성 Cloth를 사용한다. 원본 메시·재질과 Cloth 설정을 바탕으로 상단/매듭 뼈대와 정점 가중치를 작성했다. 원본 모델 프리팹 내부는 하강 시 크기가 변하고 부모 변경이 Play에서 복구되므로, 표시 스킨은 배율 1의 독립된 프레임에 미리 배치했다. 프리팹 쪽 이전 렌더러는 중복 표시를 막기 위해 비활성 상태다.
+- `ClothEndpointBinding`은 Host가 결정한 HangingCloth 상단과 실제 매듭의 연결점을 뼈대로 전달한다. 중간 정점은 Native Cloth 중력/굽힘에 따라 움직이고 양 끝 띠는 Max Distance 0으로 고정한다. 천 길이는 뼈대가 조절하므로 하강/말림과 충돌하는 고정 휴지 길이 제약(Stretch/Tethers)은 끈다. 새로운 입력·네트워크 상태나 Cloth 기반 플레이어 이동 판정은 추가하지 않았다.
+- 실제 시뮬레이션 입자를 검사할 때는 UV 중복 정점이 합쳐지는 점(원본 2,004 / Cloth 입자 1,690)과 rootBone 좌표계를 반영한다. 원본 MeshFilter bounds만 비교하는 이전 검사를 `ClothSkinBindingChecks`의 실 프레임 검사로 교체했다.
+- 실제 하강 및 가지 펼침 프레임 검사 모두 PASS. 최종 고정 띠 위치 오차 약 0.000037~0.000069m, 중간 부분 변형 약 0.20~0.31m. Native Cloth가 켜진 상태에서 실제 잡기·놓기·1회 사용·말림도 확인했다. 실제 Host/Client 두 프로세스 검증은 미실행이다.
+- 생성 스킨: `Data/Stages/Stage_01/ClothSkins`. 편집 도구: `StageOneClothSkinAuthoring`. 수정 전 씬과 연속 프레임 결과는 `Temp/ClothSkinBinding_20261109/before.unity`, `result.txt`; 실제 Cloth 검수 화면은 `Temp/ClothPhotoFix_20261108/native-cloth-blue.png`. 이전 rigid-cloth 정정 도구는 새 스킨 설치 후 재적용을 차단한다.
+
+## 2026-11-09 실제 Cloth 변형·입체 수액·추가 가지 구멍 정정
+
+- 앞선 천 검사는 MeshFilter의 원본 메시만 비교해 실제 렌더링되는 Unity Cloth 변형을 놓쳤다. 천 5개의 중복 `Cloth` 시뮬레이션과 SkinnedMeshRenderer를 비활성화하고, 같은 원본 메시/재질의 MeshRenderer 하나만 표시한다. 기존 Host 기반 HangingCloth의 흔들림·하강·말림·1인 1회 규칙은 그대로 사용한다. 이제 화면에 보이는 메시와 매듭/잡기 판정이 같은 변환을 따른다. 노랑/파랑 천은 주입 하강 네 단계 및 여러 프레임 뒤 캡처에서 연결이 유지됐다.
+- 파랑 `Coop_2_WaterCloth`는 상단 부착점을 유지하고 천 길이를 1.5m 줄여 최종 매듭을 1.5m 올렸다. 매듭은 다시 천 끝에 연결했다. 기존 하강 거리와 시간은 유지한다.
+- 성장 버섯 두 개는 최대 성장 시 각자의 나무 바깥 방향으로 1.25m 이동한다. 앞선 4~5m 이동이나 0m 고정 대신, 부착을 유지하면서 조금 더 드러나도록 한 값이다. `_growthWorldOffset`으로 조절하며 원본 휴지 위치와 성장 크기/시간은 유지한다.
+- 세 차단 수액은 양 끝을 막은 입체 원뿔 메시와 전용 `MAT_StageOneSolidWater`를 사용한다. 같은 Sap Flow 셰이더의 Solid Water/Write Depth를 이 재질에서만 켜 내부가 빈 관처럼 보이지 않게 했다. 공용 수액 재질의 기존 투명 표현은 유지한다. 몸통 528개 + 양 끝 뚜껑 24개, 총 552개 삼각형이다.
+- `StageOneFixedWaterStream`의 ExecuteAlways 미리보기는 미리 배치한 Conical Water Mesh에서 Play와 같은 생성 함수를 사용한다. 평면 LineRenderer는 양쪽 모두 끈다. 편집/Play/Play 종료 후/씬 저장·재열기의 정점 SHA256은 모두 `E2DB7387D81B798B511848A5D9E7AEF75BD217D0E15C9F7FE757519FB565F811`로 일치했다. 편집 미리보기에서는 입자를 생성하지 않는다.
+- 사용자 사진 5의 `Tree_playobject/branch_hole`에도 `Stage1_DocumentGimmicks/BranchHole_LeftLeaf_RightWater_20261109`를 추가했다. 사진 왼쪽 높은 구멍(278.4957,87.0964,330.1857)은 잎, 오른쪽 나무 가까운 낮은 구멍(287.4343,83.2532,322.0099)은 수액이다. 기존 `branch_hole (1)` 기믹을 유지하고 별도 타깃 ID와 NetworkObject를 사용한다.
+- 검증: `StageOneFollowupChecks.WaterSignature()` 및 `BranchHolePlay()`, `TraversalFeedbackChecks.ClothLoweringVisualsPlay()`와 `ClothReplacementGravityPlay()`, 기존 `StageOneOutletCorrectionChecks.Play()` 통과. 실제 잎 설치·탑승, 탄도 수액의 오른쪽 충전, 왼쪽 발사와 회수, 기존 구멍 (1) 유지 확인. 실제 Host/Client 두 프로세스 검증은 미실행이다.
+- 별도 전체 `StageOneDocumentChecks.Authored()`는 과거의 '수액 구동 천 2개' 전제에서 실패했다. 이번 수정 전 백업과 현재 씬 모두 HangingCloth의 `_waterDriven` 값은 전부 0이며 이번 수정에서는 변경하지 않았다. 이 기존 검사 전제 불일치를 요청 항목의 개별 검증 통과와 구분한다.
+- 편집 도구: `StageOneFeedbackCorrection.Apply()` (재적용 차단). 수정 전 씬은 `Temp/Stage1Feedback_20261109/before.unity`, 화면은 `Temp/ClothPhotoFix_20261108`의 `followup-*`, `solid-water-edit.png`, `grown-*`, `branch-hole-new-left-leaf.png`다. 이전 섹션의 원본 메시만으로 판단한 천 연결 확인과 성장 버섯 0m 이동 기록보다 이번 정정이 우선한다.
+
+## 2026-11-08 추가 캡처 기준 천·가지 구멍 정정
+
+- 사용자 캡처 1·2의 노랑/파랑 하강 천: 실제 `fabric` 끝에 `knot_low` 윗부분이 살짝 겹치도록 연결하고, `GripPoint`를 실제 매듭 중심에 정렬했다. 천 상단을 고정한 채 원본 하강/흔들림/회수 연출에서 같은 변환을 사용한다. 하강 중간 네 단계에서 매듭 모델과 잡기 위치 오차 0m, 끝 연결과 수직 방향 유지 확인.
+- 일반 매달린 천은 `fabric`의 긴 축이 수직이 되도록 상단 기준으로 원본 루트를 보정했다. 캡처 3의 교체 빨간 천은 가지가 내려온 뒤 실제 부착점 바로 아래로 매달린다. 기존 강제 도착 지점의 X/Z가 천을 비스듬하게 만들고 있어 `Coop_4_ReplacementGripDestination`의 X/Z를 최종 부착점 아래로 옮기고 Y는 유지했다. 이전 기록의 '첫 천과 같은 탑승 위치'보다 이 수직 매달림 정정이 우선한다. 완료 상태의 천 기울기 0도, 실제 매듭과 잡기 지점 오차 약 0.000034m 확인.
+- 캡처 4는 `Tree_playobject/branch_hole (1)`이다. 사진 왼쪽 `DesignStage1_Traversal/origin_tree (4)/InletOpening`에 잎 점프대 소켓을, 사진 오른쪽 `origin_tree (3)/InletOpening`에 수액 주입 판정을 연결했다. 잘못 연결됐던 다른 가지의 기존 `Photo1_Branch_UpperLeaf_LowerWater` 기믹을 재배치했고 NetworkObject와 타깃 ID 및 기존 충전/경고/발사/잎 회수를 유지했다. 기존 파란 구멍 표식을 사용하며 겹치는 녹색 소켓 원은 끈다. 아래 11월 4일의 구멍 위치 설명은 이 정정으로 대체한다.
+- `StageOneDocumentChecks.ClothAndJetPlay()` 및 `StageOneOutletCorrectionChecks.Play()` 통과. 천 5개 실제 탑승·1회 사용·말림·재탑승 차단, 실제 탄도 수액으로 오른쪽 구멍 충전 및 왼쪽 잎의 플레이어 발사/회수 확인. 실제 Host/Client 두 프로세스 검증은 미실행이다.
+- 편집 도구: `StageOneClothPhotoCorrection.Apply()`. 수정 전 씬과 검수 화면: `Temp/ClothPhotoFix_20261108`. 원본 천과 매듭의 위치/방향은 이번 사용자 수정 요청 범위에서 보정했으며, 가지 구멍 모델·다른 배경 모델은 재배치하지 않았다.
+
+## 2026-11-08 플레이 피드백 보정
+
+- 일반 가지 발판 `LeafBranch_31`, `LeafBranch_32`, `LeafBranch_24`, `LeafBranch_25`는 설치된 잎이 회수를 시작한 시점부터 20초간 재설치를 차단한다. 수동 회수, 만료, 발걸음 회수 모두 동일하며 회수 비행 완료까지 기다리지 않는다. 기존 `LeafInstallTarget`의 `_reuseDelayAfterRelease`로 조절하고, 점프대·분출구 마개 및 다른 타깃은 0을 유지한다. Host가 실제 설치 가능 여부를 검증한다. 일시정지 중 대기시간은 흐르지 않는다.
+- `TraversalFeedbackChecks.LeafReuse()`에서 실제 잎 설치/회수, 19.99초 재설치 거부, 20초 경과 후 재설치, 중복 해제에 의한 시간 재시작 방지, 자동 만료 회수 및 네 가지에만 설정 적용을 확인했다.
+- 성장 버섯 두 개의 `_growthWorldOffset`을 0으로 변경했다. 최대 성장 시 4~5m 바깥으로 이동하던 보정을 제거해 원래 나무 부착 피벗을 유지한다. 원본 모델의 편집 Transform과 성장 크기/시간은 유지한다.
+- 세 차단 물줄기는 전체 포물선의 연속 구간과 끝으로 넓어지는 폭으로 접촉을 검사한다. 물방울 사이와 분사 가장자리도 플레이어를 밀어낸다. 잎 마개로 물줄기를 끄면 밀어내기도 기존대로 꺼진다.
+- 제조 주전자 HUD는 위치가 다른 프레임을 교체하는 대신 첫 프레임에 최대 0.6도 흔들림을 적용하고 감쇠한다. `_rattleAngle`로 폭을 조절한다.
+- 검증: `TraversalFeedbackChecks.Run()` 통과. 오프라인 Play에서 세 물줄기 모두 중심에서 옆으로 2.2m 떨어진 지점의 실제 캐릭터가 바깥으로 밀려나는 것을 확인했다. Host/Client 두 프로세스 검증과 전체 동선 완주는 미실행이다.
+
 ## 2026-11-05 숲 출구와 복귀 판정
 
 - 숲 출구를 처음 통과한 플레이어만 삼거리로 복귀 지점을 갱신한다. 이후 안전 발판은 기존대로 개인 체크포인트를 갱신한다.
