@@ -98,3 +98,5 @@
 기존 개발용 `Development/Stage1_ModelingTest`에는 Fine_Tree 프리팹 3종 누락 경고가 있다. SFX 작업과 별개이며 해당 원본을 복원하지 않았다. 실제 2인 Host/Client 장시간 청취와 최종 음량 감수는 이번 자동 검사에 포함되지 않는다.
 
 2026-10-26 검사 결과: 57개 번호/5개 임시 연결/11개 씬/88개 emitter 참조 검사 통과. 원본 55개 SHA256 일치. Play 모드에서 57개 모든 음원의 실제 AudioSource 재생, 루프 중복 방지, Pause/UnPause, 일시정지 중 UI 재생, 소유자별 쿨다운, 비활성화 정리, 잎 비행→설치→회수 및 물 흐름→충돌→종료 검사 통과. Stage_01_ModelingReference, Stage_02_Mazes, Stage_03_Altar, Stage_03_BranchRide 실행 중 콘솔 오류 0건.
+
+2026-11-09 조정: 걷기 10/11/12 볼륨 0.5 → 0.2(60% 감소), 부채질 26은 0.175 → 0.14(20% 감소). 제조 시작 온도에서도 보글보글 소리가 들리도록 카탈로그 boilingTemperature=0. 제조 중 실제 AudioSource 24/25 반복 재생과 완료 시 정지, 연속 부채질 재생을 Play 모드에서 확인했다. 검사는 온도를 강제로 올리지 않고 실제 제조 시작 상태를 사용한다.

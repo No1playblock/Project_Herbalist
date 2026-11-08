@@ -232,7 +232,8 @@ namespace Herbalist.Editor
                 sound.volume = id switch
                 {
                     4 => .5f * .35f, 13 or 14 => .3f * .5f, 20 => .5f * .25f,
-                    21 => .5f * .5f, 26 or 29 => .5f * .35f, 33 => .5f * .13f,
+                    10 or 11 or 12 => .5f * .4f,
+                    21 => .5f * .5f, 26 => .5f * .35f * .8f, 29 => .5f * .35f, 33 => .5f * .13f,
                     _ => sound.volume
                 };
                 if (id == 26) sound.cooldown = 0; // One fan cue for each brewing press.

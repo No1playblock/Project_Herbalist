@@ -43,7 +43,8 @@ namespace Herbalist.Audio
         [Min(.01f)] public float groundProbeHeight = 1;
         [Min(.01f)] public float groundProbeDistance = 2;
         public LayerMask groundMask = ~(1 << 8 | 1 << 10);
-        public float boilingTemperature = 35;
+        [Tooltip("Zero keeps the bubbling loop audible throughout the brewing animation.")]
+        public float boilingTemperature = 0;
         [Min(.01f)] public float clothMotionThreshold = .3f;
         [Min(.01f)] public float stoneContactDistance = .7f;
         public SfxDefinition Find(int id)

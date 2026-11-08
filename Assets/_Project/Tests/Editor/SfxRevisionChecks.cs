@@ -141,7 +141,6 @@ namespace Herbalist.Editor
                 Call(scene, "LateUpdate");
                 Check(Playing(pool, 23), "failed gathering plays failure");
                 Call(flow, "StartCrafting", 0);
-                typeof(StageOneFlow).GetProperty("Temperature").SetValue(flow, pool.Catalog.boilingTemperature + 1);
                 Call(scene, "LateUpdate");
                 Check(Playing(pool, 24) && Playing(pool, 25), "hearth and boiling loops actually playing");
                 var crafter = StageActor.All.First(a => flow.RoleFor(a) == Herbalist.Presentation.CharacterRole.Sodam);
