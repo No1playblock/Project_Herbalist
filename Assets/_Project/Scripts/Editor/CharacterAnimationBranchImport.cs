@@ -16,6 +16,41 @@ namespace Herbalist.Editor
         private const string Source = "Assets/_Project/Prefabs/Characters/PF_Player_2.prefab";
         private const string ProfilePath = "Assets/_Project/Data/Characters/SO_DuyeongAnimationProfile.asset";
 
+        public static void ConfigureMovingLeafThrow()
+        {
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(
+                "Assets/_Project/Animations/Characters/Duyeong/AC_DuyeongLocomotion.controller");
+            const string maskPath = "Assets/_Project/Animations/Characters/Duyeong/AM_DuyeongMovingThrowLegs.mask";
+            var mask = AssetDatabase.LoadAssetAtPath<AvatarMask>(maskPath);
+            if (mask == null)
+            {
+                mask = new AvatarMask { name = "AM_DuyeongMovingThrowLegs" };
+                AssetDatabase.CreateAsset(mask, maskPath);
+            }
+            for (int part = 0; part < (int)AvatarMaskBodyPart.LastBodyPart; part++)
+            {
+                var bodyPart = (AvatarMaskBodyPart)part;
+                mask.SetHumanoidBodyPartActive(bodyPart, bodyPart == AvatarMaskBodyPart.LeftLeg ||
+                    bodyPart == AvatarMaskBodyPart.RightLeg || bodyPart == AvatarMaskBodyPart.LeftFootIK ||
+                    bodyPart == AvatarMaskBodyPart.RightFootIK);
+            }
+            const string layerName = "throw_legs";
+            if (!controller.layers.Any(l => l.name == layerName)) controller.AddLayer(layerName);
+            var layers = controller.layers;
+            var layer = layers.First(l => l.name == layerName);
+            layer.avatarMask = mask; layer.defaultWeight = 0;
+            var run = layer.stateMachine.states.FirstOrDefault(s => s.state.name == "Run").state;
+            if (run == null) run = layer.stateMachine.AddState("Run");
+            var original = layers.First(l => l.name == "leg").stateMachine.states.First(s => s.state.name == "Run").state;
+            run.motion = original.motion; run.speed = original.speed;
+            layer.stateMachine.defaultState = run;
+            controller.layers = layers;
+            var profile = AssetDatabase.LoadAssetAtPath<SodamAnimationProfile>(ProfilePath);
+            profile.movingThrowLegLayer = layerName;
+            EditorUtility.SetDirty(mask); EditorUtility.SetDirty(controller); EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+        }
+
         public static string ConfigureAnimations()
         {
             var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(
@@ -122,6 +157,7 @@ namespace Herbalist.Editor
             show.motions = sodam.Find(SodamPose.PotionIdle).motions;
             EditorUtility.SetDirty(sodam);
             EditorUtility.SetDirty(profile); EditorUtility.SetDirty(controller); AssetDatabase.SaveAssets();
+            ConfigureMovingLeafThrow();
             return "Configured " + poses.Count + " Duyeong poses";
         }
 

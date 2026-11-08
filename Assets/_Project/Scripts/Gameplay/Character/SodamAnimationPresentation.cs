@@ -143,9 +143,13 @@ namespace Herbalist.Player
                 PlayOneShot(transform.position.y >= _clothReleaseY - Profile.successLandingDrop
                     ? SodamPose.ClothSwingLand : SodamPose.ClothHardLand);
             }
-            else if (grounded && !_wasGrounded && !onCloth && !onTalisman && !_character.IsSodamActive &&
-                _oneShot != SodamPose.LeafThrow && _oneShot != SodamPose.LeafCatch)
+            else if (grounded && !_wasGrounded && !moving && !onCloth && !onTalisman && !_character.IsSodamActive &&
+                !_oneShot.HasValue)
                 PlayOneShot(SodamPose.Land);
+            // Ordinary landing is a stationary fallback. Movement can interrupt it immediately,
+            // while ability, item and traversal actions retain their own priority.
+            if (!_character.IsSodamActive && grounded && moving && _oneShot == SodamPose.Land)
+                _oneShot = null;
             if (flow != null && flow.MinigameResultSequence != _lastResultSequence &&
                 _lastMinigame == StageMinigameKind.Crafting && validSlot &&
                 flow.RoleFor(_actor) == Herbalist.Presentation.CharacterRole.Sodam)
@@ -276,9 +280,14 @@ namespace Herbalist.Player
         private void UpdateActionLegs(bool grounded)
         {
             if (_pose != SodamPose.LeafThrow && _pose != SodamPose.LeafCatch && _pose != SodamPose.Sap) return;
-            int layer = _animator.GetLayerIndex("leg");
-            if (layer < 0) return;
             bool moving = _animator.GetFloat(Animator.StringToHash("Speed")) > Profile.movingSpeedThreshold;
+            int defaultLayer = _animator.GetLayerIndex("leg");
+            int throwLayer = _animator.GetLayerIndex(Profile.movingThrowLegLayer);
+            bool movingThrow = _pose == SodamPose.LeafThrow && grounded && moving && throwLayer >= 0;
+            int layer = movingThrow ? throwLayer : defaultLayer;
+            if (layer < 0) return;
+            if (defaultLayer >= 0 && defaultLayer != layer) _animator.SetLayerWeight(defaultLayer, 0f);
+            if (throwLayer >= 0 && throwLayer != layer) _animator.SetLayerWeight(throwLayer, 0f);
             // Catch contains authored steps even with no movement input. Keep its upper action,
             // but explicitly cover those steps with idle legs while standing.
             if (grounded && !moving && _pose != SodamPose.LeafCatch) { _animator.SetLayerWeight(layer, 0f); return; }
@@ -287,7 +296,7 @@ namespace Herbalist.Player
             foreach (var motion in locomotion.motions)
             {
                 if (motion == null || motion.layer != (grounded ? "Base Layer" : "leg")) continue;
-                int hash = Animator.StringToHash("leg." + motion.state);
+                int hash = Animator.StringToHash(_animator.GetLayerName(layer) + "." + motion.state);
                 if (!_animator.HasState(layer, hash)) return;
                 _animator.SetLayerWeight(layer, 1f);
                 bool alreadyPlaying = _animator.GetCurrentAnimatorStateInfo(layer).fullPathHash == hash ||

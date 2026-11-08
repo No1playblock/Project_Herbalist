@@ -45,6 +45,7 @@ namespace Herbalist.Player
     public sealed class SodamAnimationProfile : ScriptableObject
     {
         [Min(0)] public float movingSpeedThreshold = 0.08f;
+        public string movingThrowLegLayer = "leg";
         [Min(0)] public float successLandingDrop = 1f;
         [Min(0)] public float cameraMovementThresholdDegreesPerSecond = 2f;
         [Min(0)] public float cameraStillDelaySeconds = 0.15f;
