@@ -10,7 +10,6 @@ namespace Herbalist.Levels
         [SerializeField] private Transform[] _wheels;
         [SerializeField] private Transform[] _ropeRuns;
         [SerializeField, Min(.01f)] private float _wheelRadius = 1.2f;
-        [SerializeField, Min(.01f)] private float _ropeLinkPitch = 6f;
         [SerializeField] private Vector3 _wheelLocalAxis = Vector3.forward;
 
         private Quaternion[] _wheelRestRotations;
@@ -29,7 +28,7 @@ namespace Herbalist.Levels
             foreach (var run in _ropeRuns)
             {
                 if (run == null) continue;
-                foreach (Transform link in run) links.Add(link);
+                links.Add(run);
             }
             _ropeLinks = links.ToArray();
             _ropeRestPositions = new Vector3[_ropeLinks.Length];
@@ -47,12 +46,11 @@ namespace Herbalist.Levels
                 if (_wheels[i] != null)
                     _wheels[i].localRotation = _wheelRestRotations[i] * Quaternion.AngleAxis(angle, axis);
 
-            // The supplied rope is a chain of repeated links. Scroll the links by one
-            // pitch so that the visible run moves without detaching from its pulley.
-            var offset = Mathf.Repeat(distance, _ropeLinkPitch);
+            // Move the complete authored run, including the mesh on its root.
+            // Wrapping by a link pitch detached it from the descending raft.
             for (int i = 0; i < _ropeLinks.Length; i++)
                 if (_ropeLinks[i] != null)
-                    _ropeLinks[i].position = _ropeRestPositions[i] + Vector3.down * offset;
+                    _ropeLinks[i].position = _ropeRestPositions[i] + Vector3.down * distance;
         }
     }
 }

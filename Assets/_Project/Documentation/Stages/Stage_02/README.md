@@ -1,3 +1,18 @@
+## 2026-11-09 수액 표시가 바닥 뒤로 가려지는 문제
+
+- 사용자 캡처를 조사해 별도의 표시 문제를 재현했다. 이동은 WaterWalls 그래프를 따르지만, 물 표면은 고정 WaterFloorPlane에 그려져 실제 relief 바닥의 돌출 부분 뒤로 들어갔다. 최초 재현에서 물량 60과 점유 칸 750개는 그대로였고, 생성된 메시 정점 3,637개 중 815개가 바닥 뒤에 있었다. 모든 벽 통과 제보를 표시 문제로 단정하는 것은 아니며, 11월 8일의 실제 얇은 벽 누락과 구분한다.
+- 사용자 선택으로 `SO_MazeFluidVisual.followReliefSurface`를 켰다. `SapMazeSurface.ReliefSurfaceZ()`는 표시 높이만 원본 relief에 맞춘다. `SurfaceZ()`, 평면, 이동/물량/충돌 그래프는 유지한다. 삼각형 모서리와 중심이 날카로운 돌출부 뒤에 들어가지 않도록 표시 높이를 추가 보정하며, XY 점유 영역은 바꾸지 않는다. 바닥 높이 질의는 기존 기하 캐시와 함께 재사용하고 상한을 둔다.
+- `MazeReliefVisibilityChecks.Run()`: 세 미로 재현 풀에서 가려진 정점 817/699/412 → 모두 0, 가려진 삼각형 중심 0, 물량과 Packed 스냅샷 불변 확인. 기존 순수 유체 및 고정 평면/벽 회귀 검사 통과.
+- 재현 풀의 캐시 사용 메시 재생성 10회 평균 7.689ms. 전체 게임 FPS 측정이 아니며 다른 물량·시점·기하 캐시 미스의 비용을 보장하지 않는다. 실제 Host/Client 두 프로세스 검증은 미실행이다.
+
+## 2026-11-08 얇은 벽 관통 및 하강 연출 보정
+
+- Maze2 로컬 `(8.39999, 2.75018)` → `(8.51999, 2.75018)` 구간에서 원본 벽과 충돌하지만 수액용 WaterWalls는 통과시키는 현상을 재현했다. 기존 0.04 local 중심점 샘플이 얇은 벽을 누락했다. `SapMazeSurface._wallBakeSampleSize`를 별도 설정으로 두고 0.01 local로 세 충돌 메시를 다시 생성했다. 런타임 계산 격자 0.04와 이동 속도 7은 유지한다. 재생성된 메시는 기존 GUID를 유지하며 씬의 기존 참조를 그대로 사용한다.
+- `TraversalFeedbackChecks.MazeThinWall()`에서 재현 구간의 직접 이동 및 구간 질의 차단 확인. 세 미로 실제 유체 시작↔도착 왕복 검사 모두 통과: Maze1 967/1515 Tick, Maze2 871/834 Tick, Maze3 674/796 Tick. 물량 보존 및 벽 내부 셀 0 확인.
+- 누수/보충 지점 7/11/13개, 총 31곳의 시작점 연결 확인. 원본 모델의 벽 높이 단면과 수액용 충돌 메시를 108,143/102,157/80,070개 열린 구간에서 비교했으며 남은 벽 누락은 0개였다. 이는 표본 검사이며 모든 연속 좌표의 수학적 보장을 뜻하지 않는다.
+- `StageTwoPulleyPresentation`은 끈 자식만 링크 간격으로 반복 이동시키던 방식에서 끈 루트 전체를 발판의 누적 하강 거리만큼 이동시키도록 수정했다. 루트 자체 메시와 자식 간격을 유지한다. `SO_MazeDistantAbilityRules`에 전용 `SO_MazeSap`을 연결해 `orbitEnabled`를 껐으며 다른 스테이지의 공유 설정은 유지한다.
+- 끈 8개의 0/8/17/64/164m 이동 검사, 실제 Stage Two 규칙의 링 비활성화 확인, 기존 `MazePassageChecks.Run()`, `SapMazeFluidChecks.Run()` 및 `RunPlaneSurface()` 통과. 이번 변경의 실제 Host/Client 두 프로세스 검증은 미실행이다. 에디터 스크립트 재로드 때 기존 Fusion `ScriptsReloaded / AssertException: attribute != null` 로그가 다시 관측됐다. Photon SDK는 수정하지 않았다.
+
 ## 2026-11-01 Maze3 좁은 구간 실제 Host/Client 입력 검증 완료
 
 - Unity MCP Development Windows64 빌드 build-227f3d03c3 성공(오류 0, 651.86 MB). 최신 좁은 굽이 보정과 MazeNarrowNetworkCheck를 포함한다.
