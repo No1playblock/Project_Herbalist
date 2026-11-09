@@ -249,7 +249,7 @@ namespace Herbalist.Levels
             Present(CurrentMaze, Online ? Travel : _travel, phase == 2);
             foreach (var actor in StageActor.All)
             {
-                if (!actor.Local) continue;
+                if (!actor.Available || !actor.Abilities.Unlocked) continue;
                 int side = actor.Abilities.Kind == PlayerAbilityKind.Sap ? 0 : 1;
                 var camera = actor.Camera;
                 if (!_masks.ContainsKey(camera)) _masks[camera] = camera.cullingMask;
@@ -263,7 +263,9 @@ namespace Herbalist.Levels
             _soloViews.Clear();
             if (_screen != null) _screen.SetOverride(this, null);
             foreach (var pair in _masks) if (pair.Key != null) pair.Key.cullingMask = pair.Value;
-            foreach (var actor in _actors) { Release(actor); if (actor != null) actor.GetComponent<PlayerController>().View.ClearCameraOverride(this); }
+            foreach (var actor in _actors) Release(actor);
+            foreach (var actor in StageActor.All)
+                if (actor != null) actor.GetComponent<PlayerController>().View.ClearCameraOverride(this);
         }
     }
 }

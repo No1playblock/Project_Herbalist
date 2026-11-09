@@ -42,7 +42,8 @@ namespace Herbalist.Editor
             var targets = all.Select(t => t.GetComponent<LeafInstallTarget>()).Where(t => t != null && t.isActiveAndEnabled).ToArray();
             Check(targets.All(t => t.Id > 0) && targets.Select(t => t.Id).Distinct().Count() == targets.Length, "Unique positive leaf IDs.");
             var cloths = all.Select(t => t.GetComponent<HangingCloth>()).Where(t => t != null && t.isActiveAndEnabled).ToArray();
-            Check(cloths.Length == 5 && cloths.Count(c => c.WaterDriven) == 2, "Five cloths, two water-driven.");
+            Check(cloths.Length == 5 && cloths.Single(c => c.WaterDriven).name == "Coop_5_WaterCloth",
+                "Five cloths; the last yellow cloth is driven by water.");
             foreach (var c in cloths)
             {
                 Check(Read<Transform>(c, "_externalVisualRoot") != null && Read<bool>(c, "_singleUse") && Read<int>(c, "_riderCapacity") == 1, "Single-use source cloth binding.");
@@ -175,6 +176,7 @@ namespace Herbalist.Editor
         {
             Check(Application.isPlaying && StageOneFlow.Instance.Authority,"Offline Play required.");
             var actors=StageActor.All.Where(a=>a.Available).OrderBy(a=>a.Slot).ToArray();
+            Check(actors[0].Abilities.UnlockSap() && actors[1].Abilities.UnlockLeaf(), "Both authored rider abilities.");
             var positions=actors.Select(a=>a.transform.position).ToArray();
             var cloths=UnityEngine.Object.FindObjectsByType<HangingCloth>(FindObjectsSortMode.None).Where(c=>c.enabled)
                 .OrderBy(c=>Read<StageOneDocumentMechanism>(c,"_deploymentMechanism") != null).ToArray();
@@ -183,6 +185,8 @@ namespace Herbalist.Editor
             {
                 foreach(var c in cloths)
                 {
+                    var rider = Read<ClothRiderAbility>(c, "_requiredAbility") == ClothRiderAbility.Leaf ? actors[1] : actors[0];
+                    var other = rider == actors[0] ? actors[1] : actors[0];
                     Write(c,"_used",false);Write(c,"_retraction",0f);Write(c,"_angles",Vector2.zero);Write(c,"_velocity",Vector2.zero);
                     var mechanism = Read<StageOneDocumentMechanism>(c, "_deploymentMechanism");
                     if (mechanism != null)
@@ -216,25 +220,25 @@ namespace Herbalist.Editor
                         Write(c,"_angles",Vector2.zero);Write(c,"_velocity",Vector2.zero);
                     }
                     else Check(!c.PushWithWater(Vector3.right,.1f),"Self-driven cloth does not accept water drive.");
-                    var knot=Read<Transform>(c,"_knot");var cc=actors[0].GetComponent<CharacterController>();
-                    actors[0].GetComponent<PlayerController>().Motor.Teleport(knot.position-cc.transform.TransformVector(cc.center));Physics.SyncTransforms();
-                    var approachOrigin = actors[0].transform.position;
-                    float contact = actors[0].GetComponent<SodamAnimationPresentation>().Profile.Find(SodamPose.ClothGrab).ContactTime;
+                    var knot=Read<Transform>(c,"_knot");var cc=rider.GetComponent<CharacterController>();
+                    rider.GetComponent<PlayerController>().Motor.Teleport(knot.position-cc.transform.TransformVector(cc.center));Physics.SyncTransforms();
+                    var approachOrigin = rider.transform.position;
+                    float contact = rider.GetComponent<SodamAnimationPresentation>().Profile.Find(SodamPose.ClothGrab).ContactTime;
                     Check(contact > .02f, "Grab contact is timed in the active character profile.");
-                    Check(HangingCloth.TryInteract(actors[0],out var feedback),"Grab authored cloth: "+c.name+" "+feedback);
+                    Check(HangingCloth.TryInteract(rider,out var feedback),"Grab authored cloth: "+c.name+" "+feedback);
                     c.Tick(contact - .02f);
-                    Check(HangingCloth.IsGrabbing(actors[0]) && !HangingCloth.IsRiding(actors[0]) && !c.WasUsed &&
-                        Vector3.Distance(actors[0].transform.position, approachOrigin) < .001f, "Before contact the cloth reserves the grab without transporting the rider.");
+                    Check(HangingCloth.IsGrabbing(rider) && !HangingCloth.IsRiding(rider) && !c.WasUsed &&
+                        Vector3.Distance(rider.transform.position, approachOrigin) < .001f, "Before contact the cloth reserves the grab without transporting the rider.");
                     c.Tick(.03f);
-                    Check(HangingCloth.IsRiding(actors[0]) &&
-                        Vector3.Distance(actors[0].transform.position, knot.position + Vector3.down * Read<float>(c, "_knotHangHeight")) < .001f,
+                    Check(HangingCloth.IsRiding(rider) &&
+                        Vector3.Distance(rider.transform.position, knot.position + Vector3.down * Read<float>(c, "_knotHangHeight")) < .001f,
                         "At contact the rider begins following the knot.");
-                    Check(Read<StageActor[]>(c,"_riders").Contains(actors[0])&&c.WasUsed,"First rider consumes cloth use.");
-                    var partner=actors[1].GetComponent<PlayerController>();partner.Motor.Teleport(actors[0].transform.position+Vector3.right*.5f);
-                    HangingCloth.TryInteract(actors[1],out _);Check(!Read<StageActor[]>(c,"_riders").Contains(actors[1]),"Only one rider can use each cloth.");HangingCloth.TryRelease(actors[1],out _);
-                    Check(HangingCloth.TryRelease(actors[0],out _),"Release current rider.");c.Tick(2);
+                    Check(Read<StageActor[]>(c,"_riders").Contains(rider)&&c.WasUsed,"First rider consumes cloth use.");
+                    var partner=other.GetComponent<PlayerController>();partner.Motor.Teleport(rider.transform.position+Vector3.right*.5f);
+                    HangingCloth.TryInteract(other,out _);Check(!Read<StageActor[]>(c,"_riders").Contains(other),"Only one rider can use each cloth.");HangingCloth.TryRelease(other,out _);
+                    Check(HangingCloth.TryRelease(rider,out _),"Release current rider.");c.Tick(2);
                     Check(Read<float>(c,"_retraction")==1,"Used cloth rolls up.");
-                    HangingCloth.TryInteract(actors[0],out _);Check(!Read<StageActor[]>(c,"_riders").Contains(actors[0]),"Used cloth rejects boarding.");HangingCloth.TryRelease(actors[0],out _);
+                    HangingCloth.TryInteract(rider,out _);Check(!Read<StageActor[]>(c,"_riders").Contains(rider),"Used cloth rejects boarding.");HangingCloth.TryRelease(rider,out _);
                 }
                 var jet=UnityEngine.Object.FindObjectsByType<StageOneDocumentMechanism>(FindObjectsSortMode.None).First(m=>m.Kind==StageOneDocumentMechanismKind.BlockJet);
                 var target=Read<LeafInstallTarget>(jet,"_leafTarget");var stream=Read<GameObject>(jet,"_jet");

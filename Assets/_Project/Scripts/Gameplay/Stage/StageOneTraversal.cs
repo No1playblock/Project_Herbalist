@@ -16,6 +16,8 @@ namespace Herbalist.Levels
         [SerializeField] private Transform[] _starts;
         [SerializeField] private BoxCollider _forestExitCheckpoint;
         [SerializeField] private Transform _forestExitRecoveryPoint;
+        [SerializeField] private HangingCloth[] _respawnCloths = System.Array.Empty<HangingCloth>();
+        [SerializeField] private StageOneDocumentMechanism[] _respawnBranches = System.Array.Empty<StageOneDocumentMechanism>();
         [SerializeField] private bool _placeOfflineAtStarts;
         [SerializeField] private float _fallHeight = -15;
         [SerializeField, Min(0)] private float _contactPadding = .08f;
@@ -99,6 +101,10 @@ namespace Herbalist.Levels
                 if (actor.transform.position.y < _fallHeight || (!usingCloth && TouchesBareTree(cc)))
                 {
                     HangingCloth.TryRelease(actor, out _);
+                    foreach (var cloth in _respawnCloths)
+                        if (cloth != null) cloth.RestoreAfterRespawn();
+                    foreach (var branch in _respawnBranches)
+                        if (branch != null) branch.RestoreFallenBranch();
                     actor.Abilities.Sap?.Cancel();
                     var net = actor.GetComponent<NetworkPlayer>();
                     if (net != null && net.Object != null && net.Object.IsValid) net.TeleportAuthoritatively(_recovery[actor]);

@@ -1042,7 +1042,19 @@ MonoBehaviour:
       m_Calls: []
   onReleased:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 655455570}
+        m_TargetAssemblyTypeName: Herbalist.Levels.StageOneDocumentMechanism, Assembly-CSharp
+        m_MethodName: DropAfterLeafRecall
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName:
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument:
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!135 &11328647
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -5685,6 +5697,91 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7a3a09ba460e4813a54a6d9a2512fb24, type: 3}
+--- !u!1 &46402605
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 46402608}
+  - component: {fileID: 46402607}
+  - component: {fileID: 46402606}
+  m_Layer: 0
+  m_Name: FallingBranch_31
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &46402606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 46402605}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ffc4fd681d85c8499bf011dc8b1c623, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Levels.StageOneDocumentMechanism
+  _kind: 4
+  _port: {fileID: 0}
+  _leafTarget: {fileID: 968257183}
+  _requiredCloth: {fileID: 0}
+  _activationArea: {fileID: 0}
+  _movingArt:
+  - {fileID: 1614518447}
+  _motionPivot: {fileID: 0}
+  _offset: {x: 0, y: -15, z: 0}
+  _rotation: {x: 30, y: 0, z: -15}
+  _fillSeconds: 1
+  _restoreSeconds: 3
+  _moveSeconds: 1.2
+  _grownScale: 2.5
+  _grownLocalScale: 0
+  _growthWorldOffset: {x: 0, y: 0, z: 0}
+  _jet: {fileID: 0}
+  _ejectionJetHoldSeconds: 1.2
+  _obstacleColliders:
+  - {fileID: 1614518449}
+--- !u!114 &46402607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 46402605}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 2162266322
+  SendPriority: 1
+  EnableInterpolation: 1
+  Flags: 262146
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 46402606}
+  ForceRemoteRenderTimeframe: 0
+--- !u!4 &46402608
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 46402605}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 284.53998, y: 47.729996, z: 293.55}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 277692517}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &47055657
 GameObject:
   m_ObjectHideFlags: 0
@@ -6429,6 +6526,7 @@ MonoBehaviour:
   _deployedGrip: {fileID: 0}
   _releaseGravityOverride: 0
   _singleUse: 1
+  _requiredAbility: 0
   _riderCapacity: 1
   _retractSeconds: 1.5
   _gripOffsets:
@@ -6706,17 +6804,18 @@ MonoBehaviour:
   _lowerCloth: {fileID: 0}
   _authoredVisual: {fileID: 0}
   _settings: {fileID: 11400000, guid: 683143c00c374cbfb22e7a5719901ed1, type: 2}
-  _waterDriven: 0
+  _waterDriven: 1
   _loweringPort: {fileID: 0}
   _raisedMeters: 2
   _lowerSeconds: 1
   _externalVisualRoot: {fileID: 1997861179}
-  _waterHitProxy: {fileID: 0}
+  _waterHitProxy: {fileID: 789496413}
   _externalAnchor: {fileID: 0}
   _deploymentMechanism: {fileID: 0}
   _deployedGrip: {fileID: 0}
   _releaseGravityOverride: 0
   _singleUse: 1
+  _requiredAbility: 0
   _riderCapacity: 1
   _retractSeconds: 1.5
   _gripOffsets:
@@ -44832,6 +44931,17 @@ MonoBehaviour:
   - {fileID: 729550148}
   _forestExitCheckpoint: {fileID: 1796703869}
   _forestExitRecoveryPoint: {fileID: 1786144138}
+  _respawnCloths:
+  - {fileID: 55648995}
+  - {fileID: 1892097061}
+  - {fileID: 1971200890}
+  - {fileID: 61791541}
+  - {fileID: 857879018}
+  _respawnBranches:
+  - {fileID: 1745266560}
+  - {fileID: 655455570}
+  - {fileID: 46402606}
+  - {fileID: 2114378536}
   _placeOfflineAtStarts: 1
   _fallHeight: -15
   _contactPadding: 0.08
@@ -44898,6 +45008,10 @@ Transform:
   - {fileID: 298961570}
   - {fileID: 2144809417}
   - {fileID: 1639598003}
+  - {fileID: 1745266562}
+  - {fileID: 655455572}
+  - {fileID: 46402608}
+  - {fileID: 2114378538}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &279537627
@@ -69954,7 +70068,19 @@ MonoBehaviour:
       m_Calls: []
   onReleased:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 2114378536}
+        m_TargetAssemblyTypeName: Herbalist.Levels.StageOneDocumentMechanism, Assembly-CSharp
+        m_MethodName: DropAfterLeafRecall
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName:
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument:
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!135 &513529190
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -83871,6 +83997,91 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2801488709427556490, guid: f2ef9b620025e1c47922094b37639093, type: 3}
   m_PrefabInstance: {fileID: 655228611}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &655455569
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 655455572}
+  - component: {fileID: 655455571}
+  - component: {fileID: 655455570}
+  m_Layer: 0
+  m_Name: FallingBranch_25
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &655455570
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 655455569}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ffc4fd681d85c8499bf011dc8b1c623, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Levels.StageOneDocumentMechanism
+  _kind: 4
+  _port: {fileID: 0}
+  _leafTarget: {fileID: 11328646}
+  _requiredCloth: {fileID: 0}
+  _activationArea: {fileID: 0}
+  _movingArt:
+  - {fileID: 705027123}
+  _motionPivot: {fileID: 0}
+  _offset: {x: 0, y: -15, z: 0}
+  _rotation: {x: 30, y: 0, z: -15}
+  _fillSeconds: 1
+  _restoreSeconds: 3
+  _moveSeconds: 1.2
+  _grownScale: 2.5
+  _grownLocalScale: 0
+  _growthWorldOffset: {x: 0, y: 0, z: 0}
+  _jet: {fileID: 0}
+  _ejectionJetHoldSeconds: 1.2
+  _obstacleColliders:
+  - {fileID: 705027120}
+--- !u!114 &655455571
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 655455569}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 2671726415
+  SendPriority: 1
+  EnableInterpolation: 1
+  Flags: 262146
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 655455570}
+  ForceRemoteRenderTimeframe: 0
+--- !u!4 &655455572
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 655455569}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 256.42, y: 115.759995, z: 284.48}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 277692517}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &655823903
 GameObject:
   m_ObjectHideFlags: 0
@@ -113381,6 +113592,7 @@ MonoBehaviour:
   _deployedGrip: {fileID: 789854626}
   _releaseGravityOverride: 22
   _singleUse: 1
+  _requiredAbility: 2
   _riderCapacity: 1
   _retractSeconds: 1.5
   _gripOffsets:
@@ -128227,7 +128439,19 @@ MonoBehaviour:
       m_Calls: []
   onReleased:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 46402606}
+        m_TargetAssemblyTypeName: Herbalist.Levels.StageOneDocumentMechanism, Assembly-CSharp
+        m_MethodName: DropAfterLeafRecall
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName:
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument:
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!135 &968257184
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -161334,7 +161558,7 @@ Transform:
   m_GameObject: {fileID: 1246503469}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 299, y: 131.5, z: 317.4}
+  m_LocalPosition: {x: 300.77, y: 128.8, z: 318.75998}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -164291,7 +164515,19 @@ MonoBehaviour:
       m_Calls: []
   onReleased:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1745266560}
+        m_TargetAssemblyTypeName: Herbalist.Levels.StageOneDocumentMechanism, Assembly-CSharp
+        m_MethodName: DropAfterLeafRecall
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName:
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument:
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!135 &1276196712
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -256640,6 +256876,91 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3078261191923197036, guid: 745d85693c6e10a4797baeb11e4d7e22, type: 3}
   m_PrefabInstance: {fileID: 914785099}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1745266559
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1745266562}
+  - component: {fileID: 1745266561}
+  - component: {fileID: 1745266560}
+  m_Layer: 0
+  m_Name: FallingBranch_24
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1745266560
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1745266559}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ffc4fd681d85c8499bf011dc8b1c623, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Levels.StageOneDocumentMechanism
+  _kind: 4
+  _port: {fileID: 0}
+  _leafTarget: {fileID: 1276196711}
+  _requiredCloth: {fileID: 0}
+  _activationArea: {fileID: 0}
+  _movingArt:
+  - {fileID: 1126615888}
+  _motionPivot: {fileID: 0}
+  _offset: {x: 0, y: -15, z: 0}
+  _rotation: {x: 30, y: 0, z: -15}
+  _fillSeconds: 1
+  _restoreSeconds: 3
+  _moveSeconds: 1.2
+  _grownScale: 2.5
+  _grownLocalScale: 0
+  _growthWorldOffset: {x: 0, y: 0, z: 0}
+  _jet: {fileID: 0}
+  _ejectionJetHoldSeconds: 1.2
+  _obstacleColliders:
+  - {fileID: 1126615885}
+--- !u!114 &1745266561
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1745266559}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 2399988479
+  SendPriority: 1
+  EnableInterpolation: 1
+  Flags: 262146
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 1745266560}
+  ForceRemoteRenderTimeframe: 0
+--- !u!4 &1745266562
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1745266559}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 264.97995, y: 110.96, z: 288.88214}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 277692517}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1748093651 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2740159159313294960, guid: 4df61aafacb33bb4dbb6bcf61b1ac33e, type: 3}
@@ -279549,6 +279870,7 @@ MonoBehaviour:
   _deployedGrip: {fileID: 0}
   _releaseGravityOverride: 0
   _singleUse: 1
+  _requiredAbility: 0
   _riderCapacity: 1
   _retractSeconds: 1.5
   _gripOffsets:
@@ -290072,6 +290394,7 @@ MonoBehaviour:
   _deployedGrip: {fileID: 0}
   _releaseGravityOverride: 0
   _singleUse: 1
+  _requiredAbility: 1
   _riderCapacity: 1
   _retractSeconds: 1.5
   _gripOffsets:
@@ -311464,6 +311787,91 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2114101312}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &2114378535
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2114378538}
+  - component: {fileID: 2114378537}
+  - component: {fileID: 2114378536}
+  m_Layer: 0
+  m_Name: FallingBranch_32
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2114378536
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2114378535}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ffc4fd681d85c8499bf011dc8b1c623, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Levels.StageOneDocumentMechanism
+  _kind: 4
+  _port: {fileID: 0}
+  _leafTarget: {fileID: 513529189}
+  _requiredCloth: {fileID: 0}
+  _activationArea: {fileID: 0}
+  _movingArt:
+  - {fileID: 615109543}
+  _motionPivot: {fileID: 0}
+  _offset: {x: 0, y: -15, z: 0}
+  _rotation: {x: 30, y: 0, z: -15}
+  _fillSeconds: 1
+  _restoreSeconds: 3
+  _moveSeconds: 1.2
+  _grownScale: 2.5
+  _grownLocalScale: 0
+  _growthWorldOffset: {x: 0, y: 0, z: 0}
+  _jet: {fileID: 0}
+  _ejectionJetHoldSeconds: 1.2
+  _obstacleColliders:
+  - {fileID: 615109545}
+--- !u!114 &2114378537
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2114378535}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 3300706977
+  SendPriority: 1
+  EnableInterpolation: 1
+  Flags: 262146
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 2114378536}
+  ForceRemoteRenderTimeframe: 0
+--- !u!4 &2114378538
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2114378535}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 323.47214, y: 61.609993, z: 295.47202}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 277692517}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2115090004
 GameObject:
   m_ObjectHideFlags: 0

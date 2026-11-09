@@ -7,6 +7,8 @@ using Herbalist.StageOne;
 using Herbalist.Networking;
 namespace Herbalist.Levels
 {
+    public enum ClothRiderAbility { Any, Leaf, Sap }
+
     [RequireComponent(typeof(NetworkObject))]
     public sealed class HangingCloth : NetworkBehaviour, IPlayerMovementReceiver
     {
@@ -27,6 +29,7 @@ namespace Herbalist.Levels
         [SerializeField] private Transform _deployedGrip;
         [SerializeField, Min(0)] private float _releaseGravityOverride;
         [SerializeField] private bool _singleUse;
+        [SerializeField] private ClothRiderAbility _requiredAbility;
         [SerializeField, Range(1, 2)] private int _riderCapacity = 2;
         [SerializeField, Min(.01f)] private float _retractSeconds = 1.5f;
         [SerializeField] private Vector3[] _gripOffsets = { new(-.45f, -1, 0), new(.45f, -1, 0) };
@@ -62,6 +65,9 @@ namespace Herbalist.Levels
         private float DeploymentProgress => Online && !HasStateAuthority ? Deployment : _deployment;
         private bool CanBoard => (_loweringPort == null || DeploymentProgress >= 1f) &&
             (_deploymentMechanism == null || _deploymentMechanism.Progress >= 1f) && (!_singleUse || !WasUsed);
+        private bool AllowsRider(StageActor actor) => _requiredAbility == ClothRiderAbility.Any ||
+            (actor.Abilities is { Unlocked: true } abilities &&
+             abilities.Kind == (_requiredAbility == ClothRiderAbility.Leaf ? PlayerAbilityKind.Leaf : PlayerAbilityKind.Sap));
         private Vector2 _angles, _velocity, _drive, _heldInput;
         private Vector2 _waterImpulse;
         public bool WaterDriven => _waterDriven;
@@ -157,7 +163,7 @@ namespace Herbalist.Levels
                 }
                 bool full = cloth.Online ? cloth.Rider0 >= 0 && (cloth._riderCapacity == 1 || cloth.Rider1 >= 0) :
                     cloth._riders[0] != null && (cloth._riderCapacity == 1 || cloth._riders[1] != null);
-                if (full || !cloth.CanBoard) continue;
+                if (full || !cloth.CanBoard || !cloth.AllowsRider(actor)) continue;
                 float d = Vector3.Distance(grabPosition, cloth._knot.position);
                 if (cloth._settings != null && d <= cloth._settings.grabRange && d < distance) { nearest = cloth; distance = d; }
             }
@@ -241,7 +247,7 @@ namespace Herbalist.Levels
                     }
                     return true;
                 }
-                if (cloth._knot == null || !cloth.CanBoard) continue;
+                if (cloth._knot == null || !cloth.CanBoard || !cloth.AllowsRider(actor)) continue;
                 float d = Vector3.Distance(grabPosition, cloth._knot.position);
                 if (cloth._settings != null && d <= cloth._settings.grabRange && d < distance) { nearest = cloth; distance = d; }
             }
@@ -351,6 +357,21 @@ namespace Herbalist.Levels
             Publish();
         }
         private bool HasRider => _riders[0] != null || _riders[1] != null;
+        public void RestoreAfterRespawn()
+        {
+            if (!isActiveAndEnabled || !Authority || (!_used && !HasRider)) return;
+            Detach(1);
+            Detach(0);
+            _used = false;
+            _retraction = 0f;
+            _angles = _velocity = _bendAngles = _bendVelocity = _waterImpulse = Vector2.zero;
+            _heldInput = _drive = _pendingDrive = _pendingDriveTime = Vector2.zero;
+            _bendActive = false;
+            _bendPoint = Vector3.zero;
+            _bendLength = 0f;
+            Publish();
+            Present(Vector2.zero, false, Vector3.zero, 0f, Vector2.zero);
+        }
         private bool HasAttachedRider => (_riders[0] != null && _grabRemaining[0] <= 0f) ||
                                          (_riders[1] != null && _grabRemaining[1] <= 0f);
         private void Attach(int side)

@@ -115,7 +115,10 @@ namespace Herbalist.Networking
                 {
                     LastJumpSequence=ridingInput.JumpSequence;
                     if(Finite(ridingInput.LookAngles.x) && Finite(ridingInput.LookAngles.y))
+                    {
+                        ApplyInputZoom(ridingInput.ZoomMultiplier);
                         LookAngles=new Vector2(Mathf.Repeat(ridingInput.LookAngles.x,360),Mathf.Clamp(ridingInput.LookAngles.y,player.Tuning.pitchLimits.x,player.Tuning.pitchLimits.y));
+                    }
                     if(HasStateAuthority && Finite(ridingInput.Move.x) && Finite(ridingInput.Move.y))
                         player.RouteMovement(ridingInput.Move);
                 }
@@ -132,11 +135,7 @@ namespace Herbalist.Networking
             {
                 if (Finite(input.Move.x) && Finite(input.Move.y) && Finite(input.LookAngles.x) && Finite(input.LookAngles.y))
                 {
-                    if (Finite(input.ZoomMultiplier) && input.ZoomMultiplier > 0f)
-                    {
-                        CameraZoomMultiplier = input.ZoomMultiplier;
-                        if (!HasInputAuthority) player.View.SetRemoteZoom(input.ZoomMultiplier);
-                    }
+                    ApplyInputZoom(input.ZoomMultiplier);
                     LookAngles = new Vector2(Mathf.Repeat(input.LookAngles.x, 360), Mathf.Clamp(input.LookAngles.y, player.Tuning.pitchLimits.x, player.Tuning.pitchLimits.y));
                     var movement = Vector2.ClampMagnitude(input.Move, 1);
                     if(HasStateAuthority && player.RouteMovement(movement))movement=Vector2.zero;
@@ -195,6 +194,12 @@ namespace Herbalist.Networking
             player.Motor.Teleport(position);
         }
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
+        private void ApplyInputZoom(float multiplier)
+        {
+            if (!Finite(multiplier) || multiplier <= 0f) return;
+            CameraZoomMultiplier = multiplier;
+            if (!HasInputAuthority) player.View.SetRemoteZoom(multiplier);
+        }
         public override void Render()
         {
             if (characterPresentation != null) characterPresentation.SetNetworkGrounded(Grounded);

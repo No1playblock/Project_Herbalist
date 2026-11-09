@@ -77,6 +77,7 @@ namespace Herbalist.Abilities
             if (leaf != null && leaf.Installed) _reuseRemaining = _reuseDelayAfterRelease;
             if (before && !HasLeaf) onReleased.Invoke();
         }
+        internal void ResetReuseDelay() => _reuseRemaining = 0f;
         private void Update() => TickReuseDelay(Time.deltaTime);
         private void TickReuseDelay(float dt)
         {

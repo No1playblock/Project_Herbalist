@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Herbalist.Levels
 {
-    public enum StageOneDocumentMechanismKind { GrowingMushrooms, EjectObstacle, LowerBranch, BlockJet }
+    public enum StageOneDocumentMechanismKind { GrowingMushrooms, EjectObstacle, LowerBranch, BlockJet, FallingBranch }
 
     // Scene-specific bindings. Original art stays at its authored rest pose in edit mode.
     [RequireComponent(typeof(NetworkObject))]
@@ -53,6 +53,21 @@ namespace Herbalist.Levels
             if (Online) Completed = true;
             return true;
         }
+        public void DropAfterLeafRecall()
+        {
+            if (_kind != StageOneDocumentMechanismKind.FallingBranch || !isActiveAndEnabled || !Authority || _completed) return;
+            _completed = true;
+            Publish();
+            Present(_amount, true, 0f);
+        }
+        public void RestoreFallenBranch()
+        {
+            if (_kind != StageOneDocumentMechanismKind.FallingBranch || !Authority || !_completed) return;
+            _completed = false;
+            _amount = 0f;
+            Publish();
+            Present(0f, false, 0f);
+        }
         private void Awake()
         {
             if (_kind == StageOneDocumentMechanismKind.BlockJet && _jet != null)
@@ -92,6 +107,7 @@ namespace Herbalist.Levels
                     }
                     break;
                 case StageOneDocumentMechanismKind.LowerBranch:
+                case StageOneDocumentMechanismKind.FallingBranch:
                     if (_completed) _amount = Mathf.MoveTowards(_amount, 1, dt / _moveSeconds);
                     break;
                 case StageOneDocumentMechanismKind.BlockJet:
@@ -99,9 +115,13 @@ namespace Herbalist.Levels
                     _amount = _completed ? 1 : 0;
                     break;
             }
-            if (Online) { Amount = _amount; Completed = _completed; }
+            Publish();
             Present(_amount, _completed, dt);
             if (!_completed && _fixedStream != null) _fixedStream.PushOnContact();
+        }
+        private void Publish()
+        {
+            if (Online) { Amount = _amount; Completed = _completed; }
         }
         public override void FixedUpdateNetwork() { if (HasStateAuthority) Tick(Runner.DeltaTime); }
         private void Update()
@@ -122,9 +142,18 @@ namespace Herbalist.Levels
                 }
                 else
                 {
-                    var rotation = Quaternion.Euler(_rotation * amount);
-                    art.SetPositionAndRotation(_pivot + rotation * (_positions[i] - _pivot) + _offset * amount, rotation * _rotations[i]);
+                    float motion = _kind == StageOneDocumentMechanismKind.FallingBranch ? amount * amount : amount;
+                    var rotation = Quaternion.Euler(_rotation * motion);
+                    art.SetPositionAndRotation(_pivot + rotation * (_positions[i] - _pivot) + _offset * motion, rotation * _rotations[i]);
+                    if (_kind == StageOneDocumentMechanismKind.FallingBranch && art.gameObject.activeSelf != (amount < 1f))
+                        art.gameObject.SetActive(amount < 1f);
                 }
+            }
+            if (_kind == StageOneDocumentMechanismKind.FallingBranch && _leafTarget != null &&
+                _leafTarget.gameObject.activeSelf == complete)
+            {
+                if (!complete) _leafTarget.ResetReuseDelay();
+                _leafTarget.gameObject.SetActive(!complete);
             }
             if (_kind == StageOneDocumentMechanismKind.EjectObstacle)
             {
