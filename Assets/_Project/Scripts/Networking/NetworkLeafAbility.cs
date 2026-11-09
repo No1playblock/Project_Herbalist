@@ -76,7 +76,7 @@ namespace Herbalist.Networking
             }
             Publish();
         }
-        private void Publish() { Unlocked = abilities.Unlocked; Count = abilities.DisplayCount; Kind = abilities.Kind; Controlling = abilities.Sap != null && abilities.Sap.Controlling; Spraying = abilities.Sap != null && abilities.Sap.Spraying; CanPlace = abilities.Sap != null && abilities.Sap.CanPlace; Ready = abilities.Sap != null && abilities.Sap.Ready; Recovering = abilities.Leaf.Recovering; LeafSlotStates = abilities.Leaf.PackedSlotStates; ThrowSequence = abilities.Leaf.ThrowSequence; ThrowElapsed = abilities.Leaf.ThrowElapsed; CatchSequence = abilities.Leaf.CatchSequence; CatchElapsed = abilities.Leaf.CatchElapsed; FeedbackSequence = abilities.Leaf.FeedbackSequence; RangeRejected = abilities.Leaf.RangeRejected; }
+        private void Publish() { Unlocked = abilities.Unlocked; Count = abilities.DisplayCount; Kind = abilities.Kind; Controlling = abilities.Sap != null && abilities.Sap.Controlling; Spraying = abilities.Sap != null && abilities.Sap.Spraying; CanPlace = abilities.Sap != null && abilities.Sap.CanPlace; Ready = abilities.Sap != null && abilities.Sap.Ready; Recovering = abilities.Leaf.Recovering; LeafSlotStates = abilities.Leaf.PackedSlotPresentation; ThrowSequence = abilities.Leaf.ThrowSequence; ThrowElapsed = abilities.Leaf.ThrowElapsed; CatchSequence = abilities.Leaf.CatchSequence; CatchElapsed = abilities.Leaf.CatchElapsed; FeedbackSequence = abilities.Leaf.FeedbackSequence; RangeRejected = abilities.Leaf.RangeRejected; }
         public override void Render()
         {
             if (HasStateAuthority) return;

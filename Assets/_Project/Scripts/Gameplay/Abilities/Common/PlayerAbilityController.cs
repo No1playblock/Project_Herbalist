@@ -31,7 +31,8 @@ namespace Herbalist.Abilities
         public bool Unlocked { get; private set; }
         public int DisplayCount { get; private set; }
         public bool DisplayRecovering { get; private set; }
-        public int DisplayLeafSlotStates => network && !authority ? _replicatedLeafSlotStates : Leaf.PackedSlotStates;
+        public int DisplayLeafSlotStates => DisplayLeafSlotPresentation & LeafThrowAbility.SlotStatesMask;
+        public int DisplayLeafSlotPresentation => network && !authority ? _replicatedLeafSlotStates : Leaf.PackedSlotPresentation;
         private void Awake() { player = GetComponent<PlayerController>(); Input = GetComponent<AbilityInputReader>(); Leaf = GetComponent<LeafThrowAbility>(); Sap = GetComponent<SapControlAbility>(); }
         private void Start()
         {

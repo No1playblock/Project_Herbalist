@@ -21,6 +21,7 @@ namespace Herbalist.GameUI
         [SerializeField] private ControlHintView _helpHintView, _interactionHintView, _clothHintView, _sapHintView;
         public GameObject leafStatus;
         public Image[] leafStatusDots;
+        [SerializeField] private UnityEngine.UI.Image[] _leafReturnFills;
         public TMP_Text[] leafStatusLabels;
         public RectTransform[] markers;
         public TMP_Text[] markerLabels;
@@ -99,12 +100,31 @@ namespace Herbalist.GameUI
                 leafStatus.SetActive(showLeaves);
                 if (showLeaves)
                 {
-                    int packed = ability.DisplayLeafSlotStates;
+                    int packed = ability.DisplayLeafSlotPresentation;
                     for (int i = 0; i < leafStatusDots.Length; i++)
                     {
                         int state = (packed >> (i * 2)) & 3;
-                        leafStatusDots[i].color = state == 2 ? settings.leafReturningColor :
-                            state == 1 ? settings.leafInstalledColor : settings.leafHeldColor;
+                        var icon = leafStatusDots[i];
+                        if (settings.LeafRecallAvailableIcon != null && settings.LeafRecallUnavailableIcon != null)
+                        {
+                            icon.sprite = state == 0 ? settings.LeafRecallAvailableIcon : settings.LeafRecallUnavailableIcon;
+                            icon.color = Color.white;
+                            if (_leafReturnFills != null && i < _leafReturnFills.Length && _leafReturnFills[i] != null)
+                            {
+                                var fill = _leafReturnFills[i];
+                                fill.gameObject.SetActive(state == 2);
+                                if (state == 2)
+                                {
+                                    fill.sprite = settings.LeafRecallAvailableIcon;
+                                    fill.fillAmount = LeafThrowAbility.ReadSlotReturnProgress(packed, i);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            icon.color = state == 2 ? settings.leafReturningColor :
+                                state == 1 ? settings.leafInstalledColor : settings.leafHeldColor;
+                        }
                         leafStatusLabels[i].text = state == 2 ? settings.leafReturningText :
                             state == 1 ? settings.leafInstalledText : settings.leafHeldText;
                     }

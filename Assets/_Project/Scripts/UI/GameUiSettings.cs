@@ -24,6 +24,10 @@ namespace Herbalist.GameUI
         public Color leafHeldColor = new Color(.49f, .86f, .66f);
         public Color leafInstalledColor = new Color(.96f, .76f, .36f);
         public Color leafReturningColor = new Color(.43f, .77f, .94f);
+        [SerializeField] private Sprite _leafRecallAvailableIcon;
+        [SerializeField] private Sprite _leafRecallUnavailableIcon;
+        public Sprite LeafRecallAvailableIcon => _leafRecallAvailableIcon;
+        public Sprite LeafRecallUnavailableIcon => _leafRecallUnavailableIcon;
         public string pauseHint="일시정지", helpHint="키 확인", emptyPocket="빈손";
         public string controlHintFormat = "<b>{0}</b>  {1}";
         public string alternativeControlHintFormat = "<b>{0}</b> / <b>{1}</b>  {2}";

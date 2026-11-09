@@ -29,23 +29,35 @@ namespace Herbalist.Abilities
         public event Action<float> FacingRequested;
         public LeafAbilitySettings Settings => settings;
         public int ActiveCount => leaves.Count;
-        // Two bits per authored HUD slot: 0 held, 1 flying/installed, 2 returning.
-        public int PackedSlotStates
+        private const int HudSlotCount = 3;
+        private const int SlotStateBits = 2;
+        private const int ProgressBits = 8;
+        private const int ProgressMax = (1 << ProgressBits) - 1;
+        private const int ProgressOffset = HudSlotCount * SlotStateBits;
+        internal const int SlotStatesMask = (1 << ProgressOffset) - 1;
+        public int PackedSlotStates => PackedSlotPresentation & SlotStatesMask;
+
+        // Keep the two-bit states in the low six bits and append one progress byte per slot.
+        public int PackedSlotPresentation
         {
             get
             {
                 if (displaySlots == null) return 0;
                 int packed = 0;
-                for (int i = 0; i < Mathf.Min(3, displaySlots.Length); i++)
+                for (int i = 0; i < Mathf.Min(HudSlotCount, displaySlots.Length); i++)
                 {
                     var leaf = displaySlots[i];
                     int state = leaf == null || leaf.State == LeafState.Complete ? 0 :
                         leaf.State == LeafState.Returning ? 2 : 1;
-                    packed |= state << (i * 2);
+                    packed |= state << (i * SlotStateBits);
+                    if (state == 2)
+                        packed |= Mathf.RoundToInt(leaf.ReturnProgress * ProgressMax) << (ProgressOffset + i * ProgressBits);
                 }
                 return packed;
             }
         }
+        public static float ReadSlotReturnProgress(int packed, int slot) =>
+            ((packed >> (ProgressOffset + slot * ProgressBits)) & ProgressMax) / (float)ProgressMax;
         public bool Recovering { get; private set; }
         public bool RecallOldestInstalled()
         {

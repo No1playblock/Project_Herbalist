@@ -31,7 +31,7 @@ Play 중 변경은 종료하면 사라진다. 수정은 Play를 종료한 다음
 | 천·수액 안내 배경 | `ClothInteraction / Art_ClothInteraction`, `SapInjectionInteraction / Art_SapInjectionInteraction` |
 | 도움말 배경 | `PF_PlayerHud / HelpPanel / Art_HelpPanel` |
 | 잎 상태 아이콘 | `PF_PlayerHud / LeafStatus / Art_StateTint_LeafSlot1Dot` 등 3개 |
-| 제조 화면 배경·솥 | `PF_PlayerHud / BrewingHud / Art_BrewingHud`, `BrewingPotAndFire / Art_BrewingPotAndFire` |
+| 제조 화면 배경·주전자·모닥불 | `PF_PlayerHud / BrewingHud / Art_BrewingHud`, `BrewingPotAndFire` 아래 `Art_BrewingKettle`과 `Art_BrewingHearth` |
 | 온도계 테두리 | `PF_PlayerHud / BrewingHud / ThermometerFrame / Art_ThermometerFrame` |
 | 스테이지 목표 배경 | `PF_GameOverlayHud / StageHeader / Art_StageHeader` |
 | 일시정지 배경 | `PF_GameOverlayHud / Pause / Art_Pause` |
