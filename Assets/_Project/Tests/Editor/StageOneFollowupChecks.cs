@@ -48,7 +48,11 @@ namespace Herbalist.Editor
             var pad = GameObject.Find("Stage1_DocumentGimmicks/BranchHole_LeftLeaf_RightWater_20261109").GetComponent<ExteriorJumpPad>();
             var target = Read<LeafInstallTarget[]>(pad, "_sockets")[0];
             var inlet = Read<SapInjectionPort[]>(pad, "_ports")[0];
-            Check(Vector3.Distance(target.SocketPosition, new Vector3(278.4957f, 87.2164f, 330.1857f)) < .01f, "Photo-left leaf socket.");
+            Check(Vector3.Distance(target.transform.position, new Vector3(278.4957f, 87.2164f, 330.1857f)) < .01f,
+                "The photo-left installation target stays at the opening.");
+            Check(Vector3.Distance(target.SocketPosition, target.transform.position) < 5f &&
+                  target.SocketPosition.y > target.transform.position.y,
+                "The fitted leaf sits just above and outward from the opening.");
             Check(Vector3.Distance(inlet.InteractionPoint, new Vector3(287.4343f, 83.6032f, 322.0099f)) < .01f, "Photo-right water inlet.");
             Check(GameObject.Find("Stage1_DocumentGimmicks/OutletCorrections_20261104/Photo1_Branch_UpperLeaf_LowerWater") != null, "branch_hole (1) pair retained.");
             var actor = StageActor.All.First(a => a.Available); var player = actor.GetComponent<PlayerController>();
@@ -59,8 +63,9 @@ namespace Herbalist.Editor
                 leaf = UnityEngine.Object.Instantiate(settings.leaf.offlinePrefab);
                 leaf.Initialize(settings.leaf, actor.transform, target.SocketPosition, target.SocketPosition, null, true);
                 Check(leaf.TryInstallAtSocket(target), "Actual leaf installation.");
-                var cc = actor.GetComponent<CharacterController>(); var surface = Read<Collider>(leaf, "_surface");
-                Physics.SyncTransforms(); var feet = surface.bounds.center; feet.y = surface.bounds.max.y + .02f;
+                var cc = actor.GetComponent<CharacterController>(); var surface = Read<BoxCollider>(leaf, "_surface");
+                Physics.SyncTransforms();
+                var feet = surface.transform.TransformPoint(surface.center + Vector3.up * (surface.size.y * .5f)) + Vector3.up * .02f;
                 player.Motor.Teleport(feet - actor.transform.TransformVector(cc.center) + Vector3.up * cc.height * Mathf.Abs(cc.transform.lossyScale.y) * .5f);
                 Physics.SyncTransforms(); Check(leaf.Supports(cc, .64f), "Actual rider stands on left leaf.");
                 water = UnityEngine.Object.Instantiate(settings.sap.offlinePrefab); water.transform.position = inlet.InteractionPoint + Vector3.up * 5;

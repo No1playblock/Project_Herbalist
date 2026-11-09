@@ -70,8 +70,9 @@ namespace Herbalist.Editor
                     "Photo1 upper leaf socket and distinct lower water inlet.");
                 leaf = UnityEngine.Object.Instantiate(settings.leaf.offlinePrefab); leaf.Initialize(settings.leaf, actor.transform, socket.SocketPosition, socket.SocketPosition, null, true);
                 Check(leaf.TryInstallAtSocket(socket), "Install upper-hole launch leaf."); leaf.Tick(120); Check(leaf.Installed, "Launch leaf remains until use.");
-                var surface = Read<Collider>(leaf, "_surface"); Physics.SyncTransforms();
-                var capsule = actor.GetComponent<CharacterController>(); var feet = surface.bounds.center; feet.y = surface.bounds.max.y + .02f;
+                var surface = Read<BoxCollider>(leaf, "_surface"); Physics.SyncTransforms();
+                var capsule = actor.GetComponent<CharacterController>();
+                var feet = surface.transform.TransformPoint(surface.center + Vector3.up * (surface.size.y * .5f)) + Vector3.up * .02f;
                 player.Motor.Teleport(feet - actor.transform.TransformVector(capsule.center) + Vector3.up * capsule.height * Mathf.Abs(capsule.transform.lossyScale.y) * .5f);
                 Physics.SyncTransforms(); Check(leaf.Supports(capsule, .64f), "Actual player stands on upper-hole leaf.");
                 held = UnityEngine.Object.Instantiate(settings.sap.offlinePrefab); held.transform.position = port.InteractionPoint + Vector3.up * 5;

@@ -218,7 +218,17 @@ namespace Herbalist.Editor
                     else Check(!c.PushWithWater(Vector3.right,.1f),"Self-driven cloth does not accept water drive.");
                     var knot=Read<Transform>(c,"_knot");var cc=actors[0].GetComponent<CharacterController>();
                     actors[0].GetComponent<PlayerController>().Motor.Teleport(knot.position-cc.transform.TransformVector(cc.center));Physics.SyncTransforms();
+                    var approachOrigin = actors[0].transform.position;
+                    float contact = actors[0].GetComponent<SodamAnimationPresentation>().Profile.Find(SodamPose.ClothGrab).ContactTime;
+                    Check(contact > .02f, "Grab contact is timed in the active character profile.");
                     Check(HangingCloth.TryInteract(actors[0],out var feedback),"Grab authored cloth: "+c.name+" "+feedback);
+                    c.Tick(contact - .02f);
+                    Check(HangingCloth.IsGrabbing(actors[0]) && !HangingCloth.IsRiding(actors[0]) && !c.WasUsed &&
+                        Vector3.Distance(actors[0].transform.position, approachOrigin) < .001f, "Before contact the cloth reserves the grab without transporting the rider.");
+                    c.Tick(.03f);
+                    Check(HangingCloth.IsRiding(actors[0]) &&
+                        Vector3.Distance(actors[0].transform.position, knot.position + Vector3.down * Read<float>(c, "_knotHangHeight")) < .001f,
+                        "At contact the rider begins following the knot.");
                     Check(Read<StageActor[]>(c,"_riders").Contains(actors[0])&&c.WasUsed,"First rider consumes cloth use.");
                     var partner=actors[1].GetComponent<PlayerController>();partner.Motor.Teleport(actors[0].transform.position+Vector3.right*.5f);
                     HangingCloth.TryInteract(actors[1],out _);Check(!Read<StageActor[]>(c,"_riders").Contains(actors[1]),"Only one rider can use each cloth.");HangingCloth.TryRelease(actors[1],out _);
@@ -270,8 +280,8 @@ namespace Herbalist.Editor
                     leaf=UnityEngine.Object.Instantiate(leafSettings.offlinePrefab);leaf.Initialize(leafSettings,actor.transform,target.SocketPosition,target.SocketPosition,null,true);
                     Check(leaf.TryInstallAtSocket(target),"Install pad leaf: "+pad.name);Physics.SyncTransforms();
                     leaf.Tick(120f);Check(leaf.Installed,"Pad leaf has no time limit: "+pad.name);
-                    var cc=actor.GetComponent<CharacterController>();var surface=Read<Collider>(leaf,"_surface");
-                    var feet=new Vector3(surface.bounds.center.x,surface.bounds.max.y+.02f,surface.bounds.center.z);
+                    var cc=actor.GetComponent<CharacterController>();var surface=Read<BoxCollider>(leaf,"_surface");
+                    var feet=surface.transform.TransformPoint(surface.center+Vector3.up*(surface.size.y*.5f))+Vector3.up*.02f;
                     player.Motor.Teleport(feet-cc.transform.TransformVector(cc.center)+Vector3.up*cc.height*Mathf.Abs(cc.transform.lossyScale.y)*.5f);Physics.SyncTransforms();
                     Check(leaf.Supports(cc,.64f),"Rider supported: "+pad.name);
                     portForPad.Inject(1.1f);pad.Tick(1.1f);Check(pad.ChargeFraction>=1,"Pad charged: "+pad.name);
