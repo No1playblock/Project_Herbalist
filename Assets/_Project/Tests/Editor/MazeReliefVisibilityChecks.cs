@@ -35,6 +35,8 @@ namespace Herbalist.Editor
                     }
                     if (source < 0) throw new Exception("Occlusion fixture not found on " + surface.name);
                     var view = surface.GetComponentInChildren<SapMazeTrailView>(true);
+                    var density = new SerializedObject(view).FindProperty("_densitySurface").objectReferenceValue as SapMazeDensitySurface;
+                    if (density != null) density.enabled = false; // This fixture tests the legacy dynamic mesh.
                     var settings = UnityEngine.Object.Instantiate(view.Settings);
                     try
                     {

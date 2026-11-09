@@ -11,6 +11,7 @@ namespace Herbalist.Levels
         [SerializeField] private LineRenderer _line;
         [SerializeField] private MeshFilter _fluidMesh;
         [SerializeField] private MeshRenderer _fluidRenderer;
+        [SerializeField] private SapMazeDensitySurface _densitySurface;
         private Mesh _mesh;
         private readonly List<Vector3> _vertices = new List<Vector3>();
         private readonly List<Vector3> _normals = new List<Vector3>();
@@ -39,6 +40,7 @@ namespace Herbalist.Levels
         private struct FloorSample { public Vector2 Point; public float Z; public bool Open; }
         private SapMazeFluidField _renderedField;
         private ulong _renderStamp;
+        private bool _renderedDensity;
         private float _nextFluidRender;
         private readonly List<Vector3> _visible = new List<Vector3>(128);
         private readonly List<Vector2> _path = new List<Vector2>(128);
@@ -57,6 +59,7 @@ namespace Herbalist.Levels
 
         public void PresentTube(IReadOnlyList<Vector2> points, SapMazeSurface surface)
         {
+            _densitySurface?.SetVisible(false);
             if (_line != null) _line.positionCount = 0;
             if (_fluidMesh == null || _fluidRenderer == null || points.Count < 2) return;
             _fluidRenderer.enabled = true;
@@ -129,8 +132,15 @@ namespace Herbalist.Levels
         {
             if (_line != null) _line.positionCount = 0;
             if (_fluidMesh == null || _fluidRenderer == null || field == null || _settings == null) return;
-            _fluidRenderer.enabled = true;
-            if (Time.unscaledTime < _nextFluidRender && _renderedField == field) return;
+            bool useDensity = _densitySurface != null && _densitySurface.isActiveAndEnabled && _densitySurface.CanPresent(field);
+            _fluidRenderer.enabled = !useDensity;
+            if (!useDensity) _densitySurface?.SetVisible(false);
+            bool sameMode = _renderedDensity == useDensity;
+            if (Time.unscaledTime < _nextFluidRender && _renderedField == field && sameMode)
+            {
+                if (useDensity) _densitySurface.SetVisible(_outlineLevel > 0);
+                return;
+            }
             _nextFluidRender = Time.unscaledTime + _settings.fluidRenderInterval;
             ulong stamp = 14695981039346656037UL;
             unchecked
@@ -150,7 +160,25 @@ namespace Herbalist.Levels
                 stamp = (stamp ^ (uint)_settings.outlineWallInsetWorld.GetHashCode()) * 1099511628211UL;
                 stamp = (stamp ^ (uint)surface.GeometryVersion) * 1099511628211UL;
             }
-            if (_mesh != null && _renderedField == field && _renderStamp == stamp) return;
+            if (_renderedField == field && _renderStamp == stamp && sameMode && (useDensity || _mesh != null))
+            {
+                if (useDensity) _densitySurface.SetVisible(_outlineLevel > 0);
+                return;
+            }
+            if (useDensity)
+            {
+                var timer = System.Diagnostics.Stopwatch.StartNew();
+                float densityScale = transform.TransformVector(Vector3.right).magnitude;
+                _outline.Build(field, _settings.outlineBlendRadiusWorld / Mathf.Max(.001f, densityScale), _settings.outlineBlendPasses);
+                _outlineLevel = Mathf.Min(_settings.outlineThreshold, _outline.Maximum * .4f);
+                float outlineMs = (float)timer.Elapsed.TotalMilliseconds;
+                _densitySurface.Upload(field, surface, _outline, _outlineLevel, _settings.waterUvScale);
+                LastBuildTimingsMs = new Vector3(outlineMs, 0, (float)timer.Elapsed.TotalMilliseconds - outlineMs);
+                _renderedField = field;
+                _renderStamp = stamp;
+                _renderedDensity = true;
+                return;
+            }
             if (_mesh == null)
             {
                 _mesh = new Mesh { name = "Maze occupied water surface", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
@@ -206,7 +234,7 @@ namespace Herbalist.Levels
             if (_flatSurface) _mesh.SetNormals(_normals); else _mesh.RecalculateNormals();
             _mesh.RecalculateBounds();
             LastBuildTimingsMs = new Vector3(outlineTime, tessellationTime, (float)buildTimer.Elapsed.TotalMilliseconds);
-            _renderedField = field; _renderStamp = stamp; _lastWasTube = false;
+            _renderedField = field; _renderStamp = stamp; _lastWasTube = false; _renderedDensity = false;
         }
 
         private FloorSample Floor(SapMazeFluidField field, SapMazeSurface surface, int index)
@@ -425,6 +453,7 @@ namespace Herbalist.Levels
         {
             if (_line != null) _line.positionCount = 0;
             if (_fluidRenderer != null) _fluidRenderer.enabled = false;
+            _densitySurface?.SetVisible(false);
         }
     }
 }
