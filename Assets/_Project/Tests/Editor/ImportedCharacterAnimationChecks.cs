@@ -99,11 +99,35 @@ namespace Herbalist.Editor
                         .First(s => s.state.name == "sodam_lower_jump").state.motion;
                     if (AssetDatabase.GetAssetPath(lower) != "Assets/_Project/Art/Character_anime/sodam_animeclip/Jump.fbx")
                         throw new Exception("Jump legs still use the wrong clip");
+                    if (duyeong) CheckDuyeongHerbGrip(presentation, animator);
                     visual.SetActive(false);
                 }
-                return "PASS: " + count + " role poses; standing/seated throw and catch contact timing, late notification compensation, and walking jump lower-body clips.";
+                return "PASS: " + count + " role poses; throw and catch contact timing, walking jump legs, and Duyeong's uninterrupted herb grip.";
             }
             finally { Object.DestroyImmediate(root); }
+        }
+
+        private static void CheckDuyeongHerbGrip(SodamAnimationPresentation presentation, Animator animator)
+        {
+            var apply = typeof(SodamAnimationPresentation).GetMethod("Apply", BindingFlags.Instance | BindingFlags.NonPublic);
+            int armLayer = animator.GetLayerIndex("right_arm");
+            animator.SetFloat("Speed", 3f);
+            apply.Invoke(presentation, new object[] { SodamPose.HerbMove, 0f });
+            animator.Update(.5f);
+
+            foreach (bool moving in new[] { false, true })
+            {
+                var grip = animator.GetCurrentAnimatorStateInfo(armLayer);
+                animator.SetFloat("Speed", moving ? 3f : 0f);
+                apply.Invoke(presentation, new object[] { moving ? SodamPose.HerbMove : SodamPose.HerbIdle, 0f });
+                animator.Update(.2f);
+                var nextGrip = animator.GetCurrentAnimatorStateInfo(armLayer);
+                if (!nextGrip.IsName("right_arm.grip_hand") || nextGrip.normalizedTime <= grip.normalizedTime ||
+                    animator.GetLayerWeight(armLayer) != 1f)
+                    throw new Exception("Duyeong restarted or lost the herb grip while " + (moving ? "resuming movement" : "stopping"));
+                if (!animator.GetCurrentAnimatorStateInfo(0).IsName(moving ? "Base Layer.Run" : "Base Layer.Idle"))
+                    throw new Exception("Duyeong's locomotion did not change while holding an herb");
+            }
         }
     }
 }

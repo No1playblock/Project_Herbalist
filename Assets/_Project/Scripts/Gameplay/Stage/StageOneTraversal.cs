@@ -95,8 +95,8 @@ namespace Herbalist.Levels
                 _grace.TryGetValue(actor, out float grace);
                 _grace[actor] = Mathf.Max(0, grace - dt);
                 if (grace > 0) continue;
-                bool ridingCloth = HangingCloth.IsRiding(actor);
-                if (actor.transform.position.y < _fallHeight || (!ridingCloth && TouchesBareTree(cc)))
+                bool usingCloth = HangingCloth.IsRiding(actor) || HangingCloth.IsGrabbing(actor);
+                if (actor.transform.position.y < _fallHeight || (!usingCloth && TouchesBareTree(cc)))
                 {
                     HangingCloth.TryRelease(actor, out _);
                     actor.Abilities.Sap?.Cancel();
@@ -116,7 +116,7 @@ namespace Herbalist.Levels
                     _recovery[actor] = _forestExitRecoveryPoint.position;
                     continue;
                 }
-                if (!player.Motor.IsGrounded || ridingCloth) continue;
+                if (!player.Motor.IsGrounded || usingCloth) continue;
                 Vector3 feet = cc.transform.TransformPoint(cc.center) - Vector3.up * cc.height * Mathf.Abs(cc.transform.lossyScale.y) * .5f;
                 if (!Physics.Raycast(feet + Vector3.up * _checkpointProbeHeight, Vector3.down, out var ground, _checkpointProbeDistance, ~0, QueryTriggerInteraction.Ignore)) continue;
                 if (System.Array.IndexOf(_checkpointSurfaces, ground.collider) >= 0 ||

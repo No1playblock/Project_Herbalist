@@ -27,6 +27,11 @@ namespace Herbalist.Player
         public SodamPose pose;
         [Min(0)] public float blendSeconds = 0.12f;
         [Min(0)] public float durationSeconds;
+        [Min(0), Tooltip("Playback time when a traversal action attaches the player. Zero keeps immediate attachment.")]
+        public float contactSeconds;
+        [Min(0), Tooltip("Playback time when the model starts moving toward the traversal anchor.")]
+        public float approachStartSeconds;
+        public float ContactTime => Mathf.Clamp(contactSeconds, 0f, durationSeconds);
         public float modelOffsetY;
         public AnimationCurve visualOffsetY;
         public bool useRootMotion;

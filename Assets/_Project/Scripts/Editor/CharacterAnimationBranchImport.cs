@@ -57,6 +57,7 @@ namespace Herbalist.Editor
                 "Assets/_Project/Animations/Characters/Duyeong/AC_DuyeongLocomotion.controller");
             AnimatorState State(string layer, string state) => controller.layers.First(l => l.name == layer)
                 .stateMachine.states.First(s => s.state.name == state).state;
+            var profile = AssetDatabase.LoadAssetAtPath<SodamAnimationProfile>(ProfilePath);
             SodamLayerMotion Motion(string state, string layer = "Base Layer") =>
                 new SodamLayerMotion { layer = layer, state = state };
             var poses = new List<SodamPoseDefinition>();
@@ -65,8 +66,11 @@ namespace Herbalist.Editor
                 var state = State(motions[0].layer, motions[0].state);
                 var clip = state.motion as AnimationClip;
                 if (clip == null) throw new Exception("Missing clip: " + state.name);
+                var previous = profile != null ? profile.Find(pose) : null;
                 poses.Add(new SodamPoseDefinition {
                     pose = pose, durationSeconds = oneShot ? clip.length / Mathf.Max(.01f, state.speed) : 0f,
+                    contactSeconds = previous?.contactSeconds ?? 0f,
+                    approachStartSeconds = previous?.approachStartSeconds ?? 0f,
                     motions = motions, blendSeconds = .12f
                 });
             }
@@ -109,7 +113,6 @@ namespace Herbalist.Editor
             var swingLanding = poses.First(p => p.pose == SodamPose.ClothSwingLand);
             swingLanding.motions[0].startTimeSeconds = 23f / 30f;
             swingLanding.durationSeconds -= swingLanding.motions[0].startTimeSeconds;
-            var profile = AssetDatabase.LoadAssetAtPath<SodamAnimationProfile>(ProfilePath);
             if (profile == null) { profile = ScriptableObject.CreateInstance<SodamAnimationProfile>(); AssetDatabase.CreateAsset(profile, ProfilePath); }
             profile.poses = poses.ToArray();
             var sodam = AssetDatabase.LoadAssetAtPath<SodamAnimationProfile>(

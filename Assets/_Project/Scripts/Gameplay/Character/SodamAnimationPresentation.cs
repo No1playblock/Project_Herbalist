@@ -30,6 +30,7 @@ namespace Herbalist.Player
         private uint _lastThrowSequence;
         private StageMinigameKind _lastMinigame;
         private bool _wasGrounded, _wasOnCloth, _wasOnTalisman;
+        private bool _wasGrabbingCloth, _wasBoardingTalisman;
         private bool _clothAirborne;
         private float _clothReleaseY;
         private bool _initialized;
@@ -92,6 +93,8 @@ namespace Herbalist.Player
             bool grounded = animator.GetBool(Animator.StringToHash("Grounded"));
             bool onCloth = _actor != null && HangingCloth.IsRiding(_actor);
             bool onTalisman = _actor != null && BranchRideFlow.IsRiding(_actor);
+            bool grabbingCloth = HangingCloth.TryGetHandGripPoint(_actor, out _, out float grabRemaining) && grabRemaining > 0f;
+            bool boardingTalisman = BranchRideFlow.TryGetBoardingSeat(_actor, out _, out float boardRemaining) && boardRemaining > 0f;
             bool moving = animator.GetFloat(Animator.StringToHash("Speed")) > Profile.movingSpeedThreshold;
 
             if (!_initialized)
@@ -102,9 +105,13 @@ namespace Herbalist.Player
                 _lastResultSequence = flow != null ? flow.MinigameResultSequence : 0;
                 _lastMinigame = flow != null ? flow.Minigame : StageMinigameKind.None;
                 _wasGrounded = grounded; _wasOnCloth = onCloth; _wasOnTalisman = onTalisman;
+                _wasGrabbingCloth = _wasBoardingTalisman = false;
                 _clothAirborne = false; _oneShot = null; _initialized = true;
-                Apply(ContinuousPose(flow, held, grounded, moving, onCloth, onTalisman));
-                return;
+                if (!grabbingCloth && !boardingTalisman)
+                {
+                    Apply(ContinuousPose(flow, held, grounded, moving, onCloth, onTalisman));
+                    return;
+                }
             }
 
             if (!Herbalist.GameUI.GameplayPause.IsPaused)
@@ -114,14 +121,18 @@ namespace Herbalist.Player
                 if (_oneShot.Value == SodamPose.CraftSuccessRise) PlayOneShot(SodamPose.CraftSuccessShow);
                 else if (_oneShot.Value == SodamPose.CraftFailRise) PlayOneShot(SodamPose.CraftFailDust);
                 else if (_oneShot.Value == SodamPose.GatherFailRise) PlayOneShot(SodamPose.GatherFailWipe);
-                else if (!_character.IsSodamActive && _oneShot.Value == SodamPose.TalismanBoard)
+                else if (onTalisman && !_character.IsSodamActive && _oneShot.Value == SodamPose.TalismanBoard)
                     PlayOneShot(SodamPose.TalismanKneel);
                 else _oneShot = null;
             }
 
-            if (onCloth && !_wasOnCloth)
-            {
+            if ((grabbingCloth && !_wasGrabbingCloth) || (onCloth && !_wasOnCloth))
                 _clothAirborne = false;
+            if (grabbingCloth && !_wasGrabbingCloth)
+                PlayOneShot(SodamPose.ClothGrab, ContactElapsed(SodamPose.ClothGrab, grabRemaining));
+            else if (onCloth && !_wasOnCloth && !_wasGrabbingCloth &&
+                !HangingCloth.TryGetHandGripPoint(_actor, out _, out _))
+            {
                 PlayOneShot(SodamPose.ClothGrab);
             }
             else if (!onCloth && _wasOnCloth)
@@ -130,10 +141,21 @@ namespace Herbalist.Player
                 _clothReleaseY = transform.position.y;
                 PlayOneShot(SodamPose.ClothFall);
             }
-            if (onTalisman && !_wasOnTalisman) PlayOneShot(SodamPose.TalismanBoard);
+            else if (!grabbingCloth && !onCloth && _wasGrabbingCloth && _oneShot == SodamPose.ClothGrab)
+                _oneShot = null;
+            if (boardingTalisman && !_wasBoardingTalisman)
+                PlayOneShot(SodamPose.TalismanBoard, ContactElapsed(SodamPose.TalismanBoard, boardRemaining));
+            else if (onTalisman && !_wasOnTalisman && !_wasBoardingTalisman &&
+                (Profile.Find(SodamPose.TalismanBoard)?.ContactTime ?? 0f) <= 0f)
+                PlayOneShot(SodamPose.TalismanBoard);
+            else if (!boardingTalisman && !onTalisman && (_wasBoardingTalisman || _wasOnTalisman) &&
+                (_oneShot == SodamPose.TalismanBoard || _oneShot == SodamPose.TalismanKneel))
+                _oneShot = null;
 
             // A previous full-body action must not keep grounded legs during takeoff.
-            if (!grounded && _wasGrounded && !onCloth && !onTalisman && !_clothAirborne &&
+            bool traversalAction = grabbingCloth || boardingTalisman || _oneShot == SodamPose.ClothGrab ||
+                _oneShot == SodamPose.TalismanBoard || _oneShot == SodamPose.TalismanKneel;
+            if (!grounded && _wasGrounded && !onCloth && !onTalisman && !_clothAirborne && !traversalAction &&
                 _oneShot != SodamPose.LeafThrow && _oneShot != SodamPose.LeafCatch)
                 _oneShot = null;
 
@@ -150,18 +172,18 @@ namespace Herbalist.Player
             // while ability, item and traversal actions retain their own priority.
             if (!_character.IsSodamActive && grounded && moving && _oneShot == SodamPose.Land)
                 _oneShot = null;
-            if (flow != null && flow.MinigameResultSequence != _lastResultSequence &&
+            if (!traversalAction && flow != null && flow.MinigameResultSequence != _lastResultSequence &&
                 _lastMinigame == StageMinigameKind.Crafting && validSlot &&
                 flow.RoleFor(_actor) == Herbalist.Presentation.CharacterRole.Sodam)
                 PlayOneShot(flow.MinigameSucceeded ? SodamPose.CraftSuccessRise : SodamPose.CraftFailRise);
 
-            bool gatherResult = flow != null && flow.MinigameResultSequence != _lastResultSequence &&
+            bool gatherResult = !traversalAction && flow != null && flow.MinigameResultSequence != _lastResultSequence &&
                 _lastMinigame == StageMinigameKind.Gathering && validSlot &&
                 flow.RoleFor(_actor) == Herbalist.Presentation.CharacterRole.Duyeong;
             if (gatherResult)
                 PlayOneShot(flow.MinigameSucceeded ? SodamPose.GatherSuccess : SodamPose.GatherFailRise);
 
-            if (flow != null && flow.Progress != null && validSlot && held != _lastHeld)
+            if (!traversalAction && flow != null && flow.Progress != null && validSlot && held != _lastHeld)
             {
                 var oldItem = flow.settings.Item(_lastHeld);
                 var newItem = flow.settings.Item(held);
@@ -174,11 +196,11 @@ namespace Herbalist.Player
             }
 
             uint catchSequence = _abilities != null ? _abilities.Leaf.CatchSequence : 0;
-            if (catchSequence != _lastCatchSequence)
+            if (!traversalAction && catchSequence != _lastCatchSequence)
                 PlayOneShot(onTalisman ? SodamPose.TalismanCatch : SodamPose.LeafCatch, _abilities.Leaf.CatchElapsed);
             _lastCatchSequence = catchSequence;
             uint throwSequence = _abilities != null ? _abilities.Leaf.ThrowSequence : 0;
-            if (throwSequence != _lastThrowSequence)
+            if (!traversalAction && throwSequence != _lastThrowSequence)
                 PlayOneShot(onTalisman ? SodamPose.TalismanThrow : SodamPose.LeafThrow, _abilities.Leaf.ThrowElapsed);
             _lastThrowSequence = throwSequence;
 
@@ -194,6 +216,7 @@ namespace Herbalist.Player
             _lastResultSequence = flow != null ? flow.MinigameResultSequence : 0;
             _lastMinigame = flow != null ? flow.Minigame : StageMinigameKind.None;
             _wasGrounded = grounded; _wasOnCloth = onCloth; _wasOnTalisman = onTalisman;
+            _wasGrabbingCloth = grabbingCloth; _wasBoardingTalisman = boardingTalisman;
         }
 
         private void UpdateDuyeongAbilities()
@@ -323,6 +346,9 @@ namespace Herbalist.Player
             var definition = Profile.Find(pose);
             if (definition == null || definition.motions == null) return;
             if (_pose.HasValue && _pose.Value == pose) return;
+            var previous = _pose.HasValue ? Profile.Find(_pose.Value) : null;
+            bool keepContinuousLayers = definition.durationSeconds == 0f &&
+                previous?.durationSeconds == 0f && previous.motions != null;
             _pose = pose;
             _poseSequence++;
             _previousVisualOffsetY = _animator.transform.localPosition.y - _restVisualPosition.y;
@@ -351,6 +377,15 @@ namespace Herbalist.Player
                 int layer = _animator.GetLayerIndex(motion.layer);
                 if (layer < 0) continue;
                 int hash = Animator.StringToHash(motion.layer + "." + motion.state);
+                // Locomotion can change while the same carry pose remains on an upper layer.
+                if (keepContinuousLayers && layer > 0 &&
+                    System.Array.Exists(previous.motions, prior => prior != null && prior.layer == motion.layer &&
+                        prior.state == motion.state && prior.startTimeSeconds == motion.startTimeSeconds))
+                {
+                    var active = _animator.IsInTransition(layer) ? _animator.GetNextAnimatorStateInfo(layer)
+                        : _animator.GetCurrentAnimatorStateInfo(layer);
+                    if (active.fullPathHash == hash) continue;
+                }
                 if (_animator.HasState(layer, hash))
                     _animator.CrossFadeInFixedTime(hash, blendSeconds, layer,
                         motion.startTimeSeconds + elapsed);
@@ -368,6 +403,42 @@ namespace Herbalist.Player
                 targetOffset += definition.visualOffsetY.Evaluate(_poseElapsed * definition.rootMotionPlaybackSpeed);
             float blend = definition.blendSeconds > 0f ? Mathf.Clamp01(_poseElapsed / definition.blendSeconds) : 1f;
             _animator.transform.localPosition = _restVisualPosition + Vector3.up * Mathf.Lerp(_previousVisualOffsetY, targetOffset, blend);
+        }
+
+        private void LateUpdate()
+        {
+            if (_animator == null || !_animator.isActiveAndEnabled) return;
+            if ((_pose == SodamPose.TalismanBoard || _pose == SodamPose.TalismanKneel) &&
+                BranchRideFlow.TryGetBoardingSeat(_actor, out var seat, out float boardRemaining))
+            {
+                _animator.transform.position += (seat - transform.position) * ApproachWeight(SodamPose.TalismanBoard, boardRemaining);
+                return;
+            }
+            if (!_animator.isHuman || (_pose != SodamPose.ClothGrab && _pose != SodamPose.ClothHang) ||
+                !HangingCloth.TryGetHandGripPoint(_actor, out var knot, out float grabRemaining)) return;
+
+            var left = _animator.GetBoneTransform(HumanBodyBones.LeftHand);
+            var right = _animator.GetBoneTransform(HumanBodyBones.RightHand);
+            if (left == null || right == null) return;
+            var leftFinger = _animator.GetBoneTransform(HumanBodyBones.LeftMiddleProximal);
+            var rightFinger = _animator.GetBoneTransform(HumanBodyBones.RightMiddleProximal);
+            Vector3 leftPalm = leftFinger != null ? (left.position + leftFinger.position) * .5f : left.position;
+            Vector3 rightPalm = rightFinger != null ? (right.position + rightFinger.position) * .5f : right.position;
+            // Approach the moving knot during the jump, then keep the palms fixed at contact.
+            _animator.transform.position += (knot - (leftPalm + rightPalm) * .5f) *
+                ApproachWeight(SodamPose.ClothGrab, grabRemaining);
+        }
+
+        private float ContactElapsed(SodamPose pose, float remaining)
+            => Mathf.Max(0f, (Profile.Find(pose)?.ContactTime ?? 0f) - remaining);
+
+        private float ApproachWeight(SodamPose pose, float remaining)
+        {
+            if (remaining <= 0f) return 1f;
+            var definition = Profile.Find(pose);
+            if (definition == null) return 0f;
+            float elapsed = Mathf.Min(_poseElapsed, Mathf.Max(0f, definition.ContactTime - remaining) + Time.deltaTime);
+            return Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(definition.approachStartSeconds, definition.ContactTime, elapsed));
         }
 
         private void OnDisable()

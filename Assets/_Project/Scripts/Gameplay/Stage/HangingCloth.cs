@@ -30,6 +30,8 @@ namespace Herbalist.Levels
         [SerializeField, Range(1, 2)] private int _riderCapacity = 2;
         [SerializeField, Min(.01f)] private float _retractSeconds = 1.5f;
         [SerializeField] private Vector3[] _gripOffsets = { new(-.45f, -1, 0), new(.45f, -1, 0) };
+        [SerializeField, Min(0), Tooltip("Rider origin below the knot in world units. Zero uses the legacy grip offsets.")]
+        private float _knotHangHeight;
         [SerializeField, Min(.1f)] private float _length = 7; // Fallback for a legacy GripPoint left at the pivot.
         [SerializeField] private string _grabText = "천의 매듭을 잡았습니다 · WASD로 흔들림에 맞춰 힘 주기 · 상호작용/점프: 놓기";
         [SerializeField] private string _releaseText = "천을 놓았습니다.";
@@ -41,6 +43,7 @@ namespace Herbalist.Levels
         [Networked] private Vector2 BendAngles { get; set; }
         [Networked] private int Rider0 { get; set; }
         [Networked] private int Rider1 { get; set; }
+        [Networked] private Vector2 GrabRemaining { get; set; }
         [Networked] private NetworkBool Used { get; set; }
         [Networked] private float Retraction { get; set; }
         [Networked] private float Deployment { get; set; }
@@ -81,6 +84,7 @@ namespace Herbalist.Levels
         private bool _bendActive;
         private readonly RaycastHit[] _bendProbeHits = new RaycastHit[32];
         private readonly StageActor[] _riders = new StageActor[2];
+        private Vector2 _grabRemaining;
         private readonly float[] _grabbedAt = new float[2];
         private readonly Vector3[] _lastPoints = new Vector3[2];
         private Quaternion _authoredRootRotation;
@@ -143,16 +147,16 @@ namespace Herbalist.Levels
             foreach (var cloth in Cloths)
             {
                 if (cloth._knot == null) continue;
-                bool riding = cloth.Online ? cloth.Rider0 == actor.Slot || cloth.Rider1 == actor.Slot :
-                    cloth._riders[0] == actor || cloth._riders[1] == actor;
-                if (riding)
+                int side = cloth.RiderSide(actor);
+                if (side >= 0)
                 {
+                    if (cloth.RemainingGrab(side) > 0f) return false;
                     point = cloth._knot.position;
                     release = true;
                     return true;
                 }
-                bool full = cloth.Online ? cloth.Rider0 >= 0 && cloth.Rider1 >= 0 :
-                    cloth._riders[0] != null && cloth._riders[1] != null;
+                bool full = cloth.Online ? cloth.Rider0 >= 0 && (cloth._riderCapacity == 1 || cloth.Rider1 >= 0) :
+                    cloth._riders[0] != null && (cloth._riderCapacity == 1 || cloth._riders[1] != null);
                 if (full || !cloth.CanBoard) continue;
                 float d = Vector3.Distance(grabPosition, cloth._knot.position);
                 if (cloth._settings != null && d <= cloth._settings.grabRange && d < distance) { nearest = cloth; distance = d; }
@@ -161,16 +165,46 @@ namespace Herbalist.Levels
             point = nearest._knot.position;
             return true;
         }
-        public override void Spawned() { if (HasStateAuthority) { Rider0 = Rider1 = -1; Angles = Vector2.zero; BendActive = false; BendPoint = Vector3.zero; BendLength = 0; BendAngles = Vector2.zero; Used = false; Retraction = 0; Deployment = 0; } }
+        public override void Spawned() { if (HasStateAuthority) { Rider0 = Rider1 = -1; GrabRemaining = Vector2.zero; Angles = Vector2.zero; BendActive = false; BendPoint = Vector3.zero; BendLength = 0; BendAngles = Vector2.zero; Used = false; Retraction = 0; Deployment = 0; } }
         public override void FixedUpdateNetwork() { if (isActiveAndEnabled && HasStateAuthority) Tick(Runner.DeltaTime); }
         public static bool IsRiding(StageActor actor)
+            => FindRiderCloth(actor, out float remaining) != null && remaining <= 0f;
+
+        public static bool IsGrabbing(StageActor actor)
+            => FindRiderCloth(actor, out float remaining) != null && remaining > 0f;
+
+        public static bool TryGetHandGripPoint(StageActor actor, out Vector3 point, out float remaining)
         {
-            if (actor == null || !actor.Available) return false;
-            foreach (var cloth in Cloths)
-                if (cloth.Online ? cloth.Rider0 == actor.Slot || cloth.Rider1 == actor.Slot :
-                    cloth._riders[0] == actor || cloth._riders[1] == actor)
-                    return true;
+            var cloth = FindRiderCloth(actor, out remaining);
+            if (cloth != null && cloth._knotHangHeight > 0f && cloth._knot != null)
+            {
+                point = cloth._knot.position;
+                return true;
+            }
+            point = default;
             return false;
+        }
+
+        private int RiderSide(StageActor actor)
+            => Online ? (Rider0 == actor.Slot ? 0 : Rider1 == actor.Slot ? 1 : -1) :
+                        (_riders[0] == actor ? 0 : _riders[1] == actor ? 1 : -1);
+
+        private float RemainingGrab(int side) => (Online ? GrabRemaining : _grabRemaining)[side];
+
+        private static HangingCloth FindRiderCloth(StageActor actor, out float remaining)
+        {
+            remaining = 0f;
+            if (actor == null || !actor.Available) return null;
+            foreach (var cloth in Cloths)
+            {
+                int side = cloth.RiderSide(actor);
+                if (side >= 0)
+                {
+                    remaining = cloth.RemainingGrab(side);
+                    return cloth;
+                }
+            }
+            return null;
         }
         public static bool TryRelease(StageActor actor, out string feedback)
         {
@@ -200,7 +234,7 @@ namespace Herbalist.Levels
                 if (!cloth.Authority) continue;
                 for (int i = 0; i < 2; i++) if (cloth._riders[i] == actor)
                 {
-                    if (Time.time - cloth._grabbedAt[i] >= cloth._settings.minimumHoldSeconds)
+                    if (cloth._grabRemaining[i] <= 0f && Time.time - cloth._grabbedAt[i] >= cloth._settings.minimumHoldSeconds)
                     {
                         cloth.Detach(i);
                         feedback = cloth._releaseText;
@@ -217,21 +251,25 @@ namespace Herbalist.Levels
             for (int i = 0; i < nearest._riderCapacity; i++)
                 if (nearest._riders[i] == null)
                 {
-                    nearest._used = true;
                     nearest._riders[i] = actor;
-                    nearest._grabbedAt[i] = Time.time;
+                    nearest._grabRemaining[i] = nearest._knotHangHeight > 0f
+                        ? actor.GetComponent<SodamAnimationPresentation>()?.Profile?.Find(SodamPose.ClothGrab)?.ContactTime ?? 0f
+                        : 0f;
+                    if (nearest._grabRemaining[i] <= 0f) nearest.Attach(i);
                     nearest._lastPoints[i] = actor.transform.position;
                     if (i == 0) { nearest._heldInput = Vector2.zero; nearest._drive = Vector2.zero; nearest._pendingDrive = Vector2.zero; nearest._pendingDriveTime = Vector2.zero; }
                     player.SetMovementReceiver(nearest); player.Motor.SetMovementLock(nearest, true);
                     actor.Abilities.Sap?.Cancel(); actor.Abilities.SetInputLock(nearest, true);
-                    nearest.Publish(); feedback = nearest._grabText; return true;
+                    nearest.Publish();
+                    feedback = nearest._grabRemaining[i] > 0f ? "매듭을 잡는 중입니다." : nearest._grabText;
+                    return true;
                 }
             feedback = nearest._fullText; return true;
         }
         public void ReceiveMovement(PlayerController player, Vector2 move)
         {
             if (_waterDriven) return;
-            if (!Authority || _riders[0] == null || _riders[0].GetComponent<PlayerController>() != player) return;
+            if (!Authority || _riders[0] == null || _grabRemaining[0] > 0f || _riders[0].GetComponent<PlayerController>() != player) return;
             Vector2 held = new(move.x > .5f ? 1 : move.x < -.5f ? -1 : 0,
                                move.y > .5f ? 1 : move.y < -.5f ? -1 : 0);
             Vector2 pressed = new(held.x != 0 && held.x != _heldInput.x ? held.x : 0,
@@ -281,7 +319,7 @@ namespace Herbalist.Levels
             {
                 Vector2 velocity = _velocity;
                 Vector2 next = Step(_angles, ref velocity, impulse, dt, _settings.maxAngle);
-                if (HasRider && velocity.sqrMagnitude > .01f && TryFindBend(next, out var point, out var length) && !RiderBlocked(next, Vector2.zero))
+                if (HasAttachedRider && velocity.sqrMagnitude > .01f && TryFindBend(next, out var point, out var length) && !RiderBlocked(next, Vector2.zero))
                 {
                     _angles = next;
                     _bendActive = true; _bendPoint = point; _bendLength = length;
@@ -294,6 +332,12 @@ namespace Herbalist.Levels
             for (int i = 0; i < 2; i++)
             {
                 var actor = _riders[i]; if (actor == null) continue;
+                if (_grabRemaining[i] > 0f)
+                {
+                    _grabRemaining[i] = Mathf.Max(0f, _grabRemaining[i] - dt);
+                    if (_grabRemaining[i] > 0f) continue;
+                    Attach(i);
+                }
                 Vector3 point = Position(_angles, _bendAngles, i); _lastPoints[i] = point;
                 var net = actor.GetComponent<NetworkPlayer>();
                 if (net != null && net.Object != null && net.Object.IsValid) net.SetTransportAuthoritatively(true, point);
@@ -307,6 +351,13 @@ namespace Herbalist.Levels
             Publish();
         }
         private bool HasRider => _riders[0] != null || _riders[1] != null;
+        private bool HasAttachedRider => (_riders[0] != null && _grabRemaining[0] <= 0f) ||
+                                         (_riders[1] != null && _grabRemaining[1] <= 0f);
+        private void Attach(int side)
+        {
+            _used = true;
+            _grabbedAt[side] = Time.time;
+        }
         private float ResolvePump(float pressed, float angle, float angularVelocity, ref float pending, ref float remaining, float dt)
         {
             if (remaining > 0 && (remaining -= dt) <= 0) pending = 0;
@@ -374,7 +425,7 @@ namespace Herbalist.Levels
         {
             for (int i = 0; i < 2; i++)
             {
-                if (_riders[i] == null) continue;
+                if (_riders[i] == null || _grabRemaining[i] > 0f) continue;
                 Vector3 from = Position(_angles, _bendAngles, i), to = Position(primaryNext, secondaryNext, i);
                 var cc = _riders[i].GetComponent<CharacterController>();
                 Vector3 delta = to - from;
@@ -389,9 +440,12 @@ namespace Herbalist.Levels
         private Vector3 Position(Vector2 primary, Vector2 secondary, int side)
         {
             Quaternion baseRotation = Quaternion.Euler(primary.x, 0, primary.y);
-            if (!_bendActive) return _fixedVisualTop + baseRotation * (_restGripOffset + _gripOffsets[side]);
-            Quaternion lowerRotation = Quaternion.Euler(secondary.x, 0, secondary.y) * baseRotation;
-            return _bendPoint + lowerRotation * (_restGripOffset.normalized * _bendLength + _gripOffsets[side]);
+            Quaternion rotation = _bendActive ? Quaternion.Euler(secondary.x, 0, secondary.y) * baseRotation : baseRotation;
+            Vector3 top = _bendActive ? _bendPoint : _fixedVisualTop;
+            Vector3 offset = _bendActive ? _restGripOffset.normalized * _bendLength : _restGripOffset;
+            if (_knotHangHeight > 0f)
+                return top + rotation * offset + Vector3.down * _knotHangHeight;
+            return top + rotation * (offset + _gripOffsets[side]);
         }
         private void Present(Vector2 primary, bool bent, Vector3 point, float lowerLength, Vector2 secondary)
         {
@@ -458,7 +512,7 @@ namespace Herbalist.Levels
             segment.rotation = Quaternion.FromToRotation(Vector3.down, end - start);
             segment.localScale = new Vector3(_clothSize.x, Vector3.Distance(start, end), _clothSize.y);
         }
-        private void Publish() { if (Online) { Angles = _angles; BendActive = _bendActive; BendPoint = _bendPoint; BendLength = _bendLength; BendAngles = _bendAngles; Rider0 = _riders[0] != null ? _riders[0].Slot : -1; Rider1 = _riders[1] != null ? _riders[1].Slot : -1; Used = _used; Retraction = _retraction; } }
+        private void Publish() { if (Online) { Angles = _angles; BendActive = _bendActive; BendPoint = _bendPoint; BendLength = _bendLength; BendAngles = _bendAngles; Rider0 = _riders[0] != null ? _riders[0].Slot : -1; Rider1 = _riders[1] != null ? _riders[1].Slot : -1; GrabRemaining = _grabRemaining; Used = _used; Retraction = _retraction; } }
         private void Detach(int side)
         {
             var actor = _riders[side]; if (actor == null) return;
@@ -466,15 +520,21 @@ namespace Herbalist.Levels
             var velocity = (_bendActive ? Position(_angles, _bendAngles + _bendVelocity * .01f, side) - Position(_angles, _bendAngles, side)
                                         : Position(_angles + _velocity * .01f, _bendAngles, side) - Position(_angles, _bendAngles, side)) / .01f * _settings.releaseSpeed;
             player.ClearMovementReceiver(this); player.ClearTransport(this); player.Motor.SetMovementLock(this, false); actor.Abilities.SetInputLock(this, false);
-            var net = actor.GetComponent<NetworkPlayer>();
-            float gravity = _releaseGravityOverride > 0f ? _releaseGravityOverride : player.Tuning.gravity;
-            if (net != null && net.Object != null && net.Object.IsValid && net.HasStateAuthority) { net.SetTransportAuthoritatively(false, actor.transform.position); net.LaunchAuthoritatively(velocity, gravity, true); }
-            else if (!Online) player.Motor.Launch(velocity, gravity, true);
+            if (_grabRemaining[side] <= 0f)
+            {
+                var net = actor.GetComponent<NetworkPlayer>();
+                float gravity = _releaseGravityOverride > 0f ? _releaseGravityOverride : player.Tuning.gravity;
+                if (net != null && net.Object != null && net.Object.IsValid && net.HasStateAuthority) { net.SetTransportAuthoritatively(false, actor.transform.position); net.LaunchAuthoritatively(velocity, gravity, true); }
+                else if (!Online) player.Motor.Launch(velocity, gravity, true);
+            }
             _riders[side] = null;
+            _grabRemaining[side] = 0f;
             if (side == 0 && _riders[1] != null)
             {
                 _riders[0] = _riders[1];
                 _grabbedAt[0] = _grabbedAt[1];
+                _grabRemaining[0] = _grabRemaining[1];
+                _grabRemaining[1] = 0f;
                 _riders[1] = null;
             }
             if (side == 0) { _heldInput = Vector2.zero; _drive = Vector2.zero; _pendingDrive = Vector2.zero; _pendingDriveTime = Vector2.zero; }
