@@ -1,4 +1,5 @@
 using System;
+using Herbalist.Levels;
 using UnityEngine;
 using UnityEngine.Serialization;
 namespace Herbalist.Abilities
@@ -21,7 +22,7 @@ namespace Herbalist.Abilities
         private float _returnElapsed, _flightSpinAngle;
         private bool _turningAfterMiss;
         private bool _catchAnnounced;
-        public event Action CatchApproaching;
+        public event Action<float> CatchApproaching;
         private bool initialized, externalTick;
         private Vector3 _installedVisualScale;
         private bool _visualScaleCaptured;
@@ -29,6 +30,7 @@ namespace Herbalist.Abilities
         public LeafState State { get; private set; } = LeafState.Complete;
         public LeafInstallTarget Target { get; private set; }
         public float InstalledAt { get; private set; }
+        public float ReturnProgress { get; private set; }
         public Vector3 ContactPoint => Target != null ? Target.transform.TransformPoint(localContactPoint) : transform.position;
         public bool Installed => State == LeafState.Installed;
         public void Initialize(LeafAbilitySettings config, Transform returningOwner, Vector3 origin, Vector3 aim, Action<LeafProjectile> onRelease, bool network, Transform returnFrame = null)
@@ -64,11 +66,21 @@ namespace Herbalist.Abilities
                 progress = Mathf.Min(1, progress + dt / duration);
                 Vector3 next = Vector3.Lerp(start, destination, progress) + curveRight * (Mathf.Sin(progress * Mathf.PI) * settings.curveWidth);
                 Vector3 delta = next - transform.position;
-                if (delta.sqrMagnitude > 0.000001f && Herbalist.Levels.StageOneLeafZone.Cast(new Ray(transform.position, delta.normalized), settings.collisionRadius, delta.magnitude, settings.hitMask, out var hit))
+                if (delta.sqrMagnitude > 0.000001f && Herbalist.Levels.StageOneLeafZone.Cast(new Ray(transform.position, delta.normalized), settings.collisionRadius, delta.magnitude, settings.hitMask, out var hit, owner))
                 {
                     var target = hit.collider.GetComponentInParent<LeafInstallTarget>();
-                    if (target != null && target.CanInstall) Install(target, hit.point, hit.normal, delta);
-                    else BeginMissReturn(hit.normal);
+                    if (target != null && target.TryGetComponent<StageOneTargetGate>(out var gate) && gate.TryHitBranch())
+                    {
+                        transform.position += delta.normalized * hit.distance;
+                        BeginMissReturn(hit.normal);
+                    }
+                    else if (target != null && target.CanInstall) Install(target, hit.point, hit.normal, delta);
+                    else
+                    {
+                        if (hit.collider.GetComponentInParent<Herbalist.Player.PlayerController>() != null)
+                            transform.position += delta.normalized * hit.distance;
+                        BeginMissReturn(hit.normal);
+                    }
                 }
                 else
                 {
@@ -86,12 +98,18 @@ namespace Herbalist.Abilities
                     transform.SetPositionAndRotation(Target.SocketPosition, Target.SocketRotation);
                 else transform.SetPositionAndRotation(Target.transform.TransformPoint(localPosition), rotation);
                 if (State == LeafState.Installed && !settings.permanentInstallation && !Target.KeepsLeafUntilUsed)
-                { remaining -= dt; if (remaining <= 0) BeginReturn(); }
+                {
+                    remaining -= dt;
+                    if (remaining <= 0 &&
+                        (!Target.TryGetComponent<StageOneLeafUse>(out var use) || !use.DefersExpiry(this)))
+                        BeginReturn();
+                }
             }
             else if (State == LeafState.Returning)
             {
                 AdvanceSpinVisual(dt);
                 _returnElapsed += dt;
+                Vector3 catchPoint = _returnFrame.TransformPoint(settings.launchOffset);
                 if (_turningAfterMiss)
                 {
                     float radius = settings.missTurnRadius;
@@ -107,24 +125,33 @@ namespace Herbalist.Abilities
                     Vector3 turnDelta = turnNext - transform.position;
                     transform.position = turnNext;
                     if (turnDelta.sqrMagnitude > 0.000001f) transform.rotation = HorizontalRotation(turnDelta);
+                    float turnRemaining = (1f - t) * _turnDuration;
+                    float chaseDistance = Mathf.Max(0f, Vector3.Distance(end, catchPoint) - settings.catchDistance);
+                    float chaseBudget = Mathf.Max(0f, settings.maxReturnDuration - _returnElapsed - turnRemaining);
+                    UpdateReturnProgress(turnRemaining + Mathf.Min(chaseDistance / settings.returnSpeed, chaseBudget));
                     if (_turnProgress >= 1f) _turningAfterMiss = false;
                     return;
                 }
-                Vector3 catchPoint = _returnFrame.TransformPoint(settings.launchOffset);
                 float timeLeft = Mathf.Max(0.0001f, settings.maxReturnDuration - _returnElapsed);
                 float speed = Mathf.Max(settings.returnSpeed, Vector3.Distance(transform.position, catchPoint) / timeLeft);
                 float untilCatch = Mathf.Max(0f, Vector3.Distance(transform.position, catchPoint) - settings.catchDistance) / speed;
                 if (!_catchAnnounced && untilCatch <= settings.catchAnticipationSeconds + dt)
                 {
                     _catchAnnounced = true;
-                    CatchApproaching?.Invoke();
+                    CatchApproaching?.Invoke(Mathf.Max(0f, untilCatch - dt));
                 }
                 Vector3 next = Vector3.MoveTowards(transform.position, catchPoint, speed * dt);
                 Vector3 delta = next - transform.position;
                 transform.position = next;
                 if (delta.sqrMagnitude > 0.000001f) transform.rotation = HorizontalRotation(delta);
                 if (Vector3.Distance(transform.position, catchPoint) <= settings.catchDistance) Finish();
+                else UpdateReturnProgress(Mathf.Max(0f, untilCatch - dt));
             }
+        }
+        private void UpdateReturnProgress(float remainingSeconds)
+        {
+            // The target can move while the leaf is returning. Re-estimate arrival without draining the HUD.
+            ReturnProgress = Mathf.Max(ReturnProgress, _returnElapsed / Mathf.Max(0.0001f, _returnElapsed + remainingSeconds));
         }
         public bool Supports(CharacterController character, float tolerance)
         {
@@ -194,6 +221,7 @@ namespace Herbalist.Abilities
         {
             if (State == LeafState.Returning || State == LeafState.Complete) return;
             _turningAfterMiss = false;
+            ReturnProgress = 0f;
             Detach(); State = LeafState.Returning; _returnElapsed = 0f; RefreshVisuals();
         }
         private void BeginMissReturn(Vector3 obstacleNormal = default)

@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
+using Herbalist.Levels;
 using Herbalist.Presentation;
 
 namespace Herbalist.Player
@@ -19,8 +21,11 @@ namespace Herbalist.Player
         private float _baseOrthographicSize;
         private float _baseFieldOfView;
         private float _baseFarClipPlane;
+        private bool _basePostProcessing;
+        private bool _stagePostProcessing;
         private CharacterRole _zoomRole = CharacterRole.Sodam;
         private float _zoomMultiplier = 1f;
+        private readonly RaycastHit[] _cameraHits = new RaycastHit[16];
         private const string ZoomPreferencePrefix = "Herbalist.Camera.Zoom.";
         public void SetCameraOverride(object owner,Transform anchor) { _cameraOwner=owner;_cameraOverride=anchor; }
         public void ClearCameraOverride(object owner)
@@ -53,6 +58,8 @@ namespace Herbalist.Player
             _baseOrthographicSize = playerCamera.orthographicSize;
             _baseFieldOfView = playerCamera.fieldOfView;
             _baseFarClipPlane = playerCamera.farClipPlane;
+            if (playerCamera.TryGetComponent(out UniversalAdditionalCameraData cameraData))
+                _basePostProcessing = cameraData.renderPostProcessing;
             LoadZoom();
             initialized = true;
             return true;
@@ -128,6 +135,12 @@ namespace Herbalist.Player
             Quaternion target = headRest * tuning.ResolveHeadLook(body.eulerAngles.y, Yaw, Pitch);
             headPivot.localRotation = Quaternion.RotateTowards(headPivot.localRotation, target, tuning.headTurnSpeed * deltaTime);
             if (!playerCamera.enabled) return;
+            bool stagePostProcessing = StageLevel.Instance != null && StageLevel.Instance.PlayerCameraPostProcessing;
+            if (_stagePostProcessing != stagePostProcessing)
+            {
+                _stagePostProcessing = stagePostProcessing;
+                playerCamera.GetUniversalAdditionalCameraData().renderPostProcessing = _basePostProcessing || stagePostProcessing;
+            }
             if (_cameraOverride != null)
             {
                 var mazeFrame = _cameraOverride.GetComponent<MazeCameraFrame>();
@@ -149,10 +162,7 @@ namespace Herbalist.Player
             RestoreProjection();
             Quaternion rotation = Quaternion.Euler(Pitch, Yaw, 0);
             Vector3 backward = rotation * Vector3.back;
-            float distance = tuning.cameraDistance * _zoomMultiplier;
-            if (Physics.SphereCast(cameraTarget.position, tuning.cameraProbeRadius, backward, out RaycastHit hit,
-                distance, tuning.cameraObstacles, QueryTriggerInteraction.Ignore))
-                distance = Mathf.Max(0, hit.distance - tuning.cameraWallPadding);
+            float distance = CameraDistance(backward);
             playerCamera.transform.SetPositionAndRotation(cameraTarget.position + backward * distance, rotation);
         }
 
@@ -162,11 +172,33 @@ namespace Herbalist.Player
             pitch = Mathf.Clamp(pitch, tuning.pitchLimits.x, tuning.pitchLimits.y);
             Quaternion rotation = Quaternion.Euler(pitch, yaw, 0);
             Vector3 backward = rotation * Vector3.back;
-            float distance = tuning.cameraDistance * _zoomMultiplier;
-            if (Physics.SphereCast(cameraTarget.position, tuning.cameraProbeRadius, backward, out RaycastHit hit,
-                distance, tuning.cameraObstacles, QueryTriggerInteraction.Ignore))
-                distance = Mathf.Max(0, hit.distance - tuning.cameraWallPadding);
+            float distance = CameraDistance(backward);
             return new Ray(cameraTarget.position + backward * distance, rotation * Vector3.forward);
+        }
+
+        private float CameraDistance(Vector3 backward)
+        {
+            float distance = tuning.cameraDistance * _zoomMultiplier;
+            var ray = new Ray(cameraTarget.position, backward);
+            if (!Physics.SphereCast(ray, tuning.cameraProbeRadius, out var hit, distance,
+                tuning.cameraObstacles, QueryTriggerInteraction.Ignore)) return distance;
+            if (!Herbalist.Levels.StageOneTraversal.IgnoresCamera(hit.collider))
+                return Mathf.Max(0, hit.distance - tuning.cameraWallPadding);
+
+            // Find the first real obstacle behind the ignored traversal props.
+            var hits = _cameraHits;
+            int count = Physics.SphereCastNonAlloc(ray, tuning.cameraProbeRadius, hits, distance,
+                tuning.cameraObstacles, QueryTriggerInteraction.Ignore);
+            if (count == hits.Length)
+            {
+                hits = Physics.SphereCastAll(ray, tuning.cameraProbeRadius, distance,
+                    tuning.cameraObstacles, QueryTriggerInteraction.Ignore);
+                count = hits.Length;
+            }
+            for (int i = 0; i < count; i++)
+                if (hits[i].distance > 0f && !Herbalist.Levels.StageOneTraversal.IgnoresCamera(hits[i].collider))
+                    distance = Mathf.Min(distance, Mathf.Max(0, hits[i].distance - tuning.cameraWallPadding));
+            return distance;
         }
 
         private void OnDisable() => SetLocalView(false);

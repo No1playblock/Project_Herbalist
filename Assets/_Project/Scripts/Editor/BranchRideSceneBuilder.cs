@@ -48,14 +48,14 @@ namespace Herbalist.Editor
         {
             if (Application.isPlaying) throw new InvalidOperationException("Stop Play first.");
             var scene = SceneManager.GetActiveScene();
-            if (scene.path != Path)
+            if (scene.path != CurrentStagePaths.BranchRideBlockout)
             {
                 if (scene.isDirty) throw new InvalidOperationException("Save the current scene before rebuilding Stage Three.");
-                scene = EditorSceneManager.OpenScene(Path);
+                scene = EditorSceneManager.OpenScene(CurrentStagePaths.BranchRideBlockout);
             }
             // Backup the last saved scene before replacing this stage's generated layout.
             System.IO.Directory.CreateDirectory("Temp/BranchRideBackup");
-            System.IO.File.Copy(Path, "Temp/BranchRideBackup/Stage_03_"+DateTime.Now.ToString("yyyyMMdd_HHmmss")+".unity", false);
+            System.IO.File.Copy(scene.path, "Temp/BranchRideBackup/Stage_03_"+DateTime.Now.ToString("yyyyMMdd_HHmmss")+".unity", false);
             var flow = Object.FindFirstObjectByType<BranchRideFlow>();
             if (flow == null) throw new InvalidOperationException("Existing BranchRideFlow missing.");
             var level = Object.FindFirstObjectByType<StageLevel>();
@@ -151,7 +151,7 @@ namespace Herbalist.Editor
             Fusion.Editor.NetworkObjectPostprocessor.BakeScene(scene);
             EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene);AssetDatabase.SaveAssets();
             if(SceneView.lastActiveSceneView!=null)SceneView.lastActiveSceneView.LookAt(new Vector3(97,16,0),Quaternion.Euler(32,-35,0),125);
-            Debug.Log("Stage 3 authored: 4 targets / 10 rotating branches / 2 drops / 2 rolling stones / two offline actors. Saved "+Path);
+            Debug.Log("Stage 3 authored: 4 targets / 10 rotating branches / 2 drops / 2 rolling stones / two offline actors. Saved "+scene.path);
         }
         private static Vector3 V(float x,float y,float z)=>new(x,y,z);
         private static Transform New(string name,Transform parent,Vector3 position)

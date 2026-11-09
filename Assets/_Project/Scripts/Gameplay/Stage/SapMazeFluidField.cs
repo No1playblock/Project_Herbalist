@@ -134,12 +134,14 @@ namespace Herbalist.Levels
         }
 
         // Contact is the occupied cell under the hole, not a nearby cell snapped across a wall.
-        public bool Contains(Vector2 point)
+        public bool Contains(Vector2 point) => WetCellAt(point) >= 0;
+
+        private int WetCellAt(Vector2 point)
         {
-            if (!float.IsFinite(point.x) || !float.IsFinite(point.y)) return false;
+            if (!float.IsFinite(point.x) || !float.IsFinite(point.y)) return -1;
             var grid = (point - _point(0)) / CellSize;
             int x = Mathf.RoundToInt(grid.x), y = Mathf.RoundToInt(grid.y);
-            if (x < 0 || x >= Width || y < 0 || y >= Count / Width) return false;
+            if (x < 0 || x >= Width || y < 0 || y >= Count / Width) return -1;
             // At a shared edge/corner either touching cell may supply water.
             // The tiny local-space tolerance only absorbs grid/transform round-off.
             float half = CellSize * .5f + .00001f;
@@ -149,35 +151,50 @@ namespace Herbalist.Levels
                 int cell = cy * Width + cx;
                 if (_mass[cell] < CellCapacity * OccupancyThreshold) continue;
                 var delta = point - _point(cell);
-                if (Mathf.Abs(delta.x) <= half && Mathf.Abs(delta.y) <= half) return true;
+                if (Mathf.Abs(delta.x) <= half && Mathf.Abs(delta.y) <= half) return cell;
             }
-            return false;
+            return -1;
         }
 
-        public void Drain(Vector2 point, float amount)
+        public float Drain(Vector2 point, float amount)
         {
+            int source = WetCellAt(point);
+            if (source < 0 || !float.IsFinite(amount) || amount <= 0) return 0;
             amount = Mathf.Clamp(amount, 0, TotalVolume);
-            float remainingVolume = TotalVolume - amount;
-            if (remainingVolume <= 0)
+            bool emptyConnected = amount >= TotalVolume;
+            // Connected water feeds the hole even while parked. Recede from the
+            // far boundary so draining does not punch a dry cell under the hole.
+            Array.Fill(_distance, -1);
+            int head = 0, tail = 1;
+            _queue[0] = source;
+            _distance[source] = 0;
+            while (head < tail)
             {
-                foreach (int cell in _active) { _mass[cell] = 0; _listed[cell] = false; }
-                _active.Clear(); TotalVolume = 0; return;
-            }
-            while (amount > .000001f)
-            {
-                int best = -1; float distance = float.PositiveInfinity;
-                foreach (int cell in _active)
+                int cell = _queue[head++];
+                for (int direction = 0; direction < 4; direction++)
                 {
-                    if (_mass[cell] <= 0) continue;
-                    float d = (_point(cell) - point).sqrMagnitude;
-                    if (d < distance) { best = cell; distance = d; }
+                    int next = _neighbour(cell, direction);
+                    if (next < 0 || _distance[next] >= 0 || _mass[next] <= 0) continue;
+                    _distance[next] = _distance[cell] + 1;
+                    _queue[tail++] = next;
                 }
-                if (best < 0) break;
-                float take = Mathf.Min(amount, _mass[best]);
-                _mass[best] -= take; amount -= take;
             }
+            float drained = 0;
+            for (int i = tail - 1; i >= 0 && (emptyConnected || amount > 0); i--)
+            {
+                int cell = _queue[i];
+                float take = emptyConnected ? _mass[cell] : Mathf.Min(amount, _mass[cell]);
+                _mass[cell] -= take;
+                amount -= take;
+                drained += take;
+            }
+            // The movement potential shares these scratch buffers.
+            _flowPotential = false;
+            _potentialTarget = -1;
             PruneEmpty();
-            TotalVolume = remainingVolume;
+            drained = Mathf.Min(drained, TotalVolume);
+            TotalVolume = Mathf.Max(0, TotalVolume - drained);
+            return drained;
         }
 
         private void PruneEmpty()

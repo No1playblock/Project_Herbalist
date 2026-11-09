@@ -1,4 +1,5 @@
 using Herbalist.Abilities;
+using Herbalist.Networking;
 using Herbalist.StageOne;
 using UnityEngine;
 
@@ -10,10 +11,12 @@ namespace Herbalist.Levels
     {
         [SerializeField, Min(0)] private float _returnDelay = .06f;
         [SerializeField, Min(.01f)] private float _standingTolerance = .35f;
+        [SerializeField] private bool _recallAfterLeaving;
         private LeafInstallTarget _target;
         private LeafProjectile _leaf;
         private float _remaining;
         private bool _stepped;
+        private static bool Multiplayer => FusionLobbySession.Instance is { HasNetworkSession: true };
         private void Awake() => _target = GetComponent<LeafInstallTarget>();
         public void Tick(float dt)
         {
@@ -21,11 +24,32 @@ namespace Herbalist.Levels
             var leaf = _target.InstalledLeaf;
             if (leaf != _leaf) { _leaf = leaf; _stepped = false; _remaining = _returnDelay; }
             if (leaf == null) return;
-            if (!_stepped)
-                foreach (var actor in StageActor.All)
-                    if (actor.Available && leaf.Supports(actor.GetComponent<CharacterController>(), _standingTolerance))
-                    { _stepped = true; break; }
+            bool multiplayer = Multiplayer;
+            if (multiplayer && IsOccupied(leaf, PlayerAbilityKind.Leaf))
+            {
+                leaf.BeginReturn();
+                return;
+            }
+            bool sapStanding = multiplayer && IsOccupied(leaf, PlayerAbilityKind.Sap);
+            if (sapStanding || ((!_stepped || _recallAfterLeaving) && IsOccupied(leaf)))
+            {
+                _stepped = true;
+                if (sapStanding || _recallAfterLeaving) { _remaining = _returnDelay; return; }
+            }
             if (_stepped && (_remaining -= dt) <= 0) leaf.BeginReturn();
+        }
+        public bool DefersExpiry(LeafProjectile leaf) => isActiveAndEnabled &&
+            ((_recallAfterLeaving && ((_leaf == leaf && _stepped) || IsOccupied(leaf))) ||
+             (Multiplayer && IsOccupied(leaf, PlayerAbilityKind.Sap)));
+
+        private bool IsOccupied(LeafProjectile leaf, PlayerAbilityKind? ability = null)
+        {
+            foreach (var actor in StageActor.All)
+                if (actor.Available && !HangingCloth.IsRiding(actor) &&
+                    (!ability.HasValue || (actor.Abilities is { Unlocked: true } abilities && abilities.Kind == ability.Value)) &&
+                    leaf.Supports(actor.GetComponent<CharacterController>(), _standingTolerance))
+                    return true;
+            return false;
         }
         private void Update() => Tick(Time.deltaTime);
     }

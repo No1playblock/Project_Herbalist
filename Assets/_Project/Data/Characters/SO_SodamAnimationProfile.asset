@@ -223,7 +223,7 @@ MonoBehaviour:
       state: standing_idle
       startTimeSeconds: 0
     - layer: right_arm
-      state: girb_hand
+      state: girb_hand(sodam)
       startTimeSeconds: 0
   - pose: 5
     blendSeconds: 0.12
@@ -353,7 +353,7 @@ MonoBehaviour:
       startTimeSeconds: 0
   - pose: 8
     blendSeconds: 0.12
-    durationSeconds: 0.8
+    durationSeconds: 1.1333334
     modelOffsetY: 0
     visualOffsetY:
       serializedVersion: 2
@@ -387,16 +387,7 @@ MonoBehaviour:
       m_RotationOrder: 4
     motions:
     - layer: Base Layer
-      state: standing_idle
-      startTimeSeconds: 0
-    - layer: head
-      state: nod_head
-      startTimeSeconds: 0
-    - layer: leg
-      state: crouch(leg)
-      startTimeSeconds: 0
-    - layer: right_arm
-      state: girb_hand
+      state: carry_pickup
       startTimeSeconds: 0
   - pose: 9
     blendSeconds: 0.12
@@ -439,8 +430,8 @@ MonoBehaviour:
     - layer: head
       state: nod_head
       startTimeSeconds: 0
-    - layer: right_arm
-      state: girb_hand
+    - layer: both_arm
+      state: grib_twohand
       startTimeSeconds: 0
   - pose: 10
     blendSeconds: 0.12
@@ -675,7 +666,7 @@ MonoBehaviour:
       startTimeSeconds: 0
   - pose: 16
     blendSeconds: 0.05
-    durationSeconds: 0.65
+    durationSeconds: 0.7125
     modelOffsetY: 0
     visualOffsetY:
       serializedVersion: 2
@@ -710,10 +701,10 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: sodam_throw
-      startTimeSeconds: 0.125
+      startTimeSeconds: 0.062499996
   - pose: 17
     blendSeconds: 0.05
-    durationSeconds: 1.15
+    durationSeconds: 1.1375
     modelOffsetY: 0
     visualOffsetY:
       serializedVersion: 2
@@ -1171,10 +1162,12 @@ MonoBehaviour:
     motions:
     - layer: Base Layer
       state: sodam_catch
-      startTimeSeconds: 0
+      startTimeSeconds: 0.012499983
   - pose: 18
     blendSeconds: 0.12
     durationSeconds: 1.4
+    contactSeconds: 1.33
+    approachStartSeconds: 0.88
     modelOffsetY: 0
     visualOffsetY:
       serializedVersion: 2
@@ -3264,6 +3257,7 @@ MonoBehaviour:
   - pose: 23
     blendSeconds: 0.12
     durationSeconds: 2.19
+    contactSeconds: 0.48
     modelOffsetY: 0
     visualOffsetY:
       serializedVersion: 2
@@ -3548,7 +3542,7 @@ MonoBehaviour:
       startTimeSeconds: 0
   - pose: 26
     blendSeconds: 0.05
-    durationSeconds: 0.65
+    durationSeconds: 0.5729167
     modelOffsetY: 0
     visualOffsetY:
       serializedVersion: 2
@@ -3586,10 +3580,10 @@ MonoBehaviour:
       startTimeSeconds: 0
     - layer: upper
       state: sit_throw
-      startTimeSeconds: 0.125
+      startTimeSeconds: 0.031249989
   - pose: 27
     blendSeconds: 0.05
-    durationSeconds: 1.15
+    durationSeconds: 1.1375
     modelOffsetY: 0
     visualOffsetY:
       serializedVersion: 2
@@ -3627,7 +3621,7 @@ MonoBehaviour:
       startTimeSeconds: 0
     - layer: upper
       state: sodam_catch
-      startTimeSeconds: 0
+      startTimeSeconds: 0.012499983
   - pose: 28
     blendSeconds: 0.12
     durationSeconds: 0

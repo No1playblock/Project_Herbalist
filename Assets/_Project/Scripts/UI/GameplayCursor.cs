@@ -15,6 +15,7 @@ namespace Herbalist.Presentation
         private readonly HashSet<object> uiOwners = new();
         private readonly HashSet<object> worldPointerOwners = new();
         public static GameplayCursor Instance { get; private set; }
+        public static bool HasGameplayFocus => Instance == null || Instance.HasGameFocus;
         public static bool AllowsPointerInput => Instance == null || Instance.CanReadPointer;
         private bool CanReadPointer => HasGameFocus && uiOwners.Count == 0 &&
             (worldPointerOwners.Count > 0 && Cursor.lockState == CursorLockMode.None ||

@@ -24,6 +24,7 @@ namespace Herbalist.Networking
         [Networked] private int LeafSlotStates { get; set; }
         [Networked] private uint FeedbackSequence { get; set; }
         [Networked] private uint CatchSequence { get; set; }
+        [Networked] private float CatchElapsed { get; set; }
         [Networked] private uint ThrowSequence { get; set; }
         [Networked] private float ThrowElapsed { get; set; }
         [Networked] private NetworkBool RangeRejected { get; set; }
@@ -75,13 +76,13 @@ namespace Herbalist.Networking
             }
             Publish();
         }
-        private void Publish() { Unlocked = abilities.Unlocked; Count = abilities.DisplayCount; Kind = abilities.Kind; Controlling = abilities.Sap != null && abilities.Sap.Controlling; Spraying = abilities.Sap != null && abilities.Sap.Spraying; CanPlace = abilities.Sap != null && abilities.Sap.CanPlace; Ready = abilities.Sap != null && abilities.Sap.Ready; Recovering = abilities.Leaf.Recovering; LeafSlotStates = abilities.Leaf.PackedSlotStates; ThrowSequence = abilities.Leaf.ThrowSequence; ThrowElapsed = abilities.Leaf.ThrowElapsed; CatchSequence = abilities.Leaf.CatchSequence; FeedbackSequence = abilities.Leaf.FeedbackSequence; RangeRejected = abilities.Leaf.RangeRejected; }
+        private void Publish() { Unlocked = abilities.Unlocked; Count = abilities.DisplayCount; Kind = abilities.Kind; Controlling = abilities.Sap != null && abilities.Sap.Controlling; Spraying = abilities.Sap != null && abilities.Sap.Spraying; CanPlace = abilities.Sap != null && abilities.Sap.CanPlace; Ready = abilities.Sap != null && abilities.Sap.Ready; Recovering = abilities.Leaf.Recovering; LeafSlotStates = abilities.Leaf.PackedSlotPresentation; ThrowSequence = abilities.Leaf.ThrowSequence; ThrowElapsed = abilities.Leaf.ThrowElapsed; CatchSequence = abilities.Leaf.CatchSequence; CatchElapsed = abilities.Leaf.CatchElapsed; FeedbackSequence = abilities.Leaf.FeedbackSequence; RangeRejected = abilities.Leaf.RangeRejected; }
         public override void Render()
         {
             if (HasStateAuthority) return;
             abilities.ApplyReplica(Unlocked, Count, Recovering, Kind, Controlling, CanPlace, Ready, LeafSlotStates, Spraying);
             abilities.Leaf.ApplyFeedback(FeedbackSequence, RangeRejected);
-            abilities.Leaf.ApplyCatchSequence(CatchSequence);
+            abilities.Leaf.ApplyCatchPresentation(CatchSequence, CatchElapsed);
             abilities.Leaf.ApplyThrowPresentation(ThrowSequence, ThrowElapsed);
         }
         private void SetShotFacing(float yaw) { if (HasStateAuthority) player.BodyYaw = yaw; }

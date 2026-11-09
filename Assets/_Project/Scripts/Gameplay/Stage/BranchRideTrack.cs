@@ -27,19 +27,56 @@ namespace Herbalist.Levels
                 return length;
             }
         }
-        public Vector3 Sample(float distance, out Vector3 forward)
+        public Vector3 Sample(float distance, out Vector3 forward, float cornerDistance = 0f,
+            Vector3 incoming = default, Vector3 outgoing = default)
         {
             forward = Vector3.forward;
             for (int i = 1; i < _points.Length; i++)
             {
-                Vector3 delta = _points[i].position - _points[i - 1].position;
+                Vector3 start = _points[i - 1].position;
+                Vector3 end = _points[i].position;
+                Vector3 delta = end - start;
                 float length = delta.magnitude;
                 if (length < .0001f) continue;
                 forward = delta / length;
-                if (distance <= length) return _points[i - 1].position + forward * Mathf.Max(0, distance);
+                if (distance <= length)
+                {
+                    float along = Mathf.Max(0, distance);
+                    float blend = Mathf.Min(cornerDistance, length * .5f);
+                    if (blend > .0001f && along < blend)
+                    {
+                        Vector3 previous = i > 1 ? (start - _points[i - 2].position).normalized : incoming;
+                        Vector3 tangent = (previous + forward).normalized;
+                        if (Vector3.Dot(tangent, forward) > 0)
+                            return BlendCorner(start, forward, tangent, blend, along / blend, out forward);
+                    }
+                    if (blend > .0001f && length - along < blend)
+                    {
+                        Vector3 next = i + 1 < _points.Length ? (_points[i + 1].position - end).normalized : outgoing;
+                        Vector3 tangent = (-next - forward).normalized;
+                        if (Vector3.Dot(tangent, -forward) > 0)
+                        {
+                            Vector3 point = BlendCorner(end, -forward, tangent, blend, (length - along) / blend, out forward);
+                            forward = -forward;
+                            return point;
+                        }
+                    }
+                    return start + forward * along;
+                }
                 distance -= length;
             }
             return End;
+        }
+
+        // Hermite between the corner and the nearby straight section. Both sides share
+        // a tangent at the node while the authored node itself stays on the path.
+        private static Vector3 BlendCorner(Vector3 corner, Vector3 straight, Vector3 tangent, float length,
+            float t, out Vector3 forward)
+        {
+            Vector3 difference = tangent - straight;
+            float remaining = 1f - t;
+            forward = (straight + difference * (remaining * (1f - 3f * t))).normalized;
+            return corner + length * t * (straight + difference * (remaining * remaining));
         }
         public static float DistanceToSegment(Vector3 point, Vector3 a, Vector3 b)
         {

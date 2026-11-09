@@ -66,7 +66,9 @@ namespace Herbalist.Abilities
 
         public bool TryPossessOther()
         {
-            if (_controlled == null || Herbalist.GameUI.GameplayPause.IsPaused || !GameplayCursor.AllowsPointerInput)
+            bool readingCodex = _controlled == _sodam && StageOneFlow.Instance?.Minigame == StageMinigameKind.Gathering;
+            if (_controlled == null || Herbalist.GameUI.GameplayPause.IsPaused ||
+                (!GameplayCursor.AllowsPointerInput && !(readingCodex && GameplayCursor.HasGameplayFocus)))
                 return false;
 
             _controlled = _controlled == _duyeong ? _sodam : _duyeong;

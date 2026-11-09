@@ -21,7 +21,7 @@ namespace Herbalist.Editor
             var prefab = PrefabUtility.LoadPrefabContents(prefabPath);
             try { Configure(prefab.GetComponent<PlayerHud>()); PrefabUtility.SaveAsPrefabAsset(prefab, prefabPath); }
             finally { PrefabUtility.UnloadPrefabContents(prefab); }
-            foreach (string path in new[] { "Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Mazes.unity", "Assets/_Project/Scenes/Stages/Stage_03/Stage_03_BranchRide.unity" })
+            foreach (string path in new[] { "Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Mazes.unity", CurrentStagePaths.BranchRide })
             {
                 var scene = SceneManager.GetSceneByPath(path);
                 bool opened = !scene.IsValid() || !scene.isLoaded;

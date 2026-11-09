@@ -10,7 +10,7 @@ namespace Herbalist.Player
         Drink, Pass, Receive, Sap, LeafThrow, LeafCatch,
         ClothGrab, ClothHang, ClothFall, ClothHardLand, ClothSwingLand,
         TalismanBoard, TalismanSit, TalismanSap, TalismanThrow, TalismanCatch,
-        IdleCameraMoving
+        IdleCameraMoving, GatherSuccess, GatherFailRise, GatherFailWipe, TalismanKneel
     }
 
     [Serializable]
@@ -27,6 +27,11 @@ namespace Herbalist.Player
         public SodamPose pose;
         [Min(0)] public float blendSeconds = 0.12f;
         [Min(0)] public float durationSeconds;
+        [Min(0), Tooltip("Playback time when a traversal action attaches the player. Zero keeps immediate attachment.")]
+        public float contactSeconds;
+        [Min(0), Tooltip("Playback time when the model starts moving toward the traversal anchor.")]
+        public float approachStartSeconds;
+        public float ContactTime => Mathf.Clamp(contactSeconds, 0f, durationSeconds);
         public float modelOffsetY;
         public AnimationCurve visualOffsetY;
         public bool useRootMotion;
@@ -45,6 +50,7 @@ namespace Herbalist.Player
     public sealed class SodamAnimationProfile : ScriptableObject
     {
         [Min(0)] public float movingSpeedThreshold = 0.08f;
+        public string movingThrowLegLayer = "leg";
         [Min(0)] public float successLandingDrop = 1f;
         [Min(0)] public float cameraMovementThresholdDegreesPerSecond = 2f;
         [Min(0)] public float cameraStillDelaySeconds = 0.15f;

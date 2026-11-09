@@ -33,6 +33,8 @@ namespace Herbalist.Levels
         [Min(1)] public int maximumTransfersPerTick = 48;
         [Min(.016f)] public float fluidRenderInterval = .05f;
         [Min(0)] public float fluidSurfaceLiftWorld = .025f;
+        [Tooltip("Presentation only: drape the water mesh over the visible relief floor without changing navigation or volume.")]
+        public bool followReliefSurface;
 
         [Header("Continuous rounded water outline")]
         [Min(0)] public float outlineBlendRadiusWorld = .45f;

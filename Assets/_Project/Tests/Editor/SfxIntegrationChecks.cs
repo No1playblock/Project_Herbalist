@@ -34,7 +34,8 @@ namespace Herbalist.Editor
                 Check(sound.clips.Length > 0 && sound.clips.All(c => c != null && c.length > 0), "valid clips: " + sound.id);
             Check(!catalog.Find(46).loop && !catalog.Find(17).loop, "descent and fall wind are one-shots");
             foreach (int id in new[] { 24, 25, 31, 34, 37, 42, 49, 55 }) Check(catalog.Find(id).loop, "loop " + id);
-            foreach (int id in new[] { 10, 11, 12 })
+            Check(!catalog.Find(10).loop && catalog.Find(10).clips.Length == 1 && catalog.Find(10).clips[0].length <= .5f, "single foot-contact dirt clip");
+            foreach (int id in new[] { 11, 12 })
                 Check(catalog.Find(id).clips.Length == 6 && catalog.Find(id).clips.All(x => x.length <= .5f), "short footstep variants " + id);
             Check(catalog.Find(8).clips[0].length <= 1.5f, "short help chime");
             int emitters = 0, scenes = 0;

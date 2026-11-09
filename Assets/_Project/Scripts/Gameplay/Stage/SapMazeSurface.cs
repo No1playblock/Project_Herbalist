@@ -15,6 +15,8 @@ namespace Herbalist.Levels
         [Tooltip("Editor wall bake: height slice from wall crest (0) towards channel floor (1). Does not change the water plane.")]
         [SerializeField, Range(.1f, .7f)] private float _wallBakeDepthFraction = .6f;
         [SerializeField, Min(0)] private float _wallBakePaddingWorld = .01f;
+        [Tooltip("Wall bake resolution independent of the runtime fluid grid. Fine samples preserve thin walls.")]
+        [SerializeField, Range(.005f, .04f)] private float _wallBakeSampleSize = .01f;
         [SerializeField, Min(256)] private int _pointQueryCacheLimit = 32768;
         [SerializeField, Range(.005f, .25f)] private float _cellSize = .04f;
         [SerializeField, Min(10000)] private int _maximumSamples = 1000000;
@@ -434,6 +436,15 @@ namespace Herbalist.Levels
             return _mazeCollider.Raycast(new Ray(world, _rayDirection), out hit, _rayLength) &&
                 _board.InverseTransformPoint(hit.point).z > _passageZ && IsFloorNormal(hit.normal)
                 ? _board.InverseTransformPoint(hit.point - _rayDirection * _visualOffset).z : fallback;
+        }
+
+        // Rendering only. The authored plane and dedicated wall graph remain the gameplay surface.
+        public float ReliefSurfaceZ(Vector2 point, float fallback)
+        {
+            if (!Ready || _board == null || _mazeCollider == null) return fallback;
+            var world = _board.TransformPoint(new Vector3(point.x, point.y, _rayStartZ));
+            return _mazeCollider.Raycast(new Ray(world, _rayDirection), out var hit, _rayLength)
+                ? _board.InverseTransformPoint(hit.point).z : SurfaceZ(point, fallback);
         }
     }
 }

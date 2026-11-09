@@ -23,6 +23,21 @@ namespace Herbalist.Editor
         private const string Derived = "Assets/_Project/Audio/SFX/Derived";
         private static SfxCatalog _catalog;
         private static int _changedPrefabs, _changedScenes;
+        // Safe for newly promoted scenes: preserve existing gameplay, colliders and catalog tuning.
+        public static void EnsureSceneAudio()
+        {
+            if (EditorApplication.isPlaying) throw new Exception("Stop play before authoring SFX");
+            _catalog = AssetDatabase.LoadAssetAtPath<SfxCatalog>(CatalogPath);
+            if (_catalog == null) throw new Exception("Missing SFX catalog");
+            var scene = SceneManager.GetActiveScene();
+            var audio = scene.GetRootGameObjects().FirstOrDefault(r => r.name == "GameAudio");
+            if (audio == null) audio = new GameObject("GameAudio");
+            Emitter(audio, 24, true);
+            var state = audio.GetComponent<SceneSfxPresentation>();
+            if (state == null) state = audio.AddComponent<SceneSfxPresentation>();
+            Bool(state, "_forestAmbience", scene.path.Contains("Stage_01/"));
+            EditorSceneManager.MarkSceneDirty(scene);
+        }
         [MenuItem("Tools/Herbalist/Audio/Apply SFX Catalog And Presenters")]
         public static void ApplyMenu() => Debug.Log(Apply());
         public static void ApplyBatch()
@@ -212,14 +227,23 @@ namespace Herbalist.Editor
                     pauseWithGameplay = id > 8, volume = id == 37 ? .16f : loopIds.Contains(id) ? .22f : .5f,
                     maxDistance = 100, minDistance = 5, pitchRange = id <= 9 || loopIds.Contains(id) ? Vector2.one : new Vector2(.97f, 1.03f), cooldown = .12f };
                 if (!string.IsNullOrWhiteSpace(values[2])) sound.clips = new[] { Clip(values[2].Trim()) };
-                if (id == 15 || id == 16) sound.lightClip = Clip(id == 15 ? "15_흙 착지_light_draft.wav" : "16_목재 착지_light_draft.wav");
+                if (id == 16) sound.lightClip = Clip("16_목재 착지_light_draft.wav");
+                // 2026-11-08 revision, relative to the approved catalog baseline (jump was .3).
+                sound.volume = id switch
+                {
+                    4 => .5f * .35f, 13 or 14 => .3f * .5f, 20 => .5f * .25f,
+                    10 or 11 or 12 => .5f * .4f,
+                    21 => .5f * .5f, 26 => .5f * .35f * .8f, 29 => .5f * .35f, 33 => .5f * .13f,
+                    _ => sound.volume
+                };
+                if (id == 26) sound.cooldown = 0; // One fan cue for each brewing press.
                 if (id == 38) sound.cooldown = 4.2f;
                 if (id == 39) sound.cooldown = .8f;
                 if (id == 44) sound.cooldown = 2.7f;
                 if (id == 52) sound.cooldown = 1.7f;
                 if (id == 43) sound.cooldown = .8f;
                 if (id == 58) sound.cooldown = 1.5f;
-                if (id >= 10 && id <= 12) sound.clips = Steps(sound.clips[0], id);
+                if (id == 11 || id == 12) sound.clips = Steps(sound.clips[0], id);
                 if (id == 8) sound.clips = new[] { Excerpt(sound.clips[0], "SFX_08_HelpChime", 1.3f) };
                 sounds.Add(sound);
             }

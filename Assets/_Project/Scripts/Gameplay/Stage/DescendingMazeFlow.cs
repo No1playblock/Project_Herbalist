@@ -35,6 +35,8 @@ namespace Herbalist.Levels
         private float _travel;
         private bool _transition;
         private readonly StageActor[] _actors = new StageActor[2];
+        private readonly Vector3[] _descentOffsets = new Vector3[2];
+        private readonly System.Collections.Generic.Dictionary<StageActor, (int Side, Vector2? Front, Vector2? Back)> _soloViews = new();
         [SerializeField] private Vector3[] _basePositions = new Vector3[2];
         private readonly System.Collections.Generic.Dictionary<Camera, int> _masks = new();
         private bool Online => Object != null && Object.IsValid;
@@ -135,7 +137,12 @@ namespace Herbalist.Levels
             if (!Authority || Herbalist.GameUI.GameplayPause.IsPaused) return;
             _actors[0] = _actors[1] = null;
             foreach (var actor in StageActor.All)
-                if (actor.Available && actor.Abilities.Unlocked) _actors[actor.Abilities.Kind == PlayerAbilityKind.Sap ? 0 : 1] = actor;
+            {
+                if (!actor.Available || !actor.Abilities.Unlocked) continue;
+                int side = actor.Abilities.Kind == PlayerAbilityKind.Sap ? 0 : 1;
+                _actors[side] = actor;
+                if (Solo && actor.Local) RestoreSoloSideView(actor, side);
+            }
             bool ready = Solo ? _actors[0] != null || _actors[1] != null : _actors[0] != null && _actors[1] != null && _actors[0].Slot != _actors[1].Slot;
             if (_phase == 0 && ready) { _phase = 1; _travel = 0; }
             if (_phase == 1)
@@ -147,7 +154,7 @@ namespace Herbalist.Levels
             else if (_phase == 2)
             {
                 _travel = Mathf.Clamp01(_travel + dt / _descentDuration); Present(_current, _travel, true);
-                for (int i = 0; i < 2; i++) Carry(_actors[i], _rafts[i].position + _riderOffset);
+                for (int i = 0; i < 2; i++) Carry(_actors[i], _rafts[i].position + _riderOffset + _descentOffsets[i]);
                 if (_travel >= 1)
                 {
                     _current++; _phase = 3; _travel = 0;
@@ -169,13 +176,42 @@ namespace Herbalist.Levels
                 }
                 if (_mazes[_current].State.Phase == MazePhase.Solved)
                 {
+                    foreach (var actor in StageActor.All)
+                        if (actor != null) actor.Abilities?.Leaf?.RecallAll();
                     _mazes[_current].SetPlayable(false);
                     if (_current == _mazes.Length - 1) _current = _mazes.Length;
-                    else { _phase = 2; _travel = 0; }
+                    else
+                    {
+                        for (int i = 0; i < 2; i++)
+                            _descentOffsets[i] = _actors[i] == null ? Vector3.zero :
+                                Vector3.ProjectOnPlane(_actors[i].transform.position - _rafts[i].position - _riderOffset, Vector3.up);
+                        _phase = 2;
+                        _travel = 0;
+                    }
                 }
             }
             if (Finished && !_transition) _transition = StageTransition.Advance(_level);
             if (Online) { Current = _current; Phase = _phase; Travel = _travel; }
+        }
+        private void RestoreSoloSideView(StageActor actor, int side)
+        {
+            if (!_soloViews.TryGetValue(actor, out var saved))
+            {
+                _soloViews[actor] = (side, null, null);
+                return;
+            }
+            if (saved.Side == side) return;
+
+            var view = actor.GetComponent<PlayerController>().View;
+            var outgoing = new Vector2(view.Yaw, view.Pitch);
+            if (saved.Side == 0) saved.Front = outgoing;
+            else saved.Back = outgoing;
+
+            // The rafts face the board from opposite sides.
+            var incoming = (side == 0 ? saved.Front : saved.Back) ?? new Vector2(outgoing.x + 180f, outgoing.y);
+            view.SetLookAngles(incoming.x, incoming.y);
+            saved.Side = side;
+            _soloViews[actor] = saved;
         }
         private void Present(int current, float travel, bool moving)
         {
@@ -224,6 +260,7 @@ namespace Herbalist.Levels
         }
         private void OnDisable()
         {
+            _soloViews.Clear();
             if (_screen != null) _screen.SetOverride(this, null);
             foreach (var pair in _masks) if (pair.Key != null) pair.Key.cullingMask = pair.Value;
             foreach (var actor in _actors) { Release(actor); if (actor != null) actor.GetComponent<PlayerController>().View.ClearCameraOverride(this); }

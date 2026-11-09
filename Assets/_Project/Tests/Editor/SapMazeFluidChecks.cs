@@ -227,7 +227,7 @@ namespace Herbalist.Editor
                 for (int i = far + 1; i <= 12; i++)
                     Check(Math.Abs(strip.Mass(i) - before[i]) < .00001f, "filled interior does not thin " + i);
                 Check(Math.Abs(strip.ActiveCells.Sum(strip.Mass) - 5) < .00001f, "boundary transfer conserves mass");
-                strip.Drain(Vector2.zero, 5);
+                strip.Drain(new Vector2(10, 0), 5);
                 Check(strip.ActiveCells.Count == 0, "empty cells are not replicated as water");
                 results.Add("farthest boundary first, full interior, empty snapshot PASS");
                 const int poolWidth = 31;
@@ -295,6 +295,29 @@ namespace Herbalist.Editor
                 Check(!contact.Contains(new Vector2(-.51f, 1)), "outside field never snaps into contact");
                 Check(!contact.Contains(new Vector2(float.NaN, 1)), "nonfinite contact rejected");
                 results.Add("exact occupied-cell leak contact, dry neighbour and outside bounds PASS");
+
+                var parked = new SapMazeFluidField(9, 9, 1, 1,
+                    (cell, direction) => direction == 0 && cell > 0 ? cell - 1 :
+                        direction == 1 && cell < 8 ? cell + 1 : -1,
+                    cell => new Vector2(cell, 0));
+                parked.Reset(4, 5);
+                for (int tick = 0; tick < 40; tick++)
+                {
+                    Check(parked.Contains(new Vector2(4, 0)), "stationary water keeps feeding the hole");
+                    Check(Math.Abs(parked.Drain(new Vector2(4, 0), .05f) - .05f) < .00001f,
+                        "stationary leak drains on every tick");
+                }
+                Check(Math.Abs(parked.TotalVolume - 3) < .0001f &&
+                    Math.Abs(parked.ActiveCells.Sum(parked.Mass) - parked.TotalVolume) < .0001f,
+                    "stationary leak conserves the remaining mass");
+                Check(parked.Drain(new Vector2(8, 0), 1) == 0, "a dry hole cannot drain nearby water");
+                var isolatedPool = new SapMazeFluidField(3, 3, 1, 1, (cell, direction) => -1,
+                    cell => new Vector2(cell, 0));
+                isolatedPool.ReadSnapshot(new uint[] { 4095u << 20, 2u | 4095u << 20 });
+                Check(Math.Abs(isolatedPool.Drain(Vector2.zero, 2) - 1) < .00001f &&
+                    Math.Abs(isolatedPool.Mass(2) - 1) < .00001f,
+                    "a leak drains only its connected water");
+                results.Add("stationary continuous drainage, exact remaining volume and isolated pools PASS");
 
                 return string.Join("\n", results);
             }

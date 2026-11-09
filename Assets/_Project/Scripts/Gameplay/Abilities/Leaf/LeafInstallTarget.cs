@@ -14,6 +14,9 @@ namespace Herbalist.Abilities
         [SerializeField] private bool _singleOccupant;
         [Tooltip("Keep an installed leaf until its owning mechanism consumes it or the player recalls it.")]
         [SerializeField] private bool _keepLeafUntilUsed;
+        [Tooltip("Wait after an installed leaf detaches before accepting another leaf. Zero disables the restriction.")]
+        [SerializeField, Min(0)] private float _reuseDelayAfterRelease;
+        private float _reuseRemaining;
         [FormerlySerializedAs("_uprightOnInstall"), SerializeField] private bool _perpendicularToSurfaceOnInstall;
         [FormerlySerializedAs("onPinned"), SerializeField] private UnityEvent onInstalled = new UnityEvent();
         [SerializeField] private UnityEvent onReleased = new UnityEvent();
@@ -43,7 +46,7 @@ namespace Herbalist.Abilities
         }
         private void OnDisable() { if (targets.TryGetValue(targetId, out var current) && current == this) targets.Remove(targetId); }
         public static LeafInstallTarget Find(int id) => targets.TryGetValue(id, out var target) ? target : null;
-        public bool CanInstall => isActiveAndEnabled && (!_singleOccupant || !HasLeaf) &&
+        public bool CanInstall => isActiveAndEnabled && _reuseRemaining <= 0f && (!_singleOccupant || !HasLeaf) &&
             (!TryGetComponent<Herbalist.Levels.StageOneTargetGate>(out var gate) || gate.AllowsInstallation);
         public Vector3 Position(Vector3 hit, Vector3 normal, float offset) => socket != null ? socket.position : hit + normal * offset;
         public Quaternion Rotation(Vector3 normal, Vector3 heading)
@@ -69,8 +72,16 @@ namespace Herbalist.Abilities
         }
         public void Detach(LeafProjectile leaf)
         {
-            bool before = HasLeaf; occupants.Remove(leaf);
+            bool before = HasLeaf;
+            if (!occupants.Remove(leaf)) return;
+            if (leaf != null && leaf.Installed) _reuseRemaining = _reuseDelayAfterRelease;
             if (before && !HasLeaf) onReleased.Invoke();
+        }
+        private void Update() => TickReuseDelay(Time.deltaTime);
+        private void TickReuseDelay(float dt)
+        {
+            if (!Herbalist.GameUI.GameplayPause.IsPaused)
+                _reuseRemaining = Mathf.Max(0f, _reuseRemaining - Mathf.Max(0f, dt));
         }
     }
 }

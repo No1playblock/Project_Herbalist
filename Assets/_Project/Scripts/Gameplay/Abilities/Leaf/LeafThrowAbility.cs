@@ -29,23 +29,35 @@ namespace Herbalist.Abilities
         public event Action<float> FacingRequested;
         public LeafAbilitySettings Settings => settings;
         public int ActiveCount => leaves.Count;
-        // Two bits per authored HUD slot: 0 held, 1 flying/installed, 2 returning.
-        public int PackedSlotStates
+        private const int HudSlotCount = 3;
+        private const int SlotStateBits = 2;
+        private const int ProgressBits = 8;
+        private const int ProgressMax = (1 << ProgressBits) - 1;
+        private const int ProgressOffset = HudSlotCount * SlotStateBits;
+        internal const int SlotStatesMask = (1 << ProgressOffset) - 1;
+        public int PackedSlotStates => PackedSlotPresentation & SlotStatesMask;
+
+        // Keep the two-bit states in the low six bits and append one progress byte per slot.
+        public int PackedSlotPresentation
         {
             get
             {
                 if (displaySlots == null) return 0;
                 int packed = 0;
-                for (int i = 0; i < Mathf.Min(3, displaySlots.Length); i++)
+                for (int i = 0; i < Mathf.Min(HudSlotCount, displaySlots.Length); i++)
                 {
                     var leaf = displaySlots[i];
                     int state = leaf == null || leaf.State == LeafState.Complete ? 0 :
                         leaf.State == LeafState.Returning ? 2 : 1;
-                    packed |= state << (i * 2);
+                    packed |= state << (i * SlotStateBits);
+                    if (state == 2)
+                        packed |= Mathf.RoundToInt(leaf.ReturnProgress * ProgressMax) << (ProgressOffset + i * ProgressBits);
                 }
                 return packed;
             }
         }
+        public static float ReadSlotReturnProgress(int packed, int slot) =>
+            ((packed >> (ProgressOffset + slot * ProgressBits)) & ProgressMax) / (float)ProgressMax;
         public bool Recovering { get; private set; }
         public bool RecallOldestInstalled()
         {
@@ -56,10 +68,27 @@ namespace Herbalist.Abilities
             oldest.BeginReturn();
             return true;
         }
+        public void RecallAll()
+        {
+            // Cancel delayed throws so an old maze cannot receive a new leaf after clear.
+            _preparingThrow = false; _preparationRemaining = 0;
+            _preparedSocket = _pendingSocket = null;
+            _socketThrow = _pendingSocketThrow = false;
+            pendingThrow = false; pendingRecovery = null; Recovering = false;
+            foreach (var leaf in leaves)
+                if (leaf != null) leaf.BeginReturn();
+        }
         public uint FeedbackSequence { get; private set; }
         public uint CatchSequence { get; private set; }
+        public float CatchElapsed { get; private set; }
         public void ApplyCatchSequence(uint sequence) => CatchSequence = sequence;
-        private void OnCatchApproaching() => CatchSequence++;
+        public void ApplyCatchPresentation(uint sequence, float elapsed)
+        { CatchSequence = sequence; CatchElapsed = elapsed; }
+        private void OnCatchApproaching(float remainingSeconds)
+        {
+            CatchSequence++;
+            CatchElapsed = Mathf.Max(0f, settings.catchAnticipationSeconds - remainingSeconds);
+        }
         public bool RangeRejected { get; private set; }
         private void Awake()
         {
@@ -80,6 +109,7 @@ namespace Herbalist.Abilities
             if (Herbalist.GameUI.GameplayPause.IsPaused) return;
             cooldown = Mathf.Max(0, cooldown - dt);
             ThrowElapsed += dt;
+            CatchElapsed += dt;
             if (pendingThrow) pendingAim = aim;
             if (_preparingThrow)
             {
@@ -157,7 +187,7 @@ namespace Herbalist.Abilities
             float maxDistance = settings.range;
             float aimRayDistance = maxDistance + Vector3.Distance(aim.origin, origin);
             Vector3 aimPoint = aim.GetPoint(aimRayDistance);
-            if (Herbalist.Levels.StageOneLeafZone.Cast(aim, 0, Mathf.Infinity, settings.hitMask, out var hit))
+            if (Herbalist.Levels.StageOneLeafZone.Cast(aim, 0, Mathf.Infinity, settings.hitMask, out var hit, transform))
                 aimPoint = hit.point + aim.direction * settings.collisionRadius;
             Vector3 towardAim = aimPoint - origin;
             if (towardAim.sqrMagnitude < 0.000001f) towardAim = aim.direction;

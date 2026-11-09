@@ -25,6 +25,8 @@ namespace Herbalist.Levels
         [SerializeField, Min(.01f)] private float _restoreSeconds = 3f;
         [SerializeField, Min(.01f)] private float _moveSeconds = 1f;
         [SerializeField, Min(1)] private float _grownScale = 2.5f;
+        [SerializeField, Min(0)] private float _grownLocalScale;
+        [SerializeField] private Vector3 _growthWorldOffset;
         [SerializeField] private GameObject _jet;
         [SerializeField, Min(0)] private float _ejectionJetHoldSeconds = 1.2f;
         [SerializeField] private Collider[] _obstacleColliders = System.Array.Empty<Collider>();
@@ -36,14 +38,25 @@ namespace Herbalist.Levels
         private Quaternion[] _rotations;
         private Vector3 _pivot;
         private float _lastPresentedAmount, _ejectionJetRemaining;
+        private StageOneFixedWaterStream _fixedStream;
         private bool Online => Object != null && Object.IsValid;
         public bool Authority => Online ? HasStateAuthority : FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession;
         public bool Solved => Online ? Completed : _completed;
         public float Progress => Online ? Amount : _amount;
         public StageOneDocumentMechanismKind Kind => _kind;
         public bool Ready => CanActivate();
+        public bool TryHitBranch()
+        {
+            if (_kind != StageOneDocumentMechanismKind.LowerBranch || !Authority ||
+                Herbalist.GameUI.GameplayPause.IsPaused || !CanActivate()) return false;
+            _completed = true;
+            if (Online) Completed = true;
+            return true;
+        }
         private void Awake()
         {
+            if (_kind == StageOneDocumentMechanismKind.BlockJet && _jet != null)
+                _fixedStream = _jet.GetComponent<StageOneFixedWaterStream>();
             _positions = new Vector3[_movingArt.Length]; _scales = new Vector3[_movingArt.Length]; _rotations = new Quaternion[_movingArt.Length];
             _pivot = _motionPivot != null ? _motionPivot.position : transform.position;
             for (int i = 0; i < _movingArt.Length; i++)
@@ -52,7 +65,9 @@ namespace Herbalist.Levels
         public override void Spawned() { if (HasStateAuthority) { Amount = 0; Completed = false; } }
         private bool CanActivate()
         {
-            if (_requiredCloth != null && !_requiredCloth.WasUsed) return false;
+            if (_requiredCloth != null &&
+                (_kind == StageOneDocumentMechanismKind.LowerBranch ? !_requiredCloth.HasRetracted : !_requiredCloth.WasUsed))
+                return false;
             if (_activationArea == null) return true;
             foreach (var actor in StageActor.All)
                 if (actor.Available &&
@@ -77,7 +92,6 @@ namespace Herbalist.Levels
                     }
                     break;
                 case StageOneDocumentMechanismKind.LowerBranch:
-                    if (_leafTarget != null && _leafTarget.HasLeaf && CanActivate()) _completed = true;
                     if (_completed) _amount = Mathf.MoveTowards(_amount, 1, dt / _moveSeconds);
                     break;
                 case StageOneDocumentMechanismKind.BlockJet:
@@ -87,6 +101,7 @@ namespace Herbalist.Levels
             }
             if (Online) { Amount = _amount; Completed = _completed; }
             Present(_amount, _completed, dt);
+            if (!_completed && _fixedStream != null) _fixedStream.PushOnContact();
         }
         public override void FixedUpdateNetwork() { if (HasStateAuthority) Tick(Runner.DeltaTime); }
         private void Update()
@@ -100,7 +115,11 @@ namespace Herbalist.Levels
             {
                 var art = _movingArt[i];
                 if (_kind == StageOneDocumentMechanismKind.GrowingMushrooms)
-                    art.localScale = _scales[i] * Mathf.Lerp(1, _grownScale, amount);
+                {
+                    var grown = _grownLocalScale > 0 ? Vector3.one * _grownLocalScale : _scales[i] * _grownScale;
+                    art.localScale = Vector3.Lerp(_scales[i], grown, amount);
+                    art.position = _positions[i] + _growthWorldOffset * amount;
+                }
                 else
                 {
                     var rotation = Quaternion.Euler(_rotation * amount);

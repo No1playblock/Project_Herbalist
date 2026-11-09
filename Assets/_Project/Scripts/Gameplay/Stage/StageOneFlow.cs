@@ -123,7 +123,7 @@ namespace Herbalist.StageOne
             _recipeIndex = recipeIndex; _sourceIndex = -1;
             var recipe = settings.recipes[recipeIndex];
             MinigameItemId = settings.ItemId(recipe.ingredient);
-            Temperature = recipe.initialTemperature; CraftingGauge = 0; MinigameTime = 0;
+            Temperature = recipe.initialTemperature; CraftingGauge = 0; MinigameTime = 0; MinigameSteps = 0;
             _fanPressTimes.Clear(); FanPressCount = 0;
             Minigame = StageMinigameKind.Crafting;
             adapter?.Publish();
@@ -249,6 +249,7 @@ namespace Herbalist.StageOne
                     if (command == StageCommand.Craft)
                     {
                         TrimFanPresses(); _fanPressTimes.Enqueue(MinigameTime); FanPressCount = _fanPressTimes.Count;
+                        MinigameSteps++;
                         adapter?.Publish(); return string.Empty;
                     }
                 }

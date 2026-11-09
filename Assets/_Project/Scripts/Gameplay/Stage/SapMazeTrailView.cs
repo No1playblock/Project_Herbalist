@@ -11,6 +11,7 @@ namespace Herbalist.Levels
         [SerializeField] private LineRenderer _line;
         [SerializeField] private MeshFilter _fluidMesh;
         [SerializeField] private MeshRenderer _fluidRenderer;
+        [SerializeField] private SapMazeDensitySurface _densitySurface;
         private Mesh _mesh;
         private readonly List<Vector3> _vertices = new List<Vector3>();
         private readonly List<Vector3> _normals = new List<Vector3>();
@@ -20,6 +21,7 @@ namespace Herbalist.Levels
         private readonly List<Vector2> _uvs = new List<Vector2>();
         private readonly Dictionary<int, FloorSample> _floor = new Dictionary<int, FloorSample>();
         private readonly Dictionary<int, float> _sampleDensity = new Dictionary<int, float>();
+        private readonly Dictionary<Vector2, float> _reliefHeights = new Dictionary<Vector2, float>();
         private float _surfaceLiftLocal;
         private bool _flatSurface;
         private Vector3 _flatNormal;
@@ -32,11 +34,13 @@ namespace Herbalist.Levels
         private Matrix4x4 _cachedMatrix;
         private Mesh _cachedFloorMesh;
         private int _cachedGeometryVersion;
+        private bool _cachedFollowRelief;
         private int _refinedWidth, _subdivisions;
         private float _outlineLevel;
         private struct FloorSample { public Vector2 Point; public float Z; public bool Open; }
         private SapMazeFluidField _renderedField;
         private ulong _renderStamp;
+        private bool _renderedDensity;
         private float _nextFluidRender;
         private readonly List<Vector3> _visible = new List<Vector3>(128);
         private readonly List<Vector2> _path = new List<Vector2>(128);
@@ -55,6 +59,7 @@ namespace Herbalist.Levels
 
         public void PresentTube(IReadOnlyList<Vector2> points, SapMazeSurface surface)
         {
+            _densitySurface?.SetVisible(false);
             if (_line != null) _line.positionCount = 0;
             if (_fluidMesh == null || _fluidRenderer == null || points.Count < 2) return;
             _fluidRenderer.enabled = true;
@@ -127,8 +132,15 @@ namespace Herbalist.Levels
         {
             if (_line != null) _line.positionCount = 0;
             if (_fluidMesh == null || _fluidRenderer == null || field == null || _settings == null) return;
-            _fluidRenderer.enabled = true;
-            if (Time.unscaledTime < _nextFluidRender && _renderedField == field) return;
+            bool useDensity = _densitySurface != null && _densitySurface.isActiveAndEnabled && _densitySurface.CanPresent(field);
+            _fluidRenderer.enabled = !useDensity;
+            if (!useDensity) _densitySurface?.SetVisible(false);
+            bool sameMode = _renderedDensity == useDensity;
+            if (Time.unscaledTime < _nextFluidRender && _renderedField == field && sameMode)
+            {
+                if (useDensity) _densitySurface.SetVisible(_outlineLevel > 0);
+                return;
+            }
             _nextFluidRender = Time.unscaledTime + _settings.fluidRenderInterval;
             ulong stamp = 14695981039346656037UL;
             unchecked
@@ -144,10 +156,29 @@ namespace Herbalist.Levels
                 stamp = (stamp ^ (uint)_settings.outlineSubdivisions) * 1099511628211UL;
                 stamp = (stamp ^ (uint)_settings.waterUvScale.GetHashCode()) * 1099511628211UL;
                 stamp = (stamp ^ (uint)_settings.fluidSurfaceLiftWorld.GetHashCode()) * 1099511628211UL;
+                stamp = (stamp ^ (_settings.followReliefSurface ? 1UL : 0UL)) * 1099511628211UL;
                 stamp = (stamp ^ (uint)_settings.outlineWallInsetWorld.GetHashCode()) * 1099511628211UL;
                 stamp = (stamp ^ (uint)surface.GeometryVersion) * 1099511628211UL;
             }
-            if (_mesh != null && _renderedField == field && _renderStamp == stamp) return;
+            if (_renderedField == field && _renderStamp == stamp && sameMode && (useDensity || _mesh != null))
+            {
+                if (useDensity) _densitySurface.SetVisible(_outlineLevel > 0);
+                return;
+            }
+            if (useDensity)
+            {
+                var timer = System.Diagnostics.Stopwatch.StartNew();
+                float densityScale = transform.TransformVector(Vector3.right).magnitude;
+                _outline.Build(field, _settings.outlineBlendRadiusWorld / Mathf.Max(.001f, densityScale), _settings.outlineBlendPasses);
+                _outlineLevel = Mathf.Min(_settings.outlineThreshold, _outline.Maximum * .4f);
+                float outlineMs = (float)timer.Elapsed.TotalMilliseconds;
+                _densitySurface.Upload(field, surface, _outline, _outlineLevel, _settings.waterUvScale);
+                LastBuildTimingsMs = new Vector3(outlineMs, 0, (float)timer.Elapsed.TotalMilliseconds - outlineMs);
+                _renderedField = field;
+                _renderStamp = stamp;
+                _renderedDensity = true;
+                return;
+            }
             if (_mesh == null)
             {
                 _mesh = new Mesh { name = "Maze occupied water surface", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
@@ -156,13 +187,14 @@ namespace Herbalist.Levels
             _vertices.Clear(); _normals.Clear(); _triangles.Clear(); _squares.Clear(); _uvs.Clear();
             int subdivisions = Mathf.Clamp(_settings.outlineSubdivisions, 1, 3);
             var matrix = transform.worldToLocalMatrix * surface.MazeCollider.transform.localToWorldMatrix;
-            if (_cachedSurface != surface || _cachedGeometryVersion != surface.GeometryVersion || subdivisions != _subdivisions || _cachedMatrix != matrix ||
-                _cachedFloorMesh != surface.MazeCollider.sharedMesh || _floor.Count > _settings.outlineGeometryCacheLimit ||
+            if (_cachedSurface != surface || _cachedGeometryVersion != surface.GeometryVersion || _cachedFollowRelief != _settings.followReliefSurface || subdivisions != _subdivisions || _cachedMatrix != matrix ||
+                _cachedFloorMesh != surface.MazeCollider.sharedMesh || _floor.Count > _settings.outlineGeometryCacheLimit || _reliefHeights.Count > _settings.outlineGeometryCacheLimit ||
                 _clearEdges.Count > _settings.outlineGeometryCacheLimit * 3)
             {
-                _floor.Clear(); _clearEdges.Clear(); _wallLimits.Clear(); _cachedSurface = surface;
+                _floor.Clear(); _clearEdges.Clear(); _wallLimits.Clear(); _reliefHeights.Clear(); _cachedSurface = surface;
                 _cachedMatrix = matrix; _cachedFloorMesh = surface.MazeCollider.sharedMesh;
                 _cachedGeometryVersion = surface.GeometryVersion;
+                _cachedFollowRelief = _settings.followReliefSurface;
             }
             _subdivisions = subdivisions;
             _refinedWidth = (field.Width - 1) * subdivisions + 1;
@@ -173,8 +205,8 @@ namespace Herbalist.Levels
             float outlineTime = (float)buildTimer.Elapsed.TotalMilliseconds;
             buildTimer.Restart();
             _edgeVertices.Clear(); _cornerVertices.Clear(); _sampleDensity.Clear();
-            _surfaceLiftLocal = surface.UsesFloorPlane ? 0 : _settings.fluidSurfaceLiftWorld / Mathf.Max(.001f, transform.TransformVector(Vector3.forward).magnitude);
-            _flatSurface = surface.UsesFloorPlane;
+            _surfaceLiftLocal = surface.UsesFloorPlane && !_settings.followReliefSurface ? 0 : _settings.fluidSurfaceLiftWorld / Mathf.Max(.001f, transform.TransformVector(Vector3.forward).magnitude);
+            _flatSurface = surface.UsesFloorPlane && !_settings.followReliefSurface;
             if (_flatSurface) _flatNormal = transform.localToWorldMatrix.transpose.MultiplyVector(-surface.FloorPlane.forward).normalized;
             foreach (int cell in _outline.Cells)
             {
@@ -194,6 +226,7 @@ namespace Herbalist.Levels
                     DrawOutlineTriangle(field, surface, a, a + _refinedWidth + 1, a + 1);
                 }
             }
+            if (_settings.followReliefSurface) EnsureReliefClearance(surface);
             float tessellationTime = (float)buildTimer.Elapsed.TotalMilliseconds;
             buildTimer.Restart();
             _mesh.Clear(); _mesh.SetVertices(_vertices); _mesh.SetTriangles(_triangles, 0, false);
@@ -201,7 +234,7 @@ namespace Herbalist.Levels
             if (_flatSurface) _mesh.SetNormals(_normals); else _mesh.RecalculateNormals();
             _mesh.RecalculateBounds();
             LastBuildTimingsMs = new Vector3(outlineTime, tessellationTime, (float)buildTimer.Elapsed.TotalMilliseconds);
-            _renderedField = field; _renderStamp = stamp; _lastWasTube = false;
+            _renderedField = field; _renderStamp = stamp; _lastWasTube = false; _renderedDensity = false;
         }
 
         private FloorSample Floor(SapMazeFluidField field, SapMazeSurface surface, int index)
@@ -209,9 +242,39 @@ namespace Herbalist.Levels
             if (_floor.TryGetValue(index, out var sample)) return sample;
             sample.Point = field.Point(0) + new Vector2(index % _refinedWidth, index / _refinedWidth) * (field.CellSize / _subdivisions);
             sample.Open = surface.IsSurfaceOpen(sample.Point);
-            if (sample.Open) sample.Z = surface.SurfaceZ(sample.Point, _settings.localZ);
+            if (sample.Open) sample.Z = RenderSurfaceZ(surface, sample.Point, _settings.localZ);
             _floor[index] = sample;
             return sample;
+        }
+        private float RenderSurfaceZ(SapMazeSurface surface, Vector2 point, float fallback)
+        {
+            if (!_settings.followReliefSurface) return surface.SurfaceZ(point, fallback);
+            if (!_reliefHeights.TryGetValue(point, out float height))
+            { height = surface.ReliefSurfaceZ(point, fallback); _reliefHeights[point] = height; }
+            return height;
+        }
+        private float RequiredReliefLift(SapMazeSurface surface, Vector3 point)
+        {
+            var xy = new Vector2(point.x, point.y);
+            if (!surface.IsSurfaceOpen(xy)) return 0;
+            return Mathf.Max(0, point.z - RenderSurfaceZ(surface, xy, point.z) + _surfaceLiftLocal);
+        }
+        private void EnsureReliefClearance(SapMazeSurface surface)
+        {
+            // A triangle can cut through a sharp floor ridge even with all three
+            // vertices above it. Check its interior and edges, preserving all XY coverage.
+            for (int i = 0; i < _triangles.Count; i += 3)
+            {
+                int a = _triangles[i], b = _triangles[i + 1], c = _triangles[i + 2];
+                var pa = _vertices[a]; var pb = _vertices[b]; var pc = _vertices[c];
+                float lift = RequiredReliefLift(surface, (pa + pb + pc) / 3f);
+                lift = Mathf.Max(lift, RequiredReliefLift(surface, (pa + pb) * .5f));
+                lift = Mathf.Max(lift, RequiredReliefLift(surface, (pb + pc) * .5f));
+                lift = Mathf.Max(lift, RequiredReliefLift(surface, (pc + pa) * .5f));
+                if (lift <= .000001f) continue;
+                var offset = Vector3.forward * (lift + .00001f);
+                _vertices[a] -= offset; _vertices[b] -= offset; _vertices[c] -= offset;
+            }
         }
         private float Density(SapMazeFluidField field, SapMazeSurface surface, int index)
         {
@@ -277,7 +340,7 @@ namespace Herbalist.Levels
                     float inset = _settings.outlineWallInsetWorld / Mathf.Max(.001f, transform.TransformVector(Vector3.right).magnitude);
                     var delta = limit.Point - wet.Point;
                     limit.Point = wet.Point + delta.normalized * Mathf.Max(0, delta.magnitude - inset);
-                    limit.Z = surface.SurfaceZ(limit.Point, wet.Z);
+                    limit.Z = RenderSurfaceZ(surface, limit.Point, wet.Z);
                     _wallLimits[directed] = limit;
                 }
                 float wanted = Vector2.Distance(wet.Point, point), available = Vector2.Distance(wet.Point, limit.Point);
@@ -285,6 +348,7 @@ namespace Herbalist.Levels
                 point = Vector2.Lerp(wet.Point, limit.Point, fraction);
                 z = Mathf.Lerp(wet.Z, limit.Z, fraction);
             }
+            if (_settings.followReliefSurface) z = RenderSurfaceZ(surface, point, z);
             index = AddSurfaceVertex(point, z);
             _edgeVertices[key] = index; return index;
         }
@@ -389,6 +453,7 @@ namespace Herbalist.Levels
         {
             if (_line != null) _line.positionCount = 0;
             if (_fluidRenderer != null) _fluidRenderer.enabled = false;
+            _densitySurface?.SetVisible(false);
         }
     }
 }

@@ -19,13 +19,17 @@ namespace Herbalist.Audio
         private SapMazeBoard[] _boards;
         private Vector3 _position, _velocity;
         private bool _initialized, _grounded, _onTalisman, _fallingWind;
-        private float _stepDistance;
+        private PlayerCharacterPresentation _presentation;
+        private Animator _footAnimator;
+        private Transform _leftFoot, _rightFoot;
+        private bool _leftLifted, _rightLifted;
         private int _consumed;
         private void Awake()
         {
             _player = GetComponent<PlayerController>(); _network = GetComponent<NetworkPlayer>();
             _actor = GetComponent<StageActor>(); _character = GetComponent<CharacterController>();
             _emitter = GetComponent<SfxEmitter>();
+            _presentation = GetComponent<PlayerCharacterPresentation>();
             _boards = FindObjectsByType<SapMazeBoard>(FindObjectsSortMode.None);
             if (_actor != null) _actor.LocalCommandRequested += OnLocalCommand;
         }
@@ -59,7 +63,7 @@ namespace Herbalist.Audio
             float height = _character.height * Mathf.Abs(transform.lossyScale.y);
             var delta = transform.position - _position;
             bool teleported = delta.magnitude > height * tuning.teleportDistanceInHeights;
-            if (teleported) { _emitter.Play(9); _stepDistance = 0; }
+            if (teleported) _emitter.Play(9);
             var surface = GroundSurface(tuning);
             if (!teleported && _grounded && !grounded && velocity.y > 0 &&
                 !(online ? (bool)_network.ExternalFlight : _player.Motor.CaptureState().ExternalFlight))
@@ -76,16 +80,11 @@ namespace Herbalist.Audio
                 float distance = Vector3.ProjectOnPlane(delta, Vector3.up).magnitude;
                 if (distance > tuning.movementThreshold * Time.deltaTime)
                 {
-                    _stepDistance += distance;
-                    if (_stepDistance >= height * tuning.stepDistanceInHeights)
-                    {
-                        _stepDistance = 0;
-                        _emitter.Play(tuning.footstepSoundId);
-                    }
+                    Footsteps(tuning, height);
                 }
-                else _stepDistance = 0;
+                else ResetFeet();
             }
-            else _stepDistance = 0;
+            else ResetFeet();
             bool fallingWind = !grounded && velocity.y < -tuning.fallingWindSpeed;
             if (tuning.fallingWindEnabled && fallingWind && !_fallingWind) _emitter.Play(17);
             _fallingWind = fallingWind;
@@ -99,6 +98,37 @@ namespace Herbalist.Audio
             _position = transform.position; _velocity = velocity; _grounded = grounded; _consumed = consumed;
             _onTalisman = onTalisman;
         }
+        private void ResetFeet() { _leftLifted = _rightLifted = false; }
+        private void Footsteps(SfxCatalog tuning, float height)
+        {
+            var animator = _presentation != null ? _presentation.ActiveAnimator : null;
+            if (animator != _footAnimator)
+            {
+                _footAnimator = animator;
+                _leftFoot = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.LeftFoot) : null;
+                _rightFoot = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.RightFoot) : null;
+                ResetFeet();
+            }
+            if (animator == null || !animator.isActiveAndEnabled || !animator.isHuman) return;
+            Footfall(_leftFoot, animator.leftFeetBottomHeight, ref _leftLifted, tuning, height);
+            Footfall(_rightFoot, animator.rightFeetBottomHeight, ref _rightLifted, tuning, height);
+        }
+        private void Footfall(Transform foot, float bottomHeight, ref bool lifted, SfxCatalog tuning, float height)
+        {
+            if (foot == null) return;
+            float sole = bottomHeight * Mathf.Abs(_footAnimator.transform.lossyScale.y);
+            Vector3 origin = foot.position + Vector3.up * tuning.groundProbeHeight;
+            if (!Physics.Raycast(origin, Vector3.down, out var hit,
+                tuning.groundProbeHeight + tuning.groundProbeDistance, tuning.groundMask, QueryTriggerInteraction.Ignore))
+            { lifted = false; return; }
+            float clearance = foot.position.y - sole - hit.point.y;
+            if (clearance > height * tuning.footLiftInHeights) lifted = true;
+            else if (lifted && clearance <= height * tuning.footContactInHeights)
+            {
+                lifted = false;
+                _emitter.Play(tuning.footstepSoundId);
+            }
+        }
         private SfxSurfaceKind GroundSurface(SfxCatalog tuning)
         {
             Vector3 feet = transform.TransformPoint(_character.center) - Vector3.up * (_character.height * Mathf.Abs(transform.lossyScale.y) * .5f);
@@ -111,7 +141,7 @@ namespace Herbalist.Audio
             }
             return SfxSurfaceKind.Dirt;
         }
-        private void OnDisable() { _initialized = false; _emitter?.StopLoops(); }
+        private void OnDisable() { _initialized = false; ResetFeet(); _emitter?.StopLoops(); }
         private void OnDestroy() { if (_actor != null) _actor.LocalCommandRequested -= OnLocalCommand; }
     }
 }

@@ -42,12 +42,19 @@ namespace Herbalist.Editor
             var targets = all.Select(t => t.GetComponent<LeafInstallTarget>()).Where(t => t != null && t.isActiveAndEnabled).ToArray();
             Check(targets.All(t => t.Id > 0) && targets.Select(t => t.Id).Distinct().Count() == targets.Length, "Unique positive leaf IDs.");
             var cloths = all.Select(t => t.GetComponent<HangingCloth>()).Where(t => t != null && t.isActiveAndEnabled).ToArray();
-            Check(cloths.Length == 4 && cloths.Count(c => c.WaterDriven) == 2, "Four cloths, two water-driven.");
+            Check(cloths.Length == 5 && cloths.Count(c => c.WaterDriven) == 2, "Five cloths, two water-driven.");
             foreach (var c in cloths)
             {
                 Check(Read<Transform>(c, "_externalVisualRoot") != null && Read<bool>(c, "_singleUse") && Read<int>(c, "_riderCapacity") == 1, "Single-use source cloth binding.");
                 Check(Read<Transform>(c, "_knot") != null && Read<HangingClothSettings>(c, "_settings") != null, "Cloth settings and grip.");
             }
+            var loweredCloths = cloths.Where(c => Read<SapInjectionPort>(c, "_loweringPort") != null).ToArray();
+            Check(loweredCloths.Select(c => c.name).OrderBy(n => n).SequenceEqual(new[] { "Coop_1_SingleUseCloth", "Coop_2_WaterCloth" }) &&
+                loweredCloths.Select(c => Read<SapInjectionPort>(c, "_loweringPort")).Distinct().Count() == 2,
+                "Only the two revised cloths use separate lowering inlets.");
+            foreach (var number in new[] { 31, 32, 24, 25 })
+                Check(targets.Any(t => t.name == $"LeafBranch_{number}" && t.HasSocket && t.GetComponent<StageOneLeafZone>() != null),
+                    $"Branch {number} has an active leaf socket.");
             var pads = all.Select(t => t.GetComponent<ExteriorJumpPad>()).Where(t => t != null && t.isActiveAndEnabled).ToArray();
             Check(pads.Length > 0, "Jump pads exist.");
             foreach (var p in pads)
@@ -56,12 +63,24 @@ namespace Herbalist.Editor
                     Read<GameObject[]>(p,"_jets").All(x => x != null), "Complete jump pad " + p.name);
             var mechanisms = all.Select(t => t.GetComponent<StageOneDocumentMechanism>()).Where(t => t != null && t.isActiveAndEnabled).ToArray();
             Check(mechanisms.Count(m => m.Kind == StageOneDocumentMechanismKind.GrowingMushrooms) == 2 &&
-                mechanisms.Count(m => m.Kind == StageOneDocumentMechanismKind.EjectObstacle) == 1 &&
+                mechanisms.All(m => m.Kind != StageOneDocumentMechanismKind.EjectObstacle) &&
                 mechanisms.Count(m => m.Kind == StageOneDocumentMechanismKind.LowerBranch) == 1 &&
-                mechanisms.Count(m => m.Kind == StageOneDocumentMechanismKind.BlockJet) == 3, "Two growth ports, ejection, branch lowering and three mushroom-route jet plugs.");
+                mechanisms.Count(m => m.Kind == StageOneDocumentMechanismKind.BlockJet) == 3, "Two growth ports, branch lowering and three mushroom-route jet plugs.");
+            var traversal = all.Select(t => t.GetComponent<StageOneTraversal>()).First(t => t != null);
+            var forestExit = Read<BoxCollider>(traversal, "_forestExitCheckpoint");
+            var fork = Read<Transform>(traversal, "_forestExitRecoveryPoint");
+            Check(forestExit != null && forestExit.isTrigger && fork != null && !forestExit.bounds.Contains(fork.position),
+                "Forest exit activates a separate fork recovery point.");
+            var checkpoints = Read<Collider[]>(traversal, "_checkpointSurfaces");
+            var jetMushrooms = new[] { "04_Musroom (10)", "04_Musroom (11)", "04_Musroom (6)" };
+            Check(!checkpoints.Any(c => c != null && jetMushrooms.Contains(c.name)),
+                "Water-jet mushrooms cannot be saved as recovery points.");
+            foreach (var growth in mechanisms.Where(m => m.Kind == StageOneDocumentMechanismKind.GrowingMushrooms))
+                Check(!checkpoints.Contains(Read<Transform[]>(growth, "_movingArt").Single().GetComponent<Collider>()),
+                    "A growing mushroom cannot be saved as a recovery point.");
             var level = all.Select(t => t.GetComponent<StageLevel>()).First(x => x != null);
             Check(level.nextScenePath.EndsWith("Stage_02_Mazes.unity") && !level.abilityRules.leaf.permanentInstallation && level.abilityRules.leaf.lifetime == 5, "Stage transition and leaf lifetime.");
-            return "PASS authored: original-map bindings, " + pads.Length + " pads, 4 single-use cloths, 4 mechanism kinds, unique leaf IDs, no missing scripts, Stage 2 transition.";
+            return "PASS authored: original-map bindings, " + pads.Length + " pads, 5 single-use cloths, 3 active mechanism kinds, unique leaf IDs, no missing scripts, Stage 2 transition.";
         }
         public static string RunPlay()
         {
@@ -73,24 +92,25 @@ namespace Herbalist.Editor
             var mechanisms = UnityEngine.Object.FindObjectsByType<StageOneDocumentMechanism>(FindObjectsSortMode.None);
             try
             {
-                var growth = mechanisms.First(m => m.Kind == StageOneDocumentMechanismKind.GrowingMushrooms);
-                var port = Read<SapInjectionPort>(growth,"_port"); port.Inject(1.1f); growth.Tick(1.1f); Check(growth.Progress > .99f, "Water grows mushrooms.");
-                growth.Tick(1.5f); Check(growth.Progress > .4f && growth.Progress < .6f, "Mushrooms shrink gradually after water stops.");
-                growth.Tick(2); Check(growth.Progress == 0, "Mushrooms restore.");
-                var eject = mechanisms.First(m => m.Kind == StageOneDocumentMechanismKind.EjectObstacle);
-                var gate = UnityEngine.Object.FindObjectsByType<StageOneTargetGate>(FindObjectsSortMode.None).First(g=>Read<StageOneDocumentMechanism>(g,"_mechanism")==eject); var gatedTarget = gate.GetComponent<LeafInstallTarget>();
-                Check(!gatedTarget.CanInstall, "Bridge is initially locked.");
-                Read<SapInjectionPort>(eject,"_port").Inject(2); eject.Tick(2); Check(!eject.Solved, "Obstacle cannot be bypassed before cloth use and arrival.");
-                var cloth = Read<HangingCloth>(eject,"_requiredCloth"); Write(cloth,"_used",true);
-                var area = Read<BoxCollider>(eject,"_activationArea");
-                var sapActor = actors.First(a => a.Abilities.Kind == PlayerAbilityKind.Sap);
-                sapActor.GetComponent<PlayerController>().Motor.Teleport(area.bounds.center); Physics.SyncTransforms();
-                // Test the actual current stage role; offline ability switching remains separate from character identity.
-                var unlocked = sapActor.Abilities.Unlocked;
-                Check(unlocked, "Prototype actor must have Sap unlocked for mechanism check.");
-                Read<SapInjectionPort>(eject,"_port").Inject(1.1f); eject.Tick(1.1f); Check(eject.Solved && gatedTarget.CanInstall, "Arrival injection ejects obstacle and unlocks bridge.");
+                foreach (var growth in mechanisms.Where(m => m.Kind == StageOneDocumentMechanismKind.GrowingMushrooms))
+                {
+                    var mushroom = Read<Transform[]>(growth, "_movingArt").Single();
+                    var restScale = mushroom.localScale;
+                    var restPosition = mushroom.position;
+                    var growthOffset = Read<Vector3>(growth, "_growthWorldOffset");
+                    var port = Read<SapInjectionPort>(growth, "_port");
+                    port.Inject(1.1f); growth.Tick(1.1f);
+                    Check(growth.Progress == 1 && Vector3.Distance(mushroom.localScale, Vector3.one * .5793636f) < .000001f,
+                        "Water grows the mushroom to the authored local scale.");
+                    Check(growthOffset.sqrMagnitude > 0 && Vector3.Distance(mushroom.position, restPosition + growthOffset) < .001f,
+                        "The mushroom grows outward from the trunk.");
+                    growth.Tick(4); Check(Mathf.Approximately(growth.Progress, .5f), "Mushroom is halfway restored after four seconds.");
+                    growth.Tick(4); Check(growth.Progress == 0 && mushroom.localScale == restScale &&
+                        Vector3.Distance(mushroom.position, restPosition) < .001f, "Mushroom restores its scale and position after eight seconds.");
+                }
                 var settings = StageLevel.Instance.abilityRules.leaf;
-                var zone = UnityEngine.Object.FindObjectsByType<StageOneLeafUse>(FindObjectsSortMode.None).First(z => z.GetComponent<StageOneTargetGate>() == null);
+                var zones = UnityEngine.Object.FindObjectsByType<StageOneLeafUse>(FindObjectsSortMode.None);
+                var zone = zones.First(z => z.GetComponent<StageOneTargetGate>() == null && !Read<bool>(z, "_recallAfterLeaving"));
                 var target = zone.GetComponent<LeafInstallTarget>();
                 leaf = UnityEngine.Object.Instantiate(settings.offlinePrefab); leaf.Initialize(settings,actors[0].transform,target.SocketPosition,target.SocketPosition,null,true);
                 Check(leaf.TryInstallAtSocket(target), "Install at allowed wall socket."); Physics.SyncTransforms();
@@ -100,14 +120,53 @@ namespace Herbalist.Editor
                 var offset=cc.transform.TransformVector(cc.center)-Vector3.up*cc.height*Mathf.Abs(cc.transform.lossyScale.y)*.5f;
                 actors[0].GetComponent<PlayerController>().Motor.Teleport(feet-offset); Physics.SyncTransforms();
                 Check(leaf.Supports(cc,.35f), "Actual player capsule stands on leaf."); zone.Tick(.07f); Check(leaf.State==LeafState.Returning, "First step recalls leaf.");
+                UnityEngine.Object.DestroyImmediate(leaf.gameObject);
+                zone = zones.Single(z => z.name == "LeafBranch_32");
+                target = zone.GetComponent<LeafInstallTarget>();
+                leaf = UnityEngine.Object.Instantiate(settings.offlinePrefab);
+                leaf.Initialize(settings, actors[0].transform, target.SocketPosition, target.SocketPosition, null, true);
+                Check(leaf.TryInstallAtSocket(target), "Install the cloth approach leaf."); Physics.SyncTransforms();
+                surface = Read<Collider>(leaf, "_surface");
+                feet = new Vector3(surface.bounds.center.x, surface.bounds.max.y + .02f, surface.bounds.center.z);
+                var riderMotor = actors[0].GetComponent<PlayerController>().Motor;
+                riderMotor.Teleport(feet - offset); Physics.SyncTransforms();
+                Check(leaf.Supports(cc, .35f), "Player stands on the cloth approach leaf.");
+                zone.Tick(.1f);
+                leaf.Tick(settings.lifetime + .1f);
+                Check(leaf.Installed, "Cloth approach leaf survives footstep and expiry while occupied.");
+                riderMotor.Teleport(feet - offset + Vector3.up * 2); Physics.SyncTransforms();
+                zone.Tick(.1f);
+                leaf.Tick(.1f);
+                Check(leaf.Installed, "A brief loss of support does not recall the cloth approach leaf.");
+                zone.Tick(.1f);
+                Check(leaf.State == LeafState.Returning, "Cloth approach leaf recalls after the player leaves.");
                 var lower = mechanisms.First(m=>m.Kind==StageOneDocumentMechanismKind.LowerBranch); var button=Read<LeafInstallTarget>(lower,"_leafTarget");
-                Check(!button.CanInstall,"Branch button cannot skip the first cloth trip.");
-                Write(Read<HangingCloth>(lower,"_requiredCloth"),"_used",true);
-                UnityEngine.Object.DestroyImmediate(leaf.gameObject); leaf=UnityEngine.Object.Instantiate(settings.offlinePrefab);
-                leaf.Initialize(settings,actors[0].transform,button.SocketPosition,button.SocketPosition,null,true); Check(leaf.TryInstallAtSocket(button),"Leaf hits branch button.");
-                lower.Tick(2); Check(lower.Solved && lower.Progress==1,"Branch lowers and remains lowered.");
-                leaf.BeginReturn(); lower.Tick(.1f); Check(lower.Solved,"Leaf recall does not raise branch again.");
-                return "PASS Play: growth/recovery, gated obstacle prerequisites and arrival injection, first-footstep recall, leaf button and latched branch lowering.";
+                var firstCloth = Read<HangingCloth>(lower, "_requiredCloth");
+                Check(firstCloth != null && !lower.Ready && !button.CanInstall,
+                    "The branch waits for the first cloth to retract and cannot hold a leaf.");
+                Write(firstCloth, "_retraction", 1f);
+                Check(lower.Ready, "The branch accepts a hit once the first cloth has retracted.");
+                var hitZone = button.GetComponent<SphereCollider>();
+                var impactPoint = hitZone.bounds.center;
+                var origins = new[] { Vector3.forward, Vector3.back, Vector3.left, Vector3.right, Vector3.up }
+                    .Select(direction => impactPoint + direction * (hitZone.radius + settings.collisionRadius + 1));
+                var origin = origins.First(point =>
+                    StageOneLeafZone.Cast(new Ray(point, (impactPoint - point).normalized), settings.collisionRadius,
+                        Vector3.Distance(point, impactPoint), settings.hitMask, out var hit) && hit.collider == hitZone);
+                UnityEngine.Object.DestroyImmediate(leaf.gameObject);
+                leaf = UnityEngine.Object.Instantiate(settings.offlinePrefab);
+                leaf.Initialize(settings, actors[0].transform, origin, impactPoint, null, true);
+                leaf.Tick(1 + Vector3.Distance(origin, impactPoint) / settings.flightSpeed);
+                Check(lower.Solved && leaf.State == LeafState.Returning && !button.HasLeaf,
+                    "A flying leaf hits the branch and bounces back without attaching.");
+                var branch = Read<Transform[]>(lower, "_movingArt")[0];
+                var restRotation = branch.rotation;
+                lower.Tick(Read<float>(lower, "_moveSeconds"));
+                Check(lower.Progress == 1 && Quaternion.Angle(branch.rotation, restRotation) > 1,
+                    "The hit rotates the branch into its lowered pose.");
+                lower.Tick(.1f);
+                Check(lower.Solved && lower.Progress == 1, "The branch stays lowered after the leaf returns.");
+                return "PASS Play: growth/recovery, first-footstep recall, leaf button and latched branch lowering.";
             }
             finally
             { if(leaf!=null) UnityEngine.Object.DestroyImmediate(leaf.gameObject); for(int i=0;i<actors.Length;i++){var motor=actors[i].GetComponent<PlayerController>().Motor;motor.Teleport(positions[i]);motor.ResetMotion();} }
@@ -117,13 +176,39 @@ namespace Herbalist.Editor
             Check(Application.isPlaying && StageOneFlow.Instance.Authority,"Offline Play required.");
             var actors=StageActor.All.Where(a=>a.Available).OrderBy(a=>a.Slot).ToArray();
             var positions=actors.Select(a=>a.transform.position).ToArray();
-            var cloths=UnityEngine.Object.FindObjectsByType<HangingCloth>(FindObjectsSortMode.None).Where(c=>c.enabled).ToArray();
+            var cloths=UnityEngine.Object.FindObjectsByType<HangingCloth>(FindObjectsSortMode.None).Where(c=>c.enabled)
+                .OrderBy(c=>Read<StageOneDocumentMechanism>(c,"_deploymentMechanism") != null).ToArray();
             LeafProjectile leaf=null;
             try
             {
                 foreach(var c in cloths)
                 {
                     Write(c,"_used",false);Write(c,"_retraction",0f);Write(c,"_angles",Vector2.zero);Write(c,"_velocity",Vector2.zero);
+                    var mechanism = Read<StageOneDocumentMechanism>(c, "_deploymentMechanism");
+                    if (mechanism != null)
+                    {
+                        Check(mechanism.TryHitBranch(), "The first cloth retraction unlocks the replacement.");
+                        mechanism.Tick(Read<float>(mechanism, "_moveSeconds"));
+                        c.Tick(.02f);
+                        Check(Vector3.Distance(Read<Transform>(c, "_knot").position,
+                            Read<Transform>(c, "_deployedGrip").position) < .01f, "The replacement reaches the original boarding point.");
+                    }
+                    var loweringPort = Read<SapInjectionPort>(c, "_loweringPort");
+                    if (loweringPort != null)
+                    {
+                        var grip = Read<Transform>(c, "_knot");
+                        var raised = grip.position.y;
+                        var raisedMeters = Read<float>(c, "_raisedMeters");
+                        Check(!c.PushWithWater(Vector3.right, .1f), "Raised cloth waits for its inlet.");
+                        loweringPort.Inject(.02f);
+                        c.Tick(.25f);
+                        Check(grip.position.y < raised && grip.position.y > raised - raisedMeters, "An injection starts lowering the cloth.");
+                        c.Tick(1f);
+                        var lowered = grip.position.y;
+                        c.Tick(1f);
+                        Check(Mathf.Abs((raised - lowered) - raisedMeters) < .05f && Mathf.Approximately(grip.position.y, lowered),
+                            "The cloth finishes lowering and stays down without continued injection.");
+                    }
                     if(c.WaterDriven)
                     {
                         Check(c.PushWithWater(Vector3.right,.1f),"Water cloth accepts impact.");c.Tick(.02f);
@@ -133,7 +218,17 @@ namespace Herbalist.Editor
                     else Check(!c.PushWithWater(Vector3.right,.1f),"Self-driven cloth does not accept water drive.");
                     var knot=Read<Transform>(c,"_knot");var cc=actors[0].GetComponent<CharacterController>();
                     actors[0].GetComponent<PlayerController>().Motor.Teleport(knot.position-cc.transform.TransformVector(cc.center));Physics.SyncTransforms();
+                    var approachOrigin = actors[0].transform.position;
+                    float contact = actors[0].GetComponent<SodamAnimationPresentation>().Profile.Find(SodamPose.ClothGrab).ContactTime;
+                    Check(contact > .02f, "Grab contact is timed in the active character profile.");
                     Check(HangingCloth.TryInteract(actors[0],out var feedback),"Grab authored cloth: "+c.name+" "+feedback);
+                    c.Tick(contact - .02f);
+                    Check(HangingCloth.IsGrabbing(actors[0]) && !HangingCloth.IsRiding(actors[0]) && !c.WasUsed &&
+                        Vector3.Distance(actors[0].transform.position, approachOrigin) < .001f, "Before contact the cloth reserves the grab without transporting the rider.");
+                    c.Tick(.03f);
+                    Check(HangingCloth.IsRiding(actors[0]) &&
+                        Vector3.Distance(actors[0].transform.position, knot.position + Vector3.down * Read<float>(c, "_knotHangHeight")) < .001f,
+                        "At contact the rider begins following the knot.");
                     Check(Read<StageActor[]>(c,"_riders").Contains(actors[0])&&c.WasUsed,"First rider consumes cloth use.");
                     var partner=actors[1].GetComponent<PlayerController>();partner.Motor.Teleport(actors[0].transform.position+Vector3.right*.5f);
                     HangingCloth.TryInteract(actors[1],out _);Check(!Read<StageActor[]>(c,"_riders").Contains(actors[1]),"Only one rider can use each cloth.");HangingCloth.TryRelease(actors[1],out _);
@@ -148,7 +243,7 @@ namespace Herbalist.Editor
                 leaf=UnityEngine.Object.Instantiate(settings.offlinePrefab);leaf.Initialize(settings,actors[0].transform,target.SocketPosition,target.SocketPosition,null,true);
                 Check(leaf.TryInstallAtSocket(target),"Install leaf plug.");jet.Tick(.02f);Check(!stream.activeSelf,"Leaf blocks water jet.");
                 leaf.Tick(5.01f);jet.Tick(.02f);Check(stream.activeSelf&&leaf.State==LeafState.Returning,"Attachment expiry reopens jet.");
-                return "PASS Play: four cloths accept one rider once, roll up, reject reuse; two water cloths respond to direction; leaf plug closes jet and timed recall reopens it.";
+                return "PASS Play: five cloths accept one rider once, roll up and reject reuse; the replacement reaches the first boarding point; leaf plug closes and reopens the jet.";
             }
             finally
             {
@@ -185,8 +280,8 @@ namespace Herbalist.Editor
                     leaf=UnityEngine.Object.Instantiate(leafSettings.offlinePrefab);leaf.Initialize(leafSettings,actor.transform,target.SocketPosition,target.SocketPosition,null,true);
                     Check(leaf.TryInstallAtSocket(target),"Install pad leaf: "+pad.name);Physics.SyncTransforms();
                     leaf.Tick(120f);Check(leaf.Installed,"Pad leaf has no time limit: "+pad.name);
-                    var cc=actor.GetComponent<CharacterController>();var surface=Read<Collider>(leaf,"_surface");
-                    var feet=new Vector3(surface.bounds.center.x,surface.bounds.max.y+.02f,surface.bounds.center.z);
+                    var cc=actor.GetComponent<CharacterController>();var surface=Read<BoxCollider>(leaf,"_surface");
+                    var feet=surface.transform.TransformPoint(surface.center+Vector3.up*(surface.size.y*.5f))+Vector3.up*.02f;
                     player.Motor.Teleport(feet-cc.transform.TransformVector(cc.center)+Vector3.up*cc.height*Mathf.Abs(cc.transform.lossyScale.y)*.5f);Physics.SyncTransforms();
                     Check(leaf.Supports(cc,.64f),"Rider supported: "+pad.name);
                     portForPad.Inject(1.1f);pad.Tick(1.1f);Check(pad.ChargeFraction>=1,"Pad charged: "+pad.name);

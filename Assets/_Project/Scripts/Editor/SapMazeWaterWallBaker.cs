@@ -26,7 +26,7 @@ namespace Herbalist.Editor
             var root = board.transform;
             var source = surface.MazeCollider;
             var serialized = new SerializedObject(surface);
-            float step = serialized.FindProperty("_cellSize").floatValue;
+            float step = serialized.FindProperty("_wallBakeSampleSize").floatValue;
             float fraction = serialized.FindProperty("_wallBakeDepthFraction").floatValue;
             float padding = serialized.FindProperty("_wallBakePaddingWorld").floatValue /
                 Mathf.Max(.001f, root.TransformVector(Vector3.right).magnitude);

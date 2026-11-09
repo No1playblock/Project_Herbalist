@@ -12,7 +12,10 @@ namespace Herbalist.Levels
         [SerializeField] private Collider[] _bareTrees;
         [SerializeField] private BoxCollider[] _mossAreas;
         [SerializeField] private Collider[] _checkpointSurfaces;
+        [SerializeField] private Collider[] _cameraPassThrough = System.Array.Empty<Collider>();
         [SerializeField] private Transform[] _starts;
+        [SerializeField] private BoxCollider _forestExitCheckpoint;
+        [SerializeField] private Transform _forestExitRecoveryPoint;
         [SerializeField] private bool _placeOfflineAtStarts;
         [SerializeField] private float _fallHeight = -15;
         [SerializeField, Min(0)] private float _contactPadding = .08f;
@@ -21,7 +24,22 @@ namespace Herbalist.Levels
         [SerializeField, Min(.01f)] private float _checkpointProbeDistance = .7f;
         private readonly Dictionary<StageActor, Vector3> _recovery = new();
         private readonly Dictionary<StageActor, float> _grace = new();
+        private readonly HashSet<StageActor> _forestExitReached = new();
         private readonly Collider[] _overlaps = new Collider[128];
+        private static readonly HashSet<Collider> CameraPassThrough = new();
+        public static bool IgnoresCamera(Collider collider) => CameraPassThrough.Contains(collider);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetCameraPassThrough() => CameraPassThrough.Clear();
+        private void OnEnable()
+        {
+            foreach (var collider in _cameraPassThrough)
+                if (collider != null) CameraPassThrough.Add(collider);
+        }
+        private void OnDisable()
+        {
+            foreach (var collider in _cameraPassThrough) CameraPassThrough.Remove(collider);
+        }
         public bool Authority => StageOneFlow.Instance != null && StageOneFlow.Instance.Authority;
         private void Start()
         {
@@ -77,7 +95,8 @@ namespace Herbalist.Levels
                 _grace.TryGetValue(actor, out float grace);
                 _grace[actor] = Mathf.Max(0, grace - dt);
                 if (grace > 0) continue;
-                if (actor.transform.position.y < _fallHeight || TouchesBareTree(cc))
+                bool usingCloth = HangingCloth.IsRiding(actor) || HangingCloth.IsGrabbing(actor);
+                if (actor.transform.position.y < _fallHeight || (!usingCloth && TouchesBareTree(cc)))
                 {
                     HangingCloth.TryRelease(actor, out _);
                     actor.Abilities.Sap?.Cancel();
@@ -87,7 +106,17 @@ namespace Herbalist.Levels
                     _grace[actor] = _recoveryGrace;
                     continue;
                 }
-                if (!player.Motor.IsGrounded || HangingCloth.IsRiding(actor)) continue;
+                if (_forestExitRecoveryPoint != null && _forestExitCheckpoint != null &&
+                    _forestExitCheckpoint.enabled && _forestExitCheckpoint.gameObject.activeInHierarchy &&
+                    !_forestExitReached.Contains(actor) && Physics.ComputePenetration(_forestExitCheckpoint,
+                        _forestExitCheckpoint.transform.position, _forestExitCheckpoint.transform.rotation,
+                        cc, cc.transform.position, cc.transform.rotation, out _, out _))
+                {
+                    _forestExitReached.Add(actor);
+                    _recovery[actor] = _forestExitRecoveryPoint.position;
+                    continue;
+                }
+                if (!player.Motor.IsGrounded || usingCloth) continue;
                 Vector3 feet = cc.transform.TransformPoint(cc.center) - Vector3.up * cc.height * Mathf.Abs(cc.transform.lossyScale.y) * .5f;
                 if (!Physics.Raycast(feet + Vector3.up * _checkpointProbeHeight, Vector3.down, out var ground, _checkpointProbeDistance, ~0, QueryTriggerInteraction.Ignore)) continue;
                 if (System.Array.IndexOf(_checkpointSurfaces, ground.collider) >= 0 ||

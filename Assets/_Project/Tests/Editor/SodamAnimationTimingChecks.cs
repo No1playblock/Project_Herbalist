@@ -57,6 +57,14 @@ namespace Herbalist.Editor
                 shot.Tick(.01f);
                 Check(ability.CatchSequence == 1 && shot.State == LeafState.Returning,
                     "catch starts while projectile is still approaching");
+                float expectedCatchElapsed = settings.catchAnticipationSeconds -
+                    Mathf.Max(0f, (1.5f - settings.catchDistance) / settings.returnSpeed - .01f);
+                Check(Mathf.Abs(ability.CatchElapsed - expectedCatchElapsed) < .002f,
+                    "nearby recall advances the catch pose by the actual remaining flight time");
+                ability.ApplyCatchPresentation(4u, .22f);
+                Check(ability.CatchSequence == 4u && Mathf.Abs(ability.CatchElapsed - .22f) < .001f,
+                    "replica receives the authoritative catch timeline");
+                ability.ApplyCatchPresentation(1u, expectedCatchElapsed);
                 shot.Tick(.01f);
                 Check(ability.CatchSequence == 1, "one catch cue per return");
                 ability.Clear();
@@ -89,11 +97,12 @@ namespace Herbalist.Editor
                 apply.Invoke(presentation, new object[] { SodamPose.Idle, 0f }); animator.Update(.2f);
                 Check(animator.GetLayerWeight(leg) == 0, "jump legs released after landing");
                 apply.Invoke(presentation, new object[] { SodamPose.LeafThrow, 0f });
+                animator.Update(0f);
                 animator.Update(.05f); animator.Update(.2f);
                 var throwState = animator.GetCurrentAnimatorStateInfo(0);
                 Check(throwState.IsName("Base Layer.sodam_throw") &&
-                    throwState.normalizedTime * 3.3333335f > .5f &&
-                    throwState.normalizedTime * 3.3333335f < .75f, "release occurs at the hand extension segment");
+                    throwState.normalizedTime * 3.3333335f > .48f &&
+                    throwState.normalizedTime * 3.3333335f < .55f, "release occurs at the hand extension segment");
                 var legs = typeof(SodamAnimationPresentation).GetMethod("UpdateActionLegs", BindingFlags.Instance | BindingFlags.NonPublic);
                 legs.Invoke(presentation, new object[] { false }); animator.Update(.05f);
                 Check(animator.GetLayerWeight(leg) == 1 &&

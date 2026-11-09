@@ -39,7 +39,7 @@ namespace Herbalist.Editor
             }
             // These stages contain inline UI, rather than the common prefab instances.
             ConfigureScene("Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Mazes.unity");
-            ConfigureScene("Assets/_Project/Scenes/Stages/Stage_03/Stage_03_BranchRide.unity");
+            ConfigureScene(CurrentStagePaths.BranchRide);
             Debug.Log("UI artwork slots prepared. Open Herbalist/UI Art for the shared prefabs.");
         }
 

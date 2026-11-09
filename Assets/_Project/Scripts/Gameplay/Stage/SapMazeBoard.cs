@@ -415,10 +415,10 @@ namespace Herbalist.Levels
                 if(!_leaks[i].Blocked && AtLeak(i))
                 {
                     float loss = Mathf.Min(_state.Volume, _definition.lossPerSecond * dt);
+                    if (UsesFluid && _fluid != null) loss = _fluid.Drain(_surfaceLeaks[i], loss);
                     // Preserve contact during this tick even if draining empties the hole's cell.
                     if (loss > 0) _leakMask |= 1 << i;
                     _state.Volume -= loss;
-                    if (UsesFluid && _fluid != null) _fluid.Drain(_surfaceLeaks[i], loss);
 
                     break;
                 }
