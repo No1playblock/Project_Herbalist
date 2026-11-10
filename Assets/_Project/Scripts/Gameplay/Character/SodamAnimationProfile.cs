@@ -54,6 +54,7 @@ namespace Herbalist.Player
         [Min(0)] public float successLandingDrop = 1f;
         [Min(0)] public float cameraMovementThresholdDegreesPerSecond = 2f;
         [Min(0)] public float cameraStillDelaySeconds = 0.15f;
+        [Min(0)] public float idleLookDelaySeconds;
         public SodamPoseDefinition[] poses;
 
         public SodamPoseDefinition Find(SodamPose pose)

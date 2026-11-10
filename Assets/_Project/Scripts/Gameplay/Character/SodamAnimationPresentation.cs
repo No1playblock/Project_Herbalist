@@ -37,6 +37,7 @@ namespace Herbalist.Player
         private bool _hasViewSample;
         private bool _cameraMoving;
         private float _lastViewYaw, _lastViewPitch, _cameraStillElapsed;
+        private float _idleElapsed;
         public SodamPose? CurrentPose => _character != null && _animator != null &&
             _character.ActiveAnimator == _animator ? _pose : null;
         public uint PoseSequence => _poseSequence;
@@ -107,9 +108,10 @@ namespace Herbalist.Player
                 _wasGrounded = grounded; _wasOnCloth = onCloth; _wasOnTalisman = onTalisman;
                 _wasGrabbingCloth = _wasBoardingTalisman = false;
                 _clothAirborne = false; _oneShot = null; _initialized = true;
+                _idleElapsed = 0f;
                 if (!grabbingCloth && !boardingTalisman)
                 {
-                    Apply(ContinuousPose(flow, held, grounded, moving, onCloth, onTalisman));
+                    Apply(IdlePresentation(ContinuousPose(flow, held, grounded, moving, onCloth, onTalisman), 0f));
                     return;
                 }
             }
@@ -207,8 +209,9 @@ namespace Herbalist.Player
             if (_abilities != null && _abilities.Sap != null && _abilities.Sap.Spraying &&
                 (_oneShot == SodamPose.LeafThrow || _oneShot == SodamPose.LeafCatch)) _oneShot = null;
 
-            if (!_oneShot.HasValue)
-                Apply(ContinuousPose(flow, held, grounded, moving, onCloth, onTalisman));
+            if (_oneShot.HasValue) _idleElapsed = 0f;
+            else Apply(IdlePresentation(ContinuousPose(flow, held, grounded, moving, onCloth, onTalisman),
+                Herbalist.GameUI.GameplayPause.IsPaused ? 0f : Time.deltaTime));
             UpdateActionLegs(grounded);
             UpdateVisualOffset();
 
@@ -298,6 +301,17 @@ namespace Herbalist.Player
             _lastViewYaw = yaw;
             _lastViewPitch = pitch;
             _hasViewSample = true;
+        }
+
+        private SodamPose IdlePresentation(SodamPose pose, float dt)
+        {
+            if (!_character.IsSodamActive || pose != SodamPose.Idle)
+            {
+                _idleElapsed = 0f;
+                return pose;
+            }
+            _idleElapsed += dt;
+            return _idleElapsed >= Profile.idleLookDelaySeconds ? pose : SodamPose.IdleCameraMoving;
         }
 
         private void UpdateActionLegs(bool grounded)
