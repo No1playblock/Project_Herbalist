@@ -220,7 +220,9 @@ namespace Herbalist.Editor
                 for(int n=0;n<10;n++){first.Port.Inject(.05f);flow.Tick(.05f);}Check((flow.PresentationBranchMask&1)!=0,"held spray does not toggle repeatedly");
                 flow.Tick(.5f);first.Port.Inject(.3f);flow.Tick(.02f);Check((flow.PresentationBranchMask&1)==0,"release and re-hit toggles again");
                 results.Add("authoritative injection, one activation per burst and re-arm");
-                Reset(flow);Board();OpenAll();
+                // Keep the throw position fixed when the configured carrier speed changes.
+                Reset(flow);Board();
+                flow.Tick(2.4f / Get<float>(flow, "_speed"));
                 var surfaces=Get<LeafInstallTarget[]>(flow,"_leafSurfaces");
                 var leafActor = actors.Single(a => a.Abilities.Kind == PlayerAbilityKind.Leaf);
                 var abilities = leafActor.Abilities;
