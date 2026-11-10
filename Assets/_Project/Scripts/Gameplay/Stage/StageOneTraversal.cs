@@ -93,7 +93,7 @@ namespace Herbalist.Levels
                 if (!actor.Available || actor.Slot < 0 || actor.Slot >= _starts.Length) continue;
                 var player = actor.GetComponent<PlayerController>();
                 var cc = actor.GetComponent<CharacterController>();
-                if (!_recovery.ContainsKey(actor)) _recovery[actor] = _starts[actor.Slot].position;
+                bool hasCheckpoint = _recovery.TryGetValue(actor, out var checkpoint);
                 _grace.TryGetValue(actor, out float grace);
                 _grace[actor] = Mathf.Max(0, grace - dt);
                 if (grace > 0) continue;
@@ -107,8 +107,9 @@ namespace Herbalist.Levels
                         if (branch != null) branch.RestoreFallenBranch();
                     actor.Abilities.Sap?.Cancel();
                     var net = actor.GetComponent<NetworkPlayer>();
-                    if (net != null && net.Object != null && net.Object.IsValid) net.TeleportAuthoritatively(_recovery[actor]);
-                    else { player.Motor.Teleport(_recovery[actor]); player.Motor.ResetMotion(); }
+                    Vector3 destination = hasCheckpoint ? checkpoint : _starts[actor.Slot].position;
+                    if (net != null && net.Object != null && net.Object.IsValid) net.TeleportAuthoritatively(destination);
+                    else { player.Motor.Teleport(destination); player.Motor.ResetMotion(); }
                     _grace[actor] = _recoveryGrace;
                     continue;
                 }
@@ -119,15 +120,18 @@ namespace Herbalist.Levels
                         cc, cc.transform.position, cc.transform.rotation, out _, out _))
                 {
                     _forestExitReached.Add(actor);
-                    _recovery[actor] = _forestExitRecoveryPoint.position;
+                    Vector3 fork = _forestExitRecoveryPoint.position;
+                    if (!hasCheckpoint || fork.y > checkpoint.y) _recovery[actor] = fork;
                     continue;
                 }
                 if (!player.Motor.IsGrounded || usingCloth) continue;
+                Vector3 position = actor.transform.position;
+                if (hasCheckpoint && position.y <= checkpoint.y) continue;
                 Vector3 feet = cc.transform.TransformPoint(cc.center) - Vector3.up * cc.height * Mathf.Abs(cc.transform.lossyScale.y) * .5f;
                 if (!Physics.Raycast(feet + Vector3.up * _checkpointProbeHeight, Vector3.down, out var ground, _checkpointProbeDistance, ~0, QueryTriggerInteraction.Ignore)) continue;
                 if (System.Array.IndexOf(_checkpointSurfaces, ground.collider) >= 0 ||
                     (System.Array.IndexOf(_bareTrees, ground.collider) >= 0 && IsMoss(ground.point)))
-                    _recovery[actor] = actor.transform.position;
+                    _recovery[actor] = position;
             }
         }
         private void Update() => Tick(Time.deltaTime);
