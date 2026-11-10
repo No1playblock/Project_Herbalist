@@ -18,6 +18,7 @@ namespace Herbalist.Levels
         [SerializeField] private Transform _authoredVisual;
         [SerializeField] private HangingClothSettings _settings;
         [SerializeField] private bool _waterDriven;
+        [SerializeField] private bool _allowRiderDriveWithWater;
         [SerializeField] private SapInjectionPort _loweringPort;
         [SerializeField, Min(0)] private float _raisedMeters = 2f;
         [SerializeField, Min(0)] private float _deployedGripRaise;
@@ -65,8 +66,8 @@ namespace Herbalist.Levels
         public bool WasUsed => Online ? Used : _used;
         public bool HasRetracted => (Online ? Retraction : _retraction) >= 1f;
         private float DeploymentProgress => Online && !HasStateAuthority ? Deployment : _deployment;
-        private float GripExtension => _loweringPort == null ? 1f :
-            Mathf.Max(.001f, 1f - Mathf.Lerp(_raisedMeters, _deployedGripRaise, DeploymentProgress) /
+        private float GripExtension =>
+            Mathf.Max(.001f, 1f - Mathf.Lerp(_raisedMeters, _deployedGripRaise, _loweringPort == null ? 1f : DeploymentProgress) /
                 Mathf.Max(.001f, _restGripOffset.magnitude));
         private bool CanBoard => (_loweringPort == null || DeploymentProgress >= 1f) &&
             (_deploymentMechanism == null || _deploymentMechanism.Progress >= 1f) && (!_singleUse || !WasUsed);
@@ -143,7 +144,7 @@ namespace Herbalist.Levels
                 _restGripOffset = transform.TransformVector(Vector3.down * _length);
             if (_deploymentMechanism != null && _externalAnchor != null)
                 _anchorGrip = _externalAnchor.InverseTransformVector(_restGripOffset);
-            if (_loweringPort != null) Present(Vector2.zero, false, Vector3.zero, 0f, Vector2.zero);
+            if (_loweringPort != null || _deployedGripRaise > 0f) Present(Vector2.zero, false, Vector3.zero, 0f, Vector2.zero);
         }
         private void OnEnable() => Cloths.Add(this);
         public static bool TryInteractionHint(StageActor actor, out Vector3 point, out bool release)
@@ -279,7 +280,7 @@ namespace Herbalist.Levels
         }
         public void ReceiveMovement(PlayerController player, Vector2 move)
         {
-            if (_waterDriven) return;
+            if (_waterDriven && !_allowRiderDriveWithWater) return;
             if (!Authority || _riders[0] == null || _grabRemaining[0] > 0f || _riders[0].GetComponent<PlayerController>() != player) return;
             Vector2 held = new(move.x > .5f ? 1 : move.x < -.5f ? -1 : 0,
                                move.y > .5f ? 1 : move.y < -.5f ? -1 : 0);
@@ -316,7 +317,7 @@ namespace Herbalist.Levels
             Vector2 pump = new(
                 ResolvePump(_drive.x, angles.x, velocityAtInput.x, ref _pendingDrive.x, ref _pendingDriveTime.x, dt),
                 ResolvePump(_drive.y, angles.y, velocityAtInput.y, ref _pendingDrive.y, ref _pendingDriveTime.y, dt));
-            Vector2 impulse = _waterDriven ? _waterImpulse :
+            Vector2 impulse = _waterImpulse +
                 pump * (_settings.driveAcceleration * _settings.pumpImpulseSeconds * _swingDriveMultiplier);
             _waterImpulse = Vector2.zero;
             _drive = Vector2.zero;
