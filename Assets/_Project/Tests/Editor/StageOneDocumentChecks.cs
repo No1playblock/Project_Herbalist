@@ -210,7 +210,7 @@ namespace Herbalist.Editor
                         c.Tick(1f);
                         var lowered = grip.position.y;
                         c.Tick(1f);
-                        Check(Mathf.Abs((raised - lowered) - raisedMeters) < .05f && Mathf.Approximately(grip.position.y, lowered),
+                        Check(Mathf.Abs((raised - lowered) - (raisedMeters - Read<float>(c, "_deployedGripRaise"))) < .05f && Mathf.Approximately(grip.position.y, lowered),
                             "The cloth finishes lowering and stays down without continued injection.");
                     }
                     if(c.WaterDriven)

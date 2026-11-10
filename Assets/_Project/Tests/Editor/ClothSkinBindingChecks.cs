@@ -20,8 +20,15 @@ namespace Herbalist.Editor
             foreach (var binding in UnityEngine.Object.FindObjectsByType<ClothEndpointBinding>(FindObjectsSortMode.None))
             {
                 var cloth = binding.GetComponent<Cloth>(); var skin = binding.GetComponent<SkinnedMeshRenderer>();
-                if (!cloth.enabled || Vector3.Distance(binding.transform.lossyScale, Vector3.one) > .001f)
-                    throw new Exception("Native Cloth must remain active in a unit-scale frame.");
+                if (Vector3.Distance(binding.transform.lossyScale, Vector3.one) > .001f)
+                    throw new Exception("Cloth presentation must use a unit-scale frame.");
+                if (!cloth.enabled)
+                {
+                    if (Read<HangingCloth>(binding, "_driver").name != "Coop_4_ReplacementCloth")
+                        throw new Exception("Only the rotating branch uses the endpoint skin without native Cloth.");
+                    rows.Add(binding.name + ": follows the authored top and knot bones");
+                    continue;
+                }
                 if (!skin.enabled) { rows.Add(binding.name + ": fully retracted; native Cloth retained"); continue; }
                 var mesh = skin.sharedMesh; var source = mesh.vertices; var weights = mesh.boneWeights;
                 var poses = mesh.bindposes; var bones = skin.bones;

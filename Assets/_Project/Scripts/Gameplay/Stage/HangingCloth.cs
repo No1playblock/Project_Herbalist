@@ -20,6 +20,7 @@ namespace Herbalist.Levels
         [SerializeField] private bool _waterDriven;
         [SerializeField] private SapInjectionPort _loweringPort;
         [SerializeField, Min(0)] private float _raisedMeters = 2f;
+        [SerializeField, Min(0)] private float _deployedGripRaise;
         [SerializeField, Min(.01f)] private float _lowerSeconds = 1f;
         [Header("Optional stage-one authored-art binding")]
         [SerializeField] private Transform _externalVisualRoot;
@@ -27,6 +28,7 @@ namespace Herbalist.Levels
         [SerializeField] private Transform _externalAnchor;
         [SerializeField] private StageOneDocumentMechanism _deploymentMechanism;
         [SerializeField] private Transform _deployedGrip;
+        [SerializeField, Min(1)] private float _swingDriveMultiplier = 1f;
         [SerializeField, Min(0)] private float _releaseGravityOverride;
         [SerializeField] private bool _singleUse;
         [SerializeField] private ClothRiderAbility _requiredAbility;
@@ -63,6 +65,9 @@ namespace Herbalist.Levels
         public bool WasUsed => Online ? Used : _used;
         public bool HasRetracted => (Online ? Retraction : _retraction) >= 1f;
         private float DeploymentProgress => Online && !HasStateAuthority ? Deployment : _deployment;
+        private float GripExtension => _loweringPort == null ? 1f :
+            Mathf.Max(.001f, 1f - Mathf.Lerp(_raisedMeters, _deployedGripRaise, DeploymentProgress) /
+                Mathf.Max(.001f, _restGripOffset.magnitude));
         private bool CanBoard => (_loweringPort == null || DeploymentProgress >= 1f) &&
             (_deploymentMechanism == null || _deploymentMechanism.Progress >= 1f) && (!_singleUse || !WasUsed);
         private bool AllowsRider(StageActor actor) => _requiredAbility == ClothRiderAbility.Any ||
@@ -311,7 +316,8 @@ namespace Herbalist.Levels
             Vector2 pump = new(
                 ResolvePump(_drive.x, angles.x, velocityAtInput.x, ref _pendingDrive.x, ref _pendingDriveTime.x, dt),
                 ResolvePump(_drive.y, angles.y, velocityAtInput.y, ref _pendingDrive.y, ref _pendingDriveTime.y, dt));
-            Vector2 impulse = _waterDriven ? _waterImpulse : pump * (_settings.driveAcceleration * _settings.pumpImpulseSeconds);
+            Vector2 impulse = _waterDriven ? _waterImpulse :
+                pump * (_settings.driveAcceleration * _settings.pumpImpulseSeconds * _swingDriveMultiplier);
             _waterImpulse = Vector2.zero;
             _drive = Vector2.zero;
             if (_bendActive)
@@ -418,7 +424,7 @@ namespace Herbalist.Levels
             velocity += impulse;
             velocity += (-angles * _settings.spring - velocity * _settings.damping) * dt;
             if (_settings.maxSwingSpeed > 0)
-                velocity = Vector2.ClampMagnitude(velocity, _settings.maxSwingSpeed);
+                velocity = Vector2.ClampMagnitude(velocity, _settings.maxSwingSpeed * _swingDriveMultiplier);
             Vector2 next = Vector2.ClampMagnitude(angles + velocity * dt, maxAngle);
             if (next.sqrMagnitude >= maxAngle * maxAngle && Vector2.Dot(velocity, next) > 0)
                 velocity -= Vector2.Dot(velocity, next.normalized) * next.normalized;
@@ -428,8 +434,8 @@ namespace Herbalist.Levels
         {
             point = Vector3.zero; lowerLength = 0;
             Vector3 origin = _fixedVisualTop;
-            float length = _restGripOffset.magnitude;
-            Vector3 direction = Quaternion.Euler(angles.x, 0, angles.y) * (_restGripOffset / length);
+            float length = _restGripOffset.magnitude * GripExtension;
+            Vector3 direction = Quaternion.Euler(angles.x, 0, angles.y) * _restGripOffset.normalized;
             int count = Physics.SphereCastNonAlloc(origin, _settings.bendProbeRadius, direction, _bendProbeHits, length, _settings.obstructionMask, QueryTriggerInteraction.Ignore);
             float nearest = float.PositiveInfinity;
             for (int i = 0; i < count; i++)
@@ -463,7 +469,7 @@ namespace Herbalist.Levels
             Quaternion baseRotation = Quaternion.Euler(primary.x, 0, primary.y);
             Quaternion rotation = _bendActive ? Quaternion.Euler(secondary.x, 0, secondary.y) * baseRotation : baseRotation;
             Vector3 top = _bendActive ? _bendPoint : _fixedVisualTop;
-            Vector3 offset = _bendActive ? _restGripOffset.normalized * _bendLength : _restGripOffset;
+            Vector3 offset = _bendActive ? _restGripOffset.normalized * _bendLength : _restGripOffset * GripExtension;
             if (_knotHangHeight > 0f)
                 return top + rotation * offset + Vector3.down * _knotHangHeight;
             return top + rotation * (offset + _gripOffsets[side]);
@@ -472,8 +478,7 @@ namespace Herbalist.Levels
         {
             RefreshAnchor();
             Quaternion baseRotation = Quaternion.Euler(primary.x, 0, primary.y);
-            float extension = _loweringPort == null ? 1f :
-                Mathf.Max(.001f, 1f - _raisedMeters * (1f - DeploymentProgress) / _restGripOffset.magnitude);
+            float extension = GripExtension;
             Vector3 knot = bent ? point + Quaternion.Euler(secondary.x, 0, secondary.y) * baseRotation * (_restGripOffset.normalized * lowerLength)
                                  : _fixedVisualTop + baseRotation * _restGripOffset * extension;
             if (_externalVisualRoot != null)

@@ -164,7 +164,7 @@ namespace Herbalist.Tests
             var sap = StageActor.All.Single(actor => actor.Available && actor.Abilities.Kind == PlayerAbilityKind.Sap);
             var sapStart = sap.transform.position;
             var capsule = rider.GetComponent<CharacterController>();
-            var branch = Object.FindObjectsByType<StageOneDocumentMechanism>().Single(item => item.name == "FallingBranch_24");
+            var branch = Object.FindObjectsByType<StageOneDocumentMechanism>().Single(item => item.name == "FallingBranch_32");
             var target = Read<LeafInstallTarget>(branch, "_leafTarget");
             var art = Read<Transform[]>(branch, "_movingArt")[0];
             var rest = art.position;

@@ -1006,6 +1006,7 @@ MonoBehaviour:
   _returnDelay: 0.06
   _standingTolerance: 0.35
   _recallAfterLeaving: 0
+  _dropBranchOnLeafFootstep: {fileID: 655455570}
 --- !u!114 &11328645
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1042,19 +1043,7 @@ MonoBehaviour:
       m_Calls: []
   onReleased:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 655455570}
-        m_TargetAssemblyTypeName: Herbalist.Levels.StageOneDocumentMechanism, Assembly-CSharp
-        m_MethodName: DropAfterLeafRecall
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName:
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument:
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!135 &11328647
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -5776,7 +5765,7 @@ Transform:
   m_GameObject: {fileID: 46402605}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 284.53998, y: 47.729996, z: 293.55}
+  m_LocalPosition: {x: 286.96, y: 48.95999, z: 295.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6518,12 +6507,14 @@ MonoBehaviour:
   _waterDriven: 0
   _loweringPort: {fileID: 1837415563}
   _raisedMeters: 9
+  _deployedGripRaise: 1.5
   _lowerSeconds: 1
   _externalVisualRoot: {fileID: 1490850848}
   _waterHitProxy: {fileID: 1948685473}
   _externalAnchor: {fileID: 0}
   _deploymentMechanism: {fileID: 0}
   _deployedGrip: {fileID: 0}
+  _swingDriveMultiplier: 1
   _releaseGravityOverride: 0
   _singleUse: 1
   _requiredAbility: 0
@@ -6807,12 +6798,14 @@ MonoBehaviour:
   _waterDriven: 1
   _loweringPort: {fileID: 0}
   _raisedMeters: 2
+  _deployedGripRaise: 0
   _lowerSeconds: 1
   _externalVisualRoot: {fileID: 1997861179}
   _waterHitProxy: {fileID: 789496413}
   _externalAnchor: {fileID: 0}
   _deploymentMechanism: {fileID: 0}
   _deployedGrip: {fileID: 0}
+  _swingDriveMultiplier: 1
   _releaseGravityOverride: 0
   _singleUse: 1
   _requiredAbility: 0
@@ -34360,8 +34353,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 214556909}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.0000195225, y: 0.034843445, z: 0.021771861}
+  m_LocalRotation: {x: -0.051657435, y: -0.87774825, z: -0.005013967, w: 0.47630274}
+  m_LocalPosition: {x: 4.499321, y: -0.630455, z: 2.1234756}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -49432,12 +49425,14 @@ MonoBehaviour:
   _waterDriven: 0
   _loweringPort: {fileID: 0}
   _raisedMeters: 2
+  _deployedGripRaise: 0
   _lowerSeconds: 1
   _externalVisualRoot: {fileID: 0}
   _waterHitProxy: {fileID: 0}
   _externalAnchor: {fileID: 0}
   _deploymentMechanism: {fileID: 0}
   _deployedGrip: {fileID: 0}
+  _swingDriveMultiplier: 1
   _releaseGravityOverride: 0
   _singleUse: 0
   _requiredAbility: 0
@@ -70034,6 +70029,7 @@ MonoBehaviour:
   _returnDelay: 0.18
   _standingTolerance: 0.35
   _recallAfterLeaving: 1
+  _dropBranchOnLeafFootstep: {fileID: 0}
 --- !u!114 &513529188
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -80327,12 +80323,14 @@ MonoBehaviour:
   _waterDriven: 0
   _loweringPort: {fileID: 0}
   _raisedMeters: 2
+  _deployedGripRaise: 0
   _lowerSeconds: 1
   _externalVisualRoot: {fileID: 0}
   _waterHitProxy: {fileID: 0}
   _externalAnchor: {fileID: 0}
   _deploymentMechanism: {fileID: 0}
   _deployedGrip: {fileID: 0}
+  _swingDriveMultiplier: 1
   _releaseGravityOverride: 0
   _singleUse: 0
   _requiredAbility: 0
@@ -113588,12 +113586,14 @@ MonoBehaviour:
   _waterDriven: 0
   _loweringPort: {fileID: 0}
   _raisedMeters: 2
+  _deployedGripRaise: 0
   _lowerSeconds: 1
   _externalVisualRoot: {fileID: 1097017996}
   _waterHitProxy: {fileID: 0}
   _externalAnchor: {fileID: 106839174}
   _deploymentMechanism: {fileID: 267959449}
   _deployedGrip: {fileID: 789854626}
+  _swingDriveMultiplier: 3
   _releaseGravityOverride: 22
   _singleUse: 1
   _requiredAbility: 2
@@ -128384,7 +128384,7 @@ Transform:
   m_GameObject: {fileID: 968257179}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.9994878, z: -0, w: -0.032002024}
-  m_LocalPosition: {x: 284.3016, y: 49.490158, z: 293.58466}
+  m_LocalPosition: {x: 286.88446, y: 49.51773, z: 295.51096}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -128407,6 +128407,7 @@ MonoBehaviour:
   _returnDelay: 0.18
   _standingTolerance: 0.35
   _recallAfterLeaving: 1
+  _dropBranchOnLeafFootstep: {fileID: 0}
 --- !u!114 &968257182
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -128433,7 +128434,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Abilities.LeafInstallTarget
   targetId: 620022
   socket: {fileID: 214556910}
-  _installedVisualScale: {x: 0, y: 0, z: 0}
+  _installedVisualScale: {x: 7.3613696, y: 0.22641952, z: 7.8361597}
   _singleOccupant: 1
   _keepLeafUntilUsed: 0
   _reuseDelayAfterRelease: 20
@@ -164483,6 +164484,7 @@ MonoBehaviour:
   _returnDelay: 0.06
   _standingTolerance: 0.35
   _recallAfterLeaving: 0
+  _dropBranchOnLeafFootstep: {fileID: 1745266560}
 --- !u!114 &1276196710
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -164519,19 +164521,7 @@ MonoBehaviour:
       m_Calls: []
   onReleased:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1745266560}
-        m_TargetAssemblyTypeName: Herbalist.Levels.StageOneDocumentMechanism, Assembly-CSharp
-        m_MethodName: DropAfterLeafRecall
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName:
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument:
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!135 &1276196712
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -177941,7 +177931,7 @@ Cloth:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1360798988}
-  m_Enabled: 1
+  m_Enabled: 0
   m_StretchingStiffness: 0
   m_BendingStiffness: 0.5
   m_UseTethers: 0
@@ -226156,43 +226146,43 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 42e41755e907ce34ca8d6bc8c549241e, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.006311794
+      value: 0.002
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 42e41755e907ce34ca8d6bc8c549241e, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.0063117947
+      value: 0.002
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 42e41755e907ce34ca8d6bc8c549241e, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.006311793
+      value: 0.002
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 42e41755e907ce34ca8d6bc8c549241e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -33.73
+      value: -31.31
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 42e41755e907ce34ca8d6bc8c549241e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -110.03
+      value: -108.8
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 42e41755e907ce34ca8d6bc8c549241e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 44.47
+      value: 46.42
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 42e41755e907ce34ca8d6bc8c549241e, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.8523943
+      value: 0.8524215
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 42e41755e907ce34ca8d6bc8c549241e, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.16222559
+      value: 0.16220969
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 42e41755e907ce34ca8d6bc8c549241e, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.42116997
+      value: 0.421122
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 42e41755e907ce34ca8d6bc8c549241e, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.2640506
+      value: 0.2640488
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 42e41755e907ce34ca8d6bc8c549241e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -256372,12 +256362,14 @@ MonoBehaviour:
   _waterDriven: 0
   _loweringPort: {fileID: 0}
   _raisedMeters: 2
+  _deployedGripRaise: 0
   _lowerSeconds: 1
   _externalVisualRoot: {fileID: 0}
   _waterHitProxy: {fileID: 0}
   _externalAnchor: {fileID: 0}
   _deploymentMechanism: {fileID: 0}
   _deployedGrip: {fileID: 0}
+  _swingDriveMultiplier: 1
   _releaseGravityOverride: 0
   _singleUse: 0
   _requiredAbility: 0
@@ -279868,12 +279860,14 @@ MonoBehaviour:
   _waterDriven: 0
   _loweringPort: {fileID: 1458673473}
   _raisedMeters: 9
+  _deployedGripRaise: 1.5
   _lowerSeconds: 1
   _externalVisualRoot: {fileID: 1553947847}
   _waterHitProxy: {fileID: 13381538}
   _externalAnchor: {fileID: 0}
   _deploymentMechanism: {fileID: 0}
   _deployedGrip: {fileID: 0}
+  _swingDriveMultiplier: 1
   _releaseGravityOverride: 0
   _singleUse: 1
   _requiredAbility: 0
@@ -290392,12 +290386,14 @@ MonoBehaviour:
   _waterDriven: 0
   _loweringPort: {fileID: 0}
   _raisedMeters: 2
+  _deployedGripRaise: 0
   _lowerSeconds: 1
   _externalVisualRoot: {fileID: 1207162769}
   _waterHitProxy: {fileID: 0}
   _externalAnchor: {fileID: 0}
   _deploymentMechanism: {fileID: 0}
   _deployedGrip: {fileID: 0}
+  _swingDriveMultiplier: 1
   _releaseGravityOverride: 0
   _singleUse: 1
   _requiredAbility: 1
@@ -317991,15 +317987,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3902456548711448007, guid: 65c86623e3a6c504d95fe71b418c58d8, type: 3}
       propertyPath: _installedVisualScale.x
-      value: 15.081559
+      value: 7.3613696
       objectReference: {fileID: 0}
     - target: {fileID: 3902456548711448007, guid: 65c86623e3a6c504d95fe71b418c58d8, type: 3}
       propertyPath: _installedVisualScale.y
-      value: 0.464048
+      value: 0.22641952
       objectReference: {fileID: 0}
     - target: {fileID: 3902456548711448007, guid: 65c86623e3a6c504d95fe71b418c58d8, type: 3}
       propertyPath: _installedVisualScale.z
-      value: 17.4018
+      value: 7.8361597
       objectReference: {fileID: 0}
     - target: {fileID: 3902456548711448007, guid: 65c86623e3a6c504d95fe71b418c58d8, type: 3}
       propertyPath: _reuseDelayAfterRelease
@@ -318047,31 +318043,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5432461390488751817, guid: 65c86623e3a6c504d95fe71b418c58d8, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 2.7332458
+      value: 1.8607788
       objectReference: {fileID: 0}
     - target: {fileID: 5432461390488751817, guid: 65c86623e3a6c504d95fe71b418c58d8, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.30301952
+      value: -0.56406164
       objectReference: {fileID: 0}
     - target: {fileID: 5432461390488751817, guid: 65c86623e3a6c504d95fe71b418c58d8, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1.6798706
+      value: 1.683258
       objectReference: {fileID: 0}
     - target: {fileID: 5432461390488751817, guid: 65c86623e3a6c504d95fe71b418c58d8, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.9971727
+      value: -0.48413056
       objectReference: {fileID: 0}
     - target: {fileID: 5432461390488751817, guid: 65c86623e3a6c504d95fe71b418c58d8, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 2.8963207e-10
+      value: 0.040964574
       objectReference: {fileID: 0}
     - target: {fileID: 5432461390488751817, guid: 65c86623e3a6c504d95fe71b418c58d8, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.000000015304241
+      value: 0.8684553
       objectReference: {fileID: 0}
     - target: {fileID: 5432461390488751817, guid: 65c86623e3a6c504d95fe71b418c58d8, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.07514407
+      value: 0.09861472
       objectReference: {fileID: 0}
     - target: {fileID: 8398889866069751905, guid: 65c86623e3a6c504d95fe71b418c58d8, type: 3}
       propertyPath: m_Name

@@ -45,6 +45,12 @@ namespace Herbalist.Levels
         public float Progress => Online ? Amount : _amount;
         public StageOneDocumentMechanismKind Kind => _kind;
         public bool Ready => CanActivate();
+        internal bool SupportsBranch(CharacterController character, float tolerance)
+        {
+            foreach (var surface in _obstacleColliders)
+                if (LeafProjectile.SupportsSurface(surface, character, tolerance)) return true;
+            return false;
+        }
         public bool TryHitBranch()
         {
             if (_kind != StageOneDocumentMechanismKind.LowerBranch || !Authority ||

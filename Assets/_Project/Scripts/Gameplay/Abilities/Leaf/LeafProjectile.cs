@@ -154,9 +154,11 @@ namespace Herbalist.Abilities
             ReturnProgress = Mathf.Max(ReturnProgress, _returnElapsed / Mathf.Max(0.0001f, _returnElapsed + remainingSeconds));
         }
         public bool Supports(CharacterController character, float tolerance)
+            => Installed && SupportsSurface(_surface, character, tolerance);
+
+        internal static bool SupportsSurface(Collider surface, CharacterController character, float tolerance)
         {
-            var surface = _surface;
-            if (!Installed || surface == null || !surface.enabled || character == null ||
+            if (surface == null || !surface.enabled || character == null ||
                 Physics.GetIgnoreCollision(character, surface)) return false;
             var feet = character.transform.TransformPoint(character.center);
             feet.y -= character.height * Mathf.Abs(character.transform.lossyScale.y) * .5f;

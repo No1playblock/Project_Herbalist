@@ -12,6 +12,7 @@ namespace Herbalist.Levels
         [SerializeField, Min(0)] private float _returnDelay = .06f;
         [SerializeField, Min(.01f)] private float _standingTolerance = .35f;
         [SerializeField] private bool _recallAfterLeaving;
+        [SerializeField] private StageOneDocumentMechanism _dropBranchOnLeafFootstep;
         private LeafInstallTarget _target;
         private LeafProjectile _leaf;
         private float _remaining;
@@ -23,6 +24,15 @@ namespace Herbalist.Levels
             if (StageOneFlow.Instance == null || !StageOneFlow.Instance.Authority || Herbalist.GameUI.GameplayPause.IsPaused) return;
             var leaf = _target.InstalledLeaf;
             if (leaf != _leaf) { _leaf = leaf; _stepped = false; _remaining = _returnDelay; }
+            if (_dropBranchOnLeafFootstep != null)
+            {
+                if (IsOccupied(leaf, PlayerAbilityKind.Leaf))
+                {
+                    if (leaf != null) leaf.BeginReturn();
+                    _dropBranchOnLeafFootstep.DropAfterLeafRecall();
+                }
+                return;
+            }
             if (leaf == null) return;
             bool multiplayer = Multiplayer;
             if (multiplayer && IsOccupied(leaf, PlayerAbilityKind.Leaf))
@@ -39,16 +49,21 @@ namespace Herbalist.Levels
             if (_stepped && (_remaining -= dt) <= 0) leaf.BeginReturn();
         }
         public bool DefersExpiry(LeafProjectile leaf) => isActiveAndEnabled &&
-            ((_recallAfterLeaving && ((_leaf == leaf && _stepped) || IsOccupied(leaf))) ||
+            (_dropBranchOnLeafFootstep != null ||
+             (_recallAfterLeaving && ((_leaf == leaf && _stepped) || IsOccupied(leaf))) ||
              (Multiplayer && IsOccupied(leaf, PlayerAbilityKind.Sap)));
 
         private bool IsOccupied(LeafProjectile leaf, PlayerAbilityKind? ability = null)
         {
             foreach (var actor in StageActor.All)
-                if (actor.Available && !HangingCloth.IsRiding(actor) &&
-                    (!ability.HasValue || (actor.Abilities is { Unlocked: true } abilities && abilities.Kind == ability.Value)) &&
-                    leaf.Supports(actor.GetComponent<CharacterController>(), _standingTolerance))
+            {
+                if (!actor.Available || HangingCloth.IsRiding(actor) || HangingCloth.IsGrabbing(actor) ||
+                    (ability.HasValue && !(actor.Abilities is { Unlocked: true } abilities && abilities.Kind == ability.Value))) continue;
+                var character = actor.GetComponent<CharacterController>();
+                if ((leaf != null && leaf.Supports(character, _standingTolerance)) ||
+                    (_dropBranchOnLeafFootstep != null && _dropBranchOnLeafFootstep.SupportsBranch(character, _standingTolerance)))
                     return true;
+            }
             return false;
         }
         private void Update() => Tick(Time.deltaTime);
