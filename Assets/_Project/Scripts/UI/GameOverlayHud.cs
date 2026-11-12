@@ -21,6 +21,7 @@ namespace Herbalist.GameUI
         private int pauseFrame;
         private float subtitleRemaining;
         [SerializeField] private CanvasGroup _stageHeaderGroup;
+        [SerializeField] private StagePlaytestHud _playtestHud;
         private string _shownObjective;
         private float _objectiveElapsed;
         private void OnEnable()
@@ -37,6 +38,7 @@ namespace Herbalist.GameUI
         }
         private void TogglePause()
         {
+            if (_playtestHud != null && _playtestHud.CloseHistory()) return;
             if(options.activeSelf) { options.SetActive(false); return; }
             if (!GameplayPause.IsPaused && TryCloseMinigame())
             {
@@ -69,7 +71,12 @@ namespace Herbalist.GameUI
             else { GameplayPause.SetOffline(false); UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(settings.menuScene); }
         }
         public void ShowSubtitle(string text) => ShowSubtitle(text,settings.feedbackDuration);
-        public void ShowSubtitle(string text,float duration) { subtitle.text=text; subtitleRemaining=duration; }
+        public void ShowSubtitle(string text,float duration)
+        {
+            subtitle.text = text;
+            subtitleRemaining = duration;
+            if (!string.IsNullOrEmpty(text)) _playtestHud?.RecordDialogue(text);
+        }
         private void Update()
         {
             bool paused=GameplayPause.IsPaused;
@@ -85,7 +92,7 @@ namespace Herbalist.GameUI
             loading.SetActive(session!=null&&(session.State==LobbyState.Loading||session.State==LobbyState.Leaving));
             var flow=Herbalist.StageOne.StageOneFlow.Instance;
             bool mazeView = Herbalist.Levels.SapMazeBoard.LocalMazeView != null;
-            if(flow!=null)objective.text=flow.Objective;
+            if(flow!=null) objective.text = _playtestHud != null ? string.Empty : flow.Objective;
             else
             {
                 var maze = FindFirstObjectByType<Herbalist.Levels.DescendingMazeFlow>();
