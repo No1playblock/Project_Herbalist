@@ -248,7 +248,10 @@ namespace Herbalist.Editor
                 for(int n=0;n<120;n++)flow.Tick(.02f);
                 Check(flow.PresentationBlockedByLeaf,"path-installed leaf stops carrier");var stopped=flow.Position;
                 var forward = Get<Quaternion>(flow, "_carrierRotation") * Vector3.forward;
-                Check(Vector3.Dot(leaf.ContactPoint - stopped, forward) > 1.7f, "the front of the paper stops before reaching the leaf");
+                var carrier = Get<BranchRideCarrier>(flow, "_carrier");
+                float frontReach = Get<Vector2>(carrier, "_leafStopFootprint").y;
+                Check(Vector3.Dot(leaf.ContactPoint - stopped, forward) >= frontReach - .05f,
+                    "the front of the paper stops before reaching the leaf");
                 flow.Tick(.3f);Check(Vector3.Distance(stopped,flow.Position)<.001f,"stop persists while installed");
                 abilities.Tick(cycle, unchecked(use + 1), aim, .02f);
                 Check(leaf.State == LeafState.Returning, "normal recall input releases the blocker");
