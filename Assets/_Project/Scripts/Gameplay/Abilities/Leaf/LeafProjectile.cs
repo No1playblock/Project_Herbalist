@@ -15,6 +15,7 @@ namespace Herbalist.Abilities
         private Transform _returnFrame;
         private Action<LeafProjectile> release;
         private Vector3 start, destination, curveRight, localPosition, localContactPoint;
+        private Vector3 _uprightOffset;
         private Quaternion localRotation;
         private float progress, duration, remaining;
         private Vector3 _turnStart, _turnForward, _turnSide;
@@ -93,10 +94,18 @@ namespace Herbalist.Abilities
             {
                 if (Target == null || !Target.isActiveAndEnabled) { BeginReturn(); return; }
                 var rotation = Target.transform.rotation * localRotation;
-                if (!Target.ExactSocketPlacement && !Target.PerpendicularToSurfaceOnInstall) rotation = HorizontalRotation(rotation * Vector3.forward);
                 if (Target.ExactSocketPlacement)
                     transform.SetPositionAndRotation(Target.SocketPosition, Target.SocketRotation);
-                else transform.SetPositionAndRotation(Target.transform.TransformPoint(localPosition), rotation);
+                else if (Target.PointUpOnInstall)
+                {
+                    rotation = LeafInstallTarget.UprightRotation(rotation * Vector3.up);
+                    transform.SetPositionAndRotation(ContactPoint + rotation * _uprightOffset, rotation);
+                }
+                else
+                {
+                    if (!Target.PerpendicularToSurfaceOnInstall) rotation = HorizontalRotation(rotation * Vector3.forward);
+                    transform.SetPositionAndRotation(Target.transform.TransformPoint(localPosition), rotation);
+                }
                 if (State == LeafState.Installed && !settings.permanentInstallation && !Target.KeepsLeafUntilUsed)
                 {
                     remaining -= dt;
@@ -178,14 +187,16 @@ namespace Herbalist.Abilities
             transform.SetPositionAndRotation(hit, target.Rotation(normal, heading));
             SetVisualScale(settings.installedScaleMultiplier);
             if (_visual != null) _visual.transform.localRotation = _baseVisualRotation;
-            transform.position = target.Position(hit, normal, 0) + (target.ExactSocketPlacement ? Vector3.zero : TipPlacementOffset(normal));
+            Vector3 offset = target.ExactSocketPlacement ? Vector3.zero : EmbedOffset(normal, target.PointUpOnInstall);
+            transform.position = target.Position(hit, normal, 0) + offset;
+            _uprightOffset = target.PointUpOnInstall ? Quaternion.Inverse(transform.rotation) * offset : Vector3.zero;
             localPosition = target.transform.InverseTransformPoint(transform.position);
             localRotation = Quaternion.Inverse(target.transform.rotation) * transform.rotation;
             State = LeafState.Installed;
             remaining = settings.lifetime; InstalledAt = Time.time;
             target.Attach(this); RefreshVisuals();
         }
-        private Vector3 TipPlacementOffset(Vector3 normal)
+        private Vector3 EmbedOffset(Vector3 normal, bool pointUp)
         {
             var visual = _visual;
             var filter = visual != null ? visual.GetComponentInChildren<MeshFilter>() : null;
@@ -202,6 +213,7 @@ namespace Herbalist.Abilities
                         new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1));
             }
             float minimum = float.PositiveInfinity, maximum = float.NegativeInfinity;
+            float lowest = float.PositiveInfinity;
             Vector3 contactOffset = Vector3.zero;
             foreach (var point in points)
             {
@@ -209,14 +221,22 @@ namespace Herbalist.Abilities
                 float projection = Vector3.Dot(offset, normal);
                 if (projection < minimum) { minimum = projection; contactOffset = offset; }
                 maximum = Mathf.Max(maximum, projection);
+                lowest = Mathf.Min(lowest, offset.y);
             }
             if (points.Length == 0) return normal * settings.surfaceOffset;
             // Thin faces must not disappear into floors when the configured depth exceeds their thickness.
             float depth = Mathf.Min(settings.tipEmbedDepth, (maximum - minimum) * settings.maxEmbedFraction);
-            // The authored long-axis tip is the anchor even for oblique shots.
-            // The broad sides of a rounded leaf may intersect the wall at steep angles.
-            if (_attachmentTip != null)
+            if (pointUp)
+            {
+                // Center the broad base on the hit, including when only mesh bounds are readable.
+                contactOffset = filter.transform.TransformPoint(mesh.bounds.center) - transform.position;
+                contactOffset.y = lowest;
+            }
+            else if (_attachmentTip != null)
+            {
+                // The authored long-axis tip is the anchor even for oblique shots.
                 contactOffset = _attachmentTip.position - transform.position;
+            }
             return -contactOffset - normal * depth;
         }
         public void BeginReturn()

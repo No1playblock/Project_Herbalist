@@ -146,6 +146,7 @@ namespace Herbalist.Editor
                 Check(firstCloth != null && !lower.Ready && !button.CanInstall,
                     "The branch waits for the first cloth to retract and cannot hold a leaf.");
                 Write(firstCloth, "_retraction", 1f);
+                Write(firstCloth, "_completedUse", true);
                 Check(lower.Ready, "The branch accepts a hit once the first cloth has retracted.");
                 var hitZone = button.GetComponent<SphereCollider>();
                 var impactPoint = hitZone.bounds.center;
@@ -191,7 +192,7 @@ namespace Herbalist.Editor
                     var mechanism = Read<StageOneDocumentMechanism>(c, "_deploymentMechanism");
                     if (mechanism != null)
                     {
-                        Check(mechanism.TryHitBranch(), "The first cloth retraction unlocks the replacement.");
+                        Check(mechanism.TryHitBranch(), "The first cloth release unlocks the replacement.");
                         mechanism.Tick(Read<float>(mechanism, "_moveSeconds"));
                         c.Tick(.02f);
                         Check(Vector3.Distance(Read<Transform>(c, "_knot").position,
@@ -237,8 +238,17 @@ namespace Herbalist.Editor
                     var partner=other.GetComponent<PlayerController>();partner.Motor.Teleport(rider.transform.position+Vector3.right*.5f);
                     HangingCloth.TryInteract(other,out _);Check(!Read<StageActor[]>(c,"_riders").Contains(other),"Only one rider can use each cloth.");HangingCloth.TryRelease(other,out _);
                     Check(HangingCloth.TryRelease(rider,out _),"Release current rider.");c.Tick(2);
-                    Check(Read<float>(c,"_retraction")==1,"Used cloth rolls up.");
-                    HangingCloth.TryInteract(rider,out _);Check(!Read<StageActor[]>(c,"_riders").Contains(rider),"Used cloth rejects boarding.");HangingCloth.TryRelease(rider,out _);
+                    if (Read<bool>(c, "_resetWhenReleased"))
+                    {
+                        Check(!c.WasUsed && Read<float>(c, "_retraction") == 0 &&
+                            Read<float>(c, "_deployment") == 0, "Release resets the local cloth and its inlet.");
+                        Check(Read<bool>(c, "_completedUse"), "Release preserves progress for a dependent replacement.");
+                    }
+                    else
+                    {
+                        Check(Read<float>(c,"_retraction")==1,"Used cloth rolls up.");
+                        HangingCloth.TryInteract(rider,out _);Check(!Read<StageActor[]>(c,"_riders").Contains(rider),"Used cloth rejects boarding.");HangingCloth.TryRelease(rider,out _);
+                    }
                 }
                 var jet=UnityEngine.Object.FindObjectsByType<StageOneDocumentMechanism>(FindObjectsSortMode.None).First(m=>m.Kind==StageOneDocumentMechanismKind.BlockJet);
                 var target=Read<LeafInstallTarget>(jet,"_leafTarget");var stream=Read<GameObject>(jet,"_jet");
@@ -247,7 +257,7 @@ namespace Herbalist.Editor
                 leaf=UnityEngine.Object.Instantiate(settings.offlinePrefab);leaf.Initialize(settings,actors[0].transform,target.SocketPosition,target.SocketPosition,null,true);
                 Check(leaf.TryInstallAtSocket(target),"Install leaf plug.");jet.Tick(.02f);Check(!stream.activeSelf,"Leaf blocks water jet.");
                 leaf.Tick(5.01f);jet.Tick(.02f);Check(stream.activeSelf&&leaf.State==LeafState.Returning,"Attachment expiry reopens jet.");
-                return "PASS Play: five cloths accept one rider once, roll up and reject reuse; the replacement reaches the first boarding point; leaf plug closes and reopens the jet.";
+                return "PASS Play: five cloths accept one eligible rider, release resets the active cloth, the replacement reaches the first boarding point, and the leaf plug closes and reopens the jet.";
             }
             finally
             {
@@ -259,23 +269,27 @@ namespace Herbalist.Editor
         public static string HoseAndPadPlay()
         {
             Check(Application.isPlaying&&StageOneFlow.Instance.Authority,"Offline Play required.");
-            var actor=StageActor.All.First(a=>a.Available);var player=actor.GetComponent<PlayerController>();var saved=actor.transform.position;
-            var sap=StageLevel.Instance.abilityRules.sap;var leafSettings=StageLevel.Instance.abilityRules.leaf;
-            var held=UnityEngine.Object.Instantiate(sap.offlinePrefab);LeafProjectile leaf=null;
+            var actor=StageActor.All.First(a=>a.Available && (!a.Abilities.Unlocked || a.Abilities.Kind==PlayerAbilityKind.Sap));
+            Check(actor.Abilities.UnlockSap(),"The test player needs sap.");
+            var player=actor.GetComponent<PlayerController>();var saved=actor.transform.position;
+            var leafSettings=StageLevel.Instance.abilityRules.leaf;
+            LeafProjectile leaf=null;
             try
             {
-                var growth=UnityEngine.Object.FindObjectsByType<StageOneDocumentMechanism>(FindObjectsSortMode.None).First(m=>m.Kind==StageOneDocumentMechanismKind.GrowingMushrooms);
-                var port=Read<SapInjectionPort>(growth,"_port");
-                var tree=GameObject.Find("Tree_playobject").GetComponentsInChildren<Collider>().First(c=>c.name=="seonag_tree");
-                Vector3 outward=Vector3.ProjectOnPlane(port.transform.position-tree.bounds.center,Vector3.up).normalized;
-                held.transform.position=port.transform.position+outward*8;var hose=new SapHoseSprayer();
-                var aim=new Ray(held.transform.position,-outward);Physics.SyncTransforms();
-                for(int i=0;i<90;i++){hose.Tick(held,aim,true,.02f,sap,()=>null);growth.Tick(.02f);Physics.SyncTransforms();}
-                Check(growth.Progress>.8f,"Actual ballistic hose reaches the growth port.");
-                growth.Tick(4);
-                var plug=UnityEngine.Object.FindObjectsByType<StageOneDocumentMechanism>(FindObjectsSortMode.None).First(m=>m.Kind==StageOneDocumentMechanismKind.BlockJet);
+                var mechanisms=UnityEngine.Object.FindObjectsByType<StageOneDocumentMechanism>(FindObjectsSortMode.None);
+                foreach(var growth in mechanisms.Where(m=>m.Kind==StageOneDocumentMechanismKind.GrowingMushrooms))
+                {
+                    Check(ChargeGrowthFromNearbyGround(actor,player.Motor,growth),
+                        "Contextual hose reaches the growth port from nearby ground: "+growth.name);
+                    growth.Tick(8f);
+                }
+                var plug=mechanisms.First(m=>m.Kind==StageOneDocumentMechanismKind.BlockJet);
                 var plugTarget=Read<LeafInstallTarget>(plug,"_leafTarget");
-                outward=Read<GameObject>(plug,"_jet").transform.forward;
+                var stream=Read<GameObject>(plug,"_jet");
+                var outlet=stream.GetComponent<StageOneFixedWaterStream>();
+                Vector3 outward=outlet!=null
+                    ? Vector3.ProjectOnPlane(outlet.GetPathPoint(1)-outlet.GetPathPoint(0),Vector3.up).normalized
+                    : stream.transform.forward;
                 Check(StageOneLeafZone.Cast(new Ray(plugTarget.SocketPosition+outward*12,-outward),leafSettings.collisionRadius,15,leafSettings.hitMask,out var hit)&&hit.collider.GetComponentInParent<LeafInstallTarget>()==plugTarget,"Leaf query can reach plug through the flowing jet.");
                 int count=0;
                 foreach(var pad in UnityEngine.Object.FindObjectsByType<ExteriorJumpPad>(FindObjectsSortMode.None).Where(p=>p.enabled))
@@ -297,13 +311,43 @@ namespace Herbalist.Editor
                 player.Motor.Teleport(saved);Physics.SyncTransforms();
                 var emptyPad=UnityEngine.Object.FindObjectsByType<ExteriorJumpPad>(FindObjectsSortMode.None).First(p=>p.enabled);
                 emptyPad.Tick(5f);var emptyTarget=Read<LeafInstallTarget[]>(emptyPad,"_sockets")[0];
+                typeof(LeafInstallTarget).GetMethod("TickReuseDelay",Private).Invoke(emptyTarget,
+                    new object[]{Read<float>(emptyTarget,"_reuseDelayAfterRelease")});
                 leaf=UnityEngine.Object.Instantiate(leafSettings.offlinePrefab);leaf.Initialize(leafSettings,actor.transform,emptyTarget.SocketPosition,emptyTarget.SocketPosition,null,true);
                 Check(leaf.TryInstallAtSocket(emptyTarget),"Install leaf for empty eruption check.");
                 Read<SapInjectionPort[]>(emptyPad,"_ports")[0].Inject(1.1f);emptyPad.Tick(1.1f);emptyPad.Tick(3.1f);
                 Check(leaf.Installed,"Empty eruption must preserve the unused leaf.");
                 return "PASS Play: actual hose and jet queries; all "+count+" pad leaves survive 120 seconds, launch actual riders and recall after use; empty eruption preserves leaf.";
             }
-            finally{if(leaf!=null)UnityEngine.Object.DestroyImmediate(leaf.gameObject);UnityEngine.Object.DestroyImmediate(held.gameObject);player.Motor.Teleport(saved);player.Motor.ResetMotion();}
+            finally{if(leaf!=null)UnityEngine.Object.DestroyImmediate(leaf.gameObject);actor.Abilities.Sap.Clear();player.Motor.Teleport(saved);player.Motor.ResetMotion();}
+        }
+
+        private static bool ChargeGrowthFromNearbyGround(StageActor actor, PlayerMotor motor, StageOneDocumentMechanism growth)
+        {
+            var point=Read<SapInjectionPort>(growth,"_port").InteractionPoint;
+            for(int angle=0;angle<360;angle+=30)
+            {
+                var planar=Quaternion.Euler(0,angle,0)*Vector3.forward;
+                for(int range=2;range<=6;range+=2)
+                {
+                    var probe=point+planar*range+Vector3.up;
+                    if(!Physics.Raycast(probe,Vector3.down,out var ground,8f,~0,QueryTriggerInteraction.Ignore)) continue;
+                    var position=ground.point+Vector3.up*.1f;
+                    motor.Teleport(position);Physics.SyncTransforms();
+                    if(!SapInjectionPort.TryInteractionHint(actor,out var hint) || Vector3.Distance(hint,point)>.2f) continue;
+                    var aim=new Ray(position+Vector3.up*3,point-position);
+                    for(int step=0;step<130;step++)
+                    {
+                        actor.Abilities.Sap.TickContextual(aim,true,.02f);
+                        growth.Tick(.02f);
+                        Physics.SyncTransforms();
+                    }
+                    actor.Abilities.Sap.Clear();
+                    if(growth.Progress>.8f) return true;
+                    growth.Tick(8f);
+                }
+            }
+            return false;
         }
     }
 }

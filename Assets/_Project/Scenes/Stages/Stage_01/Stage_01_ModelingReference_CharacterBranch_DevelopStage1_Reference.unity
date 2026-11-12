@@ -1007,6 +1007,7 @@ MonoBehaviour:
   _standingTolerance: 0.35
   _recallAfterLeaving: 0
   _dropBranchOnLeafFootstep: {fileID: 655455570}
+  _maxRideSeconds: 5
 --- !u!114 &11328645
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5734,6 +5735,7 @@ MonoBehaviour:
   _growthWorldOffset: {x: 0, y: 0, z: 0}
   _jet: {fileID: 0}
   _ejectionJetHoldSeconds: 1.2
+  _branchResetSeconds: 3
   _obstacleColliders:
   - {fileID: 1614518449}
 --- !u!114 &46402607
@@ -6518,7 +6520,8 @@ MonoBehaviour:
   _swingDriveMultiplier: 1
   _releaseGravityOverride: 0
   _singleUse: 1
-  _requiredAbility: 0
+  _resetWhenReleased: 1
+  _requiredAbility: 1
   _riderCapacity: 1
   _retractSeconds: 1.5
   _gripOffsets:
@@ -6810,7 +6813,8 @@ MonoBehaviour:
   _swingDriveMultiplier: 1
   _releaseGravityOverride: 0
   _singleUse: 1
-  _requiredAbility: 0
+  _resetWhenReleased: 1
+  _requiredAbility: 1
   _riderCapacity: 1
   _retractSeconds: 1.5
   _gripOffsets:
@@ -44729,6 +44733,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 89e6c33e7d557dc4293e393cd1ff8a93, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Levels.StageOneTraversal
+  _recoverAction: {fileID: 11400000, guid: 74a07ea931714267ac29f682967f8f5a, type: 2}
+  _sharedCheckpoints:
+  - surfaces:
+    - {fileID: 1970976415}
+    recoveryPoint: {fileID: 1786144138}
+  - surfaces:
+    - {fileID: 1786354619}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 811527761}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 734161797}
+    - {fileID: 1623996792}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1824587661}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 2117260677}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 424335328}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 254177325}
+    - {fileID: 287387927}
+    recoveryPoint: {fileID: 0}
   _bareTrees:
   - {fileID: 633115985}
   - {fileID: 407791904}
@@ -45002,6 +45034,7 @@ Transform:
   - {fileID: 655455572}
   - {fileID: 46402608}
   - {fileID: 2114378538}
+  - {fileID: 1970976416}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &279537627
@@ -49441,7 +49474,7 @@ MonoBehaviour:
   - {x: 2.9971275, y: -1, z: 2.0043023}
   _knotHangHeight: 0
   _length: 59.258278
-  _grabText: "\uCC9C\uC758 \uB9E4\uB4ED\uC744 \uC7A1\uC558\uC2B5\uB2C8\uB2E4 \xB7 WASD\uB85C \uD754\uB4E4\uB9BC\uC5D0 \uB9DE\uCDB0 \uD798 \uC8FC\uAE30 \xB7 \uC0C1\uD638\uC791\uC6A9/\uC810\uD504\uB85C \uB193\uAE30"
+  _grabText: "\uCC9C\uC758 \uB9E4\uB4ED\uC744 \uC7A1\uC558\uC2B5\uB2C8\uB2E4 \xB7 WASD\uB85C \uD754\uB4E4\uB9BC\uC5D0 \uB9DE\uCDB0 \uD798 \uC8FC\uAE30 \xB7 \uC0C1\uD638\uC791\uC6A9\uB85C \uB193\uAE30"
   _releaseText: "\uCC9C\uC744 \uB193\uC558\uC2B5\uB2C8\uB2E4."
   _fullText: "\uB9E4\uB4ED\uC5D0 \uB450 \uBA85\uC774 \uB9E4\uB2EC\uB824 \uC788\uC2B5\uB2C8\uB2E4."
 --- !u!114 &337337184
@@ -70018,6 +70051,7 @@ MonoBehaviour:
   _standingTolerance: 0.35
   _recallAfterLeaving: 1
   _dropBranchOnLeafFootstep: {fileID: 0}
+  _maxRideSeconds: 5
 --- !u!114 &513529188
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -80330,7 +80364,7 @@ MonoBehaviour:
   - {x: 2.9971275, y: -1, z: 2.0043023}
   _knotHangHeight: 0
   _length: 59.258278
-  _grabText: "\uCC9C\uC758 \uB9E4\uB4ED\uC744 \uC7A1\uC558\uC2B5\uB2C8\uB2E4 \xB7 WASD\uB85C \uD754\uB4E4\uB9BC\uC5D0 \uB9DE\uCDB0 \uD798 \uC8FC\uAE30 \xB7 \uC0C1\uD638\uC791\uC6A9/\uC810\uD504\uB85C \uB193\uAE30"
+  _grabText: "\uCC9C\uC758 \uB9E4\uB4ED\uC744 \uC7A1\uC558\uC2B5\uB2C8\uB2E4 \xB7 WASD\uB85C \uD754\uB4E4\uB9BC\uC5D0 \uB9DE\uCDB0 \uD798 \uC8FC\uAE30 \xB7 \uC0C1\uD638\uC791\uC6A9\uB85C \uB193\uAE30"
   _releaseText: "\uCC9C\uC744 \uB193\uC558\uC2B5\uB2C8\uB2E4."
   _fullText: "\uB9E4\uB4ED\uC5D0 \uB450 \uBA85\uC774 \uB9E4\uB2EC\uB824 \uC788\uC2B5\uB2C8\uB2E4."
 --- !u!114 &628767737
@@ -84036,6 +84070,7 @@ MonoBehaviour:
   _growthWorldOffset: {x: 0, y: 0, z: 0}
   _jet: {fileID: 0}
   _ejectionJetHoldSeconds: 1.2
+  _branchResetSeconds: 3
   _obstacleColliders:
   - {fileID: 705027120}
 --- !u!114 &655455571
@@ -98775,7 +98810,7 @@ MonoBehaviour:
         m_Flags: 0
       m_Flags: 0
       m_Priority: 0
-    scenePath: Assets/_Project/Scenes/Stages/Stage_03/Stage_03_EnvironmentModeling_LatestReference.unity
+    scenePath: Assets/_Project/Scenes/Stages/Stage_03/Stage_03_EnvironmentModeling_FinalReference.unity
 --- !u!1 &717208239
 GameObject:
   m_ObjectHideFlags: 0
@@ -113484,6 +113519,7 @@ MonoBehaviour:
   _swingDriveMultiplier: 3
   _releaseGravityOverride: 22
   _singleUse: 1
+  _resetWhenReleased: 1
   _requiredAbility: 2
   _riderCapacity: 1
   _retractSeconds: 1.5
@@ -128296,6 +128332,7 @@ MonoBehaviour:
   _standingTolerance: 0.35
   _recallAfterLeaving: 1
   _dropBranchOnLeafFootstep: {fileID: 0}
+  _maxRideSeconds: 5
 --- !u!114 &968257182
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -164373,6 +164410,7 @@ MonoBehaviour:
   _standingTolerance: 0.35
   _recallAfterLeaving: 0
   _dropBranchOnLeafFootstep: {fileID: 1745266560}
+  _maxRideSeconds: 5
 --- !u!114 &1276196710
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -255977,7 +256015,7 @@ MonoBehaviour:
   - {x: 2.9971275, y: -1, z: 2.0043023}
   _knotHangHeight: 0
   _length: 59.258278
-  _grabText: "\uCC9C\uC758 \uB9E4\uB4ED\uC744 \uC7A1\uC558\uC2B5\uB2C8\uB2E4 \xB7 WASD\uB85C \uD754\uB4E4\uB9BC\uC5D0 \uB9DE\uCDB0 \uD798 \uC8FC\uAE30 \xB7 \uC0C1\uD638\uC791\uC6A9/\uC810\uD504\uB85C \uB193\uAE30"
+  _grabText: "\uCC9C\uC758 \uB9E4\uB4ED\uC744 \uC7A1\uC558\uC2B5\uB2C8\uB2E4 \xB7 WASD\uB85C \uD754\uB4E4\uB9BC\uC5D0 \uB9DE\uCDB0 \uD798 \uC8FC\uAE30 \xB7 \uC0C1\uD638\uC791\uC6A9\uB85C \uB193\uAE30"
   _releaseText: "\uCC9C\uC744 \uB193\uC558\uC2B5\uB2C8\uB2E4."
   _fullText: "\uB9E4\uB4ED\uC5D0 \uB450 \uBA85\uC774 \uB9E4\uB2EC\uB824 \uC788\uC2B5\uB2C8\uB2E4."
 --- !u!114 &1740355060
@@ -256519,6 +256557,7 @@ MonoBehaviour:
   _growthWorldOffset: {x: 0, y: 0, z: 0}
   _jet: {fileID: 0}
   _ejectionJetHoldSeconds: 1.2
+  _branchResetSeconds: 3
   _obstacleColliders:
   - {fileID: 1126615885}
 --- !u!114 &1745266561
@@ -279468,7 +279507,8 @@ MonoBehaviour:
   _swingDriveMultiplier: 1
   _releaseGravityOverride: 0
   _singleUse: 1
-  _requiredAbility: 0
+  _resetWhenReleased: 1
+  _requiredAbility: 1
   _riderCapacity: 1
   _retractSeconds: 1.5
   _gripOffsets:
@@ -289992,6 +290032,7 @@ MonoBehaviour:
   _swingDriveMultiplier: 1
   _releaseGravityOverride: 0
   _singleUse: 1
+  _resetWhenReleased: 1
   _requiredAbility: 1
   _riderCapacity: 1
   _retractSeconds: 1.5
@@ -311433,6 +311474,7 @@ MonoBehaviour:
   _growthWorldOffset: {x: 0, y: 0, z: 0}
   _jet: {fileID: 0}
   _ejectionJetHoldSeconds: 1.2
+  _branchResetSeconds: 3
   _obstacleColliders:
   - {fileID: 615109545}
 --- !u!114 &2114378537
@@ -323128,6 +323170,59 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     vectorLabel1_3: W
+--- !u!1 &1970976414
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1970976416}
+  - component: {fileID: 1970976415}
+  m_Layer: 0
+  m_Name: SharedCheckpoint_ForestFork
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!65 &1970976415
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1970976414}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 12, y: 5, z: 12}
+  m_Center: {x: 0, y: 2, z: 0}
+--- !u!4 &1970976416
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1970976414}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 430, y: 0.5104048, z: 239.99998}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 277692517}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -97,9 +97,11 @@ namespace Herbalist.Abilities
                 if (consumed) return;
             }
             if(_inputLocks.Count>0)return;
-            if (uses != 0 && Unlocked && Kind == PlayerAbilityKind.Leaf) Leaf.RecallOldestInstalled();
             var rules = Herbalist.Levels.StageLevel.Instance != null ? Herbalist.Levels.StageLevel.Instance.abilityRules : null;
-            if (steps != 0 && Unlocked && Kind == PlayerAbilityKind.Leaf &&
+            bool primaryButton = rules != null && rules.usePrimaryButton;
+            if (!primaryButton && uses != 0 && Unlocked && Kind == PlayerAbilityKind.Leaf) Leaf.RecallOldestInstalled();
+            bool activate = (primaryButton ? uses : steps) != 0;
+            if (activate && Unlocked && Kind == PlayerAbilityKind.Leaf &&
                 Herbalist.Levels.ExteriorJumpPad.TryGetLeafInstallTarget(GetComponent<Herbalist.StageOne.StageActor>(), out var socket))
             {
                 Leaf.TryThrowAtSocket(socket);
@@ -109,10 +111,10 @@ namespace Herbalist.Abilities
             }
             if (rules != null && rules.contextualUse)
             {
-                if (Unlocked && Kind == PlayerAbilityKind.Sap && Sap != null) Sap.TickContextual(aim, cycleHeld, dt);
+                if (Unlocked && Kind == PlayerAbilityKind.Sap && Sap != null) Sap.TickContextual(aim, primaryButton ? useHeld : cycleHeld, dt);
                 else if (Unlocked)
                 {
-                    if (steps != 0) Leaf.TryThrowAtTarget(aim);
+                    if (activate) Leaf.TryThrowAtTarget(aim);
                 }
                 DisplayCount = Kind == PlayerAbilityKind.Sap && Sap != null ? Sap.ActiveCount : Leaf.ActiveCount;
                 DisplayRecovering = Leaf.Recovering;

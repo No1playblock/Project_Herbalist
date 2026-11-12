@@ -24,6 +24,9 @@ namespace Herbalist.StageOne
         [Networked] private float TransferRemaining { get; set; }
         [Networked] private uint MinigameResultSequence { get; set; }
         [Networked] private NetworkBool MinigameSucceeded { get; set; }
+        [Networked] private uint Recovery0 { get; set; }
+        [Networked] private uint Recovery1 { get; set; }
+        [Networked] private int LeafFallSlotPlusOne { get; set; }
         private StageOneFlow flow;
         private void Awake() { flow = GetComponent<StageOneFlow>(); }
         public override void Spawned() { Publish(); }
@@ -37,10 +40,17 @@ namespace Herbalist.StageOne
             Temperature = flow.Temperature; CraftingGauge = flow.CraftingGauge; MinigameTime = flow.MinigameTime; FanPressCount = flow.FanPressCount;
             TransferPendingSlot = flow.TransferPendingSlot; TransferRemaining = flow.TransferRemaining;
             MinigameResultSequence = flow.MinigameResultSequence; MinigameSucceeded = flow.MinigameSucceeded;
+            Recovery0 = flow.RecoverySequence(0); Recovery1 = flow.RecoverySequence(1);
+            LeafFallSlotPlusOne = flow.FirstLeafFallSlot + 1;
         }
         public override void FixedUpdateNetwork() { Publish(); }
-        public override void Render() { if (!HasStateAuthority) flow.SetReplica(Harvested, Crafted, Held0, Held1, Consumed0, Consumed1, Cleared, Inside,
-            Minigame, MinigameItemId, MinigameSteps, Temperature, CraftingGauge, MinigameTime, FanPressCount, TransferPendingSlot, TransferRemaining,
-            MinigameResultSequence, MinigameSucceeded); }
+        public override void Render()
+        {
+            if (HasStateAuthority) return;
+            flow.SetReplica(Harvested, Crafted, Held0, Held1, Consumed0, Consumed1, Cleared, Inside,
+                Minigame, MinigameItemId, MinigameSteps, Temperature, CraftingGauge, MinigameTime, FanPressCount, TransferPendingSlot, TransferRemaining,
+                MinigameResultSequence, MinigameSucceeded);
+            flow.ApplyRecoveryReplica(Recovery0, Recovery1, LeafFallSlotPlusOne - 1);
+        }
     }
 }

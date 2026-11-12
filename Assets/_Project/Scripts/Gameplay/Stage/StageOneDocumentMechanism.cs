@@ -29,6 +29,7 @@ namespace Herbalist.Levels
         [SerializeField] private Vector3 _growthWorldOffset;
         [SerializeField] private GameObject _jet;
         [SerializeField, Min(0)] private float _ejectionJetHoldSeconds = 1.2f;
+        [SerializeField, Min(0)] private float _branchResetSeconds;
         [SerializeField] private Collider[] _obstacleColliders = System.Array.Empty<Collider>();
         [Networked] private float Amount { get; set; }
         [Networked] private NetworkBool Completed { get; set; }
@@ -38,6 +39,7 @@ namespace Herbalist.Levels
         private Quaternion[] _rotations;
         private Vector3 _pivot;
         private float _lastPresentedAmount, _ejectionJetRemaining;
+        private float _branchResetRemaining;
         private StageOneFixedWaterStream _fixedStream;
         private bool Online => Object != null && Object.IsValid;
         public bool Authority => Online ? HasStateAuthority : FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession;
@@ -57,12 +59,14 @@ namespace Herbalist.Levels
                 Herbalist.GameUI.GameplayPause.IsPaused || !CanActivate()) return false;
             _completed = true;
             if (Online) Completed = true;
+            _requiredCloth?.RetireForReplacement();
             return true;
         }
         public void DropAfterLeafRecall()
         {
             if (_kind != StageOneDocumentMechanismKind.FallingBranch || !isActiveAndEnabled || !Authority || _completed) return;
             _completed = true;
+            _branchResetRemaining = _branchResetSeconds;
             Publish();
             Present(_amount, true, 0f);
         }
@@ -87,7 +91,7 @@ namespace Herbalist.Levels
         private bool CanActivate()
         {
             if (_requiredCloth != null &&
-                (_kind == StageOneDocumentMechanismKind.LowerBranch ? !_requiredCloth.HasRetracted : !_requiredCloth.WasUsed))
+                !_requiredCloth.SatisfiesPrerequisite(_kind == StageOneDocumentMechanismKind.LowerBranch))
                 return false;
             if (_activationArea == null) return true;
             foreach (var actor in StageActor.All)
@@ -113,8 +117,18 @@ namespace Herbalist.Levels
                     }
                     break;
                 case StageOneDocumentMechanismKind.LowerBranch:
-                case StageOneDocumentMechanismKind.FallingBranch:
                     if (_completed) _amount = Mathf.MoveTowards(_amount, 1, dt / _moveSeconds);
+                    break;
+                case StageOneDocumentMechanismKind.FallingBranch:
+                    if (!_completed) break;
+                    if (_branchResetSeconds > 0 && _leafTarget != null && !_leafTarget.isActiveAndEnabled)
+                        _leafTarget.TickReuseDelay(dt);
+                    _amount = Mathf.MoveTowards(_amount, 1, dt / _moveSeconds);
+                    if (_amount >= 1f && _branchResetSeconds > 0 && (_branchResetRemaining -= dt) <= 0f)
+                    {
+                        RestoreFallenBranch();
+                        return;
+                    }
                     break;
                 case StageOneDocumentMechanismKind.BlockJet:
                     _completed = _leafTarget != null && _leafTarget.HasLeaf;
@@ -158,7 +172,7 @@ namespace Herbalist.Levels
             if (_kind == StageOneDocumentMechanismKind.FallingBranch && _leafTarget != null &&
                 _leafTarget.gameObject.activeSelf == complete)
             {
-                if (!complete) _leafTarget.ResetReuseDelay();
+                if (!complete && _branchResetSeconds <= 0) _leafTarget.ResetReuseDelay();
                 _leafTarget.gameObject.SetActive(!complete);
             }
             if (_kind == StageOneDocumentMechanismKind.EjectObstacle)

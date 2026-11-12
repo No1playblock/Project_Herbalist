@@ -17,6 +17,24 @@ namespace Herbalist.Levels
         private static void ResetStatics() => _zones.Clear();
         private void OnEnable() => _zones.Add(this);
         private void OnDisable() => _zones.Remove(this);
+        internal static bool TryNearbyGuidePoint(Vector3 origin, float range, out Vector3 point)
+        {
+            point = default;
+            float nearest = range * range;
+            bool found = false;
+            foreach (var zone in _zones)
+            {
+                var target = zone.GetComponent<Herbalist.Abilities.LeafInstallTarget>();
+                if (target == null || !target.CanInstall) continue;
+                Vector3 candidate = target.HasSocket ? target.SocketPosition : zone.transform.position;
+                float distance = (candidate - origin).sqrMagnitude;
+                if (distance > nearest) continue;
+                nearest = distance;
+                point = candidate;
+                found = true;
+            }
+            return found;
+        }
 
         public static bool Cast(Ray ray, float radius, float distance, int mask, out RaycastHit hit,
             Transform owner = null, bool includeLeafZones = true)

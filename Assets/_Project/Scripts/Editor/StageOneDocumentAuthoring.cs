@@ -155,8 +155,9 @@ namespace Herbalist.Editor
             if (leaf == null) { leaf = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<LeafAbilitySettings>(Data + "SO_StageOneTimedLeaf.asset")); leaf.name = "SO_ImportedStageOneLeaf"; AssetDatabase.CreateAsset(leaf, Data + leaf.name + ".asset"); }
             leaf.permanentInstallation = false; leaf.lifetime = 5;
             rules.leaf = leaf;
-            rules.leafInstructions = "R: 초록 구역에 잎 설치 · 첫 탑승 시 회수 · 부착 제한 5초 · 좌클릭: 회수";
-            rules.sapInstructions = "R 유지: 수액 발사 · 주입구/버섯/천에 사용 · 천 탑승 중 발사 불가";
+            rules.usePrimaryButton = true;
+            rules.leafInstructions = "좌클릭: 나뭇잎 투척 · 지정된 곳에 설치";
+            rules.sapInstructions = "좌클릭 유지: 수액 발사 · 주입구/버섯/천에 사용";
             level.abilityRules = rules; EditorUtility.SetDirty(rules); EditorUtility.SetDirty(leaf);
             var cube = At("Tree_playobject/Cube");
             var c1 = Cloth("Coop_1_SingleUseCloth", At("movefabric (2)"), false);
@@ -233,6 +234,8 @@ namespace Herbalist.Editor
             stream.layer=LayerMask.NameToLayer("Ignore Raycast"); // Solid for players, transparent to the leaf query reaching the plug.
             Set(jetBlock, "_jet", stream);
             var traversal = _root.gameObject.AddComponent<StageOneTraversal>();
+            Set(traversal, "_recoverAction", AssetDatabase.LoadAssetAtPath<UnityEngine.InputSystem.InputActionReference>(
+                "Assets/_Project/Settings/Input/References/Stage/Recover.asset"));
             foreach (var filter in At("Tree_playobject").GetComponentsInChildren<MeshFilter>(true))
             {
                 var collision = filter.GetComponent<MeshCollider>();

@@ -14,6 +14,7 @@ namespace Herbalist.Abilities
         public uint CycleSequence { get; private set; }
         public uint UseSequence { get; private set; }
         public string CycleBinding => cycleAction?.GetBindingDisplayString() ?? string.Empty;
+        public string UseBinding => useAction?.GetBindingDisplayString() ?? string.Empty;
         public bool CycleHeld => active && !Herbalist.GameUI.GameplayPause.IsPaused && cycleAction != null && cycleAction.IsPressed() && Herbalist.Presentation.GameplayCursor.AllowsPointerInput;
         public bool UseHeld => active && !Herbalist.GameUI.GameplayPause.IsPaused && useAction != null && useAction.IsPressed() && Herbalist.Presentation.GameplayCursor.AllowsPointerInput;
         private void Awake()

@@ -123,6 +123,21 @@ namespace Herbalist.Levels
         }
         private void OnDisable() { Active.Remove(this); foreach (var actor in _riders) Release(actor); }
         public override void Spawned() { if (HasStateAuthority && Configured) { ResetRide(false); Publish(); } }
+        public static bool TryBoardHint(StageActor actor, out Vector3 point)
+        {
+            point = default;
+            if (actor == null || !actor.Available || actor.Slot is < 0 or > 1 ||
+                actor.GetComponent<PlayerController>().Motor.MovementLocked) return false;
+            foreach (var flow in Active)
+            {
+                if (!flow.Configured || flow.CurrentPhase != BranchRidePhase.Boarding ||
+                    ((flow.Online ? flow.RiderMask : flow._mask) & (1 << actor.Slot)) != 0 ||
+                    Vector3.Distance(actor.transform.position, flow.Position) > flow._boardRange) continue;
+                point = flow.Position;
+                return true;
+            }
+            return false;
+        }
         public static bool TryBoard(StageActor actor, out string feedback)
         {
             feedback = null;

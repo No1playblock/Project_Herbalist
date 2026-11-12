@@ -9,6 +9,7 @@ namespace Herbalist.StageOne
         public StageRecipe[] recipes;
         public CharacterRole[] slotRoles = { CharacterRole.Duyeong, CharacterRole.Sodam };
         [Min(0.1f)] public float interactionRange = 3;
+        [Range(0f, 90f)] public float potionTransferFacingAngle = 45f;
         public Vector3 interactionOffset = new Vector3(0, 1, 0);
         public LayerMask obstructionMask = 1;
         [Range(0,31)] public int herbGlowLayer = 30;
@@ -18,6 +19,8 @@ namespace Herbalist.StageOne
         [Min(0)] public int lowFireMaxPresses = 1;
         [Min(0)] public int mediumFireMaxPresses = 3;
         [Min(0)] public float temperatureChangePerSecond = 6f;
+        [SerializeField, Min(-1), Tooltip("Degrees above the target minimum. A negative value uses each recipe's authored start temperature.")]
+        private float _startTemperatureOffset = -1f;
         [Min(0)] public float gaugeGainPerSecond = 8f;
         [Min(0)] public float gaugeLossPerSecond = 12f;
         [Min(0.1f)] public float maximumTemperature = 100f;
@@ -51,6 +54,9 @@ namespace Herbalist.StageOne
             return -1;
         }
         public uint RequiredMask => recipes.Length == 32 ? uint.MaxValue : (1u << recipes.Length) - 1;
+        public float BrewingStartTemperature(StageRecipe recipe) =>
+            _startTemperatureOffset >= 0f ? recipe.targetMin + _startTemperatureOffset : recipe.initialTemperature;
+
         public bool Valid(out string error)
         {
             error = null;
@@ -73,7 +79,8 @@ namespace Herbalist.StageOne
                     { error = "Recipes require unique catalog herbs and potion outputs."; break; }
                     else if (r.ingredient.harvestingSteps == null || r.ingredient.harvestingSteps.Length != 10 ||
                         r.targetMin < 0 || r.targetMin >= r.targetMax || r.targetMax >= maximumTemperature ||
-                        r.initialTemperature < 0 || r.initialTemperature >= maximumTemperature || r.timeLimit <= 0)
+                        !float.IsFinite(BrewingStartTemperature(r)) || BrewingStartTemperature(r) < 0 ||
+                        BrewingStartTemperature(r) >= maximumTemperature || r.timeLimit <= 0)
                     { error = "Herbs need 10 steps, and brewing thresholds must be ordered."; break; }
             }
             return error == null;

@@ -13,6 +13,9 @@ namespace Herbalist.Player
         private float _externalGravity;
         private bool _externalAirControl;
         private float _liftSpeed;
+        private Herbalist.Levels.StageOneTraversal _treeTraversal;
+        private bool _bareTreeContact;
+        private bool _walkableContact;
         public override bool IsGrounded => grounded;
         public override Vector3 Velocity => velocity;
         private void Awake()
@@ -53,25 +56,63 @@ namespace Herbalist.Player
                 else horizontal = Vector3.MoveTowards(horizontal, desired, tuning.airAcceleration * deltaTime);
             }
             velocity.x = horizontal.x; velocity.z = horizontal.z;
-            Herbalist.Interaction.OneWayPlatform.PrepareMove(controller, velocity + rootMotionDisplacement / deltaTime);
+            Vector3 displacement = velocity * deltaTime + rootMotionDisplacement;
             Vector3 previousCenter = transform.TransformPoint(controller.center);
-            Herbalist.Levels.StageEntranceGate.PrepareMove(controller, _enteredGateMask);
-            CollisionFlags flags = controller.Move(velocity * deltaTime + rootMotionDisplacement);
+            _treeTraversal = Herbalist.Levels.StageOneTraversal.Instance;
+            CollisionFlags flags = Move(displacement, deltaTime);
             _enteredGateMask = Herbalist.Levels.StageEntranceGate.FinishMove(controller, previousCenter, _enteredGateMask);
-            grounded = (flags & CollisionFlags.Below) != 0;
+            grounded = (flags & CollisionFlags.Below) != 0 && (!_bareTreeContact || _walkableContact);
+            _treeTraversal = null;
             if (grounded && velocity.y <= 0) _externalFlight = false;
             if ((flags & CollisionFlags.Above) != 0 && velocity.y > 0) velocity.y = 0;
             if (grounded && velocity.y < 0) velocity.y = -tuning.groundStickSpeed;
         }
-        public override MotorState CaptureState() => new MotorState { Position = transform.position, Velocity = velocity, Grounded = grounded, EnteredGateMask = _enteredGateMask, ExternalFlight = _externalFlight, ExternalGravity = _externalGravity, ExternalAirControl = _externalAirControl };
-        public override void RestoreState(MotorState state)
+
+        private CollisionFlags Move(Vector3 displacement, float deltaTime)
+        {
+            Vector3 start = transform.position;
+            _bareTreeContact = _walkableContact = false;
+            Herbalist.Interaction.OneWayPlatform.PrepareMove(controller, displacement / deltaTime);
+            Herbalist.Levels.StageEntranceGate.PrepareMove(controller, _enteredGateMask);
+            CollisionFlags flags = controller.Move(displacement);
+            float maximumY = start.y + Mathf.Max(0f, displacement.y);
+            if (!_bareTreeContact || transform.position.y <= maximumY || Mathf.Approximately(transform.position.y, maximumY))
+                return flags;
+
+            // A sideways move into the tree can step or slide upward. Retry the vertical part
+            // independently so a jump, drop or launch still has its intended motion.
+            SetControllerPosition(start);
+            _bareTreeContact = _walkableContact = false;
+            Vector3 vertical = Vector3.up * displacement.y;
+            Herbalist.Interaction.OneWayPlatform.PrepareMove(controller, vertical / deltaTime);
+            Herbalist.Levels.StageEntranceGate.PrepareMove(controller, _enteredGateMask);
+            flags = controller.Move(vertical);
+            if (transform.position.y <= maximumY || Mathf.Approximately(transform.position.y, maximumY)) return flags;
+
+            SetControllerPosition(start);
+            return CollisionFlags.Sides;
+        }
+
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            if (_treeTraversal == null) return;
+            if (_treeTraversal.IsBareTreeContact(hit.collider, hit.point)) _bareTreeContact = true;
+            else if (hit.normal.y >= Mathf.Cos(controller.slopeLimit * Mathf.Deg2Rad)) _walkableContact = true;
+        }
+
+        private void SetControllerPosition(Vector3 position)
         {
             bool wasEnabled = controller.enabled;
             controller.enabled = false;
-            transform.position = state.Position;
+            transform.position = position;
+            controller.enabled = wasEnabled;
+        }
+        public override MotorState CaptureState() => new MotorState { Position = transform.position, Velocity = velocity, Grounded = grounded, EnteredGateMask = _enteredGateMask, ExternalFlight = _externalFlight, ExternalGravity = _externalGravity, ExternalAirControl = _externalAirControl };
+        public override void RestoreState(MotorState state)
+        {
+            SetControllerPosition(state.Position);
             _externalFlight = state.ExternalFlight; _externalGravity = state.ExternalGravity; _externalAirControl = state.ExternalAirControl;
             velocity = state.Velocity; grounded = state.Grounded; _enteredGateMask = state.EnteredGateMask;
-            controller.enabled = wasEnabled;
         }
         public override void Launch(Vector3 launchVelocity, float gravity, bool allowAirControl = false)
         { _liftSpeed = 0; _externalAirControl = allowAirControl; velocity = launchVelocity; grounded = false; _externalFlight = true; _externalGravity = Mathf.Max(0, gravity); }
