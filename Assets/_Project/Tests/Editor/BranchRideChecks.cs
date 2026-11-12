@@ -235,6 +235,13 @@ namespace Herbalist.Editor
                 Check(leaf != null, "normal ability input launches a leaf while riding");
                 for (int i = 0; i < 100 && leaf.State == LeafState.Flying; i++) leaf.Tick(.02f);
                 Check(leaf.Installed && surfaces.Contains(leaf.Target), "the thrown leaf installs on an authored branch collider");
+                if (leaf.Target.PointUpOnInstall)
+                {
+                    leaf.Tick(.02f);
+                    var tip = Get<Transform>(leaf, "_attachmentTip");
+                    Check(Vector3.Dot(leaf.transform.forward, Vector3.up) > .999f && tip.position.y > leaf.ContactPoint.y,
+                        "the installed leaf remains vertical with its pointed end above the branch");
+                }
                 var renderers=leaf.GetComponentsInChildren<Renderer>();
                 Check(renderers.Any(r=>r.enabled&&r.gameObject.activeInHierarchy),"installed leaf has active visible renderer");
                 Check(renderers.All(r=>r.bounds.size.magnitude<40),"installed leaf does not use obsolete hundredfold scale");

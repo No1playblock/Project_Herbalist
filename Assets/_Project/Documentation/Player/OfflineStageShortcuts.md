@@ -6,7 +6,7 @@
 | --- | --- |
 | 상단 1 / 키패드 1 | Stage_01_ModelingReference_CharacterBranch_DevelopStage1_Reference |
 | 상단 2 / 키패드 2 | Stage_02_Mazes |
-| 상단 3 / 키패드 3 | Stage_03_EnvironmentModeling_LatestReference |
+| 상단 3 / 키패드 3 | Stage_03_EnvironmentModeling_FinalReference |
 
 같은 스테이지의 번호를 누르면 다시 로드한다. 현재 진행/소지품/설치 오브젝트를 이어받지 않고 해당 씬에 작성된 시작 상태를 사용한다. 일시정지 중 사용해도 새 스테이지에서는 정지를 해제한다. 능력 자동 해금 등 기존 솔로 테스트 규칙은 변경하지 않는다.
 

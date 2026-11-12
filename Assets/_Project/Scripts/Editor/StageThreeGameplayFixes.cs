@@ -43,14 +43,17 @@ namespace Herbalist.Editor
             if (EditorApplication.isPlaying) throw new Exception("Stop play before authoring");
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             if (scene.path != CurrentStagePaths.BranchRide) throw new Exception("Open main Stage Three");
+            var sceneRoots = scene.GetRootGameObjects();
+            var level = sceneRoots.SelectMany(r => r.GetComponentsInChildren<StageLevel>(true)).First();
+            const string legacyRules = "Assets/_Project/Data/Stages/Stage_03/SO_BranchRideAbilityRules.asset";
+            if (AssetDatabase.GetAssetPath(level.abilityRules) != legacyRules)
+                throw new InvalidOperationException("This scene uses its own ability tuning. Edit its StageLevel ability rules instead of applying the legacy defaults.");
             var reference = EditorSceneManager.OpenPreviewScene(StageOneEnvironmentModelPromotion.Main);
             try
             {
                 var roots = reference.GetRootGameObjects();
                 var referencePlayer = roots.SelectMany(r => r.GetComponentsInChildren<CharacterController>(true)).First();
                 float referenceHeight = referencePlayer.height * Mathf.Abs(referencePlayer.transform.lossyScale.y);
-                var sceneRoots = scene.GetRootGameObjects();
-                var level = sceneRoots.SelectMany(r => r.GetComponentsInChildren<StageLevel>(true)).First();
                 var player = sceneRoots.SelectMany(r => r.GetComponentsInChildren<CharacterController>(true)).First();
                 float height = player.height * Mathf.Abs(player.transform.lossyScale.y);
                 float ratio = height / referenceHeight;
