@@ -247,7 +247,7 @@ namespace Herbalist.Editor
                 Check(renderers.All(r=>r.bounds.size.magnitude<40),"installed leaf does not use obsolete hundredfold scale");
                 for(int n=0;n<120;n++)flow.Tick(.02f);
                 Check(flow.PresentationBlockedByLeaf,"path-installed leaf stops carrier");var stopped=flow.Position;
-                var forward = Get<Quaternion>(flow, "_carrierRotation") * Vector3.forward;
+                var forward = Vector3.ProjectOnPlane(flow.Forward, Vector3.up).normalized;
                 var carrier = Get<BranchRideCarrier>(flow, "_carrier");
                 float frontReach = Get<Vector2>(carrier, "_leafStopFootprint").y;
                 Check(Vector3.Dot(leaf.ContactPoint - stopped, forward) >= frontReach - .05f,

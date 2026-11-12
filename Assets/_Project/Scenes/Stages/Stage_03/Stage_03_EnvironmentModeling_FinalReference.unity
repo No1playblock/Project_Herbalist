@@ -73587,6 +73587,10 @@ MonoBehaviour:
   _firstStone: {fileID: 2024950866}
   _noticeRange: 16
   _subtitleDuration: 2
+  _frameRideCamera: 1
+  _rideCameraPitchOffset: 24
+  _rideCameraMaxPitch: 42
+  _rideCameraResponseSeconds: 0.22
   _start: "\uBD80\uC801\uC744 \uD0C0\uACE0 \uAC00\uC9C0\uB97C \uB530\uB77C \uC774\uB3D9\uD558\uC138\uC694."
   _target: "\uC18C\uB2F4: \uACFC\uB141\uC774 \uC788\uC5B4\uC694. \uC65C \uC788\uB294 \uAC78\uAE4C\uC694?"
   _turned: "\uB450\uC601: \uAC00\uC9C0\uAC00 \uC6C0\uC9C1\uC600\uC5B4. \uACFC\uB141\uC73C\uB85C \uAE38\uC744 \uBC14\uAFC0 \uC218 \uC788\uB098 \uBD10."
@@ -155528,6 +155532,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Levels.BranchRideCarrier
   _cornerBlendDistance: 0.9
   _turnResponseSeconds: 0.12
+  _maximumTrackPitch: 45
   _leafStopFootprint: {x: 0.97999996, y: 0.7175}
 --- !u!1001 &1872606174
 PrefabInstance:

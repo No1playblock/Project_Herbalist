@@ -80,6 +80,8 @@ namespace Herbalist.Levels
         public float PresentationStoneClock => Online ? StoneClock : _stoneClock;
         public bool PresentationBlockedByLeaf => Online ? Blocked : _blocked;
         public Vector3 Position => Online ? CarrierPosition : _carrierPosition;
+        private Quaternion Rotation => Online ? CarrierRotation : _carrierRotation;
+        public Vector3 Forward => Rotation * Vector3.forward;
         public IReadOnlyList<BranchRideTrack> Track => _track;
         public string Objective => CurrentPhase == BranchRidePhase.Complete ? _completeText :
             CurrentPhase == BranchRidePhase.Falling ? _failedText : CurrentPhase == BranchRidePhase.Boarding ?
@@ -343,7 +345,7 @@ namespace Herbalist.Levels
             _mask = 0;
         }
         private Vector3 RiderPosition(int slot)
-            => Position + (Online ? CarrierRotation : _carrierRotation) * _riderOffsets[slot];
+            => Position + Rotation * _riderOffsets[slot];
 
         private void CarryRiders() { for (int i = 0; i < 2; i++) if (_contactRemaining[i] <= 0f) Carry(_riders[i], i); }
         private void Carry(StageActor actor, int slot)
@@ -405,7 +407,7 @@ namespace Herbalist.Levels
         {
             Vector4 turns = Online ? BranchTurns : _turns;
             for (int i = 0; i < _switches.Length; i++) _switches[i].Present(turns[i]);
-            _talisman.SetPositionAndRotation(Position, Online ? CarrierRotation : _carrierRotation);
+            _talisman.SetPositionAndRotation(Position, Rotation);
             if (_hazards != null) foreach (var stone in _hazards) if (stone != null) stone.Present(PresentationStoneClock, CurrentPhase == BranchRidePhase.Riding);
             if (_endingPanel != null) _endingPanel.SetActive(CurrentPhase == BranchRidePhase.Complete);
         }
