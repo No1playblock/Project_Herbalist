@@ -752,6 +752,7 @@ GameObject:
   - component: {fileID: 640970936466183891}
   - component: {fileID: 3687304392949413897}
   - component: {fileID: 4343002340844207395}
+  - component: {fileID: 8596048503447230100}
   m_Layer: 0
   m_Name: Create
   m_TagString: Untagged
@@ -2246,6 +2247,7 @@ GameObject:
   - component: {fileID: 1915641859747089048}
   - component: {fileID: 6938657102946530950}
   - component: {fileID: 6734605451900042514}
+  - component: {fileID: 8596048503447230101}
   m_Layer: 0
   m_Name: Options
   m_TagString: Untagged
@@ -9061,6 +9063,7 @@ GameObject:
   - component: {fileID: 5119756370151602895}
   - component: {fileID: 1747116535061189048}
   - component: {fileID: 7060767178725391639}
+  - component: {fileID: 8596048503447230102}
   m_Layer: 0
   m_Name: Quit
   m_TagString: Untagged
@@ -9408,6 +9411,7 @@ GameObject:
   - component: {fileID: 1174244654163261142}
   - component: {fileID: 418407016132303967}
   - component: {fileID: 2385727132281622192}
+  - component: {fileID: 8596048503447230103}
   m_Layer: 0
   m_Name: Join
   m_TagString: Untagged
@@ -10859,3 +10863,63 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 5071366217366820261, guid: e8867de3d8eb9b847a6251caa6cac959, type: 3}
   m_PrefabInstance: {fileID: 8101267113762106458}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &8596048503447230100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 411873795123420395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a20e06e95148419a8fbf0d6b3504545b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.GameUI.TitleButtonHover
+  _art: {fileID: 1598074596645296707}
+  _hoverScale: 1.05
+  _duration: 0.14
+--- !u!114 &8596048503447230101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1610788733271400866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a20e06e95148419a8fbf0d6b3504545b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.GameUI.TitleButtonHover
+  _art: {fileID: 2993328505522515511}
+  _hoverScale: 1.05
+  _duration: 0.14
+--- !u!114 &8596048503447230102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7603000458623316205}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a20e06e95148419a8fbf0d6b3504545b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.GameUI.TitleButtonHover
+  _art: {fileID: 6028976188837958903}
+  _hoverScale: 1.05
+  _duration: 0.14
+--- !u!114 &8596048503447230103
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8049614680659657065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a20e06e95148419a8fbf0d6b3504545b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.GameUI.TitleButtonHover
+  _art: {fileID: 1978955702533128695}
+  _hoverScale: 1.05
+  _duration: 0.14
