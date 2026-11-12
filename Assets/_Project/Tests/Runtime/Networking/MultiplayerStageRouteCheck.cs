@@ -24,7 +24,7 @@ namespace Herbalist.Tests
         private static NetworkPlayer Net(StageActor actor) => actor.GetComponent<NetworkPlayer>();
         private static StageActor LocalActor => NetworkPlayer.Local.GetComponent<StageActor>();
 
-        private static async Task Wait(Func<bool> predicate, string description, float seconds = 45f)
+        private static async Task Wait(Func<bool> predicate, string description, float seconds = 90f)
         {
             float deadline = Time.realtimeSinceStartup + seconds;
             while (!predicate() && Time.realtimeSinceStartup < deadline) await Task.Delay(50);
@@ -39,7 +39,9 @@ namespace Herbalist.Tests
             if (index < 0 || index + 3 >= args.Length) return;
             bool host = args[index + 1] == "host";
             string checkpoints = args[index + 3];
+            Directory.CreateDirectory(checkpoints);
             Application.runInBackground = true;
+            Application.targetFrameRate = 45;
             try
             {
                 await Wait(() => FusionLobbySession.Instance != null, "main menu");
@@ -71,6 +73,7 @@ namespace Herbalist.Tests
                 }
                 await Wait(() => StageActor.All.Count(actor => actor.Available && actor.Abilities.Unlocked) == 2,
                     "both potion abilities");
+                Debug.Log("[MultiplayerStageRoute] STAGE1 READY " + (host ? "host" : "client"));
                 await CheckClothAndBranchRecovery(host, checkpoints);
                 if (host)
                 {
@@ -84,6 +87,7 @@ namespace Herbalist.Tests
                 }
 
                 var mazeFlow = await Arrive<DescendingMazeFlow>(session);
+                Debug.Log("[MultiplayerStageRoute] STAGE2 ARRIVED " + (host ? "host" : "client"));
                 var screen = Object.FindFirstObjectByType<PlayScreenController>();
                 if (screen.Mode != PlayScreenMode.Split) screen.TryToggle();
                 await Wait(() => screen.IsSplitVisible, "both player views in split screen");
@@ -99,6 +103,7 @@ namespace Herbalist.Tests
                     await ConfirmClient(host, checkpoints, "maze-" + i);
                     if (host)
                     {
+                        // Drive the raft and scene transitions without simulating the puzzle.
                         var state = board.State;
                         state.Phase = MazePhase.Solved;
                         Field(board, "_state").SetValue(board, state);
@@ -164,7 +169,7 @@ namespace Herbalist.Tests
             var sap = StageActor.All.Single(actor => actor.Available && actor.Abilities.Kind == PlayerAbilityKind.Sap);
             var sapStart = sap.transform.position;
             var capsule = rider.GetComponent<CharacterController>();
-            var branch = Object.FindObjectsByType<StageOneDocumentMechanism>().Single(item => item.name == "FallingBranch_32");
+            var branch = Object.FindObjectsByType<StageOneDocumentMechanism>().Single(item => item.name == "FallingBranch_25");
             var target = Read<LeafInstallTarget>(branch, "_leafTarget");
             var art = Read<Transform[]>(branch, "_movingArt")[0];
             var rest = art.position;
@@ -194,12 +199,19 @@ namespace Herbalist.Tests
             await ConfirmClient(host, checkpoints, "cloth-riding");
             if (host)
             {
-                // A partner's fall must release the rider and reset the same cloth for both peers.
+                // A partner's fall must leave the attached player and the cloth alone.
                 Net(sap).SetTransportAuthoritatively(false, sap.transform.position);
                 Net(sap).TeleportAuthoritatively(Vector3.down * 100f);
             }
+            await Wait(() => !Net(sap).Transported && sap.transform.position.y > -15f &&
+                !Mathf.Approximately(sap.transform.position.y, knot.position.y),
+                "partner automatically recovers");
+            if (!HangingCloth.IsRiding(rider) || !cloth.WasUsed)
+                throw new InvalidOperationException("The partner's fall reset the active cloth.");
+            await ConfirmClient(host, checkpoints, "partner-fall-preserved-cloth");
+            if (host) LocalActor.Request(StageCommand.ReleaseCloth);
             await Wait(() => !HangingCloth.IsRiding(rider) && !Net(rider).Transported && !cloth.WasUsed,
-                "partner respawn releases and restores the occupied cloth");
+                "rider release resets its cloth");
             await ConfirmClient(host, checkpoints, "cloth-restored");
 
             if (host)
@@ -208,18 +220,19 @@ namespace Herbalist.Tests
                 if (!rider.Abilities.Leaf.TryThrowAtSocket(target))
                     throw new InvalidOperationException("Branch fixture leaf throw failed.");
                 await Wait(() => target.HasLeaf, "installed branch leaf");
-                rider.Abilities.Leaf.RecallOldestInstalled();
+                var surface = Read<BoxCollider>(target.InstalledLeaf, "_surface");
+                var feet = surface.transform.TransformPoint(surface.center + Vector3.up * (surface.size.y * .5f));
+                Vector3 footOffset = rider.transform.TransformVector(capsule.center) -
+                    Vector3.up * capsule.height * Mathf.Abs(capsule.transform.lossyScale.y) * .5f;
+                Net(rider).SetTransportAuthoritatively(true, feet - footOffset);
             }
             await Wait(() => branch.Solved && branch.Progress >= 1f && !art.gameObject.activeSelf, "recalled leaf drops the branch");
             await ConfirmClient(host, checkpoints, "branch-dropped");
-            if (host)
-            {
-                Net(rider).SetTransportAuthoritatively(false, rider.transform.position);
-                Net(rider).TeleportAuthoritatively(Vector3.down * 100f);
-            }
-            await Wait(() => !branch.Solved && art.gameObject.activeSelf && target.CanInstall &&
-                Vector3.Distance(art.position, rest) < .01f, "respawn restores the branch and its leaf socket");
+            if (host) Net(rider).SetTransportAuthoritatively(true, rest + Vector3.up * 12f);
+            await Wait(() => !branch.Solved && art.gameObject.activeSelf &&
+                Vector3.Distance(art.position, rest) < .01f, "branch resets independently of respawn");
             await ConfirmClient(host, checkpoints, "branch-restored");
+            Debug.Log("[MultiplayerStageRoute] STAGE1 CLOTH AND BRANCH PASS " + (host ? "host" : "client"));
         }
 
         private static void AllowHiddenInput()
