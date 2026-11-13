@@ -79,8 +79,8 @@ namespace Herbalist.GameUI
                 {
                     var lines = new System.Text.StringBuilder();
                     foreach (var h in settings.controls)
-                        if (h.action != null && (!h.offlineTestOnly || offlineTest))
-                            lines.AppendLine(string.Format(settings.controlHintFormat, h.action.action.GetBindingDisplayString(), h.label));
+                        if (h.Action != null && (!h.offlineTestOnly || offlineTest))
+                            lines.AppendLine(string.Format(settings.controlHintFormat, h.Action.action.GetBindingDisplayString(), h.Label));
                     helpText.text = lines.ToString();
                 }
             }
@@ -158,24 +158,30 @@ namespace Herbalist.GameUI
             }
             if(!GameplayPause.IsPaused)feedbackTime-=Time.unscaledDeltaTime;
             feedback.text=local&&feedbackTime>0?previousFeedback:"";
-            Vector3 clothPoint = default;
-            bool releasing = false;
-            bool clothHint = local && actor != null && clothPrompt != null &&
-                HangingCloth.TryInteractionHint(actor, out clothPoint, out releasing);
             prompt.SetActive(false);
-            if(!clothHint&&local&&flow!=null&&actor!=null&&flow.TryInteractionHint(actor,out var point,out bool transfer))
+            if (clothPrompt != null) clothPrompt.SetActive(false);
+            if (local && actor != null)
             {
-                PresentHint(_interactionHintView, promptText, actor.Binding(0), flow.IsCraftHint(actor)?settings.craftText:transfer?settings.giveText:settings.gatherText);
-                Position(prompt.GetComponent<RectTransform>(),view.Camera,point+promptOffset);
-            }
-            if (clothPrompt != null)
-            {
-                clothPrompt.SetActive(false);
-                if (clothHint)
+                var interaction = actor.ResolveInteraction(out var point);
+                string description = interaction switch
                 {
-                    PresentHint(_clothHintView, clothPromptText, releasing ? actor.Binding(0) + "/" + actor.JumpBinding : actor.Binding(0),
-                        releasing ? settings.clothReleaseText : settings.clothGrabText);
-                    Position((RectTransform)clothPrompt.transform, view.Camera, clothPoint + promptOffset);
+                    StageInteraction.Gather => settings.gatherText,
+                    StageInteraction.Give or StageInteraction.OfferHerb => settings.giveText,
+                    StageInteraction.Receive => settings.receiveText,
+                    StageInteraction.Brew => settings.craftText,
+                    StageInteraction.Drink => settings.drinkText,
+                    StageInteraction.PickupPotion => settings.pickupPotionText,
+                    StageInteraction.GrabCloth => settings.clothGrabText,
+                    StageInteraction.ReleaseCloth => settings.clothReleaseText,
+                    StageInteraction.BoardTalisman => settings.boardTalismanText,
+                    _ => null
+                };
+                if (description != null)
+                {
+                    bool useClothPrompt = clothPrompt != null && interaction is StageInteraction.GrabCloth or StageInteraction.ReleaseCloth;
+                    PresentHint(useClothPrompt ? _clothHintView : _interactionHintView,
+                        useClothPrompt ? clothPromptText : promptText, actor.InteractBinding, description);
+                    Position((RectTransform)(useClothPrompt ? clothPrompt : prompt).transform, view.Camera, point + promptOffset);
                 }
             }
             if (sapPrompt != null)
@@ -183,13 +189,15 @@ namespace Herbalist.GameUI
                 sapPrompt.SetActive(false);
                 if (local && actor != null && SapInjectionPort.TryInteractionHint(actor, out var portPoint))
                 {
-                    PresentHint(_sapHintView, sapPromptText, ability.Input.CycleBinding, settings.sapInjectText);
+                    string binding = rules != null && rules.usePrimaryButton ? ability.Input.UseBinding : ability.Input.CycleBinding;
+                    PresentHint(_sapHintView, sapPromptText, binding, settings.sapInjectText);
                     Position((RectTransform)sapPrompt.transform, view.Camera, portPoint + promptOffset);
                 }
                 else if (local && actor != null &&
                     ExteriorJumpPad.TryLeafInstallHint(actor, out var leafPoint))
                 {
-                    PresentHint(_sapHintView, sapPromptText, ability.Input.CycleBinding, settings.leafInstallText);
+                    string binding = rules != null && rules.usePrimaryButton ? ability.Input.UseBinding : ability.Input.CycleBinding;
+                    PresentHint(_sapHintView, sapPromptText, binding, settings.leafInstallText);
                     Position((RectTransform)sapPrompt.transform, view.Camera, leafPoint + promptOffset);
                 }
             }

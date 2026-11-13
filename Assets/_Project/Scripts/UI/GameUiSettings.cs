@@ -2,7 +2,19 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 namespace Herbalist.GameUI
 {
-    [System.Serializable] public sealed class ControlHint { public string label; public InputActionReference action; public bool offlineTestOnly; }
+    [System.Serializable]
+    public sealed class ControlHint
+    {
+        public string label;
+        public InputActionReference action;
+        public bool offlineTestOnly;
+        [SerializeField] private InputActionReference _stageOneAction;
+        [SerializeField] private string _stageOneLabel;
+
+        private bool UsesStageOneOverride => _stageOneAction != null && Herbalist.Levels.StageOneTraversal.Instance != null;
+        public InputActionReference Action => UsesStageOneOverride ? _stageOneAction : action;
+        public string Label => UsesStageOneOverride ? _stageOneLabel : label;
+    }
     [CreateAssetMenu(menuName="Herbalist/Game UI Settings")]
     public sealed class GameUiSettings : ScriptableObject
     {
@@ -17,6 +29,7 @@ namespace Herbalist.GameUI
         public string createText="방 만들기", joinText="방 참가하기";
         public string pausedText="게임을 일시 정지하였습니다.", partnerPausedText="다른 플레이어가 게임을 일시 정지하였습니다.";
         public string leafText="잎", sapText="액", gatherText="채집", giveText="전달", craftText="약제 제조";
+        public string receiveText = "약초 받기", drinkText = "물약 마시기", pickupPotionText = "물약 집기", boardTalismanText = "부적 탑승";
         public string clothGrabText="천 잡기", clothReleaseText="천 놓기", sapInjectText="수액 주입 (누르고 있기)";
         public string leafInstallText="나뭇잎 설치";
         [Min(.1f)] public float leafInstallHintRange=12f;

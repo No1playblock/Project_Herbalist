@@ -11,6 +11,8 @@ namespace Herbalist.GameUI
         public GameObject home, entry, room, loading, options;
         public Button create, join, confirm, entryBack, roomBack, start, copy, solo, quit, openOptions;
         public Button[] characterButtons;
+        [SerializeField] private GameObject[] _availableRoleArrows;
+        [SerializeField] private GameObject[] _occupiedRoleArrows;
         public TMP_Text entryTitle, message, roomCode, readiness, loadingText;
         public TMP_Text[] characterPlayers, characterLabels;
         public TMP_InputField code;
@@ -67,6 +69,10 @@ namespace Herbalist.GameUI
             for(int i=0;i<characterButtons.Length;i++)
             {
                 int owner=control.Occupant(i);
+                if (_availableRoleArrows != null && i < _availableRoleArrows.Length && _availableRoleArrows[i] != null)
+                    _availableRoleArrows[i].SetActive(owner == 0);
+                if (_occupiedRoleArrows != null && i < _occupiedRoleArrows.Length && _occupiedRoleArrows[i] != null)
+                    _occupiedRoleArrows[i].SetActive(owner != 0);
                 characterButtons[i].interactable=owner==0||owner==control.LocalId;
                 characterLabels[i].text=owner==0?settings.selectText:owner==control.LocalId?settings.selectedText:settings.occupiedText;
                 characterPlayers[i].text=owner==0?settings.vacantText:string.Format(settings.playerFormat,owner)+(owner==control.LocalId?settings.mineSuffix:"");

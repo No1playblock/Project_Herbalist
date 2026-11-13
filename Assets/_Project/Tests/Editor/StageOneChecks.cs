@@ -17,16 +17,22 @@ namespace Herbalist.Editor
                   StageBrewingRules.FireStrength(3,s)==StageFireStrength.Medium &&
                   StageBrewingRules.FireStrength(4,s)==StageFireStrength.High,"Fan rates must use the document's 0-1/2-3/4+ bands");
             var brewingRecipe=s.recipes[0];
+            foreach (var recipe in s.recipes)
+                Check(s.BrewingStartTemperature(recipe)==recipe.targetMin+5f && recipe.timeLimit==30f,
+                    "Each brew starts 5 degrees above its own target minimum and has 30 seconds");
+            Check(s.maximumTemperature==100f,"Boiling threshold remains 100 degrees");
             float temp=brewingRecipe.targetMin, gauge=0;
             StageBrewingRules.Advance(s,brewingRecipe,2,1f,ref temp,ref gauge);
-            Check(temp==brewingRecipe.targetMin && gauge==8f,"Medium fire holds temperature and gains 8 gauge per second");
+            Check(temp==brewingRecipe.targetMin && gauge==12f,"Medium fire holds temperature and gains 12 gauge per second");
             StageBrewingRules.Advance(s,brewingRecipe,4,1f,ref temp,ref gauge);
-            Check(temp==brewingRecipe.targetMin+6f && gauge==16f,"High fire heats by 6 per second");
+            Check(temp==brewingRecipe.targetMin+6f && gauge==24f,"High fire heats by 6 per second");
             StageBrewingRules.Advance(s,brewingRecipe,0,1f,ref temp,ref gauge);
-            Check(temp==brewingRecipe.targetMin && gauge==24f,"Low fire cools by 6 per second");
+            Check(temp==brewingRecipe.targetMin && gauge==36f,"Low fire cools by 6 per second");
             temp=0; gauge=5;
             StageBrewingRules.Advance(s,brewingRecipe,0,1f,ref temp,ref gauge);
-            Check(temp==0 && gauge==0,"Temperature and gauge clamp at zero, and out-of-range gauge loses 12 per second");
+            Check(temp==0 && gauge==2,"Temperature clamps at zero, and out-of-range gauge loses 3 per second");
+            StageBrewingRules.Advance(s,brewingRecipe,0,1f,ref temp,ref gauge);
+            Check(gauge==0,"Gauge clamps at zero");
             temp=brewingRecipe.targetMin; gauge=99;
             StageBrewingRules.Advance(s,brewingRecipe,2,1f,ref temp,ref gauge);
             Check(gauge==100,"Gauge clamps at 100");

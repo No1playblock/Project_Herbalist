@@ -220,7 +220,9 @@ namespace Herbalist.Editor
                 for(int n=0;n<10;n++){first.Port.Inject(.05f);flow.Tick(.05f);}Check((flow.PresentationBranchMask&1)!=0,"held spray does not toggle repeatedly");
                 flow.Tick(.5f);first.Port.Inject(.3f);flow.Tick(.02f);Check((flow.PresentationBranchMask&1)==0,"release and re-hit toggles again");
                 results.Add("authoritative injection, one activation per burst and re-arm");
-                Reset(flow);Board();OpenAll();
+                // Keep the throw position fixed when the configured carrier speed changes.
+                Reset(flow);Board();
+                flow.Tick(2.4f / Get<float>(flow, "_speed"));
                 var surfaces=Get<LeafInstallTarget[]>(flow,"_leafSurfaces");
                 var leafActor = actors.Single(a => a.Abilities.Kind == PlayerAbilityKind.Leaf);
                 var abilities = leafActor.Abilities;
@@ -233,13 +235,23 @@ namespace Herbalist.Editor
                 Check(leaf != null, "normal ability input launches a leaf while riding");
                 for (int i = 0; i < 100 && leaf.State == LeafState.Flying; i++) leaf.Tick(.02f);
                 Check(leaf.Installed && surfaces.Contains(leaf.Target), "the thrown leaf installs on an authored branch collider");
+                if (leaf.Target.PointUpOnInstall)
+                {
+                    leaf.Tick(.02f);
+                    var tip = Get<Transform>(leaf, "_attachmentTip");
+                    Check(Vector3.Dot(leaf.transform.forward, Vector3.up) > .999f && tip.position.y > leaf.ContactPoint.y,
+                        "the installed leaf remains vertical with its pointed end above the branch");
+                }
                 var renderers=leaf.GetComponentsInChildren<Renderer>();
                 Check(renderers.Any(r=>r.enabled&&r.gameObject.activeInHierarchy),"installed leaf has active visible renderer");
                 Check(renderers.All(r=>r.bounds.size.magnitude<40),"installed leaf does not use obsolete hundredfold scale");
                 for(int n=0;n<120;n++)flow.Tick(.02f);
                 Check(flow.PresentationBlockedByLeaf,"path-installed leaf stops carrier");var stopped=flow.Position;
-                var forward = Get<Quaternion>(flow, "_carrierRotation") * Vector3.forward;
-                Check(Vector3.Dot(leaf.ContactPoint - stopped, forward) > 1.7f, "the front of the paper stops before reaching the leaf");
+                var forward = Vector3.ProjectOnPlane(flow.Forward, Vector3.up).normalized;
+                var carrier = Get<BranchRideCarrier>(flow, "_carrier");
+                float frontReach = Get<Vector2>(carrier, "_leafStopFootprint").y;
+                Check(Vector3.Dot(leaf.ContactPoint - stopped, forward) >= frontReach - .05f,
+                    "the front of the paper stops before reaching the leaf");
                 flow.Tick(.3f);Check(Vector3.Distance(stopped,flow.Position)<.001f,"stop persists while installed");
                 abilities.Tick(cycle, unchecked(use + 1), aim, .02f);
                 Check(leaf.State == LeafState.Returning, "normal recall input releases the blocker");

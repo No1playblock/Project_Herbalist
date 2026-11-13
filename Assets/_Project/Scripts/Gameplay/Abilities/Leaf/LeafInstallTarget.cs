@@ -11,6 +11,8 @@ namespace Herbalist.Abilities
         [SerializeField] private Transform socket;
         [Tooltip("Installed visual local scale. Zero uses the ability's shared scale.")]
         [SerializeField] private Vector3 _installedVisualScale;
+        [Tooltip("Stand the installed leaf upright with its pointed end up. Applies to free surface placement.")]
+        [SerializeField] private bool _pointUpOnInstall;
         [SerializeField] private bool _singleOccupant;
         [Tooltip("Keep an installed leaf until its owning mechanism consumes it or the player recalls it.")]
         [SerializeField] private bool _keepLeafUntilUsed;
@@ -31,6 +33,7 @@ namespace Herbalist.Abilities
         public bool ExactSocketPlacement => socket != null;
         public Vector3 InstalledVisualScale => _installedVisualScale;
         public bool HasInstalledVisualScale => _installedVisualScale.x > 0 && _installedVisualScale.y > 0 && _installedVisualScale.z > 0;
+        public bool PointUpOnInstall => _pointUpOnInstall && socket == null;
         public bool PerpendicularToSurfaceOnInstall => _perpendicularToSurfaceOnInstall && socket == null;
         public LeafProjectile InstalledLeaf { get { foreach(var leaf in occupants) if(leaf != null && leaf.Installed) return leaf; return null; } }
         public bool HasLeaf => InstalledLeaf != null;
@@ -52,6 +55,7 @@ namespace Herbalist.Abilities
         public Quaternion Rotation(Vector3 normal, Vector3 heading)
         {
             if (socket != null) return socket.rotation;
+            if (PointUpOnInstall) return UprightRotation(-heading);
             if (_perpendicularToSurfaceOnInstall)
             {
                 Vector3 outward = Vector3.ProjectOnPlane(normal, Vector3.up);
@@ -65,6 +69,12 @@ namespace Herbalist.Abilities
             Vector3 up = Mathf.Abs(Vector3.Dot(forward.normalized, Vector3.up)) > 0.99f ? Vector3.forward : Vector3.up;
             return Quaternion.LookRotation(forward, up);
         }
+        internal static Quaternion UprightRotation(Vector3 face)
+        {
+            Vector3 horizontal = Vector3.ProjectOnPlane(face, Vector3.up);
+            if (horizontal.sqrMagnitude < 0.001f) horizontal = Vector3.back;
+            return Quaternion.LookRotation(Vector3.up, horizontal);
+        }
         public void Attach(LeafProjectile leaf)
         {
             bool before = HasLeaf; occupants.Add(leaf);
@@ -77,8 +87,9 @@ namespace Herbalist.Abilities
             if (leaf != null && leaf.Installed) _reuseRemaining = _reuseDelayAfterRelease;
             if (before && !HasLeaf) onReleased.Invoke();
         }
+        internal void ResetReuseDelay() => _reuseRemaining = 0f;
         private void Update() => TickReuseDelay(Time.deltaTime);
-        private void TickReuseDelay(float dt)
+        internal void TickReuseDelay(float dt)
         {
             if (!Herbalist.GameUI.GameplayPause.IsPaused)
                 _reuseRemaining = Mathf.Max(0f, _reuseRemaining - Mathf.Max(0f, dt));

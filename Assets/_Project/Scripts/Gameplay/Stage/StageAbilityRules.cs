@@ -8,6 +8,7 @@ namespace Herbalist.Levels
         public LeafAbilitySettings leaf;
         public SapAbilitySettings sap;
         public bool contextualUse = true;
+        public bool usePrimaryButton;
         public string leafInstructions = "R: 나뭇잎 투척 · 4번째부터 오래된 잎 자동 회수";
         public string sapInstructions = "R 유지: 수액 주입 · 미로에서는 R 유지 + 중앙 조준점";
         public string[] duyeongRangeMessages = { "조금 더 가까이 가야겠어.", "여기서는 너무 멀어." };

@@ -9,6 +9,7 @@ namespace Herbalist.Levels
     {
         [SerializeField, Min(0)] private float _cornerBlendDistance = .9f;
         [SerializeField, Min(.01f)] private float _turnResponseSeconds = .12f;
+        [SerializeField, Range(0, 85)] private float _maximumTrackPitch;
         [SerializeField, Tooltip("Paper footprint in world units: half width (X) and front reach (Y).")]
         private Vector2 _leafStopFootprint = new(2.8f, 2.05f);
 
@@ -32,6 +33,12 @@ namespace Herbalist.Levels
                 float t = Mathf.Clamp01(result.distance / duration);
                 result.position = Vector3.Lerp(track.Start, track.End, t) + Vector3.up * height;
                 result.position.y = track.Start.y - fall * t * t + height;
+                if (_maximumTrackPitch > 0f)
+                {
+                    Vector3 tangent = track.End - track.Start;
+                    tangent.y = -2f * fall * t;
+                    result.rotation = FollowDirection(rotation, tangent, dt);
+                }
                 result.atEnd = t >= 1;
                 return result;
             }
@@ -43,12 +50,20 @@ namespace Herbalist.Levels
             if (!result.blocked) result.distance = nextDistance;
             else candidate = track.Sample(distance, out direction, _cornerBlendDistance, incoming, outgoing);
             result.position = candidate + Vector3.up * height;
-            Vector3 planar = Vector3.ProjectOnPlane(direction, Vector3.up);
-            if (planar.sqrMagnitude > .001f)
-                result.rotation = Quaternion.Slerp(rotation, Quaternion.LookRotation(planar),
-                    1f - Mathf.Exp(-dt / _turnResponseSeconds));
+            result.rotation = FollowDirection(rotation, direction, dt);
             result.atEnd = !result.blocked && result.distance >= length - .0001f;
             return result;
+        }
+
+        private Quaternion FollowDirection(Quaternion rotation, Vector3 direction, float dt)
+        {
+            Vector3 planar = Vector3.ProjectOnPlane(direction, Vector3.up);
+            if (planar.sqrMagnitude <= .001f) return rotation;
+            float yaw = Mathf.Atan2(planar.x, planar.z) * Mathf.Rad2Deg;
+            float pitch = Mathf.Atan2(-direction.y, planar.magnitude) * Mathf.Rad2Deg;
+            pitch = Mathf.Clamp(pitch, -_maximumTrackPitch, _maximumTrackPitch);
+            return Quaternion.Slerp(rotation, Quaternion.Euler(pitch, yaw, 0f),
+                1f - Mathf.Exp(-dt / _turnResponseSeconds));
         }
 
         private bool IsBlockedByLeaf(BranchRideTrack track, float distance, Vector3 start, Vector3 candidate,

@@ -14,6 +14,7 @@ namespace Herbalist.Levels
         [Min(0)] public float driveAcceleration = 15f;
         [Min(0)] public float pumpImpulseSeconds = .4f;
         [Min(0)] public float reversalInputWindow = .45f;
+        [Range(0, 1)] public float repeatPumpMultiplier = 1f;
         [Min(0)] public float spring = 4f;
         [Min(0)] public float damping = .22f;
         [Min(0), Tooltip("Maximum angular speed in degrees per second. 0 removes the limit.")]

@@ -6,10 +6,10 @@ namespace Herbalist.StageOne
     public sealed class NetworkStageActor : NetworkBehaviour
     {
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        public void RPC_Command(StageCommand command)
+        public void RPC_Command(StageCommand command, StageInteraction interaction)
         {
-            if (command < StageCommand.Interact || command > StageCommand.ReleaseCloth) return;
-            string result = GetComponent<StageActor>().ExecuteCommand(command);
+            if (command < StageCommand.Interact || command > StageCommand.Recover) return;
+            string result = GetComponent<StageActor>().ExecuteCommand(command, interaction);
             RPC_Feedback(result);
         }
         [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]

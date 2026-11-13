@@ -11,9 +11,9 @@ namespace Herbalist.GameUI
             for (int i = 0; i < _rows.Length; i++)
             {
                 var hint = i < settings.controls.Length ? settings.controls[i] : null;
-                bool visible = hint != null && hint.action != null && (!hint.offlineTestOnly || offlineTest);
+                bool visible = hint != null && hint.Action != null && (!hint.offlineTestOnly || offlineTest);
                 _rows[i].gameObject.SetActive(visible);
-                if (visible) _rows[i].Present(hint.action.action.GetBindingDisplayString(), hint.label);
+                if (visible) _rows[i].Present(hint.Action.action.GetBindingDisplayString(), hint.Label);
             }
         }
     }

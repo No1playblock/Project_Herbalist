@@ -101,7 +101,7 @@ namespace Herbalist.GameUI
             if (fanPrompt != null) fanPrompt.SetActive(sodam);
             var craftingView = _screen != null ? _screen.ViewForSlot(_hud.slot) : null;
             var craftingActor = craftingView != null ? craftingView.GetComponent<StageActor>() : null;
-            if (_fanHint != null) _fanHint.Present(craftingActor != null ? craftingActor.JumpBinding : string.Empty, copy.fanActionText);
+            if (_fanHint != null) _fanHint.Present(craftingActor != null ? craftingActor.FanBinding : string.Empty, copy.fanActionText);
             else if (fanPromptText != null) fanPromptText.text = copy.fanPrompt;
             if (targetTemperatureBand != null)
             {
