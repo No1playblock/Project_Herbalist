@@ -1,6 +1,6 @@
 # 2026-09-30 legacy cleanup
 
-The approved B cleanup removes old playable stage scenes and their exclusive code. The current route is `MainMenu` → `Stage_01_Exterior_260928` → `Stage_02_Mazes` → `Stage_03_Altar`; `Sandbox_Abilities` and the main-menu solo entry remain for testing. Build Settings contains these five scenes.
+The approved B cleanup removed older playable stage scenes and their exclusive code. On 2026-10-19 the Stage 1 route changed to `MainMenu` → `Stage_01_ModelingReference` → `Stage_02_Mazes` → `Stage_03_Altar`; the earlier `Stage_01_Exterior_260928` scene was removed. `Sandbox_Abilities` and the main-menu solo entry remain for testing. Build Settings contains the current scenes.
 
 Removed: `Sandbox_Rendering`, old `Stage_01_Exterior`, `Stage_02_Interior`, `Stage_02_BGModel`, `Stage_03_Prototype`, `Stage_04_Arrival`, `Stage_05_Arrival`; their dedicated runtime/editor/test scripts, inactive legacy MainMenuCanvas and scene HUD roots, player placement-preview objects, Sap Placement flight/preview/inventory logic, and unused serialized settings. `SapSource` extraction and the continuous blue Hose remain. Current PDF maze layout authoring and current stage scripts remain.
 

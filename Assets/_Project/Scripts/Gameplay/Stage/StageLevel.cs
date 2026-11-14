@@ -8,6 +8,8 @@ namespace Herbalist.Levels
         public string nextScenePath;
         public bool requireEarnedAbilities = true;
         public StageAbilityRules abilityRules;
+        [SerializeField] private bool _playerCameraPostProcessing;
+        public bool PlayerCameraPostProcessing => _playerCameraPostProcessing;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)] private static void ResetStatics() { Instance=null; }
         private void Awake() { Instance=this; }
         private void OnDestroy() { if(Instance==this)Instance=null; }

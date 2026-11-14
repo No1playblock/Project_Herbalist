@@ -38,7 +38,7 @@ namespace Herbalist.Levels
                 foreach (var actor in StageActor.All)
                     if (actor.Local)
                     {
-                        _instructions.text = string.Format(_instructionsFormat, _potion.displayName, actor.Binding((int)StageCommand.Interact), actor.Binding((int)StageCommand.Drink));
+                        _instructions.text = string.Format(_instructionsFormat, _potion.displayName, actor.InteractBinding, actor.InteractBinding);
                         break;
                     }
         }
@@ -55,7 +55,8 @@ namespace Herbalist.Levels
         private static SoloPotionPickup Nearest(StageActor actor)
         {
             var flow = StageOneFlow.Instance;
-            if (!Solo || flow == null || !flow.Authority || actor == null || !actor.Local || actor.Slot < 0 || actor.Slot >= flow.Progress.Held.Length) return null;
+            if (!Solo || flow == null || !flow.Authority || flow.Progress == null || actor == null ||
+                !actor.Local || actor.Slot < 0 || actor.Slot >= flow.Progress.Held.Length) return null;
             SoloPotionPickup best = null; float distance = float.PositiveInfinity;
             foreach (var pickup in Pickups)
             {
@@ -85,7 +86,7 @@ namespace Herbalist.Levels
                 flow.Progress.Held[actor.Slot] = flow.settings.ItemId(pickup._potion);
                 pickup._taken = true;
                 pickup.gameObject.SetActive(false);
-                message = pickup._potion.displayName + " · " + actor.Binding((int)StageCommand.Drink) + " 복용";
+                message = pickup._potion.displayName + " · " + actor.InteractBinding + " 복용";
             }
             return true;
         }

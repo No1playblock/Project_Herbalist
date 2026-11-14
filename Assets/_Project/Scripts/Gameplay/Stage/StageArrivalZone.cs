@@ -20,11 +20,12 @@ namespace Herbalist.Levels
             var half = _volume.size * .5f;
             return Mathf.Abs(p.x) <= half.x && Mathf.Abs(p.y) <= half.y && Mathf.Abs(p.z) <= half.z;
         }
+        public bool ContainsPlayer(Vector3 playerPosition) => Contains(playerPosition + _playerProbeOffset);
         public int CountPresent()
         {
             _slots.Clear();
             foreach (var actor in StageActor.All)
-                if (actor.Available && actor.Slot >= 0 && Contains(actor.transform.position + _playerProbeOffset))
+                if (actor.Available && actor.Slot >= 0 && ContainsPlayer(actor.transform.position))
                     _slots.Add(actor.Slot);
             return _slots.Count;
         }

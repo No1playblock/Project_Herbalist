@@ -40,9 +40,25 @@ MonoBehaviour:
   gatherText: "\uCC44\uC9D1"
   giveText: "\uC804\uB2EC"
   craftText: "\uC57D\uC81C \uC81C\uC870"
+  clothGrabText: "\uCC9C \uC7A1\uAE30"
+  clothReleaseText: "\uCC9C \uB193\uAE30"
+  sapInjectText: "\uC218\uC561 \uC8FC\uC785 (\uB204\uB974\uACE0 \uC788\uAE30)"
+  leafInstallText: "\uB098\uBB47\uC78E \uC124\uCE58"
+  leafInstallHintRange: 12
+  leafHeldText: "\uBCF4\uC720"
+  leafInstalledText: "\uC124\uCE58 \uC911"
+  leafReturningText: "\uD68C\uC218 \uC911"
+  leafHeldColor: {r: 0.49, g: 0.86, b: 0.66, a: 1}
+  leafInstalledColor: {r: 0.96, g: 0.76, b: 0.36, a: 1}
+  leafReturningColor: {r: 0.43, g: 0.77, b: 0.94, a: 1}
+  _leafRecallAvailableIcon: {fileID: 21300000, guid: 3d8e19cafb6f5c5fa31602c7aa999fc2, type: 3}
+  _leafRecallUnavailableIcon: {fileID: 21300000, guid: f87d03965a915a15a9bb840e0b794ee0, type: 3}
   pauseHint: "\uC77C\uC2DC\uC815\uC9C0"
   helpHint: "\uD0A4 \uD655\uC778"
   emptyPocket: "\uBE48\uC190"
+  controlHintFormat: <b>{0}</b>  {1}
+  alternativeControlHintFormat: <b>{0}</b> / <b>{1}</b>  {2}
+  jumpPadCountdownFormat: "\uC810\uD504\uB300 \uBC1C\uC0AC\uAE4C\uC9C0 <b>{0:0.0}</b>\uCD08"
   pauseAction: {fileID: 11400000, guid: 5b7edeeb78164d64fa1b204555605a92, type: 2}
   helpAction: {fileID: 11400000, guid: d555e369d4bedfb45bafdc525a3c53ee, type: 2}
   controls:
@@ -67,17 +83,18 @@ MonoBehaviour:
   - label: "\uB2A5\uB825 \uC0AC\uC6A9 / \uBBF8\uB85C \uC81C\uC5B4 \uC804\uD658"
     action: {fileID: 11400000, guid: ead40294ab6cdf540a3eb1133fc66dd2, type: 2}
     offlineTestOnly: 0
+    _stageOneAction: {fileID: 11400000, guid: 74a07ea931714267ac29f682967f8f5a, type: 2}
+    _stageOneLabel: "\uCCB4\uD06C\uD3EC\uC778\uD2B8 \uBCF5\uADC0"
   - label: "\uB098\uBB47\uC78E \uD68C\uC218"
     action: {fileID: 11400000, guid: 90c914f183676a846b010a5dc1f82c38, type: 2}
     offlineTestOnly: 0
-  - label: "\uCC44\uC9D1 / \uC804\uB2EC"
+    _stageOneAction: {fileID: 11400000, guid: 90c914f183676a846b010a5dc1f82c38, type: 2}
+    _stageOneLabel: "\uB2A5\uB825 \uC0AC\uC6A9"
+  - label: "\uC0C1\uD638\uC791\uC6A9"
     action: {fileID: 11400000, guid: 3b2fc885946ea06499a553f69f0a5a99, type: 2}
     offlineTestOnly: 0
-  - label: "\uC57D\uC81C \uC81C\uC870"
+  - label: "\uBD80\uCC44\uC9C8 (\uC81C\uC870 \uC911)"
     action: {fileID: 11400000, guid: c346868c992d0a8479016014ceb8038a, type: 2}
-    offlineTestOnly: 0
-  - label: "\uC57D\uC81C \uBCF5\uC6A9"
-    action: {fileID: 11400000, guid: 989b6b4ec267f9047bb6de2ee72fa79c, type: 2}
     offlineTestOnly: 0
   - label: "\uC194\uB85C \uD14C\uC2A4\uD2B8: \uB098\uBB47\uC78E\xB7\uC218\uC561 \uBAA8\uB450 \uD574\uAE08"
     action: {fileID: 11400000, guid: 9ee627606ca3b0a4089084116887d214, type: 2}
@@ -87,5 +104,7 @@ MonoBehaviour:
     offlineTestOnly: 1
   markerOffset: {x: -0.65, y: 1.9, z: 0}
   feedbackDuration: 4
+  objectiveHoldDuration: 5
+  objectiveFadeDuration: 1
   menuScene: Assets/_Project/Scenes/01_Title/MainMenu.unity
-  soloScene: Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference.unity
+  soloScene: Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference_CharacterBranch_DevelopStage1_Reference.unity

@@ -7,6 +7,10 @@ namespace Herbalist.Player
     [CreateAssetMenu(menuName = "Herbalist/Player Tuning")]
     public sealed class PlayerTuning : ScriptableObject
     {
+        [Header("Character Size")]
+        [Tooltip("Uniform multiplier for the player prefab, including its model, collision capsule, camera target and ability launch points. Set before spawning players; use the same asset on Host and Client.")]
+        [Min(0.1f)] public float characterScaleMultiplier = 1f;
+
         [Header("Movement")]
         [Min(0)] public float moveSpeed = 4f;
         [Min(0)] public float gravity = 22f;
@@ -49,6 +53,17 @@ namespace Herbalist.Player
             float weight = 1f - Mathf.InverseLerp(headTrackingFadeAngles.x, headTrackingFadeAngles.y, Mathf.Abs(yaw));
             return Quaternion.Euler(Mathf.Clamp(viewPitch, -headPitchLimit, headPitchLimit) * weight,
                 Mathf.Clamp(yaw, -headYawLimit, headYawLimit) * weight, 0);
+        }
+
+        public bool CanAimWithHead(float bodyYaw, Vector3 aimDirection)
+        {
+            if (aimDirection.sqrMagnitude < 0.000001f) return false;
+            float viewYaw = Mathf.Atan2(aimDirection.x, aimDirection.z) * Mathf.Rad2Deg;
+            float viewPitch = Mathf.Atan2(-aimDirection.y,
+                new Vector2(aimDirection.x, aimDirection.z).magnitude) * Mathf.Rad2Deg;
+            float fullTrackingYaw = Mathf.Min(headYawLimit, headTrackingFadeAngles.x);
+            return Mathf.Abs(Mathf.DeltaAngle(bodyYaw, viewYaw)) <= fullTrackingYaw &&
+                Mathf.Abs(viewPitch) <= headPitchLimit;
         }
     }
 }

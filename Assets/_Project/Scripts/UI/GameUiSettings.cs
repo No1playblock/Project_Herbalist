@@ -2,7 +2,19 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 namespace Herbalist.GameUI
 {
-    [System.Serializable] public sealed class ControlHint { public string label; public InputActionReference action; public bool offlineTestOnly; }
+    [System.Serializable]
+    public sealed class ControlHint
+    {
+        public string label;
+        public InputActionReference action;
+        public bool offlineTestOnly;
+        [SerializeField] private InputActionReference _stageOneAction;
+        [SerializeField] private string _stageOneLabel;
+
+        private bool UsesStageOneOverride => _stageOneAction != null && Herbalist.Levels.StageOneTraversal.Instance != null;
+        public InputActionReference Action => UsesStageOneOverride ? _stageOneAction : action;
+        public string Label => UsesStageOneOverride ? _stageOneLabel : label;
+    }
     [CreateAssetMenu(menuName="Herbalist/Game UI Settings")]
     public sealed class GameUiSettings : ScriptableObject
     {
@@ -17,11 +29,28 @@ namespace Herbalist.GameUI
         public string createText="방 만들기", joinText="방 참가하기";
         public string pausedText="게임을 일시 정지하였습니다.", partnerPausedText="다른 플레이어가 게임을 일시 정지하였습니다.";
         public string leafText="잎", sapText="액", gatherText="채집", giveText="전달", craftText="약제 제조";
+        public string receiveText = "약초 받기", drinkText = "물약 마시기", pickupPotionText = "물약 집기", boardTalismanText = "부적 탑승";
+        public string clothGrabText="천 잡기", clothReleaseText="천 놓기", sapInjectText="수액 주입 (누르고 있기)";
+        public string leafInstallText="나뭇잎 설치";
+        [Min(.1f)] public float leafInstallHintRange=12f;
+        public string leafHeldText="보유", leafInstalledText="설치 중", leafReturningText="회수 중";
+        public Color leafHeldColor = new Color(.49f, .86f, .66f);
+        public Color leafInstalledColor = new Color(.96f, .76f, .36f);
+        public Color leafReturningColor = new Color(.43f, .77f, .94f);
+        [SerializeField] private Sprite _leafRecallAvailableIcon;
+        [SerializeField] private Sprite _leafRecallUnavailableIcon;
+        public Sprite LeafRecallAvailableIcon => _leafRecallAvailableIcon;
+        public Sprite LeafRecallUnavailableIcon => _leafRecallUnavailableIcon;
         public string pauseHint="일시정지", helpHint="키 확인", emptyPocket="빈손";
+        public string controlHintFormat = "<b>{0}</b>  {1}";
+        public string alternativeControlHintFormat = "<b>{0}</b> / <b>{1}</b>  {2}";
+        public string jumpPadCountdownFormat = "점프대 발사까지 <b>{0:0.0}</b>초";
         public InputActionReference pauseAction, helpAction;
         public ControlHint[] controls;
         public Vector3 markerOffset = new Vector3(-.65f, 1.9f, 0);
         [Min(.1f)] public float feedbackDuration=4;
+        [Min(0)] public float objectiveHoldDuration = 5f;
+        [Min(.01f)] public float objectiveFadeDuration = 1f;
         public string menuScene="Assets/_Project/Scenes/01_Title/MainMenu.unity";
         public string soloScene="Assets/_Project/Scenes/Development/Sandbox_Abilities.unity";
     }

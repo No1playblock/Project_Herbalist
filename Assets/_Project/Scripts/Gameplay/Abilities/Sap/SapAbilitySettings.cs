@@ -7,8 +7,20 @@ namespace Herbalist.Abilities
     public sealed class SapAbilitySettings : ScriptableObject
     {
         public SapDeposit offlinePrefab;
+        [Header("Water orbit (world units)")]
+        public bool orbitEnabled = true;
+        public Vector3 orbitCenterOffset = new Vector3(0f, 0.95f, 0f);
+        [Min(0.1f)] public float orbitRadius = 0.75f;
+        [Min(0.01f)] public float orbitTubeRadius = 0.07f;
+        [Tooltip("Seconds to unwind orbitUnwindAngle degrees at a constant rate. Match restore duration and use 360 degrees for equal drain/refill speeds.")]
+        [Min(0.01f)] public float orbitUnwindDuration = .45f;
+        [Min(0.01f)] public float orbitRestoreDuration = .45f;
+        [Tooltip("Degrees unwound per duration, not a maximum opening angle.")]
+        [Range(1f, 360f)] public float orbitUnwindAngle = 360f;
+        [Min(0f)] public float orbitRipple = 0.025f;
+        [Min(0f)] public float orbitFlowSpeed = 3f;
         [Header("Hose control")]
-        public Vector3 hoseHoverOffset = new Vector3(0.55f, 1.15f, 0.15f);
+        public Vector3 hoseHoverOffset = new Vector3(0f, 1.15f, 0.55f);
         [Tooltip("Stream length growth speed while the hose button is held, in meters per second.")]
         [Min(0.01f)] public float hoseExtendSpeed = 8f;
         [Tooltip("Stream length retraction speed after the hose button is released, in meters per second.")]
@@ -27,6 +39,11 @@ namespace Herbalist.Abilities
         [Min(1)] public float hoseMaxScale = 3f;
         [Range(-1, 1)] public float hoseMergeNormalDot = 0.85f;
         [Min(0.1f)] public float hoseMarkLifetime = 5f;
+        [Header("Ground water absorption")]
+        [Tooltip("Seconds before an expiring ground puddle finishes shrinking into the surface.")]
+        [Min(0.01f)] public float groundWaterAbsorbDuration = 2f;
+        [Tooltip("Surface normals above this upward dot product use the ground absorption visual.")]
+        [Range(0f, 1f)] public float groundWaterNormalThreshold = 0.7f;
         [Tooltip("Hits within this distance refresh the existing mark instead of creating another.")]
         [Min(0.01f)] public float hoseMarkSpacing = 1f;
         [Tooltip("World-space footprint of an attached sap decal at its initial size.")]

@@ -8,75 +8,174 @@ using Herbalist.StageOne;
 
 namespace Herbalist.Levels
 {
-    // Scene-authored route and targets. Only the host advances the carrier and resolves hits.
+    public enum BranchRidePhase { Boarding, Riding, Falling, Complete }
+
+    // Host owns track, contacts, riders and reset. Actor input and abilities remain separate.
     [RequireComponent(typeof(NetworkObject))]
     public sealed class BranchRideFlow : NetworkBehaviour
     {
         [SerializeField] private StageLevel _level;
         [SerializeField] private Transform _talisman;
-        [SerializeField] private Transform[] _route;
-        [SerializeField] private Transform[] _branches;
-        [SerializeField] private SapInjectionPort[] _targets;
-        [SerializeField] private LeafInstallTarget _stopSocket;
-        [SerializeField] private Transform[] _stones;
+        [SerializeField] private BranchRideCarrier _carrier;
+        // Existing identifiers are retained for serialized/editor/audio compatibility.
+        [SerializeField, HideInInspector] private Transform[] _route, _branches, _stones;
+        [SerializeField, HideInInspector] private SapInjectionPort[] _targets;
+        [SerializeField, HideInInspector] private LeafInstallTarget _stopSocket;
+        [SerializeField] private BranchRideTrack[] _track;
+        [SerializeField] private BranchRideSwitch[] _switches;
+        [SerializeField] private BranchRideStone[] _hazards;
+        [SerializeField] private LeafInstallTarget[] _leafSurfaces;
+        [SerializeField] private Transform[] _respawns, _dismounts;
         [SerializeField] private GameObject _endingPanel;
-        [SerializeField, Min(.1f)] private float _boardRange = 3;
+        [SerializeField, Min(.1f)] private float _boardRange = 7;
         [SerializeField, Min(.1f)] private float _speed = 3;
-        [SerializeField, Min(.01f)] private float _targetCharge = .35f;
-        [SerializeField, Min(.01f)] private float _targetRearmDelay = .4f;
-        [SerializeField, Min(.1f)] private float _stonePeriod = 5;
-        [SerializeField, Min(.1f)] private float _stoneCrossingTime = 2;
-        [SerializeField, Min(.1f)] private float _collisionRadius = 1.2f;
-        [SerializeField] private Vector3[] _riderOffsets = { new(-.65f, .5f, 0), new(.65f, .5f, 0) };
+        [SerializeField, Min(.01f)] private float _connectionTolerance = .25f;
+        [SerializeField, Min(.01f)] private float _carrierHeight = .5f;
+        [SerializeField, Min(0), Tooltip("Extra height at the starting branch, blended out along the entry span.")]
+        private float _entryClearanceLift;
+        [Tooltip("Vertical tolerance between an installed leaf and the branch path.")]
+        [SerializeField, Min(.1f)] private float _leafStopRadius = 1.4f;
+        [SerializeField, Min(.1f)] private float _collisionRadius = 1.1f;
+        [SerializeField, Min(.1f)] private float _dropGravity = 14;
+        [SerializeField, Min(.1f)] private float _failureDuration = 1.1f;
+        [SerializeField, Min(0)] private float _boardingAnimationGraceSeconds = .15f;
+        [SerializeField, Min(.1f)] private float _unmountedFallMargin = 8f;
+        [SerializeField] private Vector3[] _riderOffsets = { new(-1.5f, .25f, 0), new(1.5f, .25f, 0) };
         [SerializeField] private string _boardText = "부적에 탑승했습니다. 두 명이 탑승하면 출발합니다.";
         [SerializeField] private string _waitingText = "두 명 모두 E로 부적에 탑승하세요.";
-        [SerializeField] private string _ridingText = "R로 T1~T4를 맞혀 가지를 돌리세요. 나뭇잎은 부적을 멈춥니다.";
+        [SerializeField] private string _ridingText = "수액으로 과녁을 맞혀 길 연결 · 경로에 잎을 설치해 정지 · 회수하면 출발";
+        [SerializeField] private string _blockedText = "나뭇잎 앞에서 정지 · 회수하면 다시 이동합니다";
+        [SerializeField] private string _failedText = "추락 또는 돌 충돌 · 시작 지점에서 다시 탑승하세요";
+        [SerializeField] private string _completeText = "서낭당 최하단 도착 · 3스테이지 완료";
         [Networked] private int RiderMask { get; set; }
+        [Networked] private Vector2 ContactRemaining { get; set; }
         [Networked] private int Segment { get; set; }
         [Networked] private float SegmentDistance { get; set; }
         [Networked] private int BranchMask { get; set; }
+        [Networked] private Vector4 BranchTurns { get; set; }
         [Networked] private float StoneClock { get; set; }
-        [Networked] private NetworkBool Complete { get; set; }
+        [Networked] private BranchRidePhase Phase { get; set; }
+        [Networked] private Vector3 CarrierPosition { get; set; }
+        [Networked] private Quaternion CarrierRotation { get; set; }
+        [Networked] private NetworkBool Blocked { get; set; }
+        [Networked] private int Failures { get; set; }
         private static readonly HashSet<BranchRideFlow> Active = new();
         private readonly StageActor[] _riders = new StageActor[2];
-        private readonly float[] _charges = new float[4];
-        private readonly float[] _targetDry = new float[4];
-        private readonly bool[] _targetArmed = { true, true, true, true };
-        private int _mask, _segment;
-        private float _distance, _stoneClock;
-        private bool _complete;
+        private readonly float[] _boardingRemaining = new float[2];
+        private Vector2 _contactRemaining;
+        private readonly List<LeafProjectile> _leaves = new();
+        private int _mask, _segment, _branchMask, _failures;
+        private float _distance, _stoneClock, _fallTime, _failureBanner;
+        private Vector4 _turns;
+        private Vector3 _fallOrigin, _carrierPosition, _incomingDirection;
+        private Quaternion _carrierRotation = Quaternion.identity;
+        private BranchRidePhase _phase;
+        private bool _blocked;
         private bool Online => Object != null && Object.IsValid;
-        private bool Authority => Online ? HasStateAuthority : FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession;
-        public string Objective => (Online ? RiderMask : _mask) == 3 ? _ridingText : _waitingText;
-        private void OnEnable() => Active.Add(this);
-        private void OnDisable()
+        private bool Authority => Online ? HasStateAuthority : !(FusionLobbySession.Instance is { HasNetworkSession: true });
+        public BranchRidePhase CurrentPhase => Online ? Phase : _phase;
+        public int CurrentSegment => Online ? Segment : _segment;
+        public int FailureCount => Online ? Failures : _failures;
+        public int PresentationBranchMask => Online ? BranchMask : _branchMask;
+        public float PresentationStoneClock => Online ? StoneClock : _stoneClock;
+        public bool PresentationBlockedByLeaf => Online ? Blocked : _blocked;
+        public Vector3 Position => Online ? CarrierPosition : _carrierPosition;
+        private Quaternion Rotation => Online ? CarrierRotation : _carrierRotation;
+        public Vector3 Forward => Rotation * Vector3.forward;
+        public IReadOnlyList<BranchRideTrack> Track => _track;
+        public string Objective => CurrentPhase == BranchRidePhase.Complete ? _completeText :
+            CurrentPhase == BranchRidePhase.Falling ? _failedText : CurrentPhase == BranchRidePhase.Boarding ?
+            (_failureBanner > 0 ? _failedText : _waitingText) : PresentationBlockedByLeaf ? _blockedText : _ridingText;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)] private static void ResetStatics() => Active.Clear();
+        public static bool IsRiding(StageActor actor)
+            => FindRiderFlow(actor, out float remaining) != null && remaining <= 0f;
+
+        public static bool TryGetBoardingSeat(StageActor actor, out Vector3 seat, out float remaining)
         {
-            Active.Remove(this);
-            for (int i = 0; i < _riders.Length; i++) Release(_riders[i]);
+            var flow = FindRiderFlow(actor, out remaining);
+            if (flow != null && flow.CurrentPhase == BranchRidePhase.Boarding)
+            {
+                seat = flow.RiderPosition(actor.Slot);
+                return true;
+            }
+            seat = default;
+            return false;
         }
-        public override void Spawned()
+
+        private static BranchRideFlow FindRiderFlow(StageActor actor, out float remaining)
         {
-            if (!HasStateAuthority) return;
-            RiderMask = Segment = BranchMask = 0;
-            SegmentDistance = StoneClock = 0;
-            Complete = false;
+            remaining = 0f;
+            if (actor == null || !actor.Available || actor.Slot < 0 || actor.Slot > 1) return null;
+            foreach (var flow in Active)
+                if (((flow.Online ? flow.RiderMask : flow._mask) & (1 << actor.Slot)) != 0 &&
+                    (flow.Online || flow._riders[actor.Slot] == actor))
+                {
+                    remaining = (flow.Online ? flow.ContactRemaining : flow._contactRemaining)[actor.Slot];
+                    return flow;
+                }
+            return null;
+        }
+        private bool Configured => _carrier != null && _talisman != null && _track != null && _track.Length > 0 &&
+            _track[0] != null && _track[0].Valid && _switches != null && _switches.Length == 4;
+        private void OnEnable() => Active.Add(this);
+        private void Start()
+        {
+            if (!Configured) { Debug.LogError("Branch ride needs authored track and four switches. Rebuild Stage Three Blockout.", this); return; }
+            if (!Online && Authority) ResetRide(false);
+        }
+        private void OnDisable() { Active.Remove(this); foreach (var actor in _riders) Release(actor); }
+        public override void Spawned() { if (HasStateAuthority && Configured) { ResetRide(false); Publish(); } }
+        public static bool TryBoardHint(StageActor actor, out Vector3 point)
+        {
+            point = default;
+            if (actor == null || !actor.Available || actor.Slot is < 0 or > 1 ||
+                actor.GetComponent<PlayerController>().Motor.MovementLocked) return false;
+            foreach (var flow in Active)
+            {
+                if (!flow.Configured || flow.CurrentPhase != BranchRidePhase.Boarding ||
+                    ((flow.Online ? flow.RiderMask : flow._mask) & (1 << actor.Slot)) != 0 ||
+                    Vector3.Distance(actor.transform.position, flow.Position) > flow._boardRange) continue;
+                point = flow.Position;
+                return true;
+            }
+            return false;
         }
         public static bool TryBoard(StageActor actor, out string feedback)
         {
             feedback = null;
+            if (actor == null || !actor.Available || actor.Slot < 0 || actor.Slot > 1) return false;
             foreach (var flow in Active)
             {
-                if (!flow.Authority || flow._complete || flow._segment != 0 || flow._distance > 0) continue;
-                if (Vector3.Distance(actor.transform.position, flow._talisman.position) > flow._boardRange) continue;
+                if (!flow.Authority || !flow.Configured || flow._phase != BranchRidePhase.Boarding) continue;
                 int slot = actor.Slot;
-                if (slot < 0 || slot > 1) continue;
-                if (flow._riders[slot] == actor) { feedback = flow._boardText; return true; }
-                if (flow._riders[slot] != null || actor.GetComponent<PlayerController>().Motor.MovementLocked) continue;
+                if (flow._riders[slot] == actor)
+                {
+                    feedback = flow._contactRemaining[slot] > 0f ? "부적에 오르는 중입니다." : flow._boardText;
+                    return true;
+                }
+                if (flow._riders[slot] != null || Vector3.Distance(actor.transform.position, flow._carrierPosition) > flow._boardRange) continue;
+                var controller = actor.GetComponent<PlayerController>();
+                if (controller == null || controller.Motor.MovementLocked) continue;
                 flow._riders[slot] = actor;
                 flow._mask |= 1 << slot;
-                if (flow.Online) flow.RiderMask = flow._mask;
-                flow.Carry(actor, slot);
-                feedback = flow._boardText;
+                var animation = actor.GetComponent<SodamAnimationPresentation>();
+                var profile = animation != null ? animation.Profile : null;
+                var boardPose = profile?.Find(SodamPose.TalismanBoard);
+                float boarding = boardPose?.durationSeconds ?? 0;
+                var character = actor.GetComponent<PlayerCharacterPresentation>();
+                if (character != null && !character.IsSodamActive)
+                    boarding += profile?.Find(SodamPose.TalismanKneel)?.durationSeconds ?? 0;
+                flow._boardingRemaining[slot] = boarding + flow._boardingAnimationGraceSeconds;
+                flow._contactRemaining[slot] = boardPose?.ContactTime ?? 0f;
+                controller.Motor.SetMovementLock(flow, true);
+                if (boarding > 0f)
+                {
+                    actor.Abilities.Sap?.Cancel();
+                    actor.Abilities.SetInputLock(flow, true);
+                }
+                if (flow._contactRemaining[slot] <= 0f) flow.Carry(actor, slot);
+                flow.Publish();
+                feedback = flow._contactRemaining[slot] > 0f ? "부적에 오르는 중입니다." : flow._boardText;
                 return true;
             }
             return false;
@@ -84,95 +183,175 @@ namespace Herbalist.Levels
         public override void FixedUpdateNetwork() { if (HasStateAuthority) Tick(Runner.DeltaTime); }
         private void Update()
         {
+            if (!Configured) return;
             if (!Online && Authority) Tick(Time.deltaTime);
-            Present(Online ? Segment : _segment, Online ? SegmentDistance : _distance,
-                    Online ? BranchMask : _branchMask, Online ? StoneClock : _stoneClock);
-            if (_endingPanel != null) _endingPanel.SetActive(Online ? Complete : _complete);
+            if (!Herbalist.GameUI.GameplayPause.IsPaused) _failureBanner = Mathf.Max(0, _failureBanner - Time.deltaTime);
+            Present();
         }
-        private int _branchMask;
         public void Tick(float dt)
         {
-            if (!Authority || Herbalist.GameUI.GameplayPause.IsPaused || _route == null || _route.Length < 2) return;
-            for (int i = 0; i < _riders.Length; i++)
-                if ((_mask & (1 << i)) != 0 && (_riders[i] == null || !_riders[i].Available)) { ResetRide(); break; }
-            for (int i = 0; i < _targets.Length; i++)
+            if (!Authority || !Configured || Herbalist.GameUI.GameplayPause.IsPaused || dt <= 0) return;
+            RecoverUnmountedActors();
+            while (dt > 0) { float step = Mathf.Min(.02f, dt); Simulate(step); dt -= step; }
+            Publish();
+        }
+        private void Simulate(float dt)
+        {
+            for (int i = 0; i < 2; i++)
+                if ((_mask & (1 << i)) != 0 && (_riders[i] == null || !_riders[i].Available)) { ResetRide(true); return; }
+            if (_phase == BranchRidePhase.Complete) return;
+            if (_phase == BranchRidePhase.Falling)
             {
-                float hit = _targets[i].Consume();
-                _targetDry[i] = hit > 0 ? 0 : _targetDry[i] + dt;
-                if (!_targetArmed[i] && _targetDry[i] >= _targetRearmDelay) _targetArmed[i] = true;
-                if (!_targetArmed[i]) continue;
-                _charges[i] += hit;
-                if (_charges[i] < _targetCharge) continue;
-                _charges[i] = 0;
-                _targetArmed[i] = false;
-                _branchMask ^= 1 << i;
+                _fallTime += dt;
+                _carrierPosition = _fallOrigin + Vector3.down * (.5f * _dropGravity * _fallTime * _fallTime);
+                CarryRiders();
+                if (_fallTime >= _failureDuration) ResetRide(true);
+                return;
             }
-            if (_mask == 3 && !_complete)
+            for (int i = 0; i < 4; i++)
             {
-                _stoneClock += dt;
-                // Four targets align successive branches before the carrier passes each gap.
-                bool gateOpen = _segment >= _targets.Length || (_branchMask & (1 << _segment)) != 0;
-                if (_stopSocket == null || !_stopSocket.HasLeaf)
+                if (_switches[i].ConsumeActivation(dt)) _branchMask ^= 1 << i;
+                _turns[i] = Mathf.MoveTowards(_turns[i], (_branchMask & (1 << i)) != 0 ? 1 : 0, dt / _switches[i].RotationDuration);
+                _switches[i].Present(_turns[i]);
+            }
+            if (_phase != BranchRidePhase.Riding)
+            {
+                for (int i = 0; i < 2; i++)
                 {
-                    if (gateOpen) _distance += _speed * dt;
-                    float length = Vector3.Distance(_route[_segment].position, _route[_segment + 1].position);
-                    if (_distance >= length)
+                    var actor = _riders[i];
+                    if (actor == null) continue;
+                    if (_contactRemaining[i] > 0f)
                     {
-                        _distance -= length;
-                        _segment++;
-                        if (_segment >= _route.Length - 1) { _segment = _route.Length - 2; _distance = Vector3.Distance(_route[_segment].position, _route[_segment + 1].position); _complete = true; }
+                        _contactRemaining[i] = Mathf.Max(0f, _contactRemaining[i] - dt);
+                        if (_contactRemaining[i] <= 0f && !Online)
+                            Teleport(actor, RiderPosition(i));
                     }
+                    if (_boardingRemaining[i] <= 0f) continue;
+                    _boardingRemaining[i] = Mathf.Max(0f, _boardingRemaining[i] - dt);
+                    if (_boardingRemaining[i] <= 0f) actor.Abilities.SetInputLock(this, false);
                 }
-                Present(_segment, _distance, _branchMask, _stoneClock);
-                for (int i = 0; i < 2; i++) Carry(_riders[i], i);
-                if (StoneStrike()) ResetRide();
+                CarryRiders();
+                if (_mask == 3 && _boardingRemaining[0] <= 0 && _boardingRemaining[1] <= 0)
+                    _phase = BranchRidePhase.Riding;
+                return;
             }
-            if (Online)
-            {
-                RiderMask = _mask; Segment = _segment; SegmentDistance = _distance;
-                BranchMask = _branchMask; StoneClock = _stoneClock; Complete = _complete;
-            }
+            GatherLeaves();
+            Vector3 previous = _carrierPosition;
+            _blocked = false;
+            Advance(dt);
+            float previousClock = _stoneClock;
+            _stoneClock += dt;
+            if (_phase == BranchRidePhase.Riding) ResolveStones(previousClock, previous);
+            CarryRiders();
         }
-        private bool StoneStrike()
+        private void RecoverUnmountedActors()
         {
-            for (int i = 0; i < _stones.Length; i++)
+            if (_phase == BranchRidePhase.Complete || _respawns == null) return;
+            foreach (var actor in StageActor.All)
             {
-                float crossing = Mathf.Repeat(_stoneClock + i * _stonePeriod * .5f, _stonePeriod);
-                if (crossing > _stoneCrossingTime) continue;
-                if (Vector3.Distance(_stones[i].position, _talisman.position) > _collisionRadius) continue;
-                if (_stopSocket != null && _stopSocket.HasLeaf)
+                if (actor == null || !actor.Available || actor.Slot < 0 || actor.Slot >= _respawns.Length) continue;
+                int slot = actor.Slot;
+                if ((_riders[slot] == actor && _contactRemaining[slot] <= 0f) || _respawns[slot] == null ||
+                    actor.transform.position.y >= _respawns[slot].position.y - _unmountedFallMargin) continue;
+                if (_riders[slot] == actor)
                 {
-                    _stopSocket.InstalledLeaf.BeginReturn();
-                    _stoneClock += _stoneCrossingTime;
-                    return false;
+                    Release(actor);
+                    _riders[slot] = null;
+                    _mask &= ~(1 << slot);
+                    _contactRemaining[slot] = _boardingRemaining[slot] = 0f;
                 }
-                return true;
+                actor.Abilities?.Sap?.Cancel();
+                Teleport(actor, _respawns[slot].position);
             }
-            return false;
         }
-        private void Present(int segment, float distance, int branches, float clock)
+        private void GatherLeaves()
         {
-            segment = Mathf.Clamp(segment, 0, _route.Length - 2);
-            Vector3 a = _route[segment].position, b = _route[segment + 1].position;
-            _talisman.position = Vector3.MoveTowards(a, b, Mathf.Max(0, distance));
-            for (int i = 0; i < _branches.Length; i++)
-                _branches[i].localRotation = Quaternion.Euler(0, (branches & (1 << i)) != 0 ? 0 : 75, 0);
-            for (int i = 0; i < _stones.Length; i++)
+            _leaves.Clear();
+            if (_leafSurfaces == null) return;
+            foreach (var target in _leafSurfaces) if (target != null) target.CopyInstalledLeavesTo(_leaves);
+        }
+        private void Advance(float dt)
+        {
+            var current = _track[_segment];
+            int nextIndex = FindConnectedExit(current);
+            Vector3 outgoing = Vector3.zero;
+            if (nextIndex >= 0 && !_track[nextIndex].IsDrop)
+                _track[nextIndex].Sample(0, out outgoing);
+            var result = _carrier.Step(current, _distance, _carrierRotation, dt,
+                _speed, _dropGravity, _carrierHeight, _leafStopRadius, _leaves, _incomingDirection, outgoing);
+            _distance = result.distance; _carrierPosition = result.position;
+            if (_segment == 0 && _entryClearanceLift > 0f)
             {
-                float crossing = Mathf.Repeat(clock + i * _stonePeriod * .5f, _stonePeriod);
-                _stones[i].gameObject.SetActive(crossing <= _stoneCrossingTime);
-                if (crossing <= _stoneCrossingTime)
-                {
-                    Vector3 p = _stones[i].parent.position;
-                    p.y += Mathf.Lerp(8, -3, crossing / _stoneCrossingTime);
-                    _stones[i].position = p;
-                }
+                float entryProgress = _distance / Mathf.Max(.01f, current.Length);
+                _carrierPosition.y += Mathf.SmoothStep(_entryClearanceLift, 0f, entryProgress);
+            }
+            _carrierRotation = result.rotation; _blocked = result.blocked;
+            if (!result.atEnd) return;
+            if (current.IsFinish) { FinishRide(); return; }
+            if (nextIndex < 0) { FailRide(); return; }
+
+            _incomingDirection = Vector3.zero;
+            if (!current.IsDrop) current.Sample(current.Length, out _incomingDirection);
+            _segment = nextIndex;
+            _distance = 0;
+        }
+
+        private int FindConnectedExit(BranchRideTrack current)
+        {
+            // The rotating tip selects a physical A/B branch, rather than closing an abstract gate.
+            int nextIndex = -1;
+            float nearest = _connectionTolerance;
+            foreach (var candidate in current.Exits)
+            {
+                if (candidate == null) continue;
+                float gap = Vector3.Distance(current.End, candidate.Start);
+                if (gap > nearest) continue;
+                int index = System.Array.IndexOf(_track, candidate);
+                if (index < 0) continue;
+                nearest = gap;
+                nextIndex = index;
+            }
+            return nextIndex;
+        }
+        private void ResolveStones(float previousClock, Vector3 previousCarrier)
+        {
+            if (_hazards == null) return;
+            foreach (var stone in _hazards)
+            {
+                if (stone == null || !stone.Sample(_stoneClock, out var now)) continue;
+                bool continuous = stone.Sample(previousClock, out var before) && stone.CycleAt(previousClock) == stone.CycleAt(_stoneClock);
+                if (!continuous) before = now;
+                foreach (var leaf in _leaves)
+                    if (leaf.Installed && BranchRideTrack.DistanceToSegment(leaf.ContactPoint, before, now) <= stone.Radius + .25f)
+                        leaf.BeginReturn();
+                if (BranchRideTrack.DistanceToSegment(Vector3.zero, before - previousCarrier, now - _carrierPosition) <= stone.Radius + _collisionRadius)
+                { FailRide(); return; }
             }
         }
+        private void FailRide()
+        {
+            if (_phase != BranchRidePhase.Riding) return;
+            _phase = BranchRidePhase.Falling; _fallOrigin = _carrierPosition; _fallTime = 0; _blocked = false;
+        }
+        private void FinishRide()
+        {
+            _phase = BranchRidePhase.Complete; _blocked = false;
+            for (int i = 0; i < 2; i++)
+            {
+                var actor = _riders[i]; Release(actor);
+                if (actor != null && _dismounts != null && i < _dismounts.Length) Teleport(actor, _dismounts[i].position);
+                _riders[i] = null;
+            }
+            _mask = 0;
+        }
+        private Vector3 RiderPosition(int slot)
+            => Position + Rotation * _riderOffsets[slot];
+
+        private void CarryRiders() { for (int i = 0; i < 2; i++) if (_contactRemaining[i] <= 0f) Carry(_riders[i], i); }
         private void Carry(StageActor actor, int slot)
         {
             if (actor == null) return;
-            Vector3 point = _talisman.TransformPoint(_riderOffsets[slot]);
+            Vector3 point = _carrierPosition + _carrierRotation * _riderOffsets[slot];
             var net = actor.GetComponent<NetworkPlayer>();
             if (net != null && net.Object != null && net.Object.IsValid) net.SetTransportAuthoritatively(true, point);
             else actor.GetComponent<PlayerController>().SetTransport(this, point);
@@ -180,33 +359,57 @@ namespace Herbalist.Levels
         private void Release(StageActor actor)
         {
             if (actor == null) return;
-            actor.GetComponent<PlayerController>().ClearTransport(this);
+            var controller = actor.GetComponent<PlayerController>();
+            controller.ClearTransport(this);
+            controller.Motor.SetMovementLock(this, false);
+            actor.Abilities.SetInputLock(this, false);
             var net = actor.GetComponent<NetworkPlayer>();
-            if (net != null && net.Object != null && net.Object.IsValid && net.HasStateAuthority)
-                net.SetTransportAuthoritatively(false, actor.transform.position);
+            if (net != null && net.Object != null && net.Object.IsValid && net.HasStateAuthority) net.SetTransportAuthoritatively(false, actor.transform.position);
         }
-        private void ResetRide()
+        private static void Teleport(StageActor actor, Vector3 position)
+        {
+            var net = actor.GetComponent<NetworkPlayer>();
+            if (net != null && net.Object != null && net.Object.IsValid) net.TeleportAuthoritatively(position);
+            else actor.GetComponent<PlayerController>().Motor.Teleport(position);
+        }
+        private void ResetRide(bool failure)
         {
             for (int i = 0; i < 2; i++)
             {
-                var actor = _riders[i];
-                Release(actor);
+                var actor = _riders[i]; Release(actor);
                 if (actor != null)
                 {
-                    Vector3 spawn = _route[0].position + new Vector3(i == 0 ? -2 : 2, .6f, -3);
-                    var net = actor.GetComponent<NetworkPlayer>();
-                    if (net != null && net.Object != null && net.Object.IsValid) net.TeleportAuthoritatively(spawn);
-                    else actor.GetComponent<PlayerController>().Motor.Teleport(spawn);
+                    actor.Abilities.Leaf.Clear(); actor.Abilities.Sap?.Clear();
+                    if (_respawns != null && i < _respawns.Length) Teleport(actor, _respawns[i].position);
                 }
                 _riders[i] = null;
             }
-            _mask = _segment = _branchMask = 0; _distance = _stoneClock = 0; _complete = false;
-            for (int i = 0; i < _charges.Length; i++)
-            {
-                _charges[i] = _targetDry[i] = 0; _targetArmed[i] = true; _targets[i].Consume();
-            }
-            if (_stopSocket != null && _stopSocket.HasLeaf) _stopSocket.InstalledLeaf.BeginReturn();
-            Present(0, 0, 0, 0);
+            GatherLeaves(); foreach (var leaf in _leaves) if (leaf != null) leaf.Finish();
+            if (failure) { _failures++; _failureBanner = 4; }
+            _mask = _segment = _branchMask = 0; _distance = _stoneClock = _fallTime = 0;
+            _incomingDirection = Vector3.zero;
+            System.Array.Clear(_boardingRemaining, 0, _boardingRemaining.Length);
+            _contactRemaining = Vector2.zero;
+            _phase = BranchRidePhase.Boarding; _turns = Vector4.zero; _blocked = false;
+            foreach (var toggle in _switches) { toggle.ResetInput(); toggle.Present(0); }
+            _carrierPosition = _track[0].Sample(0, out var heading) + Vector3.up * (_carrierHeight + _entryClearanceLift);
+            _carrierRotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(heading, Vector3.up));
+            Present();
+        }
+        private void Publish()
+        {
+            if (!Online || !HasStateAuthority) return;
+            RiderMask = _mask; ContactRemaining = _contactRemaining; Segment = _segment; SegmentDistance = _distance; BranchMask = _branchMask;
+            BranchTurns = _turns; StoneClock = _stoneClock; Phase = _phase;
+            CarrierPosition = _carrierPosition; CarrierRotation = _carrierRotation; Blocked = _blocked; Failures = _failures;
+        }
+        private void Present()
+        {
+            Vector4 turns = Online ? BranchTurns : _turns;
+            for (int i = 0; i < _switches.Length; i++) _switches[i].Present(turns[i]);
+            _talisman.SetPositionAndRotation(Position, Rotation);
+            if (_hazards != null) foreach (var stone in _hazards) if (stone != null) stone.Present(PresentationStoneClock, CurrentPhase == BranchRidePhase.Riding);
+            if (_endingPanel != null) _endingPanel.SetActive(CurrentPhase == BranchRidePhase.Complete);
         }
     }
 }
