@@ -36,6 +36,7 @@ namespace Herbalist.Player
         private GameObject _activeRoot;
         private Animator _activeAnimator;
         public Animator ActiveAnimator => _activeAnimator;
+        public GameObject ActiveCharacterRoot => _activeRoot;
         public bool IsSodamActive => _activeRoot != null && _activeRoot == characterRoot;
 
         private void Awake()
