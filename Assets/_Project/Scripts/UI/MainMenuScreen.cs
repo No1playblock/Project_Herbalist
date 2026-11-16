@@ -23,7 +23,7 @@ namespace Herbalist.GameUI
         {
             AudioListener.volume=UserOptions.Volume;
             create.onClick.AddListener(()=>OpenEntry(true)); join.onClick.AddListener(()=>OpenEntry(false));
-            entryBack.onClick.AddListener(()=>{ entering=false; Session.ClearError(); });
+            entryBack.onClick.AddListener(()=>{ entering=false; Session.ClearError(); TitleButtonHover.ClearSelection(); });
             confirm.onClick.AddListener(Connect); roomBack.onClick.AddListener(Leave);
             start.onClick.AddListener(()=>RoomControl.Instance?.StartGame());
             copy.onClick.AddListener(()=>GUIUtility.systemCopyBuffer=Session.RoomName);
@@ -33,9 +33,14 @@ namespace Herbalist.GameUI
             Cursor.lockState=CursorLockMode.None; Cursor.visible=true;
         }
         private void OpenEntry(bool make)
-        { creating=make; entering=true; Session.ClearError(); code.text=make?System.Guid.NewGuid().ToString("N").Substring(0,6):""; }
+        {
+            creating=make; entering=true; Session.ClearError();
+            code.text=make?System.Guid.NewGuid().ToString("N").Substring(0,6):"";
+            var actionLabel=confirm.GetComponentInChildren<TMP_Text>(true);
+            if(actionLabel!=null) actionLabel.text=make?"방 만들기":"참가하기";
+        }
         private async void Connect() { await Session.ConnectAsync(code.text,creating); }
-        private async void Leave() { entering=false; await Session.LeaveAsync(); }
+        private async void Leave() { entering=false; TitleButtonHover.ClearSelection(); await Session.LeaveAsync(); }
         private void Solo()
         {
             if(Session.HasNetworkSession || soloLoading)return;

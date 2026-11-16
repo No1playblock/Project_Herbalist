@@ -12,8 +12,14 @@ namespace Herbalist.GameUI
         {
             volume.onValueChanged.AddListener(ChangeVolume);
             sensitivity.onValueChanged.AddListener(ChangeLook);
-            close.onClick.AddListener(()=>gameObject.SetActive(false));
+            close.onClick.AddListener(CloseOptions);
         }
+        private void CloseOptions()
+        {
+            gameObject.SetActive(false);
+            TitleButtonHover.ClearSelection();
+        }
+
         private void OnEnable() { volume.SetValueWithoutNotify(UserOptions.Volume); sensitivity.SetValueWithoutNotify(UserOptions.LookMultiplier); Refresh(); }
         private void ChangeVolume(float v) { UserOptions.SetVolume(v); Refresh(); }
         private void ChangeLook(float v) { UserOptions.SetLook(v); Refresh(); }
