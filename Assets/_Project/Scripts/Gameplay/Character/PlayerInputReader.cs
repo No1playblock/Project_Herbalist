@@ -13,7 +13,9 @@ namespace Herbalist.Player
         private InputAction moveAction, lookAction, orbitAction, jumpAction, zoomAction;
         private Vector2 _previousMove;
         public event System.Action<Vector2> MovePerformed;
+        public event System.Action JumpPerformed;
         public uint JumpSequence { get; private set; }
+        public string JumpBinding => jumpAction != null ? jumpAction.GetBindingDisplayString() : string.Empty;
         private bool active;
         public Vector2 Move => active && !Herbalist.GameUI.GameplayPause.IsPaused ? moveAction.ReadValue<Vector2>() : Vector2.zero;
         public Vector2 Look => active && Herbalist.Presentation.GameplayCursor.AllowsPointerInput && (!requireOrbitButton || orbitAction.IsPressed()) ? lookAction.ReadValue<Vector2>() : Vector2.zero;
@@ -53,7 +55,12 @@ namespace Herbalist.Player
             if (active) { moveAction.Enable(); lookAction.Enable(); orbitAction.Enable(); jumpAction.Enable(); zoomAction.Enable(); }
             else { moveAction.Disable(); lookAction.Disable(); orbitAction.Disable(); jumpAction.Disable(); zoomAction.Disable(); }
         }
-        private void OnJump(InputAction.CallbackContext context) { if (active && !Herbalist.GameUI.GameplayPause.IsPaused) JumpSequence++; }
+        private void OnJump(InputAction.CallbackContext context)
+        {
+            if (!active || Herbalist.GameUI.GameplayPause.IsPaused) return;
+            JumpSequence++;
+            JumpPerformed?.Invoke();
+        }
         private void OnDisable() { if (moveAction != null) SetInputActive(false); }
         private void OnDestroy() { moveAction?.Dispose(); lookAction?.Dispose(); orbitAction?.Dispose(); jumpAction?.Dispose(); zoomAction?.Dispose(); }
     }

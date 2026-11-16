@@ -35,6 +35,26 @@
                     "interactions": "",
                     "initialStateCheck": false,
                     "priority": 0
+                },
+                {
+                    "name": "Recover",
+                    "type": "Button",
+                    "id": "446bb835-14ba-4a15-8885-e0b8cf6e14aa",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
+                    "name": "DialogueHistory",
+                    "type": "Button",
+                    "id": "8cf40cb1-cf69-481a-af4a-cfa54bb67859",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
                 }
             ],
             "bindings": [
@@ -62,12 +82,23 @@
                 },
                 {
                     "name": "",
-                    "id": "49a5c604-a642-4ec0-b9db-92a353420c56",
-                    "path": "<Keyboard>/g",
+                    "id": "4c9834c7-8de3-4a8f-8185-b5ca2a7a8704",
+                    "path": "<Keyboard>/r",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Drink",
+                    "action": "Recover",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "fd6e62d7-c1cc-46ac-98b1-bddae7cfa9c0",
+                    "path": "<Keyboard>/l",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "DialogueHistory",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

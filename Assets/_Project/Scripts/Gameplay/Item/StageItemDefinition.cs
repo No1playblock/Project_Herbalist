@@ -17,5 +17,8 @@ namespace Herbalist.StageOne
         [TextArea] public string appearance;
         [TextArea] public string harvestingMethod;
         public StageDirection[] harvestingSteps;
+        [Header("Gathering presentation")]
+        public Sprite plantedImage;
+        public Sprite[] gatheringFrames;
     }
 }

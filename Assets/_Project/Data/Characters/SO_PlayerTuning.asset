@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07991bc58431ce24e9b82ca096b06157, type: 3}
   m_Name: SO_PlayerTuning
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Player.PlayerTuning
+  characterScaleMultiplier: 1
   moveSpeed: 4.5
   gravity: 22
   terminalSpeed: 35
@@ -31,7 +32,7 @@ MonoBehaviour:
   cameraWallPadding: 0.1
   cameraObstacles:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 4194305
   headYawLimit: 75
   headPitchLimit: 90
   headTurnSpeed: 240

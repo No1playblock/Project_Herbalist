@@ -20,11 +20,13 @@ MonoBehaviour:
   rangeHeightMultiplier: 3.75
   capacity: 3
   lifetime: 5
-  range: 18
+  range: 25
   flightSpeed: 51.2
   returnSpeed: 51.2
+  maxReturnDuration: 1
+  flightSpinRevolutionsPerSecond: 2
   missTurnRadius: 4
-  installedScaleMultiplier: 3.2
+  installedScaleMultiplier: 2
   flyingVisualScaleMultiplier: 0.5
   curveWidth: 0
   collisionRadius: 0.256
@@ -32,8 +34,10 @@ MonoBehaviour:
   tipEmbedDepth: 0.384
   maxEmbedFraction: 0.1
   catchDistance: 0.2
+  catchAnticipationSeconds: 0.3
   cooldown: 0.25
+  throwPreparationSeconds: 0.25
   launchOffset: {x: 0, y: 1.04, z: 0.4}
   hitMask:
     serializedVersion: 2
-    m_Bits: 4097
+    m_Bits: 4460545

@@ -12,6 +12,8 @@ namespace Herbalist.GameUI
         [TextArea] public string gatherSodamIntro;
         public string codexStepsLabel;
         public string gatherSodamProgress;
+        public string gatherDuyeongInputHint;
+        public string gatherCompleteText;
         public string craftSodamTitle;
         [TextArea] public string craftSodamBodyFormat;
         public string craftSodamProgressFormat;
@@ -33,6 +35,16 @@ namespace Herbalist.GameUI
         public string brewingGaugeFormat;
         public string brewingTimeFormat;
         public string fanPrompt;
+        public string fanActionText = "부채질하기";
         public string stepUp, stepLeft, stepDown, stepRight;
+
+        public string DirectionLabel(Herbalist.StageOne.StageDirection step) => step switch
+        {
+            Herbalist.StageOne.StageDirection.Up => stepUp,
+            Herbalist.StageOne.StageDirection.Left => stepLeft,
+            Herbalist.StageOne.StageDirection.Down => stepDown,
+            Herbalist.StageOne.StageDirection.Right => stepRight,
+            _ => string.Empty
+        };
     }
 }

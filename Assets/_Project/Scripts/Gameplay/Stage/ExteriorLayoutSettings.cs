@@ -33,8 +33,8 @@ namespace Herbalist.Levels
         public Vector3[] spawnOffsets;
         public Vector3[] herbOffsets;
         public float summitHeight = 41;
-        public float clothDriveAcceleration = 120;
-        [Min(0)] public float clothPumpImpulseSeconds = .15f;
+        public float clothDriveAcceleration = 90;
+        [Min(0)] public float clothPumpImpulseSeconds = .2f;
         [Range(0, 30)] public float clothBendMaxAngle = 30;
         [Min(.01f)] public float clothBendProbeRadius = .08f;
         [Min(.1f)] public float clothMinBendSegmentLength = 1f;

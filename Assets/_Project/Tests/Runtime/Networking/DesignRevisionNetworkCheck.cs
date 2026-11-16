@@ -69,6 +69,7 @@ namespace Herbalist.Tests
                     Teleport(actor, socket.SocketPosition + Vector3.back * 2);
                     Physics.SyncTransforms();
                     Check(actor.Abilities.Leaf.TryThrowAtTarget(new Ray(socket.SocketPosition + Vector3.up * 3, Vector3.down)), "single leaf authoritative throw");
+                    await Wait(() => actor.Abilities.Leaf.ActiveCount > 0, "leaf released after throw preparation", 5);
                     var leaf = Read<System.Collections.Generic.List<LeafProjectile>>(actor.Abilities.Leaf, "leaves").Last();
                     typeof(LeafProjectile).GetMethod("Install", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(leaf, new object[] { socket, socket.SocketPosition, Vector3.up, Vector3.forward });
                 }
@@ -135,13 +136,9 @@ namespace Herbalist.Tests
                     }
                     if (i < boards.Length - 1) await Wait(() => mazeFlow.CurrentMaze > i, "same rafts descend " + i);
                 }
-                await Wait(() => UnityEngine.Object.FindFirstObjectByType<RotatingAltar>() != null && session.State == LobbyState.Playing && NetworkPlayer.Local != null, "altar transition");
-                Check(NetworkPlayer.Local.GetComponent<PlayerAbilityController>().Kind == (host ? PlayerAbilityKind.Leaf : PlayerAbilityKind.Sap), "ability retained at altar");
-                var altar = UnityEngine.Object.FindFirstObjectByType<RotatingAltar>(); var rings = Read<AltarRing[]>(altar, "_rings");
-                if (host) Read<SapInjectionPort>(altar, "_inlet").Inject(1.1f);
-                float initialAngle = rings[0].CurrentAngle;
-                await Wait(() => Mathf.Abs(Mathf.DeltaAngle(initialAngle, rings[0].CurrentAngle)) > 2, "altar rotation replicated");
-                Debug.Log("[DesignRevisionNetworkCheck] PASS " + (host ? "host" : "client") + ": exterior gathering/crafting/potions, injected entrance, ability-preserving scene transitions, remote R/WASD, persistent raft descent and altar rotation.");
+                await Wait(() => UnityEngine.Object.FindFirstObjectByType<BranchRideFlow>() != null && session.State == LobbyState.Playing && NetworkPlayer.Local != null, "branch ride transition");
+                Check(NetworkPlayer.Local.GetComponent<PlayerAbilityController>().Kind == (host ? PlayerAbilityKind.Leaf : PlayerAbilityKind.Sap), "ability retained at branch ride");
+                Debug.Log("[DesignRevisionNetworkCheck] PASS " + (host ? "host" : "client") + ": exterior gathering/crafting/potions, injected entrance, ability-preserving scene transitions, remote R/WASD, persistent raft descent and branch ride arrival.");
                 // Client remains connected until the Host has observed the final state.
                 await Task.Delay(host ? 1000 : 2500);
                 await session.LeaveAsync(); Application.Quit(0);

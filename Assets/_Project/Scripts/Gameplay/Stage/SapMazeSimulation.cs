@@ -6,7 +6,8 @@ namespace Herbalist.Levels
     public static class SapMazeSimulation
     {
         public static MazeRunState Initial(SapMazeDefinition d,int attempt=0) =>
-            new MazeRunState { From=d.startNode,To=d.startNode,Volume=d.initialVolume,Attempt=attempt,Phase=MazePhase.Running };
+            new MazeRunState { From=d.startNode,To=d.startNode,Volume=d.initialVolume,
+                Attempt=attempt,Phase=MazePhase.Running };
         public static bool AtLeak(SapMazeDefinition d,MazeRunState s,int index) =>
             s.Phase==MazePhase.Running && Vector2.Distance(d.Position(s),d.nodes[d.leakNodes[index]])<=d.leakRadius;
         public static void Tick(SapMazeDefinition d,ref MazeRunState s,Vector2 input,float dt,Func<int,bool> blocked)
@@ -27,7 +28,11 @@ namespace Herbalist.Levels
             for(int tick=0;tick<steps && s.Phase==MazePhase.Running;tick++)
             {
                 for(int i=0;i<d.leakNodes.Length;i++)
-                    if(AtLeak(d,s,i) && !blocked(i))s.Volume=Mathf.Max(0,s.Volume-d.lossPerSecond*delta);
+                    if(AtLeak(d,s,i) && !blocked(i))
+                    {
+                        s.Volume=Mathf.Max(0,s.Volume-d.lossPerSecond*delta);
+                        break;
+                    }
                 if(s.Volume<=0){s.Phase=MazePhase.Retrying;s.RetryRemaining=d.retryDelay;return;}
                 if(input.magnitude<d.inputDeadzone)continue;
                 var direction=input.normalized;
@@ -49,7 +54,15 @@ namespace Herbalist.Levels
                 if(alignment < -d.directionThreshold){(s.From,s.To)=(s.To,s.From);s.Progress=1-s.Progress;alignment=-alignment;}
                 if(alignment<d.directionThreshold)continue;
                 s.Progress=Mathf.Min(1,s.Progress+d.speed*delta/Vector2.Distance(d.nodes[s.From],d.nodes[s.To]));
-                if(s.Progress>=1 || Mathf.Approximately(s.Progress,1)){s.From=s.To;s.Progress=0;if(s.From==d.goalNode)s.Phase=MazePhase.Solved;}
+                if(s.Progress>=1 || Mathf.Approximately(s.Progress,1))
+                {
+                    s.From=s.To;s.Progress=0;
+                    if(s.From==d.goalNode)
+                    {
+                        if(!d.useRefillVolumeRules || s.Volume>=d.requiredVolume)s.Phase=MazePhase.Solved;
+                        else { s.Phase=MazePhase.Retrying; s.RetryRemaining=d.retryDelay; }
+                    }
+                }
             }
         }
     }

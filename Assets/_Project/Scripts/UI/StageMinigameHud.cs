@@ -16,6 +16,7 @@ namespace Herbalist.GameUI
         [SerializeField] private TMP_Text body;
         [SerializeField] private TMP_Text progress;
         [SerializeField] private GameObject brewingHud;
+        [SerializeField] private BrewingPotRattle _potRattle;
         [SerializeField] private Image brewingGaugeFill;
         [SerializeField] private RectTransform targetTemperatureBand;
         [SerializeField] private RectTransform currentTemperatureMarker;
@@ -26,23 +27,37 @@ namespace Herbalist.GameUI
         [SerializeField] private TMP_Text brewingTime;
         [SerializeField] private GameObject fanPrompt;
         [SerializeField] private TMP_Text fanPromptText;
+        [SerializeField] private ControlHintView _fanHint;
         [SerializeField] private StageMinigameUiText copy;
+        [SerializeField] private StageGatheringView _gatheringView;
         private PlayerHud _hud;
         private PlayScreenController _screen;
+        private bool _personalViewOverride;
         private void Awake() { _hud = GetComponent<PlayerHud>(); _screen = FindFirstObjectByType<PlayScreenController>(); }
         private void Update()
         {
             var flow = StageOneFlow.Instance;
             var view = _screen != null ? _screen.ViewForSlot(_hud.slot) : null;
-            bool visible = copy != null && flow != null && flow.Minigame != StageMinigameKind.None &&
+            bool local = copy != null && flow != null &&
                 view != null && view.GetComponent<PlayerController>().LocallyControlled;
-            bool gathering = visible && flow.Minigame == StageMinigameKind.Gathering;
-            bool crafting = visible && flow.Minigame == StageMinigameKind.Crafting;
-            if (panel != null) panel.SetActive(gathering);
+            var actor = local ? view.GetComponent<StageActor>() : null;
+            var role = actor != null ? flow.RoleFor(actor) : CharacterRole.Duyeong;
+            bool gathering = actor != null && flow.Minigame == StageMinigameKind.Gathering;
+            bool crafting = actor != null && flow.Minigame == StageMinigameKind.Crafting;
+            bool illustratedGathering = _gatheringView != null &&
+                _gatheringView.Present(actor != null ? flow : null, role, copy);
+            if (_potRattle != null)
+                _potRattle.Present(flow, crafting ? actor : null, crafting);
+            bool personal = crafting || illustratedGathering;
+            if (_screen != null && _personalViewOverride != personal)
+            {
+                _personalViewOverride = personal;
+                _screen.SetOverride(this, personal ? PlayScreenMode.Personal : (PlayScreenMode?)null);
+            }
+            bool legacyGathering = gathering && _gatheringView == null && panel != null;
+            if (panel != null) panel.SetActive(legacyGathering);
             if (brewingHud != null) brewingHud.SetActive(crafting);
-            if (!visible) return;
-            var role = flow.RoleFor(view.GetComponent<StageActor>());
-            if (gathering)
+            if (legacyGathering)
             {
                 var rect = (RectTransform)panel.transform;
                 bool small = role == CharacterRole.Duyeong;
@@ -84,7 +99,10 @@ namespace Herbalist.GameUI
             if (brewingGaugeLabel != null) brewingGaugeLabel.text = string.Format(copy.brewingGaugeFormat, flow.CraftingGauge);
             if (brewingTime != null) brewingTime.text = string.Format(copy.brewingTimeFormat, Mathf.Max(0, recipe.timeLimit - flow.MinigameTime));
             if (fanPrompt != null) fanPrompt.SetActive(sodam);
-            if (fanPromptText != null) fanPromptText.text = copy.fanPrompt;
+            var craftingView = _screen != null ? _screen.ViewForSlot(_hud.slot) : null;
+            var craftingActor = craftingView != null ? craftingView.GetComponent<StageActor>() : null;
+            if (_fanHint != null) _fanHint.Present(craftingActor != null ? craftingActor.FanBinding : string.Empty, copy.fanActionText);
+            else if (fanPromptText != null) fanPromptText.text = copy.fanPrompt;
             if (targetTemperatureBand != null)
             {
                 targetTemperatureBand.gameObject.SetActive(sodam);
@@ -118,10 +136,13 @@ namespace Herbalist.GameUI
                 }
             }
         }
-        private string DirectionLabel(StageDirection step) => step switch
+        private string DirectionLabel(StageDirection step) => copy.DirectionLabel(step);
+        private void OnDisable()
         {
-            StageDirection.Up => copy.stepUp, StageDirection.Left => copy.stepLeft,
-            StageDirection.Down => copy.stepDown, _ => copy.stepRight
-        };
+            if (_gatheringView != null) _gatheringView.Hide();
+            if (!_personalViewOverride) return;
+            _personalViewOverride = false;
+            if (_screen != null) _screen.SetOverride(this, null);
+        }
     }
 }

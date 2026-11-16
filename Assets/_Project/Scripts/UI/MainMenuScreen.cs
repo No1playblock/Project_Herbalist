@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Herbalist.Networking;
+using UnityEngine.SceneManagement;
 namespace Herbalist.GameUI
 {
     [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "Herbalist.GameUI", sourceAssembly: "Assembly-CSharp", sourceClassName: "MainMenuUI")]
@@ -11,11 +12,16 @@ namespace Herbalist.GameUI
         public GameObject home, entry, room, loading, options;
         public Button create, join, confirm, entryBack, roomBack, start, copy, solo, quit, openOptions;
         public Button[] characterButtons;
+        [SerializeField] private GameObject[] _availableRoleArrows;
+        [SerializeField] private GameObject[] _occupiedRoleArrows;
         public TMP_Text entryTitle, message, roomCode, readiness, loadingText;
         public TMP_Text[] characterPlayers, characterLabels;
         public TMP_InputField code;
         public TMP_Text participantCount, unassignedPlayers;
         private bool creating, entering, soloLoading;
+        [SerializeField] private string _characterSelectScene;
+        private AsyncOperation _characterSelectOperation;
+        private GameObject[] _menuBackdrop;
         private FusionLobbySession Session => FusionLobbySession.Instance;
         private void Start()
         {
@@ -29,11 +35,22 @@ namespace Herbalist.GameUI
             openOptions.onClick.AddListener(()=>options.SetActive(true));
             for(int i=0;i<characterButtons.Length;i++) { int role=i; characterButtons[i].onClick.AddListener(()=>RoomControl.Instance.Select(RoomControl.Instance.LocalChoice==role?-1:role)); }
             Cursor.lockState=CursorLockMode.None; Cursor.visible=true;
+            _menuBackdrop = System.Array.FindAll(gameObject.scene.GetRootGameObjects(), root =>
+                root.activeSelf && (root.GetComponent<MainMenuLiveBackdrop>() != null ||
+                root.GetComponent<Light>() != null || root.name == "Stage01_MenuEnvironment" ||
+                root.GetComponent<UnityEngine.EventSystems.EventSystem>() != null));
         }
         private void OpenEntry(bool make)
         { creating=make; entering=true; Session.ClearError(); code.text=make?System.Guid.NewGuid().ToString("N").Substring(0,6):""; }
         private async void Connect() { await Session.ConnectAsync(code.text,creating); }
         private async void Leave() { entering=false; await Session.LeaveAsync(); }
+        internal void OpenRoomOptions() => options.SetActive(true);
+        internal bool RoomOptionsOpen => options.activeSelf;
+        internal void LeaveCharacterRoom()
+        {
+            options.SetActive(false);
+            Leave();
+        }
         private void Solo()
         {
             if(Session.HasNetworkSession || soloLoading)return;
@@ -49,11 +66,15 @@ namespace Herbalist.GameUI
             loadingText.text=state==LobbyState.Connecting?settings.connectingText:settings.loadingText;
             home.SetActive(!busy&&!entering&&(state==LobbyState.Idle||state==LobbyState.Error));
             entry.SetActive(!busy&&entering&&(state==LobbyState.Idle||state==LobbyState.Error));
-            room.SetActive(state==LobbyState.Waiting&&!busy);
+            bool showCharacterSelect = state == LobbyState.Waiting && !busy &&
+                !string.IsNullOrEmpty(_characterSelectScene);
+            UpdateCharacterSelect(showCharacterSelect);
+            room.SetActive(state==LobbyState.Waiting&&!busy&&!showCharacterSelect);
             entryTitle.text=creating?settings.createText:settings.joinText;
             message.text=state==LobbyState.Error?Session.Message:"";
             confirm.interactable=!busy&&!string.IsNullOrWhiteSpace(code.text);
             roomCode.text=string.Format(settings.roomFormat,Session.RoomName);
+            if (!room.activeSelf) return;
             var control=RoomControl.Instance;
             if(control==null)return;
             if(participantCount!=null)participantCount.text=string.Format(settings.participantsFormat,control.Players.Length);
@@ -67,9 +88,44 @@ namespace Herbalist.GameUI
             for(int i=0;i<characterButtons.Length;i++)
             {
                 int owner=control.Occupant(i);
+                if (_availableRoleArrows != null && i < _availableRoleArrows.Length && _availableRoleArrows[i] != null)
+                    _availableRoleArrows[i].SetActive(owner == 0);
+                if (_occupiedRoleArrows != null && i < _occupiedRoleArrows.Length && _occupiedRoleArrows[i] != null)
+                    _occupiedRoleArrows[i].SetActive(owner != 0);
                 characterButtons[i].interactable=owner==0||owner==control.LocalId;
                 characterLabels[i].text=owner==0?settings.selectText:owner==control.LocalId?settings.selectedText:settings.occupiedText;
                 characterPlayers[i].text=owner==0?settings.vacantText:string.Format(settings.playerFormat,owner)+(owner==control.LocalId?settings.mineSuffix:"");
+            }
+        }
+
+        private void UpdateCharacterSelect(bool show)
+        {
+            if (string.IsNullOrEmpty(_characterSelectScene) ||
+                (_characterSelectOperation != null && !_characterSelectOperation.isDone))
+                return;
+
+            var selectionScene = SceneManager.GetSceneByPath(_characterSelectScene);
+            if (show)
+            {
+                if (selectionScene.isLoaded)
+                    return;
+
+                foreach (var root in _menuBackdrop)
+                    root.SetActive(false);
+                _characterSelectOperation = SceneManager.LoadSceneAsync(_characterSelectScene, LoadSceneMode.Additive);
+            }
+            else if (selectionScene.isLoaded)
+            {
+                options.SetActive(false);
+                // Fusion owns the single-scene load when the match starts.
+                if (Session.State != LobbyState.Loading && Session.State != LobbyState.Playing)
+                    _characterSelectOperation = SceneManager.UnloadSceneAsync(selectionScene);
+            }
+            else
+            {
+                foreach (var root in _menuBackdrop)
+                    if (!root.activeSelf)
+                        root.SetActive(true);
             }
         }
     }
