@@ -17,8 +17,11 @@ namespace Herbalist.GameUI
         public TMP_Text entryTitle, message, roomCode, readiness, loadingText;
         public TMP_Text[] characterPlayers, characterLabels;
         public TMP_InputField code;
+        [SerializeField] private GameObject _joinCodeHint;
+        [SerializeField] private TMP_Text _entryActionLabel;
         public TMP_Text participantCount, unassignedPlayers;
         private bool creating, entering, soloLoading;
+        private string _joinActionText;
         [SerializeField] private string _characterSelectScene;
         private AsyncOperation _characterSelectOperation;
         private GameObject[] _menuBackdrop;
@@ -26,7 +29,8 @@ namespace Herbalist.GameUI
         private void Start()
         {
             AudioListener.volume=UserOptions.Volume;
-            create.onClick.AddListener(()=>OpenEntry(true)); join.onClick.AddListener(()=>OpenEntry(false));
+            _joinActionText = _entryActionLabel.text;
+            create.onClick.AddListener(CreateRoom); join.onClick.AddListener(OpenJoin);
             entryBack.onClick.AddListener(()=>{ entering=false; Session.ClearError(); });
             confirm.onClick.AddListener(Connect); roomBack.onClick.AddListener(Leave);
             start.onClick.AddListener(()=>RoomControl.Instance?.StartGame());
@@ -40,9 +44,32 @@ namespace Herbalist.GameUI
                 root.GetComponent<Light>() != null || root.name == "Stage01_MenuEnvironment" ||
                 root.GetComponent<UnityEngine.EventSystems.EventSystem>() != null));
         }
-        private void OpenEntry(bool make)
-        { creating=make; entering=true; Session.ClearError(); code.text=make?System.Guid.NewGuid().ToString("N").Substring(0,6):""; }
-        private async void Connect() { await Session.ConnectAsync(code.text,creating); }
+        private void CreateRoom()
+        {
+            creating = true;
+            entering = true;
+            code.gameObject.SetActive(false);
+            _joinCodeHint.SetActive(false);
+            _entryActionLabel.text = settings.createText;
+            Connect();
+        }
+
+        private void OpenJoin()
+        {
+            creating = false;
+            entering = true;
+            Session.ClearError();
+            code.text = string.Empty;
+            code.gameObject.SetActive(true);
+            _joinCodeHint.SetActive(true);
+            _entryActionLabel.text = _joinActionText;
+        }
+
+        private async void Connect()
+        {
+            string roomName = creating ? System.Guid.NewGuid().ToString("N").Substring(0, 6) : code.text;
+            await Session.ConnectAsync(roomName, creating);
+        }
         private async void Leave() { entering=false; await Session.LeaveAsync(); }
         internal void OpenRoomOptions() => options.SetActive(true);
         internal bool RoomOptionsOpen => options.activeSelf;
@@ -65,14 +92,14 @@ namespace Herbalist.GameUI
             loading.SetActive(busy);
             loadingText.text=state==LobbyState.Connecting?settings.connectingText:settings.loadingText;
             home.SetActive(!busy&&!entering&&(state==LobbyState.Idle||state==LobbyState.Error));
-            entry.SetActive(!busy&&entering&&(state==LobbyState.Idle||state==LobbyState.Error));
+            entry.SetActive(!busy && entering && (state == LobbyState.Error || (!creating && state == LobbyState.Idle)));
             bool showCharacterSelect = state == LobbyState.Waiting && !busy &&
                 !string.IsNullOrEmpty(_characterSelectScene);
             UpdateCharacterSelect(showCharacterSelect);
             room.SetActive(state==LobbyState.Waiting&&!busy&&!showCharacterSelect);
             entryTitle.text=creating?settings.createText:settings.joinText;
             message.text=state==LobbyState.Error?Session.Message:"";
-            confirm.interactable=!busy&&!string.IsNullOrWhiteSpace(code.text);
+            confirm.interactable = !busy && (creating || !string.IsNullOrWhiteSpace(code.text));
             roomCode.text=string.Format(settings.roomFormat,Session.RoomName);
             if (!room.activeSelf) return;
             var control=RoomControl.Instance;
