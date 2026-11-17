@@ -45,7 +45,8 @@ namespace Herbalist.Levels
         [SerializeField, Min(.1f)] private float _failureDuration = 1.1f;
         [SerializeField, Min(0)] private float _boardingAnimationGraceSeconds = .15f;
         [SerializeField, Min(.1f)] private float _unmountedFallMargin = 8f;
-        [SerializeField] private Vector3[] _riderOffsets = { new(-1.5f, .25f, 0), new(1.5f, .25f, 0) };
+        [SerializeField, Tooltip("Front seat first, rear seat second.")]
+        private Vector3[] _riderOffsets = { new(0, .25f, 1.5f), new(0, .25f, -1.5f) };
         [SerializeField] private string _boardText = "부적에 탑승했습니다. 두 명이 탑승하면 출발합니다.";
         [SerializeField] private string _waitingText = "두 명 모두 E로 부적에 탑승하세요.";
         [SerializeField] private string _ridingText = "수액으로 과녁을 맞혀 길 연결 · 경로에 잎을 설치해 정지 · 회수하면 출발";
@@ -56,6 +57,7 @@ namespace Herbalist.Levels
         [SerializeField] private string _dismountText = "E로 하차한 뒤 달의 눈물에 가까이 가세요.";
         [SerializeField] private string _moonTearText = "달의 눈물에 가까이 가세요.";
         [Networked] private int RiderMask { get; set; }
+        [Networked] private int FrontRiderSlot { get; set; }
         [Networked] private Vector2 ContactRemaining { get; set; }
         [Networked] private int Segment { get; set; }
         [Networked] private float SegmentDistance { get; set; }
@@ -463,14 +465,23 @@ namespace Herbalist.Levels
             actor.Abilities.Sap?.Cancel();
             actor.Abilities.SetInputLock(this, true);
         }
+        private int ResolveFrontRiderSlot()
+        {
+            if (_riders[0] != null && _riders[0].Abilities.Kind == PlayerAbilityKind.Sap) return 0;
+            if (_riders[1] != null && _riders[1].Abilities.Kind == PlayerAbilityKind.Sap) return 1;
+            return _riders[0] != null && _riders[1] == null ? 1 : 0;
+        }
+
+        private Vector3 RiderOffset(int slot, int frontSlot) => _riderOffsets[slot == frontSlot ? 0 : 1];
+
         private Vector3 RiderPosition(int slot)
-            => Position + Rotation * _riderOffsets[slot];
+            => Position + Rotation * RiderOffset(slot, Authority ? ResolveFrontRiderSlot() : FrontRiderSlot);
 
         private void CarryRiders() { for (int i = 0; i < 2; i++) if (_contactRemaining[i] <= 0f) Carry(_riders[i], i); }
         private void Carry(StageActor actor, int slot)
         {
             if (actor == null) return;
-            Vector3 point = _carrierPosition + _carrierRotation * _riderOffsets[slot];
+            Vector3 point = _carrierPosition + _carrierRotation * RiderOffset(slot, ResolveFrontRiderSlot());
             var net = actor.GetComponent<NetworkPlayer>();
             if (net != null && net.Object != null && net.Object.IsValid) net.SetTransportAuthoritatively(true, point);
             else actor.GetComponent<PlayerController>().SetTransport(this, point);
@@ -520,7 +531,8 @@ namespace Herbalist.Levels
         private void Publish()
         {
             if (!Online || !HasStateAuthority) return;
-            RiderMask = _mask; ContactRemaining = _contactRemaining; Segment = _segment; SegmentDistance = _distance; BranchMask = _branchMask;
+            RiderMask = _mask; FrontRiderSlot = ResolveFrontRiderSlot(); ContactRemaining = _contactRemaining;
+            Segment = _segment; SegmentDistance = _distance; BranchMask = _branchMask;
             BranchTurns = _turns; StoneClock = _stoneClock; Phase = _phase;
             CarrierPosition = _carrierPosition; CarrierRotation = _carrierRotation; Blocked = _blocked; Failures = _failures;
             EndingElapsed = _endingElapsed;

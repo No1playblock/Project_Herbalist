@@ -73488,8 +73488,8 @@ MonoBehaviour:
   _boardingAnimationGraceSeconds: 0.15
   _unmountedFallMargin: 8
   _riderOffsets:
-  - {x: -0.55, y: 0.06, z: 0}
-  - {x: 0.55, y: 0.06, z: 0}
+  - {x: 0, y: 0.06, z: 0.55}
+  - {x: 0, y: 0.06, z: -0.55}
   _boardText: "\uBD80\uC801\uC5D0 \uD0D1\uC2B9\uD588\uC2B5\uB2C8\uB2E4. \uB450 \uBA85\uC774 \uD0D1\uC2B9\uD558\uBA74 \uCD9C\uBC1C\uD569\uB2C8\uB2E4."
   _waitingText: "\uB450 \uBA85 \uBAA8\uB450 E\uB85C \uBD80\uC801\uC5D0 \uD0D1\uC2B9\uD558\uC138\uC694."
   _ridingText: "\uC218\uC561: \uACFC\uB141 \uC870\uC900 + \uC88C\uD074\uB9AD \uC720\uC9C0 \u00B7 \uC78E: \uACBD\uB85C \uC870\uC900 + \uC88C\uD074\uB9AD / \uC6B0\uD074\uB9AD \uD68C\uC218 \u00B7 \uB3CC\uC774 \uC9C0\uB098\uAC08 \uB54C\uAE4C\uC9C0 \uC815\uC9C0"
@@ -155541,7 +155541,8 @@ MonoBehaviour:
   _cornerBlendDistance: 0.9
   _turnResponseSeconds: 0.12
   _maximumTrackPitch: 45
-  _leafStopFootprint: {x: 0.97999996, y: 0.7175}
+  _leafStopFootprint: {x: 0.98, y: 1.085}
+  _leafStopClearance: 0.5
 --- !u!1001 &1872606174
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -156409,14 +156410,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1881748495}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 2.1699998, y: 0.105000004, z: 1.5749999}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 452486962}
   m_Father: {fileID: 1872359863}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
 --- !u!23 &1881748497
 MeshRenderer:
   m_ObjectHideFlags: 0
