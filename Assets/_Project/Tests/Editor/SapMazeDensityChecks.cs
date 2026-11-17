@@ -228,7 +228,8 @@ namespace Herbalist.Editor
                 foreach (var frame in frames)
                 {
                     field.ReadSnapshot(frame.cells);
-                    outline.Build(field, radius, view.Settings.outlineBlendPasses);
+                    outline.Build(field, radius, view.Settings.outlineBlendPasses,
+                        view.Settings.densityWallSpreadCells, view.Settings.densityWallSpreadFalloff);
                     float threshold = Mathf.Min(view.Settings.outlineThreshold, outline.Maximum * .4f);
                     Aim(camera, board.transform, frame.focus, frame.cells.Length == 1 ? .65f : 5f);
                     // Make the previous field stamp irrelevant even if this fixture duplicates a capture.

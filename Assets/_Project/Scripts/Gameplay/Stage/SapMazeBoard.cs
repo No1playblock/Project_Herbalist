@@ -593,8 +593,11 @@ namespace Herbalist.Levels
             _hasTarget = (!UsesTube || _grabbed) && held && valid && State.Phase == MazePhase.Running &&
                 !float.IsNaN(boardPoint.x) && !float.IsNaN(boardPoint.y) &&
                 !float.IsInfinity(boardPoint.x) && !float.IsInfinity(boardPoint.y);
-            if (_hasTarget) _targetPoint = _surface != null && _surface.Ready ?
-                _surface.Snap(boardPoint) : boardPoint;
+            if (!_hasTarget) return;
+            if (UsesFluid && _surface != null && _surface.Ready)
+                _hasTarget = _surface.TryResolveFluidTarget(boardPoint, out _targetPoint);
+            else
+                _targetPoint = _surface != null && _surface.Ready ? _surface.Snap(boardPoint) : boardPoint;
         }
         private void StopControl()
         {

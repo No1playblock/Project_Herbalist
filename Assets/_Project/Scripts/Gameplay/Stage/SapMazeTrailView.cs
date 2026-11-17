@@ -153,6 +153,11 @@ namespace Herbalist.Levels
                 stamp = (stamp ^ (uint)_settings.outlineBlendRadiusWorld.GetHashCode()) * 1099511628211UL;
                 stamp = (stamp ^ (uint)_settings.outlineBlendPasses) * 1099511628211UL;
                 stamp = (stamp ^ (uint)_settings.outlineThreshold.GetHashCode()) * 1099511628211UL;
+                if (useDensity)
+                {
+                    stamp = (stamp ^ (uint)_settings.densityWallSpreadCells) * 1099511628211UL;
+                    stamp = (stamp ^ (uint)_settings.densityWallSpreadFalloff.GetHashCode()) * 1099511628211UL;
+                }
                 stamp = (stamp ^ (uint)_settings.outlineSubdivisions) * 1099511628211UL;
                 stamp = (stamp ^ (uint)_settings.waterUvScale.GetHashCode()) * 1099511628211UL;
                 stamp = (stamp ^ (uint)_settings.fluidSurfaceLiftWorld.GetHashCode()) * 1099511628211UL;
@@ -169,7 +174,8 @@ namespace Herbalist.Levels
             {
                 var timer = System.Diagnostics.Stopwatch.StartNew();
                 float densityScale = transform.TransformVector(Vector3.right).magnitude;
-                _outline.Build(field, _settings.outlineBlendRadiusWorld / Mathf.Max(.001f, densityScale), _settings.outlineBlendPasses);
+                _outline.Build(field, _settings.outlineBlendRadiusWorld / Mathf.Max(.001f, densityScale),
+                    _settings.outlineBlendPasses, _settings.densityWallSpreadCells, _settings.densityWallSpreadFalloff);
                 _outlineLevel = Mathf.Min(_settings.outlineThreshold, _outline.Maximum * .4f);
                 float outlineMs = (float)timer.Elapsed.TotalMilliseconds;
                 _densitySurface.Upload(field, surface, _outline, _outlineLevel, _settings.waterUvScale);

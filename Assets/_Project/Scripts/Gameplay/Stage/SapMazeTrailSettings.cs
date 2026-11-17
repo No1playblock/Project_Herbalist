@@ -40,6 +40,8 @@ namespace Herbalist.Levels
         [Min(0)] public float outlineBlendRadiusWorld = .45f;
         [Range(1, 16)] public int outlineBlendPasses = 12;
         [Range(.05f, .8f)] public float outlineThreshold = .35f;
+        [Range(0, 4)] public int densityWallSpreadCells;
+        [Range(0f, 1f)] public float densityWallSpreadFalloff = .94f;
         [Range(1, 3)] public int outlineSubdivisions = 2;
         [Min(.01f)] public float waterUvScale = .25f;
         [Min(0)] public float outlineWallInsetWorld = .04f;

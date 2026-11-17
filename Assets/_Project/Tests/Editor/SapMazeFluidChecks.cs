@@ -149,7 +149,7 @@ namespace Herbalist.Editor
                 });
                 collider.sharedMesh = null; collider.sharedMesh = mesh;
                 var wall = new GameObject("WaterWalls"); wall.transform.SetParent(root.transform, false);
-                wall.transform.localScale = new Vector3(.08f, 4, 4);
+                wall.transform.localScale = new Vector3(.106f, 4, 4);
                 var wallCollider = wall.AddComponent<MeshCollider>(); wallCollider.sharedMesh = cubeMesh;
                 wallCollider.excludeLayers = ~0;
                 so.Update(); so.FindProperty("_waterWallCollider").objectReferenceValue = wallCollider;
@@ -158,6 +158,13 @@ namespace Herbalist.Editor
                 Check(surface.IsSurfaceOpen(new Vector2(-2, 0)), "decorative floor ridge ignored");
                 Check(!surface.IsSurfaceOpen(Vector2.zero), "dedicated wall still blocks");
                 Check(!surface.IsSegmentOpen(new Vector2(-2, 0), new Vector2(2, 0)), "dedicated thin wall blocks segment");
+                var besideWall = new Vector2(.055f, 0);
+                Check(surface.IsSurfaceOpen(besideWall) && !surface.TryResolveFluidTarget(besideWall, out _),
+                    "open point inside a blocked fine wall cell cannot attract water");
+                Check(!surface.TryResolveFluidTarget(Vector2.zero, out _), "wall aim cannot snap to another corridor");
+                var openChannel = new Vector2(.08f, 0);
+                Check(surface.TryResolveFluidTarget(openChannel, out var target) && target == openChannel,
+                    "fine wall grid preserves open channel aim");
                 Check(surface.TryFindPath(new Vector2(-2, 0), new Vector2(2, 0), path), "dedicated wall detour");
                 CheckCachedRoutes(surface);
                 return "authored plane, fixed depth, bounds, thin-wall blocking, detour, plane-edit invalidation and floor-independent wall collider PASS";
