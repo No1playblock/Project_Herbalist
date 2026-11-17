@@ -8,7 +8,7 @@ using Herbalist.StageOne;
 
 namespace Herbalist.Levels
 {
-    public enum BranchRidePhase { Boarding, Riding, Falling, Complete }
+    public enum BranchRidePhase { Boarding, Riding, Falling, Complete, Landing, Landed, Ending }
 
     // Host owns track, contacts, riders and reset. Actor input and abilities remain separate.
     [RequireComponent(typeof(NetworkObject))]
@@ -27,6 +27,11 @@ namespace Herbalist.Levels
         [SerializeField] private LeafInstallTarget[] _leafSurfaces;
         [SerializeField] private Transform[] _respawns, _dismounts;
         [SerializeField] private GameObject _endingPanel;
+        [SerializeField] private TerrainCollider _landingTerrain;
+        [SerializeField] private Transform _moonTear;
+        [SerializeField, Min(.1f)] private float _moonTearRange = 4f;
+        [SerializeField, Min(.1f)] private float _dismountSideDistance = 2.5f;
+        [SerializeField, Min(.1f)] private float _endingSeconds = 5f;
         [SerializeField, Min(.1f)] private float _boardRange = 7;
         [SerializeField, Min(.1f)] private float _speed = 3;
         [SerializeField, Min(.01f)] private float _connectionTolerance = .25f;
@@ -47,6 +52,9 @@ namespace Herbalist.Levels
         [SerializeField] private string _blockedText = "나뭇잎 앞에서 정지 · 회수하면 다시 이동합니다";
         [SerializeField] private string _failedText = "추락 또는 돌 충돌 · 시작 지점에서 다시 탑승하세요";
         [SerializeField] private string _completeText = "서낭당 최하단 도착 · 3스테이지 완료";
+        [SerializeField] private string _landingText = "부적에 탄 채 지상으로 내려가는 중입니다.";
+        [SerializeField] private string _dismountText = "E로 하차한 뒤 달의 눈물에 가까이 가세요.";
+        [SerializeField] private string _moonTearText = "달의 눈물에 가까이 가세요.";
         [Networked] private int RiderMask { get; set; }
         [Networked] private Vector2 ContactRemaining { get; set; }
         [Networked] private int Segment { get; set; }
@@ -59,8 +67,10 @@ namespace Herbalist.Levels
         [Networked] private Quaternion CarrierRotation { get; set; }
         [Networked] private NetworkBool Blocked { get; set; }
         [Networked] private int Failures { get; set; }
+        [Networked] private float EndingElapsed { get; set; }
         private static readonly HashSet<BranchRideFlow> Active = new();
         private readonly StageActor[] _riders = new StageActor[2];
+        private readonly StageActor[] _dismountedRiders = new StageActor[2];
         private readonly float[] _boardingRemaining = new float[2];
         private Vector2 _contactRemaining;
         private readonly List<LeafProjectile> _leaves = new();
@@ -68,7 +78,9 @@ namespace Herbalist.Levels
         private float _distance, _stoneClock, _fallTime, _failureBanner;
         private Vector4 _turns;
         private Vector3 _fallOrigin, _carrierPosition, _incomingDirection;
+        private float _landingY, _endingElapsed;
         private Quaternion _carrierRotation = Quaternion.identity;
+        private Quaternion _landingStartRotation, _landingRotation;
         private BranchRidePhase _phase;
         private bool _blocked;
         private bool Online => Object != null && Object.IsValid;
@@ -83,7 +95,12 @@ namespace Herbalist.Levels
         private Quaternion Rotation => Online ? CarrierRotation : _carrierRotation;
         public Vector3 Forward => Rotation * Vector3.forward;
         public IReadOnlyList<BranchRideTrack> Track => _track;
+        public bool HasTerrainEnding => _landingTerrain != null && _moonTear != null;
+        public float EndingProgress => Mathf.Clamp01((Online ? EndingElapsed : _endingElapsed) / _endingSeconds);
         public string Objective => CurrentPhase == BranchRidePhase.Complete ? _completeText :
+            CurrentPhase == BranchRidePhase.Landing ? _landingText :
+            CurrentPhase == BranchRidePhase.Landed ? ((Online ? RiderMask : _mask) != 0 ? _dismountText : _moonTearText) :
+            CurrentPhase == BranchRidePhase.Ending ? string.Empty :
             CurrentPhase == BranchRidePhase.Falling ? _failedText : CurrentPhase == BranchRidePhase.Boarding ?
             (_failureBanner > 0 ? _failedText : _waitingText) : PresentationBlockedByLeaf ? _blockedText : _ridingText;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)] private static void ResetStatics() => Active.Clear();
@@ -123,7 +140,12 @@ namespace Herbalist.Levels
             if (!Configured) { Debug.LogError("Branch ride needs authored track and four switches. Rebuild Stage Three Blockout.", this); return; }
             if (!Online && Authority) ResetRide(false);
         }
-        private void OnDisable() { Active.Remove(this); foreach (var actor in _riders) Release(actor); }
+        private void OnDisable()
+        {
+            Active.Remove(this);
+            foreach (var actor in _riders) Release(actor);
+            foreach (var actor in _dismountedRiders) Release(actor);
+        }
         public override void Spawned() { if (HasStateAuthority && Configured) { ResetRide(false); Publish(); } }
         public static bool TryBoardHint(StageActor actor, out Vector3 point)
         {
@@ -180,6 +202,33 @@ namespace Herbalist.Levels
             }
             return false;
         }
+        public static bool TryDismountHint(StageActor actor, out Vector3 point)
+        {
+            var flow = FindRiderFlow(actor, out _);
+            point = flow != null ? flow.Position : default;
+            return flow != null && flow.CurrentPhase == BranchRidePhase.Landed;
+        }
+
+        public static bool TryDismount(StageActor actor)
+        {
+            var flow = FindRiderFlow(actor, out _);
+            if (flow == null || !flow.Authority || flow._phase != BranchRidePhase.Landed) return false;
+            int slot = actor.Slot;
+            if (flow._riders[slot] != actor) return false;
+
+            Vector3 position = flow._carrierPosition + flow._carrierRotation * Vector3.right *
+                (slot == 0 ? -flow._dismountSideDistance : flow._dismountSideDistance);
+            if (!flow.TryGetTerrain(position + Vector3.up * flow._dismountSideDistance, out var ground))
+                return false;
+            position = ground + Vector3.up * .05f;
+            flow.Release(actor);
+            flow._riders[slot] = null;
+            flow._mask &= ~(1 << slot);
+            flow._dismountedRiders[slot] = actor;
+            Teleport(actor, position);
+            flow.Publish();
+            return true;
+        }
         public override void FixedUpdateNetwork() { if (HasStateAuthority) Tick(Runner.DeltaTime); }
         private void Update()
         {
@@ -197,9 +246,37 @@ namespace Herbalist.Levels
         }
         private void Simulate(float dt)
         {
+            if (_phase == BranchRidePhase.Complete) return;
+            if (_phase == BranchRidePhase.Ending)
+            {
+                _endingElapsed = Mathf.Min(_endingSeconds, _endingElapsed + dt);
+                if (_endingElapsed >= _endingSeconds) _phase = BranchRidePhase.Complete;
+                return;
+            }
+            if (_phase == BranchRidePhase.Landed)
+            {
+                CarryRiders();
+                foreach (var actor in _dismountedRiders)
+                    if (actor != null && actor.Available &&
+                        (actor.transform.position - _moonTear.position).sqrMagnitude <= _moonTearRange * _moonTearRange)
+                    {
+                        BeginEnding();
+                        break;
+                    }
+                return;
+            }
             for (int i = 0; i < 2; i++)
                 if ((_mask & (1 << i)) != 0 && (_riders[i] == null || !_riders[i].Available)) { ResetRide(true); return; }
-            if (_phase == BranchRidePhase.Complete) return;
+            if (_phase == BranchRidePhase.Landing)
+            {
+                _fallTime += dt;
+                _carrierPosition.y = Mathf.Max(_landingY, _fallOrigin.y - .5f * _dropGravity * _fallTime * _fallTime);
+                _carrierRotation = Quaternion.Slerp(_landingStartRotation, _landingRotation,
+                    Mathf.InverseLerp(_fallOrigin.y, _landingY, _carrierPosition.y));
+                if (_carrierPosition.y <= _landingY) _phase = BranchRidePhase.Landed;
+                CarryRiders();
+                return;
+            }
             if (_phase == BranchRidePhase.Falling)
             {
                 _fallTime += dt;
@@ -246,7 +323,8 @@ namespace Herbalist.Levels
         }
         private void RecoverUnmountedActors()
         {
-            if (_phase == BranchRidePhase.Complete || _respawns == null) return;
+            if (_phase is BranchRidePhase.Complete or BranchRidePhase.Landing or BranchRidePhase.Landed or BranchRidePhase.Ending ||
+                _respawns == null) return;
             foreach (var actor in StageActor.All)
             {
                 if (actor == null || !actor.Available || actor.Slot < 0 || actor.Slot >= _respawns.Length) continue;
@@ -287,7 +365,12 @@ namespace Herbalist.Levels
             }
             _carrierRotation = result.rotation; _blocked = result.blocked;
             if (!result.atEnd) return;
-            if (current.IsFinish) { FinishRide(); return; }
+            if (current.IsFinish)
+            {
+                if (HasTerrainEnding) BeginLanding();
+                else FinishRide();
+                return;
+            }
             if (nextIndex < 0) { FailRide(); return; }
 
             _incomingDirection = Vector3.zero;
@@ -344,6 +427,42 @@ namespace Herbalist.Levels
             }
             _mask = 0;
         }
+        private bool TryGetTerrain(Vector3 origin, out Vector3 point)
+        {
+            point = default;
+            float depth = origin.y - _landingTerrain.bounds.min.y + _carrierHeight;
+            if (depth <= 0f || !_landingTerrain.Raycast(new Ray(origin, Vector3.down), out var hit, depth)) return false;
+            point = hit.point;
+            return true;
+        }
+
+        private void BeginLanding()
+        {
+            if (!TryGetTerrain(_carrierPosition, out var ground)) { FailRide(); return; }
+            _phase = BranchRidePhase.Landing;
+            _fallOrigin = _carrierPosition;
+            _fallTime = 0f;
+            _landingY = ground.y + _carrierHeight;
+            _landingStartRotation = _carrierRotation;
+            _landingRotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(_carrierRotation * Vector3.forward, Vector3.up));
+            _blocked = false;
+        }
+
+        private void BeginEnding()
+        {
+            _phase = BranchRidePhase.Ending;
+            _endingElapsed = 0f;
+            foreach (var actor in _dismountedRiders) LockForEnding(actor);
+            foreach (var actor in _riders) LockForEnding(actor);
+        }
+
+        private void LockForEnding(StageActor actor)
+        {
+            if (actor == null || !actor.Available) return;
+            actor.GetComponent<PlayerController>().Motor.SetMovementLock(this, true);
+            actor.Abilities.Sap?.Cancel();
+            actor.Abilities.SetInputLock(this, true);
+        }
         private Vector3 RiderPosition(int slot)
             => Position + Rotation * _riderOffsets[slot];
 
@@ -389,6 +508,8 @@ namespace Herbalist.Levels
             _mask = _segment = _branchMask = 0; _distance = _stoneClock = _fallTime = 0;
             _incomingDirection = Vector3.zero;
             System.Array.Clear(_boardingRemaining, 0, _boardingRemaining.Length);
+            System.Array.Clear(_dismountedRiders, 0, _dismountedRiders.Length);
+            _endingElapsed = 0f;
             _contactRemaining = Vector2.zero;
             _phase = BranchRidePhase.Boarding; _turns = Vector4.zero; _blocked = false;
             foreach (var toggle in _switches) { toggle.ResetInput(); toggle.Present(0); }
@@ -402,6 +523,7 @@ namespace Herbalist.Levels
             RiderMask = _mask; ContactRemaining = _contactRemaining; Segment = _segment; SegmentDistance = _distance; BranchMask = _branchMask;
             BranchTurns = _turns; StoneClock = _stoneClock; Phase = _phase;
             CarrierPosition = _carrierPosition; CarrierRotation = _carrierRotation; Blocked = _blocked; Failures = _failures;
+            EndingElapsed = _endingElapsed;
         }
         private void Present()
         {

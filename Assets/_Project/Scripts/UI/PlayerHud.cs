@@ -174,6 +174,7 @@ namespace Herbalist.GameUI
                     StageInteraction.GrabCloth => settings.clothGrabText,
                     StageInteraction.ReleaseCloth => settings.clothReleaseText,
                     StageInteraction.BoardTalisman => settings.boardTalismanText,
+                    StageInteraction.DismountTalisman => settings.dismountTalismanText,
                     _ => null
                 };
                 if (description != null)

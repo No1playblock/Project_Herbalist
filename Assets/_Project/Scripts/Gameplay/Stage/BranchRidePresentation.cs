@@ -1,5 +1,6 @@
 using Herbalist.GameUI;
 using Herbalist.Player;
+using Herbalist.Presentation;
 using Herbalist.StageOne;
 using UnityEngine;
 
@@ -10,6 +11,8 @@ namespace Herbalist.Levels
         [SerializeField] private BranchRideFlow _flow;
         [SerializeField] private GameOverlayHud _hud;
         [SerializeField] private Transform _firstTarget, _firstStone;
+        [SerializeField] private PlayScreenController _screen;
+        [SerializeField] private Transform _endingShot, _endingShotEnd;
         [SerializeField, Min(1)] private float _noticeRange = 16;
         [SerializeField, Min(.1f)] private float _subtitleDuration = 4;
         [SerializeField] private bool _frameRideCamera;
@@ -24,9 +27,25 @@ namespace Herbalist.Levels
         private float _remaining;
         private PlayerController _rideCameraPlayer;
         private bool _manualRideLook;
+        private bool _showingEnding;
+        private Vector3 _endingStartPosition;
+        private Quaternion _endingStartRotation;
+
+        private void Awake()
+        {
+            if (_endingShot == null) return;
+            _endingStartPosition = _endingShot.position;
+            _endingStartRotation = _endingShot.rotation;
+        }
+
         private void Update()
         {
             if (_flow == null || GameplayPause.IsPaused) return;
+            if (_flow.HasTerrainEnding && (_flow.CurrentPhase is BranchRidePhase.Ending or BranchRidePhase.Complete))
+            {
+                PresentEnding();
+                return;
+            }
             if (_frameRideCamera) UpdateRideCamera(Time.deltaTime);
             if (_hud == null) return;
             _remaining = Mathf.Max(0, _remaining - Time.deltaTime);
@@ -42,7 +61,7 @@ namespace Herbalist.Levels
         private void UpdateRideCamera(float dt)
         {
             PlayerController player = null;
-            if (_flow.CurrentPhase is BranchRidePhase.Boarding or BranchRidePhase.Riding)
+            if (_flow.CurrentPhase is BranchRidePhase.Boarding or BranchRidePhase.Riding or BranchRidePhase.Landing)
             {
                 foreach (var actor in StageActor.All)
                 {
@@ -72,7 +91,35 @@ namespace Herbalist.Levels
             view.SetLookAngles(Mathf.LerpAngle(view.Yaw, yaw, blend), Mathf.Lerp(view.Pitch, pitch, blend));
         }
 
-        private void OnDisable() { _rideCameraPlayer = null; _manualRideLook = false; }
+        private void PresentEnding()
+        {
+            if (_screen == null || _endingShot == null || _endingShotEnd == null) return;
+            if (!_showingEnding)
+            {
+                _showingEnding = true;
+                _screen.SetOverride(this, PlayScreenMode.Personal);
+            }
+            float t = Mathf.SmoothStep(0f, 1f, _flow.EndingProgress);
+            _endingShot.SetPositionAndRotation(Vector3.Lerp(_endingStartPosition, _endingShotEnd.position, t),
+                Quaternion.Slerp(_endingStartRotation, _endingShotEnd.rotation, t));
+            for (int slot = 0; slot < 2; slot++)
+                _screen.ViewForSlot(slot)?.SetCameraOverride(this, _endingShot);
+        }
+
+        private void OnDisable()
+        {
+            _rideCameraPlayer = null;
+            _manualRideLook = false;
+            if (!_showingEnding) return;
+            _showingEnding = false;
+            if (_screen != null)
+            {
+                for (int slot = 0; slot < 2; slot++)
+                    _screen.ViewForSlot(slot)?.ClearCameraOverride(this);
+                _screen.SetOverride(this, null);
+            }
+            if (_endingShot != null) _endingShot.SetPositionAndRotation(_endingStartPosition, _endingStartRotation);
+        }
         private void Show(int bit, string text) { _seen |= bit; _remaining = _subtitleDuration; _hud.ShowSubtitle(text, _subtitleDuration); }
     }
 }
