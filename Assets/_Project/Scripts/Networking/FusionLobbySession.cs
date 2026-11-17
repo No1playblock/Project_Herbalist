@@ -13,7 +13,7 @@ namespace Herbalist.Networking
 {
     public enum LobbyState { Idle, Connecting, Waiting, Loading, Playing, Leaving, Error }
 
-    public sealed class FusionLobbySession : MonoBehaviour, INetworkRunnerCallbacks
+    public sealed partial class FusionLobbySession : MonoBehaviour, INetworkRunnerCallbacks
     {
         [SerializeField] private LobbySettings settings;
         [SerializeField] private NetworkRunner runnerPrefab;
@@ -56,15 +56,28 @@ namespace Herbalist.Networking
                 if(player==null||ability==null||!ability.Unlocked)return;
                 saved[id]=new StagePlayerState{Slot=player.Slot,Ability=ability.Kind};
             }
+            int cinematicIndex = CinematicSceneIndex(scenePath);
+            var sapPlayers = saved.Values.Where(player => player.Ability == Herbalist.Abilities.PlayerAbilityKind.Sap).ToArray();
+            if (cinematicIndex >= 0 && (sapPlayers.Length != 1 || sapPlayers[0].Slot < 0 || sapPlayers[0].Slot > 1))
+            {
+                Debug.LogError("Stage 1 cinematic requires one Sap player with an assigned character.");
+                return;
+            }
+            var stageRunner = runner;
             _stageEntryId=entryId;stageTransition=true;stagePlayers.Clear();foreach(var pair in saved)stagePlayers.Add(pair.Key,pair.Value);
             SetState(LobbyState.Loading,settings.loadingMessage);
             try
             {
-                foreach(var id in current)if(runner.TryGetPlayerObject(id,out var obj))runner.Despawn(obj);
-                await runner.LoadScene(SceneRef.FromIndex(sceneIndex),LoadSceneMode.Single);
+                foreach(var id in current)if(stageRunner.TryGetPlayerObject(id,out var obj))stageRunner.Despawn(obj);
+                if (cinematicIndex >= 0) await RunStageCinematic(stageRunner, current, sapPlayers[0].Slot, cinematicIndex);
+                if (runner != stageRunner || stopping) return;
+                if (cinematicIndex >= 0 && stageRunner.ActivePlayers.Count() != current.Length)
+                    throw new InvalidOperationException("A player left during the cinematic.");
+                await stageRunner.LoadScene(SceneRef.FromIndex(sceneIndex),LoadSceneMode.Single);
             }
+            catch (OperationCanceledException) when (stopping || runner != stageRunner) { }
             catch(Exception exception){await FinishAsync(string.Format(settings.failureFormat,exception.Message));}
-            finally{stageTransition=false;}
+            finally{stageTransition=false; ClearStageCinematic();}
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -152,6 +165,7 @@ namespace Herbalist.Networking
         {
             if (stopping) return;
             stopping = true;
+            ClearStageCinematic();
             SetState(LobbyState.Leaving, settings.leavingMessage);
             var oldRunner = runner;
             runner = null; started = false; stagePlayers.Clear(); _stageEntryId = null;
@@ -187,11 +201,18 @@ namespace Herbalist.Networking
         {
             if (Instance != this) return;
             cancellation?.Cancel();
+            ClearStageCinematic();
             if (runner != null) runner.RemoveCallbacks(this);
             Instance = null;
         }
         public void OnPlayerJoined(NetworkRunner r, PlayerRef player) { RefreshWaiting(); TryStart(); }
-        public void OnPlayerLeft(NetworkRunner r, PlayerRef player) { if (r.IsServer && r.TryGetPlayerObject(player, out var obj)) r.Despawn(obj); if (!loadRequested && State != LobbyState.Playing) RefreshWaiting(); }
+        public void OnPlayerLeft(NetworkRunner r, PlayerRef player)
+        {
+            if (r.IsServer && r.TryGetPlayerObject(player, out var obj)) r.Despawn(obj);
+            if (r.IsServer && _stageCinematic != null && _stageCinematic.Participants.ContainsKey(player))
+                _stageCinematic.Completion.TrySetException(new InvalidOperationException("A player left during the cinematic."));
+            if (!loadRequested && State != LobbyState.Playing) RefreshWaiting();
+        }
         public async void OnShutdown(NetworkRunner r, ShutdownReason reason)
         { if (!stopping && !connecting) await FinishAsync(string.Format(settings.failureFormat, reason)); }
         public void OnConnectRequest(NetworkRunner r, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token)
@@ -199,6 +220,12 @@ namespace Herbalist.Networking
         public void OnSceneLoadStart(NetworkRunner r) { if (loadRequested || started) SetState(LobbyState.Loading, settings.loadingMessage); }
         public void OnSceneLoadDone(NetworkRunner r)
         {
+            if (SceneManager.GetActiveScene().path == settings.stageOneCinematicScenePath)
+            {
+                OnStageCinematicSceneLoaded(r);
+                return;
+            }
+            if (!r.IsServer) ClearStageCinematic();
             if (SceneManager.GetActiveScene().path == settings.playScenePath || Herbalist.Levels.StageLevel.Instance != null)
             {
                 var layout = string.IsNullOrEmpty(_stageEntryId)
@@ -217,7 +244,11 @@ namespace Herbalist.Networking
         public void OnInputMissing(NetworkRunner r, PlayerRef player, NetworkInput input) { }
         public void OnObjectEnterAOI(NetworkRunner r, NetworkObject obj, PlayerRef player) { }
         public void OnObjectExitAOI(NetworkRunner r, NetworkObject obj, PlayerRef player) { }
-        public void OnReliableDataReceived(NetworkRunner r, PlayerRef player, ReliableKey key, ReadOnlySpan<byte> data) { Herbalist.GameUI.RoomControl.Instance?.Receive(r, player, key, data); }
+        public void OnReliableDataReceived(NetworkRunner r, PlayerRef player, ReliableKey key, ReadOnlySpan<byte> data)
+        {
+            if (!ReceiveStageCinematic(r, player, key, data))
+                Herbalist.GameUI.RoomControl.Instance?.Receive(r, player, key, data);
+        }
         public void OnReliableDataProgress(NetworkRunner r, PlayerRef player, ReliableKey key, float progress) { }
         public void OnSessionListUpdated(NetworkRunner r, List<SessionInfo> sessions) { }
         public void OnCustomAuthenticationResponse(NetworkRunner r, Dictionary<string, object> data) { }
