@@ -108,11 +108,13 @@ namespace Herbalist.Networking
         {
             if (IsProxy) return;
             if (Herbalist.GameUI.GameplayPause.IsPaused) { if (GetInput(out PlayerNetworkInput pausedInput)) LastJumpSequence = pausedInput.JumpSequence; return; }
+            if (HasStateAuthority) player.TickClothLanding(Runner.DeltaTime);
             if(Transported)
             {
                 if (HasStateAuthority) { RootMotionPose = -1; RootMotionElapsed = 0f; }
                 if(GetInput(out PlayerNetworkInput ridingInput))
                 {
+                    bool jumpPressed = LastJumpSequence != ridingInput.JumpSequence;
                     LastJumpSequence=ridingInput.JumpSequence;
                     if(Finite(ridingInput.LookAngles.x) && Finite(ridingInput.LookAngles.y))
                     {
@@ -121,6 +123,7 @@ namespace Herbalist.Networking
                     }
                     if(HasStateAuthority && Finite(ridingInput.Move.x) && Finite(ridingInput.Move.y))
                         player.RouteMovement(ridingInput.Move);
+                    if (jumpPressed && HasStateAuthority && player.TryReleaseCloth()) return;
                 }
                 player.Motor.Teleport(TransportPosition);SimulationPosition=TransportPosition;
                 SimulationVelocity=Vector3.zero;Grounded=false;return;
@@ -174,6 +177,11 @@ namespace Herbalist.Networking
                 }
             }
             player.Motor.Simulate(rootMotionActive ? Vector3.zero : direction * player.Tuning.moveSpeed, Runner.DeltaTime, rootMotion);
+            if (HasStateAuthority)
+            {
+                player.CheckClothLanding();
+                MovementBlocked = player.Motor.HasMovementLockExcept(this);
+            }
             BodyYaw = player.Tuning.ResolveBodyYaw(BodyYaw, LookAngles.x, direction, player.Motor.MovementLocked, Runner.DeltaTime);
             var state = player.Motor.CaptureState();
             SimulationPosition = state.Position; SimulationVelocity = state.Velocity; Grounded = state.Grounded;

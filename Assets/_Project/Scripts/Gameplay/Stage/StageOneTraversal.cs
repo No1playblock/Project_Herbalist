@@ -135,7 +135,9 @@ namespace Herbalist.Levels
                     if (branch != null) branch.RestoreFallenBranch();
             }
             actor.Abilities.Sap?.Cancel();
-            var motor = actor.GetComponent<PlayerController>().Motor;
+            var player = actor.GetComponent<PlayerController>();
+            player.ClearClothLanding();
+            var motor = player.Motor;
             motor.ResetMotion();
             var net = actor.GetComponent<NetworkPlayer>();
             Vector3 destination = _starts[actor.Slot].position;

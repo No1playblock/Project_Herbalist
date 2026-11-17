@@ -25,6 +25,7 @@ namespace Herbalist.GameUI
         [SerializeField, Min(.1f)] private float _guideSeconds = 3.5f;
         [SerializeField, Min(.1f)] private float _recoverySeconds = .35f;
         [SerializeField, Min(.1f)] private float _leafGuideRange = 12f;
+        [SerializeField, Min(.1f)] private float _sapGuideRange = 12f;
         [SerializeField] private Vector2 _guideHalfSize = new(.075f, .10f);
         [SerializeField] private string _emptyHistory = "아직 기록된 대사가 없습니다.";
         [SerializeField] private string _opening = "두영: 먼저 주변에서 약초를 찾아보자.";
@@ -51,6 +52,7 @@ namespace Herbalist.GameUI
         private float _dialogueRemaining, _guideRemaining, _fadeRemaining;
         private Vector3 _guidePoint;
         private Camera _guideCamera;
+        private bool _guideAllowOffscreen;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetHistory() => History.Clear();
@@ -159,15 +161,24 @@ namespace Herbalist.GameUI
             if ((_abilityGuides & bit) != 0) return;
             Vector3 point;
             bool found = leaf ? StageOneLeafZone.TryNearbyGuidePoint(local.transform.position, _leafGuideRange, out point) ||
-                ExteriorJumpPad.TryLeafInstallHint(local, out point) : SapInjectionPort.TryInteractionHint(local, out point);
-            if (found && StartGuide(local.Camera, point, leaf ? _leafGuide : _sapGuide))
+                ExteriorJumpPad.TryLeafInstallHint(local, out point) :
+                TrySapGuidePoint(local, flow.FirstSapGuidePort, out point);
+            if (found && StartGuide(local.Camera, point, leaf ? _leafGuide : _sapGuide, !leaf))
                 _abilityGuides |= bit;
         }
 
-        private bool StartGuide(Camera camera, Vector3 point, string message)
+        private bool TrySapGuidePoint(StageActor actor, SapInjectionPort port, out Vector3 point)
+        {
+            if (port == null) return SapInjectionPort.TryInteractionHint(actor, out point);
+            point = port.InteractionPoint;
+            return port.isActiveAndEnabled && (actor.transform.position - point).sqrMagnitude <= _sapGuideRange * _sapGuideRange;
+        }
+
+        private bool StartGuide(Camera camera, Vector3 point, string message, bool allowOffscreen)
         {
             _guideCamera = camera;
             _guidePoint = point;
+            _guideAllowOffscreen = allowOffscreen;
             if (!PresentSpotlight()) return false;
             _guideText.text = message;
             _guideRemaining = _guideSeconds;
@@ -180,13 +191,17 @@ namespace Herbalist.GameUI
             Rect viewport = _guideCamera.rect;
             if (viewport.width <= 0 || viewport.height <= 0) return false;
             var point = _guideCamera.WorldToViewportPoint(_guidePoint);
-            if (point.z <= 0) return false;
             Vector2 center = point;
+            bool visible = point.z > 0f && center.x >= 0f && center.x <= 1f && center.y >= 0f && center.y <= 1f;
+            if (!visible && !_guideAllowOffscreen) return false;
+            Fit(_spotlight, viewport.min, viewport.max);
+            foreach (var shade in _shade) shade.gameObject.SetActive(visible);
+            _guideFrame.gameObject.SetActive(visible);
+            _guideArrow.gameObject.SetActive(visible);
+            if (!visible) return true;
             Vector2 half = _guideHalfSize;
-            if (center.x < 0 || center.x > 1 || center.y < 0 || center.y > 1) return false;
             Vector2 low = Vector2.Max(Vector2.zero, center - half);
             Vector2 high = Vector2.Min(Vector2.one, center + half);
-            Fit(_spotlight, viewport.min, viewport.max);
             Fit(_shade[0], Vector2.zero, new(1, low.y));
             Fit(_shade[1], new(0, high.y), Vector2.one);
             Fit(_shade[2], new(0, low.y), new(low.x, high.y));

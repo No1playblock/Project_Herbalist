@@ -33,6 +33,7 @@ namespace Herbalist.Player
         private bool _wasGrabbingCloth, _wasBoardingTalisman;
         private bool _clothAirborne;
         private float _clothReleaseY;
+        private float _groundedFootHeight;
         private bool _initialized;
         private bool _hasViewSample;
         private bool _cameraMoving;
@@ -63,6 +64,7 @@ namespace Herbalist.Player
                 _cameraMoving = false;
                 _animator = null;
                 _pose = null;
+                _groundedFootHeight = 0f;
                 return;
             }
             var animator = _character.ActiveAnimator;
@@ -156,7 +158,8 @@ namespace Herbalist.Player
 
             // A previous full-body action must not keep grounded legs during takeoff.
             bool traversalAction = grabbingCloth || boardingTalisman || _oneShot == SodamPose.ClothGrab ||
-                _oneShot == SodamPose.TalismanBoard || _oneShot == SodamPose.TalismanKneel;
+                _oneShot == SodamPose.TalismanBoard || _oneShot == SodamPose.TalismanKneel ||
+                _oneShot is SodamPose.ClothSwingLand or SodamPose.ClothHardLand || (_clothAirborne && grounded);
             if (!grounded && _wasGrounded && !onCloth && !onTalisman && !_clothAirborne && !traversalAction &&
                 _oneShot != SodamPose.LeafThrow && _oneShot != SodamPose.LeafCatch)
                 _oneShot = null;
@@ -164,8 +167,7 @@ namespace Herbalist.Player
             if (_clothAirborne && grounded && !_wasGrounded)
             {
                 _clothAirborne = false;
-                PlayOneShot(transform.position.y >= _clothReleaseY - Profile.successLandingDrop
-                    ? SodamPose.ClothSwingLand : SodamPose.ClothHardLand);
+                PlayOneShot(Profile.ClothLandingPose(_clothReleaseY, transform.position.y));
             }
             else if (grounded && !_wasGrounded && !moving && !onCloth && !onTalisman && !_character.IsSodamActive &&
                 !_oneShot.HasValue)
@@ -422,6 +424,20 @@ namespace Herbalist.Player
         private void LateUpdate()
         {
             if (_animator == null || !_animator.isActiveAndEnabled) return;
+            if (_wasGrounded && _animator.isHuman &&
+                (_pose is SodamPose.Idle or SodamPose.IdleCameraMoving or SodamPose.ClothHardLand or SodamPose.ClothSwingLand))
+            {
+                var leftFoot = _animator.GetBoneTransform(HumanBodyBones.LeftToes) ?? _animator.GetBoneTransform(HumanBodyBones.LeftFoot);
+                var rightFoot = _animator.GetBoneTransform(HumanBodyBones.RightToes) ?? _animator.GetBoneTransform(HumanBodyBones.RightFoot);
+                if (leftFoot != null && rightFoot != null)
+                {
+                    float footHeight = Mathf.Min(leftFoot.position.y, rightFoot.position.y) - transform.position.y;
+                    if (_pose is SodamPose.ClothHardLand or SodamPose.ClothSwingLand)
+                        _animator.transform.position -= Vector3.up * Mathf.Max(0f, footHeight - _groundedFootHeight);
+                    else if (_poseElapsed >= Profile.Find(_pose.Value).blendSeconds)
+                        _groundedFootHeight = footHeight;
+                }
+            }
             if ((_pose == SodamPose.TalismanBoard || _pose == SodamPose.TalismanKneel) &&
                 BranchRideFlow.TryGetBoardingSeat(_actor, out var seat, out float boardRemaining))
             {

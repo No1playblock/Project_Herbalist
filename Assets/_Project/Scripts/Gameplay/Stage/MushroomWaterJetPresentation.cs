@@ -9,13 +9,16 @@ namespace Herbalist.Levels
         [SerializeField] private ParticleSystem _sprayDroplets;
         [SerializeField] private ParticleSystem _sprayTemplate;
         [SerializeField] private MeshFilter _conicalSurface;
+        [SerializeField] private Material _pourMaterial;
+        [SerializeField, Min(0)] private float _pourExtension;
+        [SerializeField, Min(0)] private float _pourOverhangDrop;
 
         private SapJumpPadSettings _settings;
         private Vector3[] _pathPoints;
         private float _flowTime;
         private float _sprayBudget;
         private float _fanSpread;
-        private const int ConeSides = 12;
+        private int ConeSides => _pourMaterial != null ? 28 : 12;
         private Mesh _cone;
         private Vector3[] _coneVertices;
         private float _coneMouth;
@@ -31,7 +34,8 @@ namespace Herbalist.Levels
                 main.simulationSpace = ParticleSystemSimulationSpace.World;
             }
 
-            _pathPoints = new Vector3[Mathf.Max(6, _settings.waterStreamSegments) + 1];
+            int segments = Mathf.Max(6, _settings.waterStreamSegments);
+            _pathPoints = new Vector3[segments * (_pourMaterial != null ? 2 : 1) + 1];
             // Match the ability stream's LineRenderer setup. Its material is authored in the scene.
             _stream.useWorldSpace = true;
             _stream.enabled = true;
@@ -55,7 +59,36 @@ namespace Herbalist.Levels
         internal static Vector3 PathPoint(Vector3 start, Vector3 end, float t, float rise, float drop)
             => Vector3.Lerp(start, end, t) + Vector3.up * (rise * t * (1f - t) - drop * t * t);
 
-        public void Present(Vector3 start, Vector3 end, float rise = 0f, float drop = 0f)
+        internal bool HasPourShape => _pourMaterial != null;
+
+        internal Vector3 PourPathPoint(Vector3 start, Vector3 end, float t, float rise, float drop, Vector3? mouth)
+        {
+            Vector3 levelAxis = Vector3.ProjectOnPlane(end - start, Vector3.up);
+            float length = levelAxis.magnitude;
+            Vector3 point = PathPoint(start, end, t, rise, drop);
+            if (_pourExtension > 0f && length > .001f)
+            {
+                float travel = t * (length + _pourExtension);
+                float overhang = Mathf.Max(0f, travel - length);
+                float spill = Mathf.InverseLerp(length + Mathf.Max(0f, _pourExtension - 1.8f), length + _pourExtension, travel);
+                point = PathPoint(start, end, Mathf.Min(1f, travel / length), rise, drop)
+                    + levelAxis * (overhang / length) + Vector3.down * (.08f * overhang + _pourOverhangDrop * spill * spill);
+            }
+            if (mouth.HasValue)
+                point += (mouth.Value - start) * (1f - Mathf.SmoothStep(0f, 1f, t / .3f));
+            return point;
+        }
+
+        internal static float PourRadius(float mouthWidth, float sprayWidth, float t) =>
+            (mouthWidth + Mathf.Max(0f, sprayWidth - mouthWidth) * .86f * (1f - Mathf.Pow(1f - t, 3f))) * .5f;
+
+        internal static float PourSpread(float t) => Mathf.SmoothStep(0f, 1f, t * 4f);
+        internal static float PourThickness(float spread) => Mathf.Lerp(1f, .37f, spread);
+        private const float PrimaryRipple = .14f;
+        private const float SecondaryRipple = .055f;
+        internal static float PourRippleEnvelope(float spread) => 1f + spread * (PrimaryRipple + SecondaryRipple);
+
+        public void Present(Vector3 start, Vector3 end, float rise = 0f, float drop = 0f, Vector3? visibleMouth = null)
         {
             if (_stream == null || _settings == null) return;
             if (_pathPoints == null) Initialize(_settings);
@@ -75,9 +108,11 @@ namespace Herbalist.Levels
                 float t = (float)i / (_pathPoints.Length - 1);
                 float envelope = Mathf.Max(0f, Mathf.Sin(Mathf.PI * t));
                 float phase = _flowTime * 2.4f + t * 5.6f;
-                _pathPoints[i] = PathPoint(start, end, t, rise, drop)
-                    + side * (Mathf.Sin(phase) * sway * envelope)
+                Vector3 point = HasPourShape || visibleMouth.HasValue
+                    ? PourPathPoint(start, end, t, rise, drop, visibleMouth) : PathPoint(start, end, t, rise, drop);
+                point += side * (Mathf.Sin(phase) * sway * envelope)
                     + lift * (Mathf.Sin(phase * .73f + 1.2f) * sway * .34f * envelope);
+                _pathPoints[i] = point;
             }
             if (_cone == null) _stream.SetPositions(_pathPoints);
             else PresentCone(side, lift);
@@ -130,6 +165,7 @@ namespace Herbalist.Levels
                 renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
             _conicalSurface.sharedMesh = _cone;
+            if (_pourMaterial != null) _conicalSurface.GetComponent<MeshRenderer>().sharedMaterial = _pourMaterial;
         }
 
         private void PresentCone(Vector3 side, Vector3 lift)
@@ -137,11 +173,22 @@ namespace Herbalist.Levels
             var worldToLocal = transform.worldToLocalMatrix;
             for (int ring = 0; ring < _pathPoints.Length; ring++)
             {
-                float radius = (_coneMouth + _fanSpread * ring / (_pathPoints.Length - 1)) * .5f;
+                float along = (float)ring / (_pathPoints.Length - 1);
+                float radius = (_coneMouth + _fanSpread * along) * .5f;
+                if (HasPourShape) radius = PourRadius(_coneMouth, _coneMouth + _fanSpread, along);
+                float spread = PourSpread(along);
                 for (int edge = 0; edge <= ConeSides; edge++)
                 {
                     float angle = edge * (2f * Mathf.PI / ConeSides);
-                    var point = _pathPoints[ring] + radius * (Mathf.Cos(angle) * side + Mathf.Sin(angle) * lift);
+                    float horizontal = Mathf.Cos(angle), vertical = Mathf.Sin(angle);
+                    float ripple = 1f;
+                    if (_pourMaterial != null)
+                    {
+                        float phase = along * 28f - _flowTime * 12f;
+                        ripple += spread * (PrimaryRipple * Mathf.Sin(angle * 3f + phase) + SecondaryRipple * Mathf.Sin(angle * 5f - phase * 1.7f));
+                        vertical *= PourThickness(spread);
+                    }
+                    var point = _pathPoints[ring] + radius * ripple * (horizontal * side + vertical * lift);
                     _coneVertices[ring * (ConeSides + 1) + edge] = worldToLocal.MultiplyPoint3x4(point);
                 }
             }
@@ -166,7 +213,7 @@ namespace Herbalist.Levels
             _sprayBudget -= count;
             for (int i = 0; i < count; i++)
             {
-                float pathPosition = Random.Range(.08f, .92f) * (_pathPoints.Length - 1);
+                float pathPosition = (_pourMaterial != null ? Random.Range(.35f, .99f) : Random.Range(.08f, .92f)) * (_pathPoints.Length - 1);
                 int index = Mathf.Min(Mathf.FloorToInt(pathPosition), _pathPoints.Length - 2);
                 Vector3 tangent = (_pathPoints[index + 1] - _pathPoints[index]).normalized;
                 if (tangent.sqrMagnitude < .0001f) continue;
@@ -176,6 +223,7 @@ namespace Herbalist.Levels
                 Vector3 fanDirection = _cone != null ? Quaternion.AngleAxis(Random.Range(0f, 360f), tangent) * side : side;
                 float lateral = Random.Range(-1f, 1f) * _fanSpread * .5f;
                 Vector3 fanOffset = fanDirection * lateral * (pathPosition / (_pathPoints.Length - 1));
+                if (_pourMaterial != null) fanOffset.y *= .45f;
                 side = Quaternion.AngleAxis(Random.Range(0f, 360f), tangent) * side.normalized;
                 var particle = new ParticleSystem.EmitParams
                 {

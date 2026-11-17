@@ -21,6 +21,8 @@ namespace Herbalist.Player
         private SodamAnimationPresentation _sodamAnimation;
         private uint _rootMotionPoseSequence;
         private float _rootMotionElapsed;
+        private bool _waitingForClothLanding;
+        private float _clothReleaseY, _clothLandingRemaining;
         public void SetMovementReceiver(IPlayerMovementReceiver receiver) => _movementReceiver=receiver;
         public void ClearMovementReceiver(IPlayerMovementReceiver receiver) { if(ReferenceEquals(_movementReceiver,receiver))_movementReceiver=null; }
         public bool RouteMovement(Vector2 move) { if(_movementReceiver==null)return false;_movementReceiver.ReceiveMovement(this,move);return true; }
@@ -32,6 +34,37 @@ namespace Herbalist.Player
         public void SetNetworkControl(bool local) { networkDriven = true; SetLocalControl(local); }
         public PlayerMotor Motor => motor;
         public bool LocallyControlled => locallyControlled;
+
+        internal void BeginClothLanding()
+        {
+            _clothReleaseY = transform.position.y;
+            _waitingForClothLanding = true;
+        }
+
+        internal void ClearClothLanding()
+        {
+            _waitingForClothLanding = false;
+            _clothLandingRemaining = 0f;
+            motor.SetMovementLock(this, false);
+        }
+
+        internal void TickClothLanding(float deltaTime)
+        {
+            if (_clothLandingRemaining <= 0f) return;
+            _clothLandingRemaining -= deltaTime;
+            if (_clothLandingRemaining <= 0f) ClearClothLanding();
+        }
+
+        internal void CheckClothLanding()
+        {
+            if (!_waitingForClothLanding || !motor.IsGrounded) return;
+            _waitingForClothLanding = false;
+            var profile = _sodamAnimation?.Profile;
+            if (profile == null) return;
+            var pose = profile.ClothLandingPose(_clothReleaseY, transform.position.y);
+            _clothLandingRemaining = profile.Find(pose)?.durationSeconds ?? 0f;
+            motor.SetMovementLock(this, _clothLandingRemaining > 0f);
+        }
 
         private void Awake()
         {
@@ -64,20 +97,33 @@ namespace Herbalist.Player
         {
             ApplyCharacterScale();
             if (!ready || Herbalist.GameUI.GameplayPause.IsPaused) return;
+            if (!networkDriven) TickClothLanding(Time.deltaTime);
             if (!locallyControlled)
             {
                 // An unpossessed offline actor still falls and lands normally.
                 if (!networkDriven)
                 {
                     if (_transportOwner != null) motor.Teleport(_transportPosition);
-                    else motor.Simulate(Vector3.zero, Time.deltaTime, SampleRootMotion(Time.deltaTime, out _));
+                    else
+                    {
+                        motor.Simulate(Vector3.zero, Time.deltaTime, SampleRootMotion(Time.deltaTime, out _));
+                        CheckClothLanding();
+                    }
                 }
                 return;
             }
             view.ApplyLook(input.Look);
             view.ApplyZoom(input.Zoom);
             if (networkDriven) return;
-            if(_transportOwner!=null){RouteMovement(input.Move);lastJump=input.JumpSequence;motor.Teleport(_transportPosition);return;}
+            if (_transportOwner != null)
+            {
+                RouteMovement(input.Move);
+                bool jumpPressed = lastJump != input.JumpSequence;
+                lastJump = input.JumpSequence;
+                if (jumpPressed && TryReleaseCloth()) return;
+                motor.Teleport(_transportPosition);
+                return;
+            }
             Vector2 movement = Vector2.ClampMagnitude(input.Move, 1);
             if(RouteMovement(movement))movement=Vector2.zero;
             Vector3 direction = view.PlanarRotation * new Vector3(movement.x, 0, movement.y);
@@ -86,6 +132,7 @@ namespace Herbalist.Player
             bool rootMotionActive;
             Vector3 rootMotion = SampleRootMotion(Time.deltaTime, out rootMotionActive);
             motor.Simulate(rootMotionActive ? Vector3.zero : direction * tuning.moveSpeed, Time.deltaTime, rootMotion);
+            CheckClothLanding();
         }
         private Vector3 SampleRootMotion(float deltaTime, out bool active)
         {
@@ -111,9 +158,13 @@ namespace Herbalist.Player
             return Quaternion.Euler(0f, view.BodyYaw, 0f) * (localDelta * _sodamAnimation.RootMotionScale);
         }
         public bool TryJump() => motor.TryJump();
+        internal bool TryReleaseCloth() =>
+            _movementReceiver is Herbalist.Levels.HangingCloth cloth &&
+            cloth.TryReleaseFromInput(GetComponent<Herbalist.StageOne.StageActor>());
         private void LateUpdate() { if (ready) view.Present(Time.deltaTime, locallyControlled); }
         private void OnDisable()
         {
+            if (motor != null) ClearClothLanding();
             if (input != null) input.SetInputActive(false);
             if (view != null) view.SetLocalView(false);
         }

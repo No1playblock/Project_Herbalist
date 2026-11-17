@@ -160,9 +160,10 @@ namespace Herbalist.GameUI
             feedback.text=local&&feedbackTime>0?previousFeedback:"";
             prompt.SetActive(false);
             if (clothPrompt != null) clothPrompt.SetActive(false);
+            StageInteraction interaction = StageInteraction.None;
             if (local && actor != null)
             {
-                var interaction = actor.ResolveInteraction(out var point);
+                interaction = actor.ResolveInteraction(out var point);
                 string description = interaction switch
                 {
                     StageInteraction.Gather => settings.gatherText,
@@ -178,6 +179,8 @@ namespace Herbalist.GameUI
                 };
                 if (description != null)
                 {
+                    if (interaction == StageInteraction.ReleaseCloth && !string.IsNullOrEmpty(player.Input.JumpBinding))
+                        description += $" ({player.Input.JumpBinding})";
                     bool useClothPrompt = clothPrompt != null && interaction is StageInteraction.GrabCloth or StageInteraction.ReleaseCloth;
                     PresentHint(useClothPrompt ? _clothHintView : _interactionHintView,
                         useClothPrompt ? clothPromptText : promptText, actor.InteractBinding, description);
@@ -192,6 +195,15 @@ namespace Herbalist.GameUI
                     string binding = rules != null && rules.usePrimaryButton ? ability.Input.UseBinding : ability.Input.CycleBinding;
                     PresentHint(_sapHintView, sapPromptText, binding, settings.sapInjectText);
                     Position((RectTransform)sapPrompt.transform, view.Camera, portPoint + promptOffset);
+                }
+                else if (local && !mazeView && rules is { contextualUse: true } &&
+                    HangingCloth.TryWaterPushHint(actor, view.GetAimRay(view.Yaw, view.Pitch), out var clothPoint))
+                {
+                    string binding = rules.usePrimaryButton ? ability.Input.UseBinding : ability.Input.CycleBinding;
+                    PresentHint(_sapHintView, sapPromptText, binding, settings.sapPushClothText);
+                    Position((RectTransform)sapPrompt.transform, view.Camera, clothPoint + promptOffset);
+                    if (sapPrompt.activeSelf && interaction == StageInteraction.GrabCloth && clothPrompt != null)
+                        clothPrompt.SetActive(false);
                 }
                 else if (local && actor != null &&
                     ExteriorJumpPad.TryLeafInstallHint(actor, out var leafPoint))

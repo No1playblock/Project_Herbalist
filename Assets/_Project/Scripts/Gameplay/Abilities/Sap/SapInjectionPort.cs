@@ -15,7 +15,10 @@ namespace Herbalist.Abilities
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetPorts() => ActivePorts.Clear();
         private void OnEnable() => ActivePorts.Add(this);
-        public static bool TryInteractionHint(StageActor actor, out Vector3 point)
+        public static bool TryInteractionHint(StageActor actor, out Vector3 point) =>
+            TryInteractionHint(actor, null, out point);
+
+        internal static bool TryInteractionHint(StageActor actor, SapInjectionPort target, out Vector3 point)
         {
             point = default;
             var ability = actor != null ? actor.Abilities : null;
@@ -27,6 +30,7 @@ namespace Herbalist.Abilities
             bool found = false;
             foreach (var port in ActivePorts)
             {
+                if (target != null && port != target) continue;
                 float range = Mathf.Min(port._hintRange, ability.Sap.Settings.controlRange);
                 float distance = Vector3.Distance(actor.transform.position, port.InteractionPoint);
                 if (distance > range || distance >= nearest) continue;

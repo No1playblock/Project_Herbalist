@@ -18,6 +18,8 @@ namespace Herbalist.StageOne
         public UnityEvent onEntranceOpened = new UnityEvent();
         public UnityEvent onCleared = new UnityEvent();
         public MonoBehaviour entranceCondition;
+        [SerializeField] private SapInjectionPort _firstSapGuidePort;
+        internal SapInjectionPort FirstSapGuidePort => _firstSapGuidePort;
         public bool GateOpen => Progress != null && Progress.GateOpen && (!(entranceCondition is Herbalist.Levels.IStageExitCondition condition) || condition.CanExit);
         public StageProgress Progress { get; private set; }
         public StageActor[] Actors { get; private set; } = new StageActor[2];
