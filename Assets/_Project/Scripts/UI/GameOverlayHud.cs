@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
@@ -21,20 +22,74 @@ namespace Herbalist.GameUI
         private int pauseFrame;
         private float subtitleRemaining;
         [SerializeField] private CanvasGroup _stageHeaderGroup;
+        [SerializeField] private Image _stageHeaderFirstArt;
+        [SerializeField] private Image _stageHeaderSecondArt;
+        [SerializeField, Min(0f)] private float _stageHeaderFadeInDuration = 0.6f;
+        [SerializeField, Min(0f)] private float _stageHeaderHoldDuration = 2f;
+        [SerializeField, Min(0f)] private float _stageHeaderFadeOutDuration = 0.6f;
         [SerializeField] private StagePlaytestHud _playtestHud;
+        private Coroutine _stageHeaderSequence;
         private string _shownObjective;
         private float _objectiveElapsed;
         private void OnEnable()
         {
             _shownObjective = null;
             _objectiveElapsed = 0;
+            if (_stageHeaderGroup != null) _stageHeaderGroup.alpha = 1f;
+            SetImageAlpha(_stageHeaderFirstArt, 0f);
+            SetImageAlpha(_stageHeaderSecondArt, 0f);
+            if (_stageHeaderFirstArt != null && _stageHeaderSecondArt != null)
+                _stageHeaderSequence = StartCoroutine(PlayStageHeaderSequence());
             pause=settings.pauseAction.action.Clone(); pause.performed+=_=>TogglePause(); pause.Enable();
             AudioListener.volume=UserOptions.Volume;
+        }
+        private static void SetImageAlpha(Image image, float alpha)
+        {
+            if (image == null) return;
+            Color color = image.color;
+            color.a = alpha;
+            image.color = color;
+        }
+
+        private IEnumerator PlayStageHeaderSequence()
+        {
+            SetImageAlpha(_stageHeaderFirstArt, 0f);
+            SetImageAlpha(_stageHeaderSecondArt, 0f);
+
+            yield return FadeImage(_stageHeaderFirstArt, 0f, 1f, _stageHeaderFadeInDuration);
+            yield return new WaitForSecondsRealtime(_stageHeaderHoldDuration);
+            yield return FadeImage(_stageHeaderFirstArt, 1f, 0f, _stageHeaderFadeOutDuration);
+
+            yield return FadeImage(_stageHeaderSecondArt, 0f, 1f, _stageHeaderFadeInDuration);
+            yield return new WaitForSecondsRealtime(_stageHeaderHoldDuration);
+            yield return FadeImage(_stageHeaderSecondArt, 1f, 0f, _stageHeaderFadeOutDuration);
+
+            _stageHeaderSequence = null;
+        }
+
+        private IEnumerator FadeImage(Image image, float from, float to, float duration)
+        {
+            if (image == null) yield break;
+            if (duration <= 0f)
+            {
+                SetImageAlpha(image, to);
+                yield break;
+            }
+
+            float elapsed = 0f;
+            SetImageAlpha(image, from);
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                SetImageAlpha(image, Mathf.Lerp(from, to, Mathf.Clamp01(elapsed / duration)));
+                yield return null;
+            }
+            SetImageAlpha(image, to);
         }
         private void Start()
         {
             resume.onClick.AddListener(()=>SetPause(false)); optionButton.onClick.AddListener(()=>options.SetActive(true));
-            mainMenu.onClick.AddListener(ReturnToMenu); stageName.text=title;
+            mainMenu.onClick.AddListener(ReturnToMenu); if (stageName != null) stageName.text=title;
         }
         private void TogglePause()
         {
@@ -92,16 +147,19 @@ namespace Herbalist.GameUI
             loading.SetActive(session!=null&&(session.State==LobbyState.Loading||session.State==LobbyState.Leaving));
             var flow=Herbalist.StageOne.StageOneFlow.Instance;
             bool mazeView = Herbalist.Levels.SapMazeBoard.LocalMazeView != null;
-            if(flow!=null) objective.text = _playtestHud != null ? string.Empty : flow.Objective;
-            else
+            if (objective != null)
             {
-                var maze = FindFirstObjectByType<Herbalist.Levels.DescendingMazeFlow>();
-                var altar = FindFirstObjectByType<Herbalist.Levels.RotatingAltar>();
-                var branchRide = FindFirstObjectByType<Herbalist.Levels.BranchRideFlow>();
-                if (maze != null) objective.text = maze.Objective;
-                else if (branchRide != null) objective.text = branchRide.Objective;
-                else if (altar != null) objective.text = altar.Objective;
-                else objective.text = defaultObjective;
+                if(flow!=null) objective.text = _playtestHud != null ? string.Empty : flow.Objective;
+                else
+                {
+                    var maze = FindFirstObjectByType<Herbalist.Levels.DescendingMazeFlow>();
+                    var altar = FindFirstObjectByType<Herbalist.Levels.RotatingAltar>();
+                    var branchRide = FindFirstObjectByType<Herbalist.Levels.BranchRideFlow>();
+                    if (maze != null) objective.text = maze.Objective;
+                    else if (branchRide != null) objective.text = branchRide.Objective;
+                    else if (altar != null) objective.text = altar.Objective;
+                    else objective.text = defaultObjective;
+                }
             }
             UpdateStageHeader(!mazeView && (flow == null || flow.Minigame == StageMinigameKind.None), paused, Time.unscaledDeltaTime);
             if(!paused)subtitleRemaining-=Time.unscaledDeltaTime;
@@ -109,9 +167,17 @@ namespace Herbalist.GameUI
         }
         private void UpdateStageHeader(bool visible, bool paused, float deltaTime)
         {
-            if (_shownObjective != objective.text)
+            if (_stageHeaderFirstArt != null && _stageHeaderSecondArt != null)
             {
-                _shownObjective = objective.text;
+                if (_stageHeaderGroup != null) _stageHeaderGroup.alpha = visible ? 1f : 0f;
+                if (stageHeader != null) stageHeader.SetActive(visible);
+                return;
+            }
+
+            string currentObjective = objective != null ? objective.text : string.Empty;
+            if (_shownObjective != currentObjective)
+            {
+                _shownObjective = currentObjective;
                 _objectiveElapsed = 0;
             }
             else if (visible && !paused) _objectiveElapsed += deltaTime;
@@ -120,14 +186,14 @@ namespace Herbalist.GameUI
             if (_stageHeaderGroup != null) _stageHeaderGroup.alpha = alpha;
             else
             {
-                stageName.alpha = alpha;
-                objective.alpha = alpha;
+                if (stageName != null) stageName.alpha = alpha;
+                if (objective != null) objective.alpha = alpha;
             }
             if (stageHeader != null) stageHeader.SetActive(visible && alpha > 0);
             else
             {
-                stageName.gameObject.SetActive(visible && alpha > 0);
-                objective.gameObject.SetActive(visible && alpha > 0);
+                if (stageName != null) stageName.gameObject.SetActive(visible && alpha > 0);
+                if (objective != null) objective.gameObject.SetActive(visible && alpha > 0);
             }
         }
         private void LateUpdate()
@@ -143,6 +209,11 @@ namespace Herbalist.GameUI
         private void OnDisable()
         {
             recaptureAfterMinigame = false;
+            if (_stageHeaderSequence != null)
+            {
+                StopCoroutine(_stageHeaderSequence);
+                _stageHeaderSequence = null;
+            }
             pause?.Dispose();
             GameplayCursor.Instance?.SetUiMode(this,false);
             GameplayPause.SetOffline(false);

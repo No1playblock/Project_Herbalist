@@ -39,11 +39,27 @@ namespace Herbalist.GameUI
                 slot.root.SetActive(visible);
                 if (!visible) continue;
                 string key = overflow ? binding : parts[i].Trim();
-                bool showImage = slot.image.sprite != null && SameKey(key, slot.binding);
+                bool showImage = !IsControlKey(key) && slot.image.sprite != null && SameKey(key, slot.binding);
                 slot.image.gameObject.SetActive(showImage);
                 slot.fallback.gameObject.SetActive(!showImage);
-                slot.fallback.text = key;
+                slot.fallback.text = FormatKeyLabel(key);
             }
+        }
+
+        private static string FormatKeyLabel(string key)
+        {
+            return IsControlKey(key) ? "CTRL" : key;
+        }
+
+        private static bool IsControlKey(string key)
+        {
+            string normalized = (key ?? string.Empty).Trim().Replace(" ", string.Empty);
+            return string.Equals(normalized, "Ctrl", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(normalized, "Control", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(normalized, "LeftCtrl", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(normalized, "RightCtrl", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(normalized, "LeftControl", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(normalized, "RightControl", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool SameKey(string a, string b)
