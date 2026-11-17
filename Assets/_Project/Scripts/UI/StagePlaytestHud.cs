@@ -42,12 +42,14 @@ namespace Herbalist.GameUI
         };
         [SerializeField] private string _leafGuide = "수액 흔적에는 나뭇잎을 던질 수 있습니다.";
         [SerializeField] private string _sapGuide = "나무 홈에는 수액을 주입할 수 있습니다.";
+        [SerializeField] private string _sapOnlyBranchGuide = "가지에 붙인 나뭇잎은 수액 능력자만 탈 수 있어요.";
 
         private static readonly List<string> History = new();
         private readonly Queue<string> _dialogue = new();
         private readonly uint[] _seenRecovery = new uint[2];
         private InputAction _historyAction;
         private bool _openingSeen, _harvestSeen, _leafFallSeen;
+        private bool _sapOnlyBranchGuideSeen;
         private int _abilityGuides;
         private float _dialogueRemaining, _guideRemaining, _fadeRemaining;
         private Vector3 _guidePoint;
@@ -155,7 +157,14 @@ namespace Herbalist.GameUI
             _fadeRemaining = Mathf.Max(0f, _fadeRemaining - dt);
             _recoveryFade.alpha = _fadeRemaining / _recoverySeconds;
             _recoveryFade.gameObject.SetActive(_fadeRemaining > 0f);
-            if (!local.Abilities.Unlocked || flow.Minigame != StageMinigameKind.None || _guideRemaining > 0) return;
+            if (!local.Abilities.Unlocked || flow.Minigame != StageMinigameKind.None) return;
+            if (_guideRemaining > 0) return;
+            if (!_sapOnlyBranchGuideSeen && TrySapOnlyBranchGuidePoint(local, flow, out var branchPoint) &&
+                StartGuide(local.Camera, branchPoint, _sapOnlyBranchGuide, true))
+            {
+                _sapOnlyBranchGuideSeen = true;
+                return;
+            }
             bool leaf = local.Abilities.Kind == PlayerAbilityKind.Leaf;
             int bit = leaf ? 1 : 2;
             if ((_abilityGuides & bit) != 0) return;
@@ -165,6 +174,24 @@ namespace Herbalist.GameUI
                 TrySapGuidePoint(local, flow.FirstSapGuidePort, out point);
             if (found && StartGuide(local.Camera, point, leaf ? _leafGuide : _sapGuide, !leaf))
                 _abilityGuides |= bit;
+        }
+
+        private bool TrySapOnlyBranchGuidePoint(StageActor local, StageOneFlow flow, out Vector3 point)
+        {
+            point = default;
+            float nearest = _leafGuideRange * _leafGuideRange;
+            bool found = false;
+            foreach (var target in flow.SapOnlyBranchGuideTargets)
+            {
+                if (target == null || !target.isActiveAndEnabled) continue;
+                Vector3 candidate = target.HasLeaf ? target.SocketPosition : target.transform.position;
+                float distance = (local.transform.position - candidate).sqrMagnitude;
+                if (distance > nearest) continue;
+                nearest = distance;
+                point = candidate;
+                found = true;
+            }
+            return found;
         }
 
         private bool TrySapGuidePoint(StageActor actor, SapInjectionPort port, out Vector3 point)

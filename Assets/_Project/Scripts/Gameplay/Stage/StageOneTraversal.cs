@@ -171,7 +171,7 @@ namespace Herbalist.Levels
                 StageOneFlow.Instance.TrackLeafPlatformFall(actor, player.Motor.IsGrounded);
                 if (_sharedCheckpoints.Length > 0)
                 {
-                    if (!usingCloth && player.Motor.IsGrounded) UpdateSharedCheckpoint(actor, cc);
+                    if (!usingCloth && cc.enabled) UpdateSharedCheckpoint(actor, cc, player.Motor);
                     continue;
                 }
                 if (_forestExitRecoveryPoint != null && _forestExitCheckpoint != null &&
@@ -196,35 +196,40 @@ namespace Herbalist.Levels
             }
         }
 
-        private void UpdateSharedCheckpoint(StageActor actor, CharacterController character)
+        private void UpdateSharedCheckpoint(StageActor actor, CharacterController character, PlayerMotor motor)
         {
-            Vector3 feet = character.transform.TransformPoint(character.center) -
-                Vector3.up * character.height * Mathf.Abs(character.transform.lossyScale.y) * .5f;
-            Physics.Raycast(feet + Vector3.up * _checkpointProbeHeight, Vector3.down,
-                out var ground, _checkpointProbeDistance, ~0, QueryTriggerInteraction.Ignore);
+            Collider ground = null;
+            if (motor.IsGrounded)
+            {
+                ground = (motor as CharacterControllerMotor)?.WalkableGround;
+                if (ground == null)
+                {
+                    Vector3 feet = character.transform.TransformPoint(character.center) -
+                        Vector3.up * character.height * Mathf.Abs(character.transform.lossyScale.y) * .5f;
+                    if (Physics.Raycast(feet + Vector3.up * _checkpointProbeHeight, Vector3.down,
+                        out var hit, _checkpointProbeDistance, ~0, QueryTriggerInteraction.Ignore))
+                        ground = hit.collider;
+                }
+            }
+            int slot = actor.Slot;
+            int arrival = 1 << slot;
             for (int i = _sharedCheckpoints.Length - 1; i > _activeCheckpoint; i--)
             {
                 var group = _sharedCheckpoints[i];
-                bool reached = false;
+                if ((group.arrived & arrival) != 0) continue;
                 foreach (var surface in group.surfaces)
                 {
                     if (surface == null || !surface.enabled || !surface.gameObject.activeInHierarchy) continue;
-                    if (surface == ground.collider || (surface.isTrigger && Physics.ComputePenetration(
+                    if (surface != ground && (!surface.isTrigger || !Physics.ComputePenetration(
                         surface, surface.transform.position, surface.transform.rotation,
-                        character, character.transform.position, character.transform.rotation, out _, out _)))
-                    {
-                        reached = true;
-                        break;
-                    }
+                        character, character.transform.position, character.transform.rotation, out _, out _))) continue;
+                    group.positions[slot] = group.recoveryPoint != null
+                        ? group.recoveryPoint.position + _starts[slot].position - _starts[0].position
+                        : actor.transform.position;
+                    group.arrived |= arrival;
+                    if (group.arrived == 0b11) _activeCheckpoint = i;
+                    break;
                 }
-                if (!reached) continue;
-                int slot = actor.Slot;
-                group.positions[slot] = group.recoveryPoint != null
-                    ? group.recoveryPoint.position + _starts[slot].position - _starts[0].position
-                    : actor.transform.position;
-                group.arrived |= 1 << slot;
-                if (group.arrived == 0b11) _activeCheckpoint = i;
-                return;
             }
         }
         private void Update() => Tick(Time.deltaTime);

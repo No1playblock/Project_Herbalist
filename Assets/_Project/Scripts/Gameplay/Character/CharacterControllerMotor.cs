@@ -16,6 +16,7 @@ namespace Herbalist.Player
         private Herbalist.Levels.StageOneTraversal _treeTraversal;
         private bool _bareTreeContact;
         private bool _walkableContact;
+        internal Collider WalkableGround { get; private set; }
         public override bool IsGrounded => grounded;
         public override Vector3 Velocity => velocity;
         private void Awake()
@@ -72,6 +73,7 @@ namespace Herbalist.Player
         {
             Vector3 start = transform.position;
             _bareTreeContact = _walkableContact = false;
+            WalkableGround = null;
             Herbalist.Interaction.OneWayPlatform.PrepareMove(controller, displacement / deltaTime);
             Herbalist.Levels.StageEntranceGate.PrepareMove(controller, _enteredGateMask);
             CollisionFlags flags = controller.Move(displacement);
@@ -83,6 +85,7 @@ namespace Herbalist.Player
             // independently so a jump, drop or launch still has its intended motion.
             SetControllerPosition(start);
             _bareTreeContact = _walkableContact = false;
+            WalkableGround = null;
             Vector3 vertical = Vector3.up * displacement.y;
             Herbalist.Interaction.OneWayPlatform.PrepareMove(controller, vertical / deltaTime);
             Herbalist.Levels.StageEntranceGate.PrepareMove(controller, _enteredGateMask);
@@ -97,7 +100,11 @@ namespace Herbalist.Player
         {
             if (_treeTraversal == null) return;
             if (_treeTraversal.IsBareTreeContact(hit.collider, hit.point)) _bareTreeContact = true;
-            else if (hit.normal.y >= Mathf.Cos(controller.slopeLimit * Mathf.Deg2Rad)) _walkableContact = true;
+            else if (hit.normal.y >= Mathf.Cos(controller.slopeLimit * Mathf.Deg2Rad))
+            {
+                _walkableContact = true;
+                WalkableGround = hit.collider;
+            }
         }
 
         private void SetControllerPosition(Vector3 position)
@@ -111,6 +118,7 @@ namespace Herbalist.Player
         public override void RestoreState(MotorState state)
         {
             SetControllerPosition(state.Position);
+            WalkableGround = null;
             _externalFlight = state.ExternalFlight; _externalGravity = state.ExternalGravity; _externalAirControl = state.ExternalAirControl;
             velocity = state.Velocity; grounded = state.Grounded; _enteredGateMask = state.EnteredGateMask;
         }

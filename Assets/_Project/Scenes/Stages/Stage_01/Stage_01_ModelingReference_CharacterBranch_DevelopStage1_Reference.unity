@@ -6807,7 +6807,7 @@ MonoBehaviour:
   _allowRiderDriveWithWater: 1
   _loweringPort: {fileID: 0}
   _raisedMeters: 2
-  _deployedGripRaise: 3
+  _deployedGripRaise: 2
   _lowerSeconds: 1
   _externalVisualRoot: {fileID: 1997861179}
   _waterHitProxy: {fileID: 789496413}
@@ -44865,6 +44865,18 @@ MonoBehaviour:
     - {fileID: 1786354619}
     recoveryPoint: {fileID: 0}
   - surfaces:
+    - {fileID: 1976157899}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1179547944}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1776286072}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1513852947}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
     - {fileID: 295767782}
     recoveryPoint: {fileID: 0}
   - surfaces:
@@ -44874,6 +44886,15 @@ MonoBehaviour:
     - {fileID: 119751489}
     recoveryPoint: {fileID: 0}
   - surfaces:
+    - {fileID: 1978142887}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 196199741}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 106336525}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
     - {fileID: 811527761}
     recoveryPoint: {fileID: 0}
   - surfaces:
@@ -44881,10 +44902,64 @@ MonoBehaviour:
     - {fileID: 1623996792}
     recoveryPoint: {fileID: 0}
   - surfaces:
+    - {fileID: 528315244}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1760435542}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
     - {fileID: 1880865474}
     recoveryPoint: {fileID: 0}
   - surfaces:
+    - {fileID: 1063918888}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1524629887}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
     - {fileID: 240996998}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 689688648}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 963048029}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1056444382}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1494614537}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1248961891}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1126615885}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1621554095}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1377215917}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1069763286}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1964558603}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1373829349}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1179486700}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1978177805}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1244057674}
     recoveryPoint: {fileID: 0}
   - surfaces:
     - {fileID: 1352376524}
@@ -44893,10 +44968,22 @@ MonoBehaviour:
     - {fileID: 855300586}
     recoveryPoint: {fileID: 0}
   - surfaces:
+    - {fileID: 1355591135}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 1623965384}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
     - {fileID: 254177325}
     recoveryPoint: {fileID: 0}
   - surfaces:
     - {fileID: 1913681476}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 2042611568}
+    recoveryPoint: {fileID: 0}
+  - surfaces:
+    - {fileID: 428088350}
     recoveryPoint: {fileID: 0}
   _bareTrees:
   - {fileID: 633115985}
@@ -103409,7 +103496,7 @@ Transform:
   m_GameObject: {fileID: 789854625}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 302.88953, y: 114.93141, z: 346.8054}
+  m_LocalPosition: {x: 300.2, y: 111.8, z: 345.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -130377,7 +130464,7 @@ MonoBehaviour:
   nextScenePath: Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Mazes.unity
   requireEarnedAbilities: 1
   abilityRules: {fileID: 11400000, guid: 44ebab51bf3ac9d47bd3a64c203dd5a8, type: 2}
-  _playerCameraPostProcessing: 0
+  _playerCameraPostProcessing: 1
 --- !u!4 &996864011
 Transform:
   m_ObjectHideFlags: 0
@@ -186356,6 +186443,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 683928217}
+  - {fileID: 1583277694}
   m_Father: {fileID: 1367155426}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!135 &1386574078
@@ -225474,6 +225562,99 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c01abf4bf7a25dd459f2d785431d7335, type: 3}
   m_PrefabInstance: {fileID: 1583033847}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1583277693
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1583277694}
+  - component: {fileID: 1583277696}
+  - component: {fileID: 1583277695}
+  m_Layer: 0
+  m_Name: SurfaceFittedOpening
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1583277694
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1583277693}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1386574077}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1583277695
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1583277693}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 453843fe43b8d474db82c1bc38010bdc, type: 2}
+  - {fileID: 2100000, guid: e2a47234f5198e24fb14078159402dc0, type: 2}
+  - {fileID: 2100000, guid: 46362aba75d62e34f9a8dc7673a20d28, type: 2}
+  - {fileID: 2100000, guid: df7caa8727d56b24096c3137c3daeb00, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1583277696
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1583277693}
+  m_Mesh: {fileID: 4300000, guid: 414cc3759c619474a930ef01573d89f7, type: 2}
 --- !u!1001 &1583433904
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -282407,7 +282588,7 @@ MonoBehaviour:
   _allowRiderDriveWithWater: 0
   _loweringPort: {fileID: 1458673473}
   _raisedMeters: 15
-  _deployedGripRaise: 7.5
+  _deployedGripRaise: 5
   _lowerSeconds: 1
   _externalVisualRoot: {fileID: 1553947847}
   _waterHitProxy: {fileID: 13381538}
@@ -289872,6 +290053,8 @@ MonoBehaviour:
       m_Calls: []
   entranceCondition: {fileID: 0}
   _firstSapGuidePort: {fileID: 1419924879788877903}
+  _sapOnlyBranchGuideTargets:
+  - {fileID: 968257183}
 --- !u!114 &1964594252
 MonoBehaviour:
   m_ObjectHideFlags: 0

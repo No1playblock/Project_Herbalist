@@ -392,11 +392,10 @@ private void ConfigureCoreLine()
                 Vector3 velocity = sap.HoseLaunchVelocity;
                 float duration = sap.HoseTravelTime;
                 float startTime = Mathf.Clamp(sap.HoseStartTime, 0f, duration);
-                float gravity = sap.Settings.hoseGravity;
                 for (int i = 0; i < _pathPoints.Length; i++)
                 {
                     float time = Mathf.Lerp(startTime, duration, (float)i / (_pathPoints.Length - 1));
-                    _pathPoints[i] = start + velocity * time + Vector3.down * (0.5f * gravity * time * time);
+                    _pathPoints[i] = SapHoseSprayer.SamplePosition(start, velocity, time, sap.Settings);
                 }
                 _pathPoints[_pathPoints.Length - 1] = end;
                 return;
