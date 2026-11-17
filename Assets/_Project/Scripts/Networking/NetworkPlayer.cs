@@ -13,6 +13,7 @@ namespace Herbalist.Networking
         public uint JumpSequence;
         public uint AbilityCycle;
         public uint AbilityUse;
+        public uint AbilityRecall;
         public NetworkBool AbilityHeld;
         public NetworkBool AbilityCycleHeld;
         public Vector2 MazePointer;
@@ -98,6 +99,7 @@ namespace Herbalist.Networking
                 JumpSequence = player.Input.JumpSequence,
                 AbilityCycle = abilityInput.CycleSequence,
                 AbilityUse = abilityInput.UseSequence,
+                AbilityRecall = abilityInput.RecallSequence,
                 AbilityHeld = abilityInput.UseHeld,
                 AbilityCycleHeld = abilityInput.CycleHeld,
                 MazePointer = pointerPosition,

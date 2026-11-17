@@ -69,17 +69,16 @@ namespace Herbalist.GameUI
                 if (show) jumpPadCountdown.text = string.Format(settings.jumpPadCountdownFormat, remaining);
             }
             PresentHint(_helpHintView, helpHint, settings.helpAction.action.GetBindingDisplayString(), settings.helpHint);
-            helpPanel.SetActive(local&&expanded&&!mazeView);
-            if(local&&expanded)
+            bool showHelp = local && expanded && !mazeView;
+            helpPanel.SetActive(showHelp);
+            if(showHelp)
             {
-                var switcher = player.GetComponent<OfflineAbilitySwitcher>();
-                bool offlineTest = switcher != null && switcher.isActiveAndEnabled;
-                if (_helpControls != null) _helpControls.Present(settings, offlineTest);
+                if (_helpControls != null) _helpControls.Present(settings, (RectTransform)helpPanel.transform);
                 else
                 {
                     var lines = new System.Text.StringBuilder();
                     foreach (var h in settings.controls)
-                        if (h.Action != null && (!h.offlineTestOnly || offlineTest))
+                        if (settings.ShowsInControlHelp(h))
                             lines.AppendLine(string.Format(settings.controlHintFormat, h.Action.action.GetBindingDisplayString(), h.Label));
                     helpText.text = lines.ToString();
                 }

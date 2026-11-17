@@ -10,10 +10,24 @@ namespace Herbalist.GameUI
         public bool offlineTestOnly;
         [SerializeField] private InputActionReference _stageOneAction;
         [SerializeField] private string _stageOneLabel;
+        [SerializeField] private bool _stageOneOnly;
+        [SerializeField] private string _mazeLabel;
+        [SerializeField] private bool _hideInMaze;
 
         private bool UsesStageOneOverride => _stageOneAction != null && Herbalist.Levels.StageOneTraversal.Instance != null;
+        private static bool IsMazeStage => Herbalist.Levels.StageLevel.Instance != null &&
+            Herbalist.Levels.StageLevel.Instance.TryGetComponent<Herbalist.Levels.DescendingMazeFlow>(out _);
         public InputActionReference Action => UsesStageOneOverride ? _stageOneAction : action;
-        public string Label => UsesStageOneOverride ? _stageOneLabel : label;
+        public string Label
+        {
+            get
+            {
+                if (UsesStageOneOverride) return _stageOneLabel;
+                return !string.IsNullOrEmpty(_mazeLabel) && IsMazeStage ? _mazeLabel : label;
+            }
+        }
+        internal bool IsAvailableInStage => (!_stageOneOnly || Herbalist.StageOne.StageOneFlow.Instance != null) &&
+            (!_hideInMaze || !IsMazeStage);
     }
     [CreateAssetMenu(menuName="Herbalist/Game UI Settings")]
     public sealed class GameUiSettings : ScriptableObject
@@ -48,6 +62,13 @@ namespace Herbalist.GameUI
         public string jumpPadCountdownFormat = "점프대 발사까지 <b>{0:0.0}</b>초";
         public InputActionReference pauseAction, helpAction;
         public ControlHint[] controls;
+
+        internal bool ShowsInControlHelp(ControlHint hint)
+        {
+            var action = hint?.Action;
+            return action != null && hint.IsAvailableInStage && !hint.offlineTestOnly && action != pauseAction && action != helpAction;
+        }
+
         public Vector3 markerOffset = new Vector3(-.65f, 1.9f, 0);
         [Min(.1f)] public float feedbackDuration=4;
         [Min(0)] public float objectiveHoldDuration = 5f;

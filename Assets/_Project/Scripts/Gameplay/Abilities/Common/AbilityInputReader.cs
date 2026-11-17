@@ -8,11 +8,12 @@ namespace Herbalist.Abilities
     {
         [SerializeField] private InputActionReference cycle;
         [SerializeField] private InputActionReference use;
-        private InputAction cycleAction, useAction;
+        private InputAction cycleAction, useAction, recallAction;
         private PlayerController player;
         private bool active;
         public uint CycleSequence { get; private set; }
         public uint UseSequence { get; private set; }
+        public uint RecallSequence { get; private set; }
         public string CycleBinding => cycleAction?.GetBindingDisplayString() ?? string.Empty;
         public string UseBinding => useAction?.GetBindingDisplayString() ?? string.Empty;
         public bool CycleHeld => active && !Herbalist.GameUI.GameplayPause.IsPaused && cycleAction != null && cycleAction.IsPressed() && Herbalist.Presentation.GameplayCursor.AllowsPointerInput;
@@ -22,18 +23,21 @@ namespace Herbalist.Abilities
             player = GetComponent<PlayerController>();
             if (cycle == null || use == null) { Debug.LogError("Assign ability action references.", this); enabled = false; return; }
             cycleAction = cycle.action.Clone(); useAction = use.action.Clone();
+            recallAction = use.action.actionMap?.FindAction("Recall")?.Clone();
             cycleAction.performed += _ => { if (active && !Herbalist.GameUI.GameplayPause.IsPaused && Herbalist.Presentation.GameplayCursor.AllowsPointerInput) CycleSequence++; };
             useAction.performed += _ => { if (active && !Herbalist.GameUI.GameplayPause.IsPaused && Herbalist.Presentation.GameplayCursor.AllowsPointerInput) UseSequence++; };
+            if (recallAction != null)
+                recallAction.performed += _ => { if (active && !Herbalist.GameUI.GameplayPause.IsPaused && Herbalist.Presentation.GameplayCursor.AllowsPointerInput) RecallSequence++; };
         }
         private void Update()
         {
             bool next = player.LocallyControlled && player.isActiveAndEnabled;
             if (next == active) return;
             active = next;
-            if (active) { cycleAction.Enable(); useAction.Enable(); }
-            else { cycleAction.Disable(); useAction.Disable(); }
+            if (active) { cycleAction.Enable(); useAction.Enable(); recallAction?.Enable(); }
+            else { cycleAction.Disable(); useAction.Disable(); recallAction?.Disable(); }
         }
-        private void OnDisable() { active = false; cycleAction?.Disable(); useAction?.Disable(); }
-        private void OnDestroy() { cycleAction?.Dispose(); useAction?.Dispose(); }
+        private void OnDisable() { active = false; cycleAction?.Disable(); useAction?.Disable(); recallAction?.Disable(); }
+        private void OnDestroy() { cycleAction?.Dispose(); useAction?.Dispose(); recallAction?.Dispose(); }
     }
 }
