@@ -56,7 +56,7 @@ namespace Herbalist.Tests
                     RoomControl.Instance.StartGame();
                 }
                 await Wait(() => StageOneFlow.Instance != null && NetworkPlayer.Local != null &&
-                    session.State == LobbyState.Playing && StageActor.All.Count(a => a.Available) == 2, "Stage 1 network actors");
+                    session.State == LobbyState.Playing && StageActor.All.Count(a => a.Available) == 2, "Stage 1 network actors after the opening cinematic", 240);
                 if (host)
                 {
                     var flow = StageOneFlow.Instance;

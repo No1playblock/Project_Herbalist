@@ -40,7 +40,7 @@ namespace Herbalist.GameUI
                     if(room.LocalChoice==1)throw new Exception("Duplicate choice accepted");
                     room.Select(0);
                 }
-                await Wait(()=>NetworkPlayer.Local!=null&&session.State==LobbyState.Playing,"scene start");
+                await Wait(()=>NetworkPlayer.Local!=null&&session.State==LobbyState.Playing,"scene start after the opening cinematic",240);
                 if(NetworkPlayer.Local.Slot!=(host?1:0))throw new Exception("Role slot not preserved");
                 await Task.Delay(500);
                 if(host)

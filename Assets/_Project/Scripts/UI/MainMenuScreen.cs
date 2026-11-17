@@ -23,6 +23,7 @@ namespace Herbalist.GameUI
         private bool creating, entering, soloLoading;
         private string _joinActionText;
         [SerializeField] private string _characterSelectScene;
+        [SerializeField] private GameObject _titleBackdrop;
         private AsyncOperation _characterSelectOperation;
         private GameObject[] _menuBackdrop;
         private FusionLobbySession Session => FusionLobbySession.Instance;
@@ -95,6 +96,7 @@ namespace Herbalist.GameUI
             entry.SetActive(!busy && entering && (state == LobbyState.Error || (!creating && state == LobbyState.Idle)));
             bool showCharacterSelect = state == LobbyState.Waiting && !busy &&
                 !string.IsNullOrEmpty(_characterSelectScene);
+            if (_titleBackdrop != null) _titleBackdrop.SetActive(!showCharacterSelect && !busy);
             UpdateCharacterSelect(showCharacterSelect);
             room.SetActive(state==LobbyState.Waiting&&!busy&&!showCharacterSelect);
             entryTitle.text=creating?settings.createText:settings.joinText;

@@ -110,6 +110,12 @@ namespace Herbalist.Networking
         {
             if (IsProxy) return;
             if (Herbalist.GameUI.GameplayPause.IsPaused) { if (GetInput(out PlayerNetworkInput pausedInput)) LastJumpSequence = pausedInput.JumpSequence; return; }
+            if (FusionLobbySession.Instance?.HoldingCinematicArrival == true)
+            {
+                if (GetInput(out PlayerNetworkInput arrivalInput)) LastJumpSequence = arrivalInput.JumpSequence;
+                if (Transported) player.Motor.Teleport(TransportPosition);
+                return;
+            }
             if (HasStateAuthority) player.TickClothLanding(Runner.DeltaTime);
             if(Transported)
             {

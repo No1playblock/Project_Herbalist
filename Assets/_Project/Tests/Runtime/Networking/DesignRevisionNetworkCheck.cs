@@ -42,7 +42,7 @@ namespace Herbalist.Tests
                 await Wait(() => session.ConnectedCount == 2 && session.State == LobbyState.Waiting, "pair");
                 RoomControl.Instance.Select(host ? 1 : 0);
                 if (host) { await Wait(() => RoomControl.Instance.Ready, "role selection"); RoomControl.Instance.StartGame(); }
-                await Wait(() => StageOneFlow.Instance != null && NetworkPlayer.Local != null && session.State == LobbyState.Playing, "exterior");
+                await Wait(() => StageOneFlow.Instance != null && NetworkPlayer.Local != null && session.State == LobbyState.Playing, "exterior after the opening cinematic", 240);
                 await Task.Delay(500);
                 if (host)
                 {

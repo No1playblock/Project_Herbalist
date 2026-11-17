@@ -45,7 +45,7 @@ namespace Herbalist.Tests
                 await Wait(() => session.ConnectedCount == 2 && session.State == LobbyState.Waiting, "two peers");
                 RoomControl.Instance.Select(host ? 1 : 0);
                 if (host) { await Wait(() => RoomControl.Instance.Ready, "roles"); RoomControl.Instance.StartGame(); }
-                await Wait(() => StageOneFlow.Instance != null && NetworkPlayer.Local != null && session.State == LobbyState.Playing, "Stage1");
+                await Wait(() => StageOneFlow.Instance != null && NetworkPlayer.Local != null && session.State == LobbyState.Playing, "Stage 1 after the opening cinematic", 240);
                 Log("REAL PHOTON " + _peer + " slot=" + NetworkPlayer.Local.Slot + " firstSlot=" + firstSlot);
                 await Task.Delay(1500);
                 var cloths = Object.FindObjectsByType<Cloth>();

@@ -143,7 +143,14 @@ namespace Herbalist.Levels
                 _actors[side] = actor;
                 if (Solo && actor.Local) RestoreSoloSideView(actor, side);
             }
-            bool ready = Solo ? _actors[0] != null || _actors[1] != null : _actors[0] != null && _actors[1] != null && _actors[0].Slot != _actors[1].Slot;
+            if (_phase == 0 && FusionLobbySession.Instance?.HoldingCinematicArrival == true)
+            {
+                for (int i = 0; i < _actors.Length; i++)
+                    Carry(_actors[i], _rafts[i].position + _riderOffset + Vector3.up * _fallMargin);
+                return;
+            }
+            bool singleRider = Solo || (Online && FusionLobbySession.Instance?.ConnectedCount == 1);
+            bool ready = singleRider ? _actors[0] != null || _actors[1] != null : _actors[0] != null && _actors[1] != null && _actors[0].Slot != _actors[1].Slot;
             if (_phase == 0 && ready) { _phase = 1; _travel = 0; }
             if (_phase == 1)
             {
@@ -246,6 +253,7 @@ namespace Herbalist.Levels
         {
             if (!Online && Authority) Tick(Time.deltaTime);
             int phase = Online ? Phase : _phase;
+            bool introView = phase == 1 || (phase == 0 && FusionLobbySession.Instance?.HoldingCinematicArrival == true);
             Present(CurrentMaze, Online ? Travel : _travel, phase == 2);
             foreach (var actor in StageActor.All)
             {
@@ -255,7 +263,7 @@ namespace Herbalist.Levels
                 if (!_masks.ContainsKey(camera)) _masks[camera] = camera.cullingMask;
                 camera.cullingMask = _masks[camera] & ~(1 << (side == 0 ? _backLayer : _frontLayer));
                 var view = actor.GetComponent<PlayerController>().View;
-                if (phase == 1) view.SetCameraOverride(this, _introCameras[side]); else view.ClearCameraOverride(this);
+                if (introView) view.SetCameraOverride(this, _introCameras[side]); else view.ClearCameraOverride(this);
             }
         }
         private void OnDisable()
