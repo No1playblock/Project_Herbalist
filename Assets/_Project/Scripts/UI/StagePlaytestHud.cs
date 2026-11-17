@@ -17,8 +17,8 @@ namespace Herbalist.GameUI
         [SerializeField] private TMP_Text _historyText;
         [SerializeField] private UnityEngine.UI.ScrollRect _historyScroll;
         [SerializeField] private RectTransform _spotlight;
-        [SerializeField] private RectTransform[] _shade;
-        [SerializeField] private RectTransform _guideFrame;
+        [SerializeField] private UnityEngine.UI.RawImage _spotlightOverlay;
+        [SerializeField] private Material _worldRingMaterial;
         [SerializeField] private RectTransform _guideArrow;
         [SerializeField] private TMP_Text _guideText;
         [SerializeField] private CanvasGroup _recoveryFade;
@@ -26,7 +26,10 @@ namespace Herbalist.GameUI
         [SerializeField, Min(.1f)] private float _recoverySeconds = .35f;
         [SerializeField, Min(.1f)] private float _leafGuideRange = 12f;
         [SerializeField, Min(.1f)] private float _sapGuideRange = 12f;
-        [SerializeField] private Vector2 _guideHalfSize = new(.075f, .10f);
+        [SerializeField, Min(.1f)] private float _guideRingRadius = 1.2f;
+        [SerializeField, Min(0f)] private float _guideRingCameraOffset = .2f;
+        [SerializeField] private Vector2 _guideMinimumRadii = new(.065f, .085f);
+        [SerializeField] private Vector2 _guideMaximumRadii = new(.24f, .216f);
         [SerializeField] private string _emptyHistory = "아직 기록된 대사가 없습니다.";
         [SerializeField] private string _opening = "두영: 먼저 주변에서 약초를 찾아보자.";
         [SerializeField] private string _firstGather = "소담: 첫 약초를 찾았군요. 제게 건네주시면 약제를 만들 수 있어요.";
@@ -54,7 +57,13 @@ namespace Herbalist.GameUI
         private float _dialogueRemaining, _guideRemaining, _fadeRemaining;
         private Vector3 _guidePoint;
         private Camera _guideCamera;
+        private LeafInstallTarget _guideTarget;
         private bool _guideAllowOffscreen;
+        private Material _spotlightMaterial;
+        private SpotlightWorldRing _worldRing;
+
+        private static readonly int CenterId = Shader.PropertyToID("_Center");
+        private static readonly int RadiiId = Shader.PropertyToID("_Radii");
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetHistory() => History.Clear();
@@ -73,9 +82,16 @@ namespace Herbalist.GameUI
 
         private void OnDisable()
         {
+            _spotlight.gameObject.SetActive(false);
             CloseHistory();
             _historyAction?.Dispose();
             _historyAction = null;
+        }
+
+        private void OnDestroy()
+        {
+            _worldRing?.Dispose();
+            if (_spotlightMaterial != null) Destroy(_spotlightMaterial);
         }
 
         public void RecordDialogue(string text)
@@ -121,7 +137,11 @@ namespace Herbalist.GameUI
             StageActor local = null;
             foreach (var actor in StageActor.All)
                 if (actor.Local && actor.Slot is >= 0 and < 2) { local = actor; break; }
-            if (local == null) return;
+            if (local == null)
+            {
+                _spotlight.gameObject.SetActive(false);
+                return;
+            }
             float dt = Time.unscaledDeltaTime;
             var flow = StageOneFlow.Instance;
             if (flow != null) UpdateStageOne(local, flow, dt);
@@ -159,8 +179,8 @@ namespace Herbalist.GameUI
             _recoveryFade.gameObject.SetActive(_fadeRemaining > 0f);
             if (!local.Abilities.Unlocked || flow.Minigame != StageMinigameKind.None) return;
             if (_guideRemaining > 0) return;
-            if (!_sapOnlyBranchGuideSeen && TrySapOnlyBranchGuidePoint(local, flow, out var branchPoint) &&
-                StartGuide(local.Camera, branchPoint, _sapOnlyBranchGuide, true))
+            var branch = !_sapOnlyBranchGuideSeen ? FindSapOnlyBranchGuideTarget(local, flow) : null;
+            if (branch != null && StartGuide(local.Camera, BranchGuidePoint(branch), _sapOnlyBranchGuide, true, branch))
             {
                 _sapOnlyBranchGuideSeen = true;
                 return;
@@ -176,23 +196,23 @@ namespace Herbalist.GameUI
                 _abilityGuides |= bit;
         }
 
-        private bool TrySapOnlyBranchGuidePoint(StageActor local, StageOneFlow flow, out Vector3 point)
+        private LeafInstallTarget FindSapOnlyBranchGuideTarget(StageActor local, StageOneFlow flow)
         {
-            point = default;
             float nearest = _leafGuideRange * _leafGuideRange;
-            bool found = false;
+            LeafInstallTarget closest = null;
             foreach (var target in flow.SapOnlyBranchGuideTargets)
             {
                 if (target == null || !target.isActiveAndEnabled) continue;
-                Vector3 candidate = target.HasLeaf ? target.SocketPosition : target.transform.position;
-                float distance = (local.transform.position - candidate).sqrMagnitude;
+                float distance = (local.transform.position - BranchGuidePoint(target)).sqrMagnitude;
                 if (distance > nearest) continue;
                 nearest = distance;
-                point = candidate;
-                found = true;
+                closest = target;
             }
-            return found;
+            return closest;
         }
+
+        private static Vector3 BranchGuidePoint(LeafInstallTarget target) =>
+            target.HasLeaf ? target.SocketPosition : target.transform.position;
 
         private bool TrySapGuidePoint(StageActor actor, SapInjectionPort port, out Vector3 point)
         {
@@ -201,12 +221,15 @@ namespace Herbalist.GameUI
             return port.isActiveAndEnabled && (actor.transform.position - point).sqrMagnitude <= _sapGuideRange * _sapGuideRange;
         }
 
-        private bool StartGuide(Camera camera, Vector3 point, string message, bool allowOffscreen)
+        private bool StartGuide(Camera camera, Vector3 point, string message, bool allowOffscreen,
+            LeafInstallTarget target = null)
         {
+            if (camera == null || !camera.isActiveAndEnabled) return false;
+            if (!allowOffscreen && !IsVisible(camera.WorldToViewportPoint(point))) return false;
             _guideCamera = camera;
             _guidePoint = point;
+            _guideTarget = target;
             _guideAllowOffscreen = allowOffscreen;
-            if (!PresentSpotlight()) return false;
             _guideText.text = message;
             _guideRemaining = _guideSeconds;
             return true;
@@ -214,30 +237,49 @@ namespace Herbalist.GameUI
 
         private bool PresentSpotlight()
         {
-            if (_guideCamera == null) return false;
+            if (_guideCamera == null || !_guideCamera.isActiveAndEnabled) return false;
             Rect viewport = _guideCamera.rect;
             if (viewport.width <= 0 || viewport.height <= 0) return false;
-            var point = _guideCamera.WorldToViewportPoint(_guidePoint);
-            Vector2 center = point;
-            bool visible = point.z > 0f && center.x >= 0f && center.x <= 1f && center.y >= 0f && center.y <= 1f;
+            Vector3 target = _guideTarget != null ? BranchGuidePoint(_guideTarget) : _guidePoint;
+            Vector3 targetProjection = _guideCamera.WorldToViewportPoint(target);
+            bool visible = IsVisible(targetProjection);
             if (!visible && !_guideAllowOffscreen) return false;
             Fit(_spotlight, viewport.min, viewport.max);
-            foreach (var shade in _shade) shade.gameObject.SetActive(visible);
-            _guideFrame.gameObject.SetActive(visible);
+            _spotlightOverlay.gameObject.SetActive(visible);
             _guideArrow.gameObject.SetActive(visible);
             if (!visible) return true;
-            Vector2 half = _guideHalfSize;
-            Vector2 low = Vector2.Max(Vector2.zero, center - half);
-            Vector2 high = Vector2.Min(Vector2.one, center + half);
-            Fit(_shade[0], Vector2.zero, new(1, low.y));
-            Fit(_shade[1], new(0, high.y), Vector2.one);
-            Fit(_shade[2], new(0, low.y), new(low.x, high.y));
-            Fit(_shade[3], new(high.x, low.y), new(1, high.y));
-            Fit(_guideFrame, low, high);
-            float arrowY = Mathf.Min(.93f, high.y + .025f);
-            Fit(_guideArrow, new(center.x - .03f, arrowY), new(center.x + .03f, arrowY + .05f));
+
+            var cameraTransform = _guideCamera.transform;
+            // Bring the marker slightly forward so it clears the surface it is pointing at.
+            Vector3 ringCenter = Vector3.MoveTowards(target, cameraTransform.position,
+                Mathf.Min(_guideRingCameraOffset, targetProjection.z * .12f));
+            Vector2 center = _guideCamera.WorldToViewportPoint(ringCenter);
+            Vector2 right = _guideCamera.WorldToViewportPoint(ringCenter + cameraTransform.right * _guideRingRadius);
+            Vector2 up = _guideCamera.WorldToViewportPoint(ringCenter + cameraTransform.up * _guideRingRadius);
+            Vector2 opening = new Vector2(right.x - center.x, up.y - center.y) * 1.25f;
+            float ringScale = Mathf.Min(1f,
+                Mathf.Min(_guideMaximumRadii.x / Mathf.Max(.001f, opening.x),
+                    _guideMaximumRadii.y / Mathf.Max(.001f, opening.y)));
+            Vector2 radii = Vector2.Max(_guideMinimumRadii, opening * ringScale);
+
+            if (_spotlightMaterial == null)
+            {
+                _spotlightMaterial = new Material(_spotlightOverlay.material);
+                _spotlightOverlay.material = _spotlightMaterial;
+            }
+            _spotlightMaterial.SetVector(CenterId, new Vector4(center.x, center.y, 0, 0));
+            _spotlightMaterial.SetVector(RadiiId, new Vector4(radii.x, radii.y, 0, 0));
+            _worldRing ??= new SpotlightWorldRing();
+            _worldRing.Draw(_guideCamera, ringCenter, _guideRingRadius * ringScale, _worldRingMaterial);
+
+            float arrowY = Mathf.Min(.93f, center.y + radii.y + .025f);
+            float arrowX = Mathf.Clamp(center.x, .03f, .97f);
+            Fit(_guideArrow, new(arrowX - .03f, arrowY), new(arrowX + .03f, arrowY + .05f));
             return true;
         }
+
+        private static bool IsVisible(Vector3 point) =>
+            point.z > 0f && point.x >= 0f && point.x <= 1f && point.y >= 0f && point.y <= 1f;
 
         private static void Fit(RectTransform rect, Vector2 min, Vector2 max)
         {
