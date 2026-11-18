@@ -35,8 +35,8 @@ RectTransform:
   - {fileID: 8745888534675783881}
   m_Father: {fileID: 8409950773488035742}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.24, y: 0.18}
-  m_AnchorMax: {x: 0.76, y: 0.82}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -61,7 +61,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.09, g: 0.14, b: 0.12, a: 0.98}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -856,7 +856,7 @@ MonoBehaviour:
   defaultObjective: 
   _stageHeaderGroup: {fileID: 6498284465660720278}
   _stageHeaderFirstArt: {fileID: 8909553995468330401}
-  _stageHeaderSecondArt: {fileID: 2624008604633129752}
+  _stageHeaderSecondArt: {fileID: 0}
   _stageHeaderFadeInDuration: 0.6
   _stageHeaderHoldDuration: 2
   _stageHeaderFadeOutDuration: 0.6
@@ -1704,7 +1704,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 346, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &7525129028125493085
@@ -1737,8 +1737,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 33c3be8d8a6890c478fa96824fbc4480, type: 2}
-  m_sharedMaterial: {fileID: 2531516679534824642, guid: 33c3be8d8a6890c478fa96824fbc4480, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: f6d6db893a076304b96ff122c79e3d7c, type: 2}
+  m_sharedMaterial: {fileID: -1729637501063944873, guid: f6d6db893a076304b96ff122c79e3d7c, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1757,13 +1757,13 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 34
-  m_fontSizeBase: 34
+  m_fontSize: 16
+  m_fontSizeBase: 16
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -2005,7 +2005,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.05, y: 0.83}
   m_AnchorMax: {x: 0.95, y: 0.98}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4035153650400149309
@@ -2036,10 +2036,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uB300\uC0AC \uAE30\uB85D"
+  m_text: "\uAE30\uB85D\uC7A5"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 33c3be8d8a6890c478fa96824fbc4480, type: 2}
-  m_sharedMaterial: {fileID: 2531516679534824642, guid: 33c3be8d8a6890c478fa96824fbc4480, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: f6d6db893a076304b96ff122c79e3d7c, type: 2}
+  m_sharedMaterial: {fileID: -1729637501063944873, guid: f6d6db893a076304b96ff122c79e3d7c, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2058,13 +2058,13 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 50
-  m_fontSizeBase: 50
+  m_fontSize: 30
+  m_fontSizeBase: 30
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -2262,7 +2262,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &8409950773488035742
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2304,7 +2304,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.64}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.9}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2611,16 +2611,16 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "L / Esc  \uB2EB\uAE30"
+  m_text: "L \uB2EB\uAE30"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 33c3be8d8a6890c478fa96824fbc4480, type: 2}
-  m_sharedMaterial: {fileID: 2531516679534824642, guid: 33c3be8d8a6890c478fa96824fbc4480, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: f6d6db893a076304b96ff122c79e3d7c, type: 2}
+  m_sharedMaterial: {fileID: -1729637501063944873, guid: f6d6db893a076304b96ff122c79e3d7c, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4286111999
   m_fontColor: {r: 1, g: 0.88, b: 0.47, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -2633,13 +2633,13 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 26
-  m_fontSizeBase: 26
+  m_fontSize: 14
+  m_fontSizeBase: 14
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18

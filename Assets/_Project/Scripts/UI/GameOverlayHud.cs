@@ -93,7 +93,6 @@ namespace Herbalist.GameUI
         }
         private void TogglePause()
         {
-            if (_playtestHud != null && _playtestHud.CloseHistory()) return;
             if(options.activeSelf) { options.SetActive(false); return; }
             if (!GameplayPause.IsPaused && TryCloseMinigame())
             {
@@ -130,8 +129,14 @@ namespace Herbalist.GameUI
         {
             subtitle.text = text;
             subtitleRemaining = duration;
-            if (!string.IsNullOrEmpty(text)) _playtestHud?.RecordDialogue(text);
+            if (!string.IsNullOrEmpty(text)) _playtestHud?.RecordDialogue(FormatSpeakerSeparators(text));
         }
+        private static string FormatSpeakerSeparators(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+            return text.Replace("두영:", "두영 <color=#D3B36B>|</color>").Replace("소담:", "소담 <color=#D3B36B>|</color>");
+        }
+
         private void Update()
         {
             bool paused=GameplayPause.IsPaused;
