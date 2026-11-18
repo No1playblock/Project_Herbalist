@@ -18,7 +18,7 @@ namespace Herbalist.GameUI
         [SerializeField] private UnityEngine.UI.ScrollRect _historyScroll;
         [SerializeField] private RectTransform _spotlight;
         [SerializeField] private UnityEngine.UI.RawImage _spotlightOverlay;
-        [SerializeField] private Material _worldRingMaterial;
+        [SerializeField] private SpotlightWorldRingSetup _worldRingSetup;
         [SerializeField] private RectTransform _guideArrow;
         [SerializeField] private TMP_Text _guideText;
         [SerializeField] private CanvasGroup _recoveryFade;
@@ -26,8 +26,6 @@ namespace Herbalist.GameUI
         [SerializeField, Min(.1f)] private float _recoverySeconds = .35f;
         [SerializeField, Min(.1f)] private float _leafGuideRange = 12f;
         [SerializeField, Min(.1f)] private float _sapGuideRange = 12f;
-        [SerializeField, Min(.1f)] private float _guideRingRadius = 1.2f;
-        [SerializeField, Min(0f)] private float _guideRingCameraOffset = .2f;
         [SerializeField] private Vector2 _guideMinimumRadii = new(.065f, .085f);
         [SerializeField] private Vector2 _guideMaximumRadii = new(.24f, .216f);
         [SerializeField] private string _emptyHistory = "아직 기록된 대사가 없습니다.";
@@ -57,6 +55,9 @@ namespace Herbalist.GameUI
         private float _dialogueRemaining, _guideRemaining, _fadeRemaining;
         private Vector3 _guidePoint;
         private Camera _guideCamera;
+        private GameObject _guideCaption;
+        private RectTransform _guideCaptionRect;
+        private RectTransform _canvasRect;
         private LeafInstallTarget _guideTarget;
         private bool _guideAllowOffscreen;
         private Material _spotlightMaterial;
@@ -71,6 +72,14 @@ namespace Herbalist.GameUI
         private void Awake()
         {
             if (StageOneFlow.Instance != null) History.Clear();
+            _worldRingSetup ??= GetComponentInChildren<SpotlightWorldRingSetup>(true);
+            _guideCaption = _guideText != null && _guideText.transform.parent != null
+                ? _guideText.transform.parent.gameObject
+                : null;
+            _guideCaptionRect = _guideCaption != null ? _guideCaption.GetComponent<RectTransform>() : null;
+            var canvas = GetComponent<Canvas>();
+            _canvasRect = canvas != null ? canvas.GetComponent<RectTransform>() : transform as RectTransform;
+            _guideCaption?.SetActive(false);
         }
 
         private void OnEnable()
@@ -83,6 +92,7 @@ namespace Herbalist.GameUI
         private void OnDisable()
         {
             _spotlight.gameObject.SetActive(false);
+            _guideCaption?.SetActive(false);
             CloseHistory();
             _historyAction?.Dispose();
             _historyAction = null;
@@ -132,6 +142,7 @@ namespace Herbalist.GameUI
             if (GameplayPause.IsPaused || _historyPanel.activeSelf)
             {
                 _spotlight.gameObject.SetActive(false);
+                _guideCaption?.SetActive(false);
                 return;
             }
             StageActor local = null;
@@ -140,13 +151,18 @@ namespace Herbalist.GameUI
             if (local == null)
             {
                 _spotlight.gameObject.SetActive(false);
+                _guideCaption?.SetActive(false);
                 return;
             }
             float dt = Time.unscaledDeltaTime;
             var flow = StageOneFlow.Instance;
             if (flow != null) UpdateStageOne(local, flow, dt);
             _guideRemaining -= dt;
-            _spotlight.gameObject.SetActive(_guideRemaining > 0 && PresentSpotlight());
+            bool guideVisible = _guideRemaining > 0f;
+            bool guidePresented = guideVisible && PresentSpotlight();
+            if (_guideCaption != null && _guideCaption.activeSelf != guidePresented)
+                _guideCaption.SetActive(guidePresented);
+            _spotlight.gameObject.SetActive(guidePresented);
             _dialogueRemaining -= dt;
             if (_dialogue.Count > 0 && _dialogueRemaining <= 0 && _fadeRemaining <= 0 &&
                 (flow == null || flow.Minigame == StageMinigameKind.None))
@@ -232,6 +248,7 @@ namespace Herbalist.GameUI
             _guideAllowOffscreen = allowOffscreen;
             _guideText.text = message;
             _guideRemaining = _guideSeconds;
+            _guideCaption?.SetActive(true);
             return true;
         }
 
@@ -246,21 +263,28 @@ namespace Herbalist.GameUI
             if (!visible && !_guideAllowOffscreen) return false;
             Fit(_spotlight, viewport.min, viewport.max);
             _spotlightOverlay.gameObject.SetActive(visible);
-            _guideArrow.gameObject.SetActive(visible);
-            if (!visible) return true;
+            if (_guideArrow != null) _guideArrow.gameObject.SetActive(false);
+            if (!visible)
+            {
+                PositionGuideCaption(_guideCamera, target, 0f);
+                return true;
+            }
 
             var cameraTransform = _guideCamera.transform;
             // Bring the marker slightly forward so it clears the surface it is pointing at.
+            float ringRadius = _worldRingSetup != null ? _worldRingSetup.RingRadius : 1.2f;
+            float cameraOffset = _worldRingSetup != null ? _worldRingSetup.CameraOffset : .2f;
             Vector3 ringCenter = Vector3.MoveTowards(target, cameraTransform.position,
-                Mathf.Min(_guideRingCameraOffset, targetProjection.z * .12f));
+                Mathf.Min(cameraOffset, targetProjection.z * .12f));
             Vector2 center = _guideCamera.WorldToViewportPoint(ringCenter);
-            Vector2 right = _guideCamera.WorldToViewportPoint(ringCenter + cameraTransform.right * _guideRingRadius);
-            Vector2 up = _guideCamera.WorldToViewportPoint(ringCenter + cameraTransform.up * _guideRingRadius);
+            Vector2 right = _guideCamera.WorldToViewportPoint(ringCenter + cameraTransform.right * ringRadius);
+            Vector2 up = _guideCamera.WorldToViewportPoint(ringCenter + cameraTransform.up * ringRadius);
             Vector2 opening = new Vector2(right.x - center.x, up.y - center.y) * 1.25f;
             float ringScale = Mathf.Min(1f,
                 Mathf.Min(_guideMaximumRadii.x / Mathf.Max(.001f, opening.x),
                     _guideMaximumRadii.y / Mathf.Max(.001f, opening.y)));
             Vector2 radii = Vector2.Max(_guideMinimumRadii, opening * ringScale);
+            PositionGuideCaption(_guideCamera, ringCenter, radii.y);
 
             if (_spotlightMaterial == null)
             {
@@ -269,13 +293,33 @@ namespace Herbalist.GameUI
             }
             _spotlightMaterial.SetVector(CenterId, new Vector4(center.x, center.y, 0, 0));
             _spotlightMaterial.SetVector(RadiiId, new Vector4(radii.x, radii.y, 0, 0));
-            _worldRing ??= new SpotlightWorldRing();
-            _worldRing.Draw(_guideCamera, ringCenter, _guideRingRadius * ringScale, _worldRingMaterial);
+            if (_worldRingSetup != null && _worldRingSetup.RingMaterial != null)
+            {
+                _worldRing ??= new SpotlightWorldRing(_worldRingSetup);
+                _worldRing.Draw(_guideCamera, ringCenter, ringRadius * ringScale, _worldRingSetup.RingMaterial);
+            }
 
-            float arrowY = Mathf.Min(.93f, center.y + radii.y + .025f);
-            float arrowX = Mathf.Clamp(center.x, .03f, .97f);
-            Fit(_guideArrow, new(arrowX - .03f, arrowY), new(arrowX + .03f, arrowY + .05f));
             return true;
+        }
+
+        private void PositionGuideCaption(Camera camera, Vector3 worldPoint, float ringRadiusViewport)
+        {
+            if (camera == null || _guideCaptionRect == null || _canvasRect == null) return;
+            Vector3 screenPoint = camera.WorldToScreenPoint(worldPoint);
+            Rect cameraPixels = camera.pixelRect;
+            screenPoint.y += ringRadiusViewport * cameraPixels.height + 18f;
+            screenPoint.x = Mathf.Clamp(screenPoint.x,
+                cameraPixels.xMin + cameraPixels.width * .2f,
+                cameraPixels.xMax - cameraPixels.width * .2f);
+            screenPoint.y = Mathf.Clamp(screenPoint.y,
+                cameraPixels.yMin + cameraPixels.height * .08f,
+                cameraPixels.yMax - cameraPixels.height * .08f);
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_canvasRect, screenPoint, null, out var localPoint)) return;
+            Vector2 anchor = new(
+                Mathf.Lerp(_guideCaptionRect.anchorMin.x, _guideCaptionRect.anchorMax.x, _guideCaptionRect.pivot.x),
+                Mathf.Lerp(_guideCaptionRect.anchorMin.y, _guideCaptionRect.anchorMax.y, _guideCaptionRect.pivot.y));
+            Vector2 anchorLocal = _canvasRect.rect.min + Vector2.Scale(_canvasRect.rect.size, anchor);
+            _guideCaptionRect.anchoredPosition = localPoint - anchorLocal;
         }
 
         private static bool IsVisible(Vector3 point) =>

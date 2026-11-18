@@ -22,6 +22,9 @@ namespace Herbalist.GameUI
         public GameObject leafStatus;
         public Image[] leafStatusDots;
         [SerializeField] private UnityEngine.UI.Image[] _leafReturnFills;
+        [SerializeField] private RectTransform[] _questPersonalRightTargets;
+        [SerializeField, Min(0f)] private float _questPersonalRightInset = 24f;
+        private Vector2[] _questBasePositions;
         public TMP_Text[] leafStatusLabels;
         public RectTransform[] markers;
         public TMP_Text[] markerLabels;
@@ -33,7 +36,44 @@ namespace Herbalist.GameUI
         private float feedbackTime;
         private uint _abilityFeedback;
         private uint _minigameResult;
-        private void Awake() { screen=FindFirstObjectByType<PlayScreenController>(); }
+        private void Awake()
+        {
+            screen = FindFirstObjectByType<PlayScreenController>();
+            CacheQuestLayoutPositions();
+        }
+        private void CacheQuestLayoutPositions()
+        {
+            if (_questPersonalRightTargets == null) return;
+            _questBasePositions = new Vector2[_questPersonalRightTargets.Length];
+            for (int i = 0; i < _questPersonalRightTargets.Length; i++)
+                if (_questPersonalRightTargets[i] != null)
+                    _questBasePositions[i] = _questPersonalRightTargets[i].anchoredPosition;
+        }
+        private void ApplyQuestLayout()
+        {
+            if (_questPersonalRightTargets == null || _questPersonalRightTargets.Length == 0) return;
+            if (_questBasePositions == null || _questBasePositions.Length != _questPersonalRightTargets.Length)
+                CacheQuestLayoutPositions();
+
+            var root = transform as RectTransform;
+            if (root == null || root.rect.width <= 0f) return;
+            bool alignToRight = screen != null && !screen.IsSplitVisible;
+            float deltaX = 0f;
+            var panel = _questPersonalRightTargets[0];
+            if (alignToRight && panel != null)
+            {
+                float panelRight = _questBasePositions[0].x +
+                    (1f - panel.pivot.x) * panel.rect.width * Mathf.Abs(panel.localScale.x);
+                deltaX = root.rect.xMax - _questPersonalRightInset - panelRight;
+            }
+
+            for (int i = 0; i < _questPersonalRightTargets.Length; i++)
+            {
+                var target = _questPersonalRightTargets[i];
+                if (target != null)
+                    target.anchoredPosition = _questBasePositions[i] + (alignToRight ? Vector2.right * deltaX : Vector2.zero);
+            }
+        }
         private void OnEnable()
         {
             foreach (var marker in markers)
@@ -53,6 +93,7 @@ namespace Herbalist.GameUI
                 if(leafStatus!=null) leafStatus.SetActive(false);
                 return;
             }
+            ApplyQuestLayout();
             var player=view.GetComponent<Herbalist.Player.PlayerController>();
             bool local=player.LocallyControlled;
             var maze = SapMazeBoard.LocalMazeView;

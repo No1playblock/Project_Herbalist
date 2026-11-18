@@ -8,10 +8,17 @@ namespace Herbalist.GameUI
     internal sealed class SpotlightWorldRing
     {
         private static readonly int ColorId = Shader.PropertyToID("_Color");
-        private readonly Mesh _core = BuildCapsuleRing(0.04f);
-        private readonly Mesh _glow = BuildCapsuleRing(0.18f);
-        private readonly MaterialPropertyBlock _coreColor = MakeColor(new Color(1f, 0.79f, 0.42f, 1f));
-        private readonly MaterialPropertyBlock _glowColor = MakeColor(new Color(1f, 0.56f, 0.18f, 0.38f));
+        private readonly Mesh _core;
+        private readonly Mesh _glow;
+        private readonly MaterialPropertyBlock _coreColor;
+        private readonly MaterialPropertyBlock _glowColor;
+        public SpotlightWorldRing(SpotlightWorldRingSetup setup)
+        {
+            _core = BuildCapsuleRing(setup.CoreWidth, setup.DashCount, setup.DashCoverage);
+            _glow = BuildCapsuleRing(setup.GlowWidth, setup.DashCount, setup.DashCoverage);
+            _coreColor = MakeColor(setup.CoreColor);
+            _glowColor = MakeColor(setup.GlowColor);
+        }
 
         public void Draw(Camera camera, Vector3 center, float radius, Material material)
         {
@@ -36,16 +43,16 @@ namespace Herbalist.GameUI
             return properties;
         }
 
-        private static Mesh BuildCapsuleRing(float width)
+        internal static Mesh BuildCapsuleRing(float width, int count, float dashCoverage)
         {
             Mesh mesh = new Mesh { name = "Spotlight Rounded Dash Ring" };
             mesh.hideFlags = HideFlags.HideAndDontSave;
 
             List<Vector3> vertices = new List<Vector3>();
             List<int> triangles = new List<int>();
-            const int count = 24;
+            count = Mathf.Max(3, count);
             float cellAngle = Mathf.PI * 2f / count;
-            float dashAngle = cellAngle * 0.62f;
+            float dashAngle = cellAngle * Mathf.Clamp(dashCoverage, .1f, .95f);
             const int capSteps = 8;
 
             for (int dash = 0; dash < count; dash++)
