@@ -60,6 +60,7 @@ namespace Herbalist.GameUI
         private RectTransform _canvasRect;
         private LeafInstallTarget _guideTarget;
         private bool _guideAllowOffscreen;
+        private MeshRenderer[] _curedBlueSapMarks;
         private Material _spotlightMaterial;
         private SpotlightWorldRing _worldRing;
 
@@ -205,13 +206,36 @@ namespace Herbalist.GameUI
             int bit = leaf ? 1 : 2;
             if ((_abilityGuides & bit) != 0) return;
             Vector3 point;
-            bool found = leaf ? StageOneLeafZone.TryNearbyGuidePoint(local.transform.position, _leafGuideRange, out point) ||
+            bool found = leaf ? TryNearbyCuredBlueSapGuidePoint(local, _leafGuideRange, out point) ||
+                StageOneLeafZone.TryNearbyGuidePoint(local.transform.position, _leafGuideRange, out point) ||
                 ExteriorJumpPad.TryLeafInstallHint(local, out point) :
                 TrySapGuidePoint(local, flow.FirstSapGuidePort, out point);
             if (found && StartGuide(local.Camera, point, leaf ? _leafGuide : _sapGuide, !leaf))
                 _abilityGuides |= bit;
         }
 
+        private bool TryNearbyCuredBlueSapGuidePoint(StageActor actor, float range, out Vector3 point)
+        {
+            point = default;
+            if (actor == null) return false;
+            if (_curedBlueSapMarks == null || _curedBlueSapMarks.Length == 0)
+                _curedBlueSapMarks = FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None);
+
+            float nearest = range * range;
+            bool found = false;
+            foreach (var mark in _curedBlueSapMarks)
+            {
+                if (mark == null || !mark.enabled || !mark.gameObject.activeInHierarchy ||
+                    mark.gameObject.name != "CuredBlueSap") continue;
+                Vector3 candidate = mark.bounds.center;
+                float distance = (candidate - actor.transform.position).sqrMagnitude;
+                if (distance > nearest) continue;
+                nearest = distance;
+                point = candidate;
+                found = true;
+            }
+            return found;
+        }
         private LeafInstallTarget FindSapOnlyBranchGuideTarget(StageActor local, StageOneFlow flow)
         {
             float nearest = _leafGuideRange * _leafGuideRange;
