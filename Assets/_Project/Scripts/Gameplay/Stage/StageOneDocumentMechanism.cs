@@ -87,10 +87,12 @@ namespace Herbalist.Levels
             _pivot = _motionPivot != null ? _motionPivot.position : transform.position;
             for (int i = 0; i < _movingArt.Length; i++)
             {
-                _positions[i] = _movingArt[i].position;
-                _scales[i] = _movingArt[i].localScale *
+                var art = _movingArt[i];
+                if (art == null) continue;
+                _positions[i] = art.position;
+                _scales[i] = art.localScale *
                     (_kind == StageOneDocumentMechanismKind.GrowingMushrooms ? _restScaleMultiplier : 1f);
-                _rotations[i] = _movingArt[i].rotation;
+                _rotations[i] = art.rotation;
             }
         }
         public override void Spawned() { if (HasStateAuthority) { Amount = 0; Completed = false; } }
@@ -161,6 +163,7 @@ namespace Herbalist.Levels
             for (int i = 0; i < _movingArt.Length; i++)
             {
                 var art = _movingArt[i];
+                if (art == null) continue;
                 if (_kind == StageOneDocumentMechanismKind.GrowingMushrooms)
                 {
                     var grown = _grownLocalScale > 0 ? Vector3.one * _grownLocalScale : _scales[i] * _grownScale;
