@@ -13,6 +13,7 @@ namespace Herbalist.GameUI
         [SerializeField] private TMP_Text _roomCode, _participantCount, _startLabel;
         [SerializeField] private TMP_Text[] _statuses;
         [SerializeField] private Text[] _playerNames, _badges;
+        private static readonly Color ReadyStatusColor = new Color32(0xD9, 0xA0, 0x05, 0xFF);
 
         private CharacterSelectHover _hover;
         private MainMenuScreen _menu;
@@ -59,6 +60,7 @@ namespace Herbalist.GameUI
                 _playerNames[i].text = $"Player{i + 1}";
                 _badges[i].text = role == 0 ? "두영" : role == 1 ? "소담" : $"P{i + 1}";
                 _statuses[i].text = player == 0 ? "대기 중" : role < 0 ? "캐릭터 선택 중" : "준비 완료";
+                _statuses[i].color = player != 0 && role >= 0 ? ReadyStatusColor : Color.white;
             }
 
             bool ready = room?.IsHost == true && room.Ready;

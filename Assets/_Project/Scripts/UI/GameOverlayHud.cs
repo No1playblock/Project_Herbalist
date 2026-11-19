@@ -18,6 +18,7 @@ namespace Herbalist.GameUI
         public string title, defaultObjective;
         private InputAction pause;
         private bool lastPaused;
+        private bool lastUiOpen;
         private bool recaptureAfterMinigame;
         private int pauseFrame;
         private float subtitleRemaining;
@@ -33,6 +34,8 @@ namespace Herbalist.GameUI
         private float _objectiveElapsed;
         private void OnEnable()
         {
+            lastPaused = GameplayPause.IsPaused;
+            lastUiOpen = lastPaused || (options != null && options.activeSelf);
             _shownObjective = null;
             _objectiveElapsed = 0;
             if (_stageHeaderGroup != null) _stageHeaderGroup.alpha = 1f;
@@ -40,7 +43,7 @@ namespace Herbalist.GameUI
             SetImageAlpha(_stageHeaderSecondArt, 0f);
             if (_stageHeaderFirstArt != null && _stageHeaderSecondArt != null)
                 _stageHeaderSequence = StartCoroutine(PlayStageHeaderSequence());
-            pause=settings.pauseAction.action.Clone(); pause.performed+=_=>TogglePause(); pause.Enable();
+            pause=settings.pauseAction.action.Clone(); pause.performed+=_=>ToggleOptions(); pause.Enable();
             AudioListener.volume=UserOptions.Volume;
         }
         private static void SetImageAlpha(Image image, float alpha)
@@ -91,7 +94,7 @@ namespace Herbalist.GameUI
             resume.onClick.AddListener(()=>SetPause(false)); optionButton.onClick.AddListener(()=>options.SetActive(true));
             mainMenu.onClick.AddListener(ReturnToMenu); if (stageName != null) stageName.text=title;
         }
-        private void TogglePause()
+        private void ToggleOptions()
         {
             if(options.activeSelf) { options.SetActive(false); return; }
             if (!GameplayPause.IsPaused && TryCloseMinigame())
@@ -99,8 +102,7 @@ namespace Herbalist.GameUI
                 recaptureAfterMinigame = true;
                 return;
             }
-            if(!GameplayPause.IsPaused)SetPause(true);
-            else if(RoomControl.Instance==null||!FusionLobbySession.Instance.HasNetworkSession||RoomControl.Instance.OwnsPause)SetPause(false);
+            options.SetActive(true);
         }
         private static bool TryCloseMinigame()
         {
@@ -139,14 +141,17 @@ namespace Herbalist.GameUI
 
         private void Update()
         {
+            bool optionsOpen = options.activeSelf;
             bool paused=GameplayPause.IsPaused;
-            if(paused&&!lastPaused)pauseFrame=Time.frameCount;
-            pauseRoot.SetActive(paused&&Time.frameCount>pauseFrame);
             bool mine=RoomControl.Instance==null||FusionLobbySession.Instance==null||!FusionLobbySession.Instance.HasNetworkSession||RoomControl.Instance.OwnsPause;
-            ownMenu.SetActive(paused&&mine);
+            if(paused&&!lastPaused)pauseFrame=Time.frameCount;
+            bool showPauseMenu = paused && !optionsOpen;
+            pauseRoot.SetActive(showPauseMenu&&Time.frameCount>pauseFrame);
+            ownMenu.SetActive(showPauseMenu&&mine);
             pauseMessage.text=mine?settings.pausedText:settings.partnerPausedText;
-            if(!paused)options.SetActive(false);
-            if(GameplayCursor.Instance!=null) { GameplayCursor.Instance.SetUiMode(this,paused); if(lastPaused&&!paused)GameplayCursor.Instance.Capture(); }
+            bool uiOpen = paused || optionsOpen;
+            if(GameplayCursor.Instance!=null) { GameplayCursor.Instance.SetUiMode(this,uiOpen); if(lastUiOpen&&!uiOpen)GameplayCursor.Instance.Capture(); }
+            lastUiOpen=uiOpen;
             lastPaused=paused;
             var session=FusionLobbySession.Instance;
             loading.SetActive(session!=null&&(session.State==LobbyState.Loading||session.State==LobbyState.Leaving));

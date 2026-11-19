@@ -21,6 +21,11 @@ namespace Herbalist.GameUI
         [SerializeField] private TMP_Text _description;
         [SerializeField] private string _previewBinding;
         [SerializeField] private string _previewDescription;
+        [SerializeField] private bool _useIllustratedKeys;
+        [SerializeField] private Sprite _squareKeySprite;
+        [SerializeField] private Sprite _wideKeySprite;
+        [SerializeField] private Sprite _leftMouseSprite;
+        [SerializeField] private Sprite _rightMouseSprite;
 
         private void Update()
         {
@@ -39,6 +44,24 @@ namespace Herbalist.GameUI
                 slot.root.SetActive(visible);
                 if (!visible) continue;
                 string key = overflow ? binding : parts[i].Trim();
+                if (_useIllustratedKeys && slot.image != null && slot.fallback != null)
+                {
+                    bool leftMouse = IsMouseButton(key, false);
+                    bool rightMouse = IsMouseButton(key, true);
+                    Sprite artwork = leftMouse ? _leftMouseSprite : rightMouse ? _rightMouseSprite
+                        : IsWideKey(key) ? _wideKeySprite : _squareKeySprite;
+                    if (artwork != null)
+                    {
+                        slot.image.sprite = artwork;
+                        slot.image.preserveAspect = true;
+                        slot.image.rectTransform.localScale = leftMouse || rightMouse
+                            ? new Vector3(2f, 2f, 1f) : Vector3.one;
+                        slot.image.gameObject.SetActive(true);
+                        slot.fallback.gameObject.SetActive(!leftMouse && !rightMouse);
+                        slot.fallback.text = FormatKeyLabel(key);
+                        continue;
+                    }
+                }
                 bool showImage = !IsControlKey(key) && slot.image.sprite != null && SameKey(key, slot.binding);
                 slot.image.gameObject.SetActive(showImage);
                 slot.fallback.gameObject.SetActive(!showImage);
@@ -49,6 +72,29 @@ namespace Herbalist.GameUI
         private static string FormatKeyLabel(string key)
         {
             return IsControlKey(key) ? "CTRL" : key;
+        }
+
+        private static bool IsWideKey(string key)
+        {
+            string normalized = (key ?? string.Empty).Trim().Replace(" ", string.Empty);
+            return normalized.Equals("Space", StringComparison.OrdinalIgnoreCase)
+                || normalized.Equals("SpaceBar", StringComparison.OrdinalIgnoreCase)
+                || normalized.Equals("Enter", StringComparison.OrdinalIgnoreCase)
+                || normalized.Equals("Return", StringComparison.OrdinalIgnoreCase)
+                || normalized.Equals("Shift", StringComparison.OrdinalIgnoreCase)
+                || IsControlKey(normalized);
+        }
+
+        private static bool IsMouseButton(string key, bool right)
+        {
+            string normalized = (key ?? string.Empty).Trim().Replace(" ", string.Empty);
+            return right
+                ? normalized.Equals("RMB", StringComparison.OrdinalIgnoreCase)
+                    || normalized.Equals("RightButton", StringComparison.OrdinalIgnoreCase)
+                    || normalized.Equals("RightMouseButton", StringComparison.OrdinalIgnoreCase)
+                : normalized.Equals("LMB", StringComparison.OrdinalIgnoreCase)
+                    || normalized.Equals("LeftButton", StringComparison.OrdinalIgnoreCase)
+                    || normalized.Equals("LeftMouseButton", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsControlKey(string key)
