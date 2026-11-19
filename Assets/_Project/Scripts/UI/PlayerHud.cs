@@ -34,6 +34,7 @@ namespace Herbalist.GameUI
         private uint _abilityFeedback;
         private uint _minigameResult;
         private StageNarrativePresenter _narrative;
+        [SerializeField] private TMP_Text _questTitle, _questCount, _questDetail;
         [SerializeField] private RectTransform _questPanel;
         [SerializeField] private RectTransform[] _questLayoutTargets = System.Array.Empty<RectTransform>();
         [SerializeField, Min(0)] private float _questRightMargin = 24f;
@@ -59,6 +60,7 @@ namespace Herbalist.GameUI
             var view=screen!=null?screen.ViewForSlot(slot):null;
             if(view==null)
             {
+                PresentQuest(false);
                 if (markers.Length > 0 && markers[0] != null) markers[0].gameObject.SetActive(false);
                 if (_mazeVolumeDisplay != null) _mazeVolumeDisplay.Present(0, 0, false);
                 if(jumpPadCountdown!=null) jumpPadCountdown.gameObject.SetActive(false);
@@ -70,6 +72,7 @@ namespace Herbalist.GameUI
             }
             var player=view.GetComponent<Herbalist.Player.PlayerController>();
             bool local=player.LocallyControlled;
+            PresentQuest(local || (screen != null && screen.IsSplitVisible));
             PresentNavigation(local, view.Camera);
             var maze = SapMazeBoard.LocalMazeView;
             bool mazeView = maze != null && maze.IsViewedBy(view);
@@ -230,6 +233,20 @@ namespace Herbalist.GameUI
                 }
             }
         }
+        private void PresentQuest(bool local)
+        {
+            if (_questTitle == null || _narrative == null) return;
+            bool visible = local && _narrative.QuestVisible;
+            for (int i = 0; i < _questLayoutTargets.Length; i++)
+                if (_questLayoutTargets[i] != null) _questLayoutTargets[i].gameObject.SetActive(visible && i <= 1);
+            string title = _narrative.MainQuestText;
+            int countStart = title.LastIndexOf('(');
+            bool hasCount = countStart >= 0 && title.EndsWith(")");
+            _questTitle.text = hasCount ? title.Substring(0, countStart).TrimEnd() : title;
+            if (_questCount != null) _questCount.text = hasCount ? title.Substring(countStart) : string.Empty;
+            if (_questDetail != null) _questDetail.text = _narrative.DetailQuestText;
+        }
+
         internal static void PositionQuestPanel(RectTransform root, RectTransform panel, RectTransform[] targets,
             Vector3[] originals, bool split, float margin)
         {

@@ -46,6 +46,9 @@ namespace Herbalist.GameUI
         private Vector3[] _questOriginalPositions;
         private RectTransform[] _questLayoutTargets;
         private PlayScreenController _screen;
+        public string MainQuestText => _mainQuest != null ? _mainQuest.text : string.Empty;
+        public string DetailQuestText => _subQuest != null && _subQuest.gameObject.activeSelf ? _subQuest.text : string.Empty;
+        public bool QuestVisible => _mainQuest != null && _mainQuest.transform.parent.gameObject.activeSelf;
         public bool TryNavigationTarget(out Vector3 point, out string label)
         {
             point = default;
@@ -60,15 +63,7 @@ namespace Herbalist.GameUI
                 return true;
             }
 
-            if (_detailId != "S1-01" && _detailId != "S1-05")
-                return false;
-            var ability = _detailId == "S1-01" ? PlayerAbilityKind.Sap : PlayerAbilityKind.Leaf;
-            var source = flow.sources.FirstOrDefault(s => s != null && s.item.ability == ability && !_discovered.Contains(s));
-            if (source == null)
-                return false;
-            point = source.Point;
-            label = source.item.displayName;
-            return true;
+            return false;
         }
 
         private void Awake()
@@ -191,26 +186,31 @@ namespace Herbalist.GameUI
                         Dialogue("G1-02", "D-003", "D-004");
             if (flow.Progress.Crafted != 0)
                 Dialogue("G1-03", "D-005", "D-006");
-            if (!flow.Progress.GateOpen)
+            bool potionsComplete = flow.Progress.GateOpen;
+            if (!potionsComplete)
             {
                 string detail = PotionStep(flow, PlayerAbilityKind.Sap, 1) ?? PotionStep(flow, PlayerAbilityKind.Leaf, 5);
                 Quest("M1-01", detail, flow.Progress.Consumed.Count(x => x != 0));
-                return;
+                // The offline T shortcut grants abilities without completing either potion.
+                // Let it exercise tutorials without advancing narrative or gate progress.
+                if (!actor.Abilities.OfflineBothUnlocked) return;
             }
-
-            Dialogue("G1-04", "D-007", "D-008");
+            else Dialogue("G1-04", "D-007", "D-008");
             if (_firstPad != null)
             {
-                _pairedPadArrival |= flow.Actors.Count(a => a != null && a.Available && a.Abilities.Unlocked && Near(a, _firstPad.transform.position)) == 2;
-                if (_pairedPadArrival)
-                    Dialogue("G1-05", "D-009");
-                if (_firstPad.LaunchCount > 0)
+                if (potionsComplete)
                 {
-                    Quest("M1-03");
-                    Dialogue("G1-06", "D-010");
+                    _pairedPadArrival |= flow.Actors.Count(a => a != null && a.Available && a.Abilities.Unlocked && Near(a, _firstPad.transform.position)) == 2;
+                    if (_pairedPadArrival)
+                        Dialogue("G1-05", "D-009");
+                    if (_firstPad.LaunchCount > 0)
+                    {
+                        Quest("M1-03");
+                        Dialogue("G1-06", "D-010");
+                    }
+                    else
+                        Quest("M1-02", !_pairedPadArrival ? "S1-09" : _firstPadLeaf != null && _firstPadLeaf.HasLeaf ? "S1-11" : "S1-10");
                 }
-                else
-                    Quest("M1-02", !_pairedPadArrival ? "S1-09" : _firstPadLeaf != null && _firstPadLeaf.HasLeaf ? "S1-11" : "S1-10");
                 bool atPad = actor.Abilities.Unlocked && Near(actor, _firstPad.transform.position);
                 if (actor.Abilities.Kind == PlayerAbilityKind.Sap && _firstPadInlet != null)
                     Tutorial("T1-01", actor, _firstPadInlet.InteractionPoint, atPad, _firstPad.ChargeFraction > 0 || _firstPad.LaunchCount > 0);
