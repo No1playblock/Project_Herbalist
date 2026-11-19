@@ -28,6 +28,9 @@ namespace Herbalist.Editor
         }
 
         public static string Run()
+            => RunMaze("SapMaze_1");
+
+        public static string RunMaze(string mazeName)
         {
             var scene = EditorSceneManager.OpenPreviewScene(ScenePath);
             var target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
@@ -36,11 +39,11 @@ namespace Herbalist.Editor
             try
             {
                 var boards = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<SapMazeBoard>(true)).ToArray();
-                var board = boards.Single(b => b.name == "SapMaze_1");
+                var board = boards.Single(b => b.name == mazeName);
                 var view = board.GetComponentInChildren<SapMazeTrailView>(true);
                 var density = DensityFor(view);
-                Check(density != null && boards.Count(b => DensityFor(b.GetComponentInChildren<SapMazeTrailView>(true)) != null) == 1,
-                    "Only Maze 1 should contain a density renderer.");
+                Check(density != null && boards.All(b => DensityFor(b.GetComponentInChildren<SapMazeTrailView>(true)) != null),
+                    "All authored mazes should contain a density renderer.");
                 var surface = board.Surface;
                 Check(surface.Build(board.transform), "Maze surface must build.");
                 var renderer = density.GetComponent<MeshRenderer>();
@@ -113,20 +116,24 @@ namespace Herbalist.Editor
                 field.ReadSnapshot(frames[1].cells);
                 Aim(camera, board.transform, frames[1].focus, 5f);
                 Present(view, density, field, surface, false);
-                Save(camera, target, pixels, "legacy");
+                Save(camera, target, pixels, mazeName + "-legacy");
                 Present(view, density, field, surface, true);
-                Save(camera, target, pixels, "density");
+                Save(camera, target, pixels, mazeName + "-density");
 
                 int[] validation = VerifyPixels(scene, board, view, density, field, frames, camera, target, pixels);
                 string report =
-                    $"Maze 1, {path.Count} path points, {ticks} movement ticks, {legacyCpu.Count} paired updates. Same cell snapshots and conserved volume.\n" +
+                    $"{mazeName}, {path.Count} path points, {ticks} movement ticks, {legacyCpu.Count} paired updates. Same cell snapshots and conserved volume.\n" +
                     Stats("CPU legacy", legacyCpu) + "\n" + Stats("CPU density", densityCpu) + "\n" +
                     Stats("Offscreen frame + GPU readback legacy", legacyFrame) + "\n" +
                     Stats("Offscreen frame + GPU readback density", densityFrame) + "\n" +
                     $"Visible samples {validation[0]}, occluded by relief {validation[1]}, on walls {validation[2]}, " +
                     $"without reachable density {validation[3]}. Adjacent-cell blocked-edge fixture checked.";
-                File.WriteAllText(Output + "/comparison.txt", report);
-                Check(validation[0] > 100 && validation.Skip(1).All(v => v == 0), "Density wall or floor pixel verification failed. " + report);
+                File.WriteAllText(Output + "/" + mazeName + "-comparison.txt", report);
+                // Foreground relief is allowed to occlude liquid. Lifting it above
+                // every ridge would recreate the wall-climbing artifact. Walls and
+                // density disconnected across a wall remain strict failures.
+                Check(validation[0] > 100 && validation[2] == 0 && validation[3] == 0,
+                    "Density wall or reachable-water pixel verification failed. " + report);
                 return report;
             }
             finally
@@ -204,6 +211,7 @@ namespace Herbalist.Editor
             var marker = new Material(previousMaterial);
             marker.SetColor("_BaseColor", Color.magenta);
             marker.SetColor("_EdgeColor", Color.magenta);
+            marker.SetFloat("_FlowStrength", 0);
             renderer.sharedMaterial = marker;
             density.gameObject.layer = 31;
             camera.cullingMask = 1 << 31;

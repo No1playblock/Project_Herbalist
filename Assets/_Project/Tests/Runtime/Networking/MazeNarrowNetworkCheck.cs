@@ -112,6 +112,9 @@ namespace Herbalist.Tests
                 await Wait(() => FusionLobbySession.Instance != null, "menu");
                 var session = FusionLobbySession.Instance; var settings = Object.Instantiate(Read<LobbySettings>(session, "settings"));
                 settings.playScenePath = MazePath; Write(settings, "_grantPrototypeAbilitiesOnDirectStart", true); Write(session, "settings", settings);
+                // This fixture tests maze input/replication, not the 169-second opening.
+                // Only the runtime settings copy bypasses the cinematic.
+                settings.stageOneCinematicScenePath = string.Empty;
                 await session.ConnectAsync(room, host); Check(session.State != LobbyState.Error, session.Message);
                 await Wait(() => session.ConnectedCount == 2 && session.State == LobbyState.Waiting, "two peers");
                 Herbalist.GameUI.RoomControl.Instance.Select(host ? hostSlot : 1 - hostSlot);
@@ -179,9 +182,13 @@ namespace Herbalist.Tests
                     await Task.Delay(150);
                     if (controller) Capture(actor.Camera, Path.Combine(folder, _peer + "-" + token + ".png"));
                     var view = board.GetComponentInChildren<SapMazeTrailView>(true); var mesh = Read<Mesh>(view, "_mesh");
-                    Check(mesh != null && mesh.vertexCount > 0, "water mesh " + token);
+                    var density = Read<SapMazeDensitySurface>(view, "_densitySurface");
+                    bool usesDensity = density != null && density.isActiveAndEnabled && density.CanPresent(board.Fluid);
+                    var waterMesh = usesDensity ? density.GetComponent<MeshFilter>().sharedMesh : mesh;
+                    Check(waterMesh != null && waterMesh.vertexCount > 0, "water surface " + token);
                     results.Add(new { c, from, to, controller, inputPackets, hash = expectedHash, cells = board.Fluid.ActiveCells.Count,
-                        volume = board.RemainingVolume, distance = board.Fluid.Distance(route[to]), wallCells = 0, meshVertices = mesh.vertexCount });
+                        volume = board.RemainingVolume, distance = board.Fluid.Distance(route[to]), wallCells = 0,
+                        densityPresentation = usesDensity, meshVertices = waterMesh.vertexCount });
                     Log("PASS " + token + " cells=" + board.Fluid.ActiveCells.Count + " hash=" + expectedHash); Set(_peer, token + "-pass");
                     if (host) await Wait(() => Status("client") == token + "-pass", "client checkpoint " + token);
                     else await Wait(() => Status("phase") != token + "-check" || Status("host") == "PASS", "next case");

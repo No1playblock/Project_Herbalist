@@ -487,5 +487,33 @@ namespace Herbalist.Levels
             return _mazeCollider.Raycast(new Ray(world, _rayDirection), out var hit, _rayLength)
                 ? _board.InverseTransformPoint(hit.point).z : SurfaceZ(point, fallback);
         }
+
+        // Presentation accepts floor-facing relief only. A wall crest must never pull
+        // liquid towards the camera, even when the navigation silhouette is open.
+        public bool TryLiquidFloor(Vector2 point, float maximumHeightWorld, out float height)
+        {
+            height = SurfaceZ(point, 0);
+            if (!Ready || _board == null || _mazeCollider == null) return false;
+            var world = _board.TransformPoint(new Vector3(point.x, point.y, _rayStartZ));
+            if (!_mazeCollider.Raycast(new Ray(world, _rayDirection), out var hit, _rayLength) ||
+                !IsFloorNormal(hit.normal)) return false;
+            float relief = _board.InverseTransformPoint(hit.point).z;
+            float depthScale = _board.TransformVector(Vector3.forward).magnitude;
+            if (UsesFloorPlane && Mathf.Abs(relief - PlaneDepth(point)) * depthScale > maximumHeightWorld)
+                return false;
+            height = relief;
+            return true;
+        }
+
+        public Vector4 LiquidFloorPlaneWorld
+        {
+            get
+            {
+                var normal = UsesFloorPlane ? _floorPlane.forward.normalized : -_rayDirection;
+                var point = UsesFloorPlane ? _floorPlane.position : _board.position;
+                return new Vector4(normal.x, normal.y, normal.z, -Vector3.Dot(normal, point));
+            }
+        }
+        public float MaximumFloorSlope => _maximumFloorSlope;
     }
 }

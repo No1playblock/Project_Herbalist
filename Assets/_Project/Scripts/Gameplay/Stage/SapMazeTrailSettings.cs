@@ -32,7 +32,11 @@ namespace Herbalist.Levels
         [Tooltip("Bounds flow work even after a long frame or a large input jump.")]
         [Min(1)] public int maximumTransfersPerTick = 48;
         [Min(.016f)] public float fluidRenderInterval = .05f;
+        [Tooltip("Host snapshot interval; gameplay still runs every simulation tick.")]
+        [Min(.016f)] public float fluidSnapshotInterval = .05f;
         [Min(0)] public float fluidSurfaceLiftWorld = .025f;
+        [Tooltip("Maximum visible relief above/below the authored liquid plane. Walls are excluded.")]
+        [Min(.01f)] public float maximumReliefHeightWorld = 1.4f;
         [Tooltip("Presentation only: drape the water mesh over the visible relief floor without changing navigation or volume.")]
         public bool followReliefSurface;
 

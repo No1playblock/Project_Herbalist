@@ -18,6 +18,9 @@ namespace Herbalist.Levels
         private static readonly int WetBoundsId = Shader.PropertyToID("_WetBounds");
         private static readonly int ThresholdId = Shader.PropertyToID("_Threshold");
         private static readonly int UvScaleId = Shader.PropertyToID("_WaterUvScale");
+        private static readonly int FloorPlaneId = Shader.PropertyToID("_LiquidFloorPlane");
+        private static readonly int ReliefLimitId = Shader.PropertyToID("_ReliefLimit");
+        private static readonly int FloorFacingId = Shader.PropertyToID("_FloorFacing");
 
         private Texture2D _density;
         private MaterialPropertyBlock _properties;
@@ -35,7 +38,7 @@ namespace Herbalist.Levels
         }
 
         public void Upload(SapMazeFluidField field, SapMazeSurface surface, SapMazeFluidOutline outline,
-            float threshold, float uvScale)
+            float threshold, float uvScale, float maximumReliefHeightWorld = 1.4f)
         {
             int height = field.Count / field.Width;
             if (_density == null || _density.width != field.Width || _density.height != height)
@@ -81,6 +84,11 @@ namespace Herbalist.Levels
             // At zero volume there is no threshold contour to draw.
             _properties.SetFloat(ThresholdId, threshold > 0f ? threshold : 2f);
             _properties.SetFloat(UvScaleId, uvScale);
+            _properties.SetVector(FloorPlaneId, surface.LiquidFloorPlaneWorld);
+            _properties.SetFloat(ReliefLimitId, surface.UsesFloorPlane ? maximumReliefHeightWorld : 10000f);
+            Vector3 facing = -surface.transform.forward;
+            _properties.SetVector(FloorFacingId, new Vector4(facing.x, facing.y, facing.z,
+                Mathf.Cos(surface.MaximumFloorSlope * Mathf.Deg2Rad)));
             _renderer.SetPropertyBlock(_properties);
             SetVisible(threshold > 0f);
         }
