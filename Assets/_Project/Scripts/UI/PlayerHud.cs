@@ -33,7 +33,19 @@ namespace Herbalist.GameUI
         private float feedbackTime;
         private uint _abilityFeedback;
         private uint _minigameResult;
-        private void Awake() { screen=FindFirstObjectByType<PlayScreenController>(); }
+        private StageNarrativePresenter _narrative;
+        [SerializeField] private RectTransform _questPanel;
+        [SerializeField] private RectTransform[] _questLayoutTargets = System.Array.Empty<RectTransform>();
+        [SerializeField, Min(0)] private float _questRightMargin = 24f;
+        private Vector3[] _questOriginalPositions;
+        private void Awake()
+        {
+            screen=FindFirstObjectByType<PlayScreenController>();
+            _narrative=FindAnyObjectByType<StageNarrativePresenter>();
+            _questOriginalPositions = new Vector3[_questLayoutTargets.Length];
+            for (int i = 0; i < _questLayoutTargets.Length; i++)
+                if (_questLayoutTargets[i] != null) _questOriginalPositions[i] = _questLayoutTargets[i].anchoredPosition3D;
+        }
         private void OnEnable()
         {
             foreach (var marker in markers)
@@ -42,9 +54,12 @@ namespace Herbalist.GameUI
         }
         private void Update()
         {
+            PositionQuestPanel((RectTransform)transform, _questPanel, _questLayoutTargets,
+                _questOriginalPositions, screen != null && screen.IsSplitVisible, _questRightMargin);
             var view=screen!=null?screen.ViewForSlot(slot):null;
             if(view==null)
             {
+                if (markers.Length > 0 && markers[0] != null) markers[0].gameObject.SetActive(false);
                 if (_mazeVolumeDisplay != null) _mazeVolumeDisplay.Present(0, 0, false);
                 if(jumpPadCountdown!=null) jumpPadCountdown.gameObject.SetActive(false);
                 prompt.SetActive(false);
@@ -55,6 +70,7 @@ namespace Herbalist.GameUI
             }
             var player=view.GetComponent<Herbalist.Player.PlayerController>();
             bool local=player.LocallyControlled;
+            PresentNavigation(local, view.Camera);
             var maze = SapMazeBoard.LocalMazeView;
             bool mazeView = maze != null && maze.IsViewedBy(view);
             helpHint.gameObject.SetActive(!mazeView);
@@ -214,6 +230,24 @@ namespace Herbalist.GameUI
                 }
             }
         }
+        internal static void PositionQuestPanel(RectTransform root, RectTransform panel, RectTransform[] targets,
+            Vector3[] originals, bool split, float margin)
+        {
+            if (panel == null || originals == null) return;
+            for (int i = 0; i < targets.Length && i < originals.Length; i++)
+                // CanvasScaler and viewport layout can resize the parent after Awake.
+                // Preserve authored anchor offsets instead of the pre-layout local pose.
+                if (targets[i] != null) targets[i].anchoredPosition3D = originals[i];
+            if (split) return;
+            var canvas = root.GetComponentInParent<Canvas>();
+            float scale = canvas != null ? canvas.scaleFactor : 1f;
+            // Positions always start from the authored pose, including after a mode change.
+            var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(root, panel);
+            float delta = root.rect.xMax - margin / Mathf.Max(.001f, scale) - bounds.max.x;
+            Vector3 worldDelta = root.TransformVector(Vector3.right * delta);
+            foreach (var target in targets)
+                if (target != null) target.position += worldDelta;
+        }
         private void PresentHint(ControlHintView view, TMP_Text fallback, string binding, string description)
         {
             if (view != null) view.Present(binding, description);
@@ -231,6 +265,28 @@ namespace Herbalist.GameUI
                 local.y=Mathf.Clamp(local.y,bounds.yMin+half.y,bounds.yMax-half.y);
                 rect.anchoredPosition=local;
             }
+        }
+        private void PresentNavigation(bool local, Camera camera)
+        {
+            if (markers.Length == 0 || markers[0] == null) return;
+            var marker = markers[0];
+            bool show = local && _narrative != null && !GameplayPause.IsPaused;
+            Vector3 point = default;
+            string label = string.Empty;
+            show = show && _narrative.TryNavigationTarget(out point, out label);
+            marker.gameObject.SetActive(show);
+            if (!show) return;
+            Vector3 viewport = camera.WorldToViewportPoint(point);
+            if (viewport.z < 0f)
+            {
+                viewport.x = 1f - viewport.x;
+                viewport.y = 1f - viewport.y;
+            }
+            Vector2 screenPoint = camera.pixelRect.min + Vector2.Scale(camera.pixelRect.size,
+                new Vector2(Mathf.Clamp(viewport.x,.08f,.92f), Mathf.Clamp(viewport.y,.12f,.88f)));
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle((RectTransform)transform,
+                screenPoint, null, out var position)) marker.anchoredPosition = position;
+            if (markerLabels.Length > 0 && markerLabels[0] != null) markerLabels[0].text = label;
         }
         private void OnDisable() { help?.Dispose(); help=null; }
     }

@@ -8,10 +8,28 @@ namespace Herbalist.GameUI
     internal sealed class SpotlightWorldRing
     {
         private static readonly int ColorId = Shader.PropertyToID("_Color");
-        private readonly Mesh _core = BuildCapsuleRing(0.04f);
-        private readonly Mesh _glow = BuildCapsuleRing(0.18f);
+        private Mesh _core = BuildCapsuleRing(0.04f, 18, .44f);
+        private Mesh _glow = BuildCapsuleRing(0.10f, 18, .44f);
+        private int _count = 18;
+        private float _fraction = .44f, _coreWidth = .04f, _glowWidth = .10f;
         private readonly MaterialPropertyBlock _coreColor = MakeColor(new Color(1f, 0.79f, 0.42f, 1f));
         private readonly MaterialPropertyBlock _glowColor = MakeColor(new Color(1f, 0.56f, 0.18f, 0.38f));
+
+        public void Configure(SpotlightWorldRingSetup setup)
+        {
+            if (setup == null) return;
+            int count = Mathf.Clamp(setup.dashCount, 3, 128);
+            if (_count != count || _fraction != setup.dashFraction || _coreWidth != setup.coreWidth || _glowWidth != setup.glowWidth)
+            {
+                Dispose();
+                _count = count; _fraction = setup.dashFraction;
+                _coreWidth = setup.coreWidth; _glowWidth = setup.glowWidth;
+                _core = BuildCapsuleRing(_coreWidth, _count, _fraction);
+                _glow = BuildCapsuleRing(_glowWidth, _count, _fraction);
+            }
+            _coreColor.SetColor(ColorId, setup.coreColor);
+            _glowColor.SetColor(ColorId, setup.glowColor);
+        }
 
         public void Draw(Camera camera, Vector3 center, float radius, Material material)
         {
@@ -36,16 +54,15 @@ namespace Herbalist.GameUI
             return properties;
         }
 
-        private static Mesh BuildCapsuleRing(float width)
+        private static Mesh BuildCapsuleRing(float width, int count, float fraction)
         {
             Mesh mesh = new Mesh { name = "Spotlight Rounded Dash Ring" };
             mesh.hideFlags = HideFlags.HideAndDontSave;
 
             List<Vector3> vertices = new List<Vector3>();
             List<int> triangles = new List<int>();
-            const int count = 24;
             float cellAngle = Mathf.PI * 2f / count;
-            float dashAngle = cellAngle * 0.62f;
+            float dashAngle = cellAngle * fraction;
             const int capSteps = 8;
 
             for (int dash = 0; dash < count; dash++)

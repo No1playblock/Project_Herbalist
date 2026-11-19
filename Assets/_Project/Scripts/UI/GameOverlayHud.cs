@@ -75,8 +75,12 @@ namespace Herbalist.GameUI
         {
             subtitle.text = text;
             subtitleRemaining = duration;
-            if (!string.IsNullOrEmpty(text)) _playtestHud?.RecordDialogue(text);
+            if (!string.IsNullOrEmpty(text)) _playtestHud?.RecordDialogue(FormatSpeakerSeparators(text));
         }
+
+        private static string FormatSpeakerSeparators(string text) =>
+            text.Replace("두영:", "두영 <color=#D3B36B>|</color>")
+                .Replace("소담:", "소담 <color=#D3B36B>|</color>");
         private void Update()
         {
             bool paused=GameplayPause.IsPaused;
@@ -103,7 +107,8 @@ namespace Herbalist.GameUI
                 else if (altar != null) objective.text = altar.Objective;
                 else objective.text = defaultObjective;
             }
-            UpdateStageHeader(!mazeView && (flow == null || flow.Minigame == StageMinigameKind.None), paused, Time.unscaledDeltaTime);
+            UpdateStageHeader(GetComponent<StageNarrativePresenter>() == null &&
+                !mazeView && (flow == null || flow.Minigame == StageMinigameKind.None), paused, Time.unscaledDeltaTime);
             if(!paused)subtitleRemaining-=Time.unscaledDeltaTime;
             subtitle.gameObject.SetActive(subtitleRemaining>0&&!string.IsNullOrEmpty(subtitle.text));
         }
