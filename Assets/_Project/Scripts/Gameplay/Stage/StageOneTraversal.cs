@@ -41,6 +41,7 @@ namespace Herbalist.Levels
         private readonly HashSet<StageActor> _forestExitReached = new();
         private readonly Collider[] _overlaps = new Collider[128];
         private int _activeCheckpoint = -1;
+        private float _activeCheckpointHeight = float.NegativeInfinity;
         private static readonly HashSet<Collider> CameraPassThrough = new();
         public static StageOneTraversal Instance { get; private set; }
         public InputActionReference RecoverAction => _recoverAction;
@@ -141,7 +142,13 @@ namespace Herbalist.Levels
             motor.ResetMotion();
             var net = actor.GetComponent<NetworkPlayer>();
             Vector3 destination = _starts[actor.Slot].position;
-            if (_activeCheckpoint >= 0) destination = _sharedCheckpoints[_activeCheckpoint].positions[actor.Slot];
+            if (_activeCheckpoint >= 0)
+            {
+                var group = _sharedCheckpoints[_activeCheckpoint];
+                destination = group.recoveryPoint != null
+                    ? group.recoveryPoint.position + _starts[actor.Slot].position - _starts[0].position
+                    : group.positions[actor.Slot];
+            }
             else if (_recovery.TryGetValue(actor, out var checkpoint)) destination = checkpoint;
             if (net != null && net.Object != null && net.Object.IsValid) net.TeleportAuthoritatively(destination);
             else motor.Teleport(destination);
@@ -213,13 +220,14 @@ namespace Herbalist.Levels
             }
             int slot = actor.Slot;
             int arrival = 1 << slot;
-            for (int i = _sharedCheckpoints.Length - 1; i > _activeCheckpoint; i--)
+            for (int i = _sharedCheckpoints.Length - 1; i >= 0; i--)
             {
                 var group = _sharedCheckpoints[i];
                 if ((group.arrived & arrival) != 0) continue;
                 foreach (var surface in group.surfaces)
                 {
                     if (surface == null || !surface.enabled || !surface.gameObject.activeInHierarchy) continue;
+                    if (surface.bounds.max.y < _activeCheckpointHeight) continue;
                     if (surface != ground && (!surface.isTrigger || !Physics.ComputePenetration(
                         surface, surface.transform.position, surface.transform.rotation,
                         character, character.transform.position, character.transform.rotation, out _, out _))) continue;
@@ -227,7 +235,12 @@ namespace Herbalist.Levels
                         ? group.recoveryPoint.position + _starts[slot].position - _starts[0].position
                         : actor.transform.position;
                     group.arrived |= arrival;
-                    if (group.arrived == 0b11) _activeCheckpoint = i;
+                    int partner = 1 - slot;
+                    if ((group.arrived & (1 << partner)) == 0)
+                        group.positions[partner] = group.positions[slot] +
+                            _starts[partner].position - _starts[slot].position;
+                    _activeCheckpoint = i;
+                    _activeCheckpointHeight = surface.bounds.max.y;
                     break;
                 }
             }

@@ -25,6 +25,7 @@ namespace Herbalist.Levels
         [SerializeField] private BranchRideSwitch[] _switches;
         [SerializeField] private BranchRideStone[] _hazards;
         [SerializeField] private LeafInstallTarget[] _leafSurfaces;
+        [SerializeField] private bool _leafStopsCarrier = true;
         [SerializeField] private Transform[] _respawns, _dismounts;
         [SerializeField] private GameObject _endingPanel;
         [SerializeField] private TerrainCollider _landingTerrain;
@@ -64,6 +65,7 @@ namespace Herbalist.Levels
         [Networked] private int BranchMask { get; set; }
         [Networked] private Vector4 BranchTurns { get; set; }
         [Networked] private float StoneClock { get; set; }
+        [Networked, Capacity(32)] private NetworkArray<int> DestroyedStoneCycles => default;
         [Networked] private BranchRidePhase Phase { get; set; }
         [Networked] private Vector3 CarrierPosition { get; set; }
         [Networked] private Quaternion CarrierRotation { get; set; }
@@ -76,6 +78,7 @@ namespace Herbalist.Levels
         private readonly float[] _boardingRemaining = new float[2];
         private Vector2 _contactRemaining;
         private readonly List<LeafProjectile> _leaves = new();
+        private readonly int[] _destroyedStoneCycles = new int[32];
         private int _mask, _segment, _branchMask, _failures;
         private float _distance, _stoneClock, _fallTime, _failureBanner;
         private Vector4 _turns;
@@ -97,6 +100,9 @@ namespace Herbalist.Levels
         private Quaternion Rotation => Online ? CarrierRotation : _carrierRotation;
         public Vector3 Forward => Rotation * Vector3.forward;
         public IReadOnlyList<BranchRideTrack> Track => _track;
+        public IReadOnlyList<BranchRideSwitch> Switches => _switches;
+        public IReadOnlyList<BranchRideStone> Hazards => _hazards;
+        public int BoardedCount => ((Online ? RiderMask : _mask) & 1) + (((Online ? RiderMask : _mask) >> 1) & 1);
         public bool HasTerrainEnding => _landingTerrain != null && _moonTear != null;
         public float EndingProgress => Mathf.Clamp01((Online ? EndingElapsed : _endingElapsed) / _endingSeconds);
         public string Objective => CurrentPhase == BranchRidePhase.Complete ? _completeText :
@@ -347,8 +353,27 @@ namespace Herbalist.Levels
         private void GatherLeaves()
         {
             _leaves.Clear();
-            if (_leafSurfaces == null) return;
+            if (!_leafStopsCarrier || _leafSurfaces == null) return;
             foreach (var target in _leafSurfaces) if (target != null) target.CopyInstalledLeavesTo(_leaves);
+        }
+        internal static bool TryBreakStone(BranchRideStone stone, Transform owner)
+        {
+            if (stone == null || owner == null ||
+                !owner.TryGetComponent<PlayerAbilityController>(out var abilities) ||
+                !abilities.Unlocked || abilities.Kind != PlayerAbilityKind.Leaf) return false;
+            foreach (var flow in Active)
+            {
+                if (!flow.Authority || flow._phase != BranchRidePhase.Riding) continue;
+                int index = System.Array.IndexOf(flow._hazards, stone);
+                if (index < 0 || index >= flow._destroyedStoneCycles.Length ||
+                    !stone.Sample(flow._stoneClock, out _)) continue;
+                int cycle = stone.CycleAt(flow._stoneClock);
+                flow._destroyedStoneCycles[index] = cycle;
+                stone.SetDestroyedCycle(cycle);
+                flow.Publish();
+                return true;
+            }
+            return false;
         }
         private void Advance(float dt)
         {
@@ -406,6 +431,22 @@ namespace Herbalist.Levels
                 if (stone == null || !stone.Sample(_stoneClock, out var now)) continue;
                 bool continuous = stone.Sample(previousClock, out var before) && stone.CycleAt(previousClock) == stone.CycleAt(_stoneClock);
                 if (!continuous) before = now;
+                bool destroyed = false;
+                foreach (var rider in _riders)
+                {
+                    if (rider == null || rider.Abilities.Kind != PlayerAbilityKind.Leaf) continue;
+                    foreach (var leaf in rider.Abilities.Leaf.Projectiles)
+                        if (leaf != null && leaf.State == LeafState.Flying &&
+                            BranchRideTrack.DistanceToSegment(leaf.transform.position, before, now) <=
+                            stone.Radius + rider.Abilities.Leaf.Settings.collisionRadius)
+                        {
+                            destroyed = TryBreakStone(stone, rider.transform);
+                            if (destroyed) leaf.BeginReturn();
+                            break;
+                        }
+                    if (destroyed) break;
+                }
+                if (destroyed) continue;
                 foreach (var leaf in _leaves)
                     if (leaf.Installed && BranchRideTrack.DistanceToSegment(leaf.ContactPoint, before, now) <= stone.Radius + .25f)
                         leaf.BeginReturn();
@@ -517,6 +558,9 @@ namespace Herbalist.Levels
             GatherLeaves(); foreach (var leaf in _leaves) if (leaf != null) leaf.Finish();
             if (failure) { _failures++; _failureBanner = 4; }
             _mask = _segment = _branchMask = 0; _distance = _stoneClock = _fallTime = 0;
+            System.Array.Fill(_destroyedStoneCycles, int.MinValue);
+            if (_hazards != null)
+                foreach (var stone in _hazards) if (stone != null) stone.SetDestroyedCycle(int.MinValue);
             _incomingDirection = Vector3.zero;
             System.Array.Clear(_boardingRemaining, 0, _boardingRemaining.Length);
             System.Array.Clear(_dismountedRiders, 0, _dismountedRiders.Length);
@@ -535,6 +579,7 @@ namespace Herbalist.Levels
             Segment = _segment; SegmentDistance = _distance; BranchMask = _branchMask;
             BranchTurns = _turns; StoneClock = _stoneClock; Phase = _phase;
             CarrierPosition = _carrierPosition; CarrierRotation = _carrierRotation; Blocked = _blocked; Failures = _failures;
+            for (int i = 0; i < _destroyedStoneCycles.Length; i++) DestroyedStoneCycles.Set(i, _destroyedStoneCycles[i]);
             EndingElapsed = _endingElapsed;
         }
         private void Present()
@@ -542,7 +587,14 @@ namespace Herbalist.Levels
             Vector4 turns = Online ? BranchTurns : _turns;
             for (int i = 0; i < _switches.Length; i++) _switches[i].Present(turns[i]);
             _talisman.SetPositionAndRotation(Position, Rotation);
-            if (_hazards != null) foreach (var stone in _hazards) if (stone != null) stone.Present(PresentationStoneClock, CurrentPhase == BranchRidePhase.Riding);
+            if (_hazards != null)
+                for (int i = 0; i < _hazards.Length; i++)
+                {
+                    var stone = _hazards[i];
+                    if (stone == null) continue;
+                    stone.SetDestroyedCycle(Online ? DestroyedStoneCycles[i] : _destroyedStoneCycles[i]);
+                    stone.Present(PresentationStoneClock, CurrentPhase == BranchRidePhase.Riding);
+                }
             if (_endingPanel != null) _endingPanel.SetActive(CurrentPhase == BranchRidePhase.Complete);
         }
     }

@@ -13,6 +13,13 @@ namespace Herbalist.Levels
         [SerializeField] private Transform _firstTarget, _firstStone;
         [SerializeField] private PlayScreenController _screen;
         [SerializeField] private Transform _endingShot, _endingShotEnd;
+        [SerializeField] private UnityEngine.UI.RawImage _branchPreview;
+        [SerializeField] private Camera[] _branchPreviewCameras = System.Array.Empty<Camera>();
+        [SerializeField, Min(.1f)] private float _branchPreviewSeconds = 1f;
+        [SerializeField] private bool _narrativeControlled;
+        private int _previewMask;
+        private float _previewRemaining;
+        private int _previewIndex = -1;
         [SerializeField, Min(1)] private float _noticeRange = 16;
         [SerializeField, Min(.1f)] private float _subtitleDuration = 4;
         [SerializeField] private bool _frameRideCamera;
@@ -41,12 +48,14 @@ namespace Herbalist.Levels
         private void Update()
         {
             if (_flow == null || GameplayPause.IsPaused) return;
+            UpdateBranchPreview();
             if (_flow.HasTerrainEnding && (_flow.CurrentPhase is BranchRidePhase.Ending or BranchRidePhase.Complete))
             {
                 PresentEnding();
                 return;
             }
             if (_frameRideCamera) UpdateRideCamera(Time.deltaTime);
+            if (_narrativeControlled) return;
             if (_hud == null) return;
             _remaining = Mathf.Max(0, _remaining - Time.deltaTime);
             if (_failures != _flow.FailureCount) { _failures = _flow.FailureCount; _seen = 0; }
@@ -56,6 +65,27 @@ namespace Herbalist.Levels
             else if ((_seen & 2) == 0 && _firstTarget != null && Vector3.Distance(_flow.Position, _firstTarget.position) < _noticeRange) Show(2, _target);
             else if ((_seen & 4) == 0 && (_flow.PresentationBranchMask & 1) != 0) Show(4, _turned);
             else if ((_seen & 8) == 0 && _firstStone != null && Vector3.Distance(_flow.Position, _firstStone.position) < _noticeRange) Show(8, _stone);
+        }
+
+        private void UpdateBranchPreview()
+        {
+            int changed = _previewMask ^ _flow.PresentationBranchMask;
+            _previewMask = _flow.PresentationBranchMask;
+            if (_flow.CurrentPhase == BranchRidePhase.Riding && changed != 0)
+                for (int i = 0; i < _branchPreviewCameras.Length; i++)
+                    if ((changed & (1 << i)) != 0)
+                    {
+                        _previewIndex = i;
+                        _previewRemaining = _branchPreviewSeconds;
+                        break;
+                    }
+            bool show = _previewRemaining > 0 && _previewIndex >= 0 &&
+                _flow.CurrentPhase == BranchRidePhase.Riding &&
+                _screen != null && _screen.Mode == PlayScreenMode.Personal;
+            _previewRemaining = Mathf.Max(0f, _previewRemaining - Time.deltaTime);
+            if (_branchPreview != null) _branchPreview.gameObject.SetActive(show);
+            for (int i = 0; i < _branchPreviewCameras.Length; i++)
+                if (_branchPreviewCameras[i] != null) _branchPreviewCameras[i].enabled = show && i == _previewIndex;
         }
 
         private void UpdateRideCamera(float dt)
@@ -108,6 +138,8 @@ namespace Herbalist.Levels
 
         private void OnDisable()
         {
+            if (_branchPreview != null) _branchPreview.gameObject.SetActive(false);
+            foreach (var camera in _branchPreviewCameras) if (camera != null) camera.enabled = false;
             _rideCameraPlayer = null;
             _manualRideLook = false;
             if (!_showingEnding) return;

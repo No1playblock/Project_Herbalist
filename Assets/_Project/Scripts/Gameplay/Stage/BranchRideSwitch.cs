@@ -14,6 +14,8 @@ namespace Herbalist.Levels
         [SerializeField, Min(.01f)] private float _chargeRequired = .15f;
         [SerializeField, Min(.01f)] private float _rearmDelay = .35f;
         [SerializeField, Min(.01f)] private float _rotationDuration = .6f;
+        [SerializeField] private Light _sapGlow;
+        [SerializeField, Min(0)] private float _glowIntensity = 3f;
         private float _charge, _dry;
         private bool _armed = true;
         public SapInjectionPort Port => _port;
@@ -39,6 +41,7 @@ namespace Herbalist.Levels
         }
         public void Present(float fraction)
         {
+            if (_sapGlow != null) _sapGlow.intensity = _glowIntensity;
             if (_pivots == null) return;
             float t = Mathf.SmoothStep(0, 1, fraction);
             for (int i = 0; i < _pivots.Length; i++)

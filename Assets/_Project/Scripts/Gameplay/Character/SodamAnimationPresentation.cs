@@ -318,7 +318,8 @@ namespace Herbalist.Player
 
         private void UpdateActionLegs(bool grounded)
         {
-            if (_pose != SodamPose.LeafThrow && _pose != SodamPose.LeafCatch && _pose != SodamPose.Sap) return;
+            if (_pose != SodamPose.LeafThrow && _pose != SodamPose.LeafCatch && _pose != SodamPose.Sap &&
+                _pose != SodamPose.Drink) return;
             bool moving = _animator.GetFloat(Animator.StringToHash("Speed")) > Profile.movingSpeedThreshold;
             int defaultLayer = _animator.GetLayerIndex("leg");
             int throwLayer = _animator.GetLayerIndex(Profile.movingThrowLegLayer);
@@ -425,14 +426,14 @@ namespace Herbalist.Player
         {
             if (_animator == null || !_animator.isActiveAndEnabled) return;
             if (_wasGrounded && _animator.isHuman &&
-                (_pose is SodamPose.Idle or SodamPose.IdleCameraMoving or SodamPose.ClothHardLand or SodamPose.ClothSwingLand))
+                (_pose is SodamPose.Idle or SodamPose.IdleCameraMoving or SodamPose.Land or SodamPose.ClothHardLand or SodamPose.ClothSwingLand))
             {
                 var leftFoot = _animator.GetBoneTransform(HumanBodyBones.LeftToes) ?? _animator.GetBoneTransform(HumanBodyBones.LeftFoot);
                 var rightFoot = _animator.GetBoneTransform(HumanBodyBones.RightToes) ?? _animator.GetBoneTransform(HumanBodyBones.RightFoot);
                 if (leftFoot != null && rightFoot != null)
                 {
                     float footHeight = Mathf.Min(leftFoot.position.y, rightFoot.position.y) - transform.position.y;
-                    if (_pose is SodamPose.ClothHardLand or SodamPose.ClothSwingLand)
+                    if (_pose is SodamPose.Land or SodamPose.ClothHardLand or SodamPose.ClothSwingLand)
                         _animator.transform.position -= Vector3.up * Mathf.Max(0f, footHeight - _groundedFootHeight);
                     else if (_poseElapsed >= Profile.Find(_pose.Value).blendSeconds)
                         _groundedFootHeight = footHeight;

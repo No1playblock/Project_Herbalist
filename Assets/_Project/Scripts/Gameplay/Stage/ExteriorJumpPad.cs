@@ -17,12 +17,15 @@ namespace Herbalist.Levels
         [SerializeField] private Transform[] _leafCenters;
         [SerializeField] private GameObject[] _jets;
         [SerializeField] private bool _recallLeafAfterLaunch;
+        [SerializeField] private GameObject[] _readyVisuals = System.Array.Empty<GameObject>();
         [Networked] private float Charge0 { get; set; }
         [Networked] private float Charge1 { get; set; }
         [Networked] private float LaunchDelayRemaining { get; set; }
         [Networked] private float Flight { get; set; }
         [Networked] private int Output { get; set; }
         [Networked] private uint Riders { get; set; }
+        [Networked] private float CooldownRemaining { get; set; }
+        [Networked] private int Launches { get; set; }
         private readonly float[] _charge = new float[2];
         private readonly float[] _grace = new float[2];
         private readonly Vector3[] _rest = new Vector3[2];
@@ -32,6 +35,10 @@ namespace Herbalist.Levels
         private AudioSource _voiceSource;
         private int _output;
         private uint _riders;
+        private int _launchCount;
+        public int LaunchCount => Online ? Launches : _launchCount;
+        public bool Ready => (Online ? CooldownRemaining : _cooldown) <= 0f &&
+            (Online ? Flight : _flight) <= 0f && (Online ? LaunchDelayRemaining : _launchDelayRemaining) <= 0f;
         private readonly StageActor[] _carriedActors = new StageActor[2];
         private bool Online => Object != null && Object.IsValid;
         public bool Authority => Online ? HasStateAuthority : FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession;
@@ -156,6 +163,8 @@ namespace Herbalist.Levels
         }
         private void Present(float flight, int output)
         {
+            foreach (var visual in _readyVisuals)
+                if (visual != null) visual.SetActive(Ready && !PresentationHasLeaf);
             float rise = Rise(flight);
             for (int i = 0; i < _leafCenters.Length; i++)
             {
@@ -192,10 +201,11 @@ namespace Herbalist.Levels
                     break;
                 }
             }
-            if (Online) { Charge0 = _charge[0]; Charge1 = _charge[1]; LaunchDelayRemaining = _launchDelayRemaining; Flight = _flight; Output = _output; Riders = _riders; }
+            if (Online) { Charge0 = _charge[0]; Charge1 = _charge[1]; LaunchDelayRemaining = _launchDelayRemaining; Flight = _flight; Output = _output; Riders = _riders; CooldownRemaining = _cooldown; Launches = _launchCount; }
         }
         private void Erupt()
         {
+            _launchCount++;
             _flight = _settings.flightDuration; _cooldown = _settings.cooldown;
             ReleaseRiders(false);
             var leaf = _sockets[_output].InstalledLeaf;

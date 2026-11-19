@@ -322,7 +322,9 @@ namespace Herbalist.Levels
                 if (nearest._riders[i] == null)
                 {
                     nearest._riders[i] = actor;
-                    var grab = nearest._knotHangHeight > 0f
+                    // An airborne player is already reaching the knot; do not replay
+                    // the grounded jump anticipation before attaching.
+                    var grab = nearest._knotHangHeight > 0f && player.Motor.IsGrounded
                         ? actor.GetComponent<SodamAnimationPresentation>()?.Profile?.Find(SodamPose.ClothGrab)
                         : null;
                     nearest._grabRemaining[i] = nearest._grabDurations[i] = grab?.ContactTime ?? 0f;

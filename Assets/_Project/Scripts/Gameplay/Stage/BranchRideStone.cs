@@ -14,6 +14,12 @@ namespace Herbalist.Levels
         [SerializeField, Min(.1f)] private float _respawnDelay = 3;
         [SerializeField, Min(0)] private float _phaseOffset;
         [SerializeField, Min(.1f)] private float _radius = .8f;
+        [SerializeField] private ParticleSystem _breakParticles;
+        [SerializeField] private int _breakSoundId = 57;
+        private int _destroyedCycle = int.MinValue;
+        private int _shownDestroyedCycle = int.MinValue;
+        public int DestroyedCycle => _destroyedCycle;
+        public void SetDestroyedCycle(int cycle) => _destroyedCycle = cycle;
         public Transform Visual => _visual;
         public float Radius => _radius;
         public float RollLength
@@ -31,6 +37,7 @@ namespace Herbalist.Levels
         {
             position = transform.position;
             if (_rollPoints == null || _rollPoints.Length < 2) return false;
+            if (CycleAt(clock) == _destroyedCycle) return false;
             float t = Mathf.Repeat(clock + _phaseOffset, CycleDuration);
             Vector3 up = Vector3.up * _radius;
             if (t < _fallDuration)
@@ -58,6 +65,19 @@ namespace Herbalist.Levels
         }
         public void Present(float clock, bool running)
         {
+            if (_destroyedCycle != _shownDestroyedCycle)
+            {
+                _shownDestroyedCycle = _destroyedCycle;
+                if (_destroyedCycle != int.MinValue && running)
+                {
+                    if (_breakParticles != null)
+                    {
+                        _breakParticles.transform.position = _visual.position;
+                        _breakParticles.Play(true);
+                    }
+                    Herbalist.Audio.SfxEmitter.ScenePool?.PlayAt(_breakSoundId, _visual.position);
+                }
+            }
             bool active = Sample(clock, out var position) && running;
             if (_visual == null) return;
             _visual.gameObject.SetActive(active);

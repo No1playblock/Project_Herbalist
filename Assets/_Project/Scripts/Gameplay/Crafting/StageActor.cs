@@ -16,6 +16,7 @@ namespace Herbalist.StageOne
         private void OnEnable() { All.Add(this); }
         public InputActionReference interact, craft, drink;
         public int offlineSlot;
+        [SerializeField] private int _recoverSoundId = 59;
         private InputAction _interactAction;
         private InputAction _fanAction;
         private InputAction _recoverAction;
@@ -48,8 +49,9 @@ namespace Herbalist.StageOne
         private void Start()
         {
             var recover = Herbalist.Levels.StageOneTraversal.Instance?.RecoverAction;
-            if (recover == null) return;
-            _recoverAction = recover.action.Clone();
+            var action = recover != null ? recover.action : interact.action.actionMap.FindAction("Recover");
+            if (action == null) return;
+            _recoverAction = action.Clone();
             _recoverAction.performed += _ => Request(StageCommand.Recover);
         }
         private void OnMovePerformed(Vector2 move)
@@ -94,6 +96,7 @@ namespace Herbalist.StageOne
             var interaction = command == StageCommand.Interact ? ResolveInteraction(out _) : StageInteraction.None;
             if (command == StageCommand.Interact && interaction == StageInteraction.None) return;
             LocalCommandRequested?.Invoke(command);
+            if (command == StageCommand.Recover) GetComponent<Herbalist.Audio.SfxEmitter>()?.Play(_recoverSoundId);
             if (adapter != null && adapter.Object != null && adapter.Object.IsValid) adapter.RPC_Command(command, interaction);
             else SetFeedback(ExecuteCommand(command, interaction));
         }
@@ -102,7 +105,8 @@ namespace Herbalist.StageOne
             if (Herbalist.GameUI.GameplayPause.IsPaused || !Available) return string.Empty;
             if (command == StageCommand.Recover)
             {
-                Herbalist.Levels.StageOneTraversal.Instance?.TryRecover(this);
+                if (!SapMazeBoard.TryRestart(this))
+                    Herbalist.Levels.StageOneTraversal.Instance?.TryRecover(this);
                 return string.Empty;
             }
             var flow = StageOneFlow.Instance;
