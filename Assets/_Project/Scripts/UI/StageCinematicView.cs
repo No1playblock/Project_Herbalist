@@ -97,6 +97,9 @@ namespace Herbalist.GameUI
             {
                 _voted = true;
                 _skipLabel.text = "스킵 동의 완료";
+#if UNITY_EDITOR
+                if (_onHoldChanged == null) FinishVideo();
+#endif
             }
         }
 

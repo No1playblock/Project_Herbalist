@@ -98,6 +98,9 @@ namespace Herbalist.Networking
             if (!Guid.TryParse(PhotonAppSettings.Global.AppSettings.AppIdFusion, out _))
             { SetState(LobbyState.Error, settings.missingAppIdMessage); return; }
             stagePlayers.Clear(); stageTransition = false; _stageEntryId = null;
+#if UNITY_EDITOR
+            _qaDestination = null;
+#endif
             Herbalist.GameUI.RoomControl.Instance?.ResetRoom();
             connecting = true; loadRequested = false; started = false; RoomName = name;
             SetState(LobbyState.Connecting, settings.connectingMessage);
@@ -140,6 +143,20 @@ namespace Herbalist.Networking
             if (!started || loadRequested || State == LobbyState.Playing || stopping) return;
             SetState(LobbyState.Waiting, string.Format(settings.waitingFormat, ConnectedCount, settings.playerCount));
         }
+#if UNITY_EDITOR
+        private string _qaDestination;
+        private int _qaSapSlot;
+        private bool _qaCinematic;
+
+        internal void ConfigureQaStart(string destination, int sapSlot, bool cinematic)
+        {
+            if (runner == null || !runner.IsServer || State != LobbyState.Waiting)
+                throw new InvalidOperationException("QA 시작은 Host 로비에서만 설정할 수 있습니다.");
+            _qaDestination = destination;
+            _qaSapSlot = sapSlot;
+            _qaCinematic = cinematic;
+        }
+#endif
         public void StartSelectedGame() => TryStart(true);
         private async void TryStart(bool requested = false)
         {
@@ -159,10 +176,30 @@ namespace Herbalist.Networking
             SetState(LobbyState.Loading, settings.loadingMessage);
             try
             {
-                int sceneIndex = SceneUtility.GetBuildIndexByScenePath(settings.playScenePath);
+                string destination = settings.playScenePath;
+                byte clip = OpeningCinematic;
+                int cinematicIndex = CinematicSceneIndex(destination);
+#if UNITY_EDITOR
+                if (_qaDestination != null)
+                {
+                    destination = _qaDestination;
+                    _qaDestination = null;
+                    cinematicIndex = _qaCinematic ? SceneUtility.GetBuildIndexByScenePath(settings.stageOneCinematicScenePath) : -1;
+                    if (destination != settings.playScenePath)
+                    {
+                        clip = (byte)_qaSapSlot;
+                        foreach (var player in players)
+                        {
+                            var state = stagePlayers[player];
+                            state.Ability = state.Slot == _qaSapSlot ? Herbalist.Abilities.PlayerAbilityKind.Sap : Herbalist.Abilities.PlayerAbilityKind.Leaf;
+                            stagePlayers[player] = state;
+                        }
+                    }
+                }
+#endif
+                int sceneIndex = SceneUtility.GetBuildIndexByScenePath(destination);
                 if (sceneIndex < 0) throw new InvalidOperationException("Play scene is missing from Build Settings.");
-                int cinematicIndex = CinematicSceneIndex(settings.playScenePath);
-                if (cinematicIndex >= 0) await RunStageCinematic(stageRunner, players, OpeningCinematic, cinematicIndex, sceneIndex);
+                if (cinematicIndex >= 0) await RunStageCinematic(stageRunner, players, clip, cinematicIndex, sceneIndex);
                 else await stageRunner.LoadScene(SceneRef.FromIndex(sceneIndex), LoadSceneMode.Single);
             }
             catch (OperationCanceledException) when (stopping || runner != stageRunner) { }

@@ -8,7 +8,7 @@ namespace Herbalist.StageOne
 {
     public enum StageMinigameKind { None, Gathering, Crafting }
     [DefaultExecutionOrder(-500)]
-    public sealed class StageOneFlow : MonoBehaviour
+    public sealed partial class StageOneFlow : MonoBehaviour
     {
         public static StageOneFlow Instance { get; private set; }
         public StageOneSettings settings;

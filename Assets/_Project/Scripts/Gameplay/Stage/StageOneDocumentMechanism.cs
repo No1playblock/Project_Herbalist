@@ -10,7 +10,7 @@ namespace Herbalist.Levels
 
     // Scene-specific bindings. Original art stays at its authored rest pose in edit mode.
     [RequireComponent(typeof(NetworkObject))]
-    public sealed class StageOneDocumentMechanism : NetworkBehaviour
+    public sealed partial class StageOneDocumentMechanism : NetworkBehaviour
     {
         [SerializeField] private StageOneDocumentMechanismKind _kind;
         [SerializeField] private SapInjectionPort _port;

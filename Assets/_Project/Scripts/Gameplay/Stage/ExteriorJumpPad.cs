@@ -8,7 +8,7 @@ using Herbalist.Networking;
 namespace Herbalist.Levels
 {
     [RequireComponent(typeof(NetworkObject))]
-    public sealed class ExteriorJumpPad : NetworkBehaviour
+    public sealed partial class ExteriorJumpPad : NetworkBehaviour
     {
         private static readonly HashSet<ExteriorJumpPad> ActivePads = new HashSet<ExteriorJumpPad>();
         [SerializeField] private SapJumpPadSettings _settings;

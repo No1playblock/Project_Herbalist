@@ -8,7 +8,7 @@ using Herbalist.Presentation;
 namespace Herbalist.Levels
 {
     [RequireComponent(typeof(NetworkObject))]
-    public sealed class DescendingMazeFlow : NetworkBehaviour
+    public sealed partial class DescendingMazeFlow : NetworkBehaviour
     {
         [SerializeField] private SapMazeBoard[] _mazes;
         [SerializeField] private Transform[] _rafts;

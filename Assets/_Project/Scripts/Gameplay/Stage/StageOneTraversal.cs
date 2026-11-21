@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 namespace Herbalist.Levels
 {
     // Stage-one authored tree hazards and safe moss areas are independent of leaf targets.
-    public sealed class StageOneTraversal : MonoBehaviour
+    public sealed partial class StageOneTraversal : MonoBehaviour
     {
         [System.Serializable]
         private sealed class CheckpointGroup

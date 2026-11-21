@@ -10,7 +10,7 @@ namespace Herbalist.Levels
     public enum ClothRiderAbility { Any, Leaf, Sap }
 
     [RequireComponent(typeof(NetworkObject))]
-    public sealed class HangingCloth : NetworkBehaviour, IPlayerMovementReceiver
+    public sealed partial class HangingCloth : NetworkBehaviour, IPlayerMovementReceiver
     {
         [SerializeField] private Transform _knot;
         [SerializeField] private Transform _cloth;

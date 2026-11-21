@@ -12,7 +12,7 @@ namespace Herbalist.Levels
     public enum MazeControlView { KeepPlayerCamera, MazeCamera }
 
     [RequireComponent(typeof(NetworkObject))]
-    public sealed class SapMazeBoard : NetworkBehaviour,IAbilityCycleReceiver,IAbilityPointerReceiver
+    public sealed partial class SapMazeBoard : NetworkBehaviour,IAbilityCycleReceiver,IAbilityPointerReceiver
     {
         [SerializeField] private SapMazeDefinition _definition;
         [SerializeField] private SapMazeSurface _surface;

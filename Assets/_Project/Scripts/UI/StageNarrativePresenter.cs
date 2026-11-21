@@ -177,6 +177,10 @@ namespace Herbalist.GameUI
             return "S1-" + step.ToString("00");
         }
 
+#if UNITY_EDITOR
+        internal ExteriorJumpPad QaFirstJumpPad => _firstPad;
+#endif
+
         private void StageOne(StageActor actor, StageOneFlow flow)
         {
             Dialogue("G1-01", "D-001", "D-002");

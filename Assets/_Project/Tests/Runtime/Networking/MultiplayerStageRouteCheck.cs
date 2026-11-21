@@ -253,7 +253,8 @@ namespace Herbalist.Tests
         {
             await Wait(() => Object.FindFirstObjectByType<T>() != null && NetworkPlayer.Local != null &&
                 session.State == LobbyState.Playing && StageActor.All.Count(a => a.Available && a.Abilities.Unlocked) == 2,
-                typeof(T).Name + " with both retained abilities");
+                // Stage 1 -> 2 includes a 128-130 second cinematic before arrival.
+                typeof(T).Name + " with both retained abilities", 240f);
             return Object.FindFirstObjectByType<T>();
         }
     }

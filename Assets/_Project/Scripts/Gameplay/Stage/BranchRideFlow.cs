@@ -12,7 +12,7 @@ namespace Herbalist.Levels
 
     // Host owns track, contacts, riders and reset. Actor input and abilities remain separate.
     [RequireComponent(typeof(NetworkObject))]
-    public sealed class BranchRideFlow : NetworkBehaviour
+    public sealed partial class BranchRideFlow : NetworkBehaviour
     {
         [SerializeField] private StageLevel _level;
         [SerializeField] private Transform _talisman;
