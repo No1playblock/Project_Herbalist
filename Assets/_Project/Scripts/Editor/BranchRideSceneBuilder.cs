@@ -46,6 +46,8 @@ namespace Herbalist.Editor
         [MenuItem("Herbalist/Stages/Rebuild Stage Three Blockout")]
         public static void Rebuild()
         {
+            if (!System.IO.File.Exists(CurrentStagePaths.BranchRideBlockout))
+                throw new InvalidOperationException("The archived Stage Three blockout was removed during unused-asset cleanup. Restore its source scene from the local backup before rebuilding it.");
             if (Application.isPlaying) throw new InvalidOperationException("Stop Play first.");
             var scene = SceneManager.GetActiveScene();
             if (scene.path != CurrentStagePaths.BranchRideBlockout)

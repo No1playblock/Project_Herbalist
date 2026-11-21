@@ -68,6 +68,8 @@ namespace Herbalist.Editor
         [MenuItem("Herbalist/Stages/Apply Environment Modeling Stage 2")]
         public static void ApplyStage2()
         {
+            if (!System.IO.File.Exists(Reference2))
+                throw new InvalidOperationException("The archived Stage Two reference was removed during unused-asset cleanup. Restore it from the local backup before importing it again.");
             if (EditorApplication.isPlaying) throw new InvalidOperationException("Edit mode required.");
             var scene = EditorSceneManager.OpenScene(Stage2, OpenSceneMode.Single);
             var environment = GameObject.Find("Stage2_EnvironmentModeling").transform;
@@ -138,6 +140,8 @@ namespace Herbalist.Editor
         [MenuItem("Herbalist/Stages/Apply Environment Modeling Stage 3")]
         public static void ApplyStage3()
         {
+            if (!System.IO.File.Exists(Reference3) || !System.IO.File.Exists(Stage3))
+                throw new InvalidOperationException("The archived Stage Three reference/blockout was removed during unused-asset cleanup. Restore its source scenes from the local backup before importing them again.");
             if (EditorApplication.isPlaying) throw new InvalidOperationException("Edit mode required.");
             var scene = EditorSceneManager.OpenScene(Stage3, OpenSceneMode.Single);
             var layout = GameObject.Find("StageThree_BranchRideLayout").transform;
