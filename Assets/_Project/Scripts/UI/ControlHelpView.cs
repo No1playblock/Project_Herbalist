@@ -30,8 +30,6 @@ namespace Herbalist.GameUI
             _needsFit = false;
             var list = (RectTransform)transform;
             LayoutRebuilder.ForceRebuildLayoutImmediate(list);
-            float verticalPadding = Mathf.Max(0f, panel.rect.height - list.rect.height);
-            panel.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, LayoutUtility.GetPreferredHeight(list) + verticalPadding);
         }
     }
 }

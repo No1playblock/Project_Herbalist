@@ -146,6 +146,7 @@ namespace Herbalist.Editor
             data.FindProperty("_description").objectReferenceValue = desc;
             data.FindProperty("_previewBinding").stringValue = binding;
             data.FindProperty("_previewDescription").stringValue = description;
+            data.FindProperty("_spaceKeySprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/UI/Textures/ArtistDrop/T_UI_KeySpace_GoldFrame.png");
             var parts = binding.Split('/');
             var slots = data.FindProperty("_keys");
             slots.arraySize = parts.Length;

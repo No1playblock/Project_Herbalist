@@ -896,8 +896,13 @@ MonoBehaviour:
   _spotlight: {fileID: 839208636312936983}
   _spotlightOverlay: {fileID: 7813609472018445004}
   _worldRingSetup: {fileID: 7999000000000000003}
+  _worldRingMaterial: {fileID: 2100000, guid: fcca6a4c6eb4b90478ae09ce0eaeb8f8, type: 2}
   _guideArrow: {fileID: 0}
   _guideText: {fileID: 1618506004321863415}
+  _captionMinimumSize: {x: 260, y: 64}
+  _captionMaximumSize: {x: 900, y: 120}
+  _captionPadding: {x: 48, y: 24}
+  _captionTargetGap: 20
   _recoveryFade: {fileID: 4556297986010209963}
   _guideSeconds: 3.5
   _recoverySeconds: 0.35
@@ -1486,24 +1491,24 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 54
-  m_fontSizeBase: 54
+  m_fontSize: 40
+  m_fontSizeBase: 40
   m_fontWeight: 400
   m_enableAutoSizing: 1
-  m_fontSizeMin: 42
-  m_fontSizeMax: 54
+  m_fontSizeMin: 22
+  m_fontSizeMax: 40
   m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
-  m_characterHorizontalScale: 1.15
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
@@ -3033,13 +3038,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8476237830828899431}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.93130666, b: 0.8254717, a: 0.9}
+  m_Color: {r: 0.035, g: 0.045, b: 0.025, a: 0.72}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

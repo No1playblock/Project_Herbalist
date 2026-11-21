@@ -172,7 +172,7 @@ namespace Herbalist.GameUI
         {
             if (GameplayPause.IsPaused || _historyPanel.activeSelf)
             {
-                _spotlight.gameObject.SetActive(false);
+                HideGuidePresentation();
                 return;
             }
             StageActor local = null;
@@ -180,7 +180,7 @@ namespace Herbalist.GameUI
                 if (actor.Local && actor.Slot is >= 0 and < 2) { local = actor; break; }
             if (local == null)
             {
-                _spotlight.gameObject.SetActive(false);
+                HideGuidePresentation();
                 return;
             }
             float dt = Time.unscaledDeltaTime;
@@ -188,6 +188,7 @@ namespace Herbalist.GameUI
             if (flow != null) UpdateStageOne(local, flow, dt);
             bool guideVisible = _guideRemaining > 0 && PresentSpotlight();
             _spotlight.gameObject.SetActive(guideVisible);
+            if (!guideVisible) HideGuidePresentation();
             if (guideVisible) _guideRemaining = Mathf.Max(0f, _guideRemaining - dt);
             _dialogueRemaining -= dt;
             if (_dialogue.Count > 0 && _dialogueRemaining <= 0 && _fadeRemaining <= 0 &&
@@ -196,6 +197,16 @@ namespace Herbalist.GameUI
                 _dialogueRemaining = _overlay.settings.feedbackDuration;
                 _overlay.ShowSubtitle(_dialogue.Dequeue(), _dialogueRemaining);
             }
+        }
+
+        private void HideGuidePresentation()
+        {
+            if (_spotlight != null) _spotlight.gameObject.SetActive(false);
+            if (_spotlightOverlay != null) _spotlightOverlay.gameObject.SetActive(false);
+            if (_guideArrow != null) _guideArrow.gameObject.SetActive(false);
+            if (_guideText != null && _guideText.transform.parent != null)
+                _guideText.transform.parent.gameObject.SetActive(false);
+            if (_guideConnector != null) _guideConnector.gameObject.SetActive(false);
         }
 
         private void UpdateStageOne(StageActor local, StageOneFlow flow, float dt)
@@ -275,6 +286,8 @@ namespace Herbalist.GameUI
             _guideAllowOffscreen = allowOffscreen;
             _guideText.text = message;
             _guideRemaining = _guideSeconds;
+            foreach (var playerHud in FindObjectsByType<PlayerHud>(FindObjectsSortMode.None))
+                playerHud.HideContextHints();
             return true;
         }
 
