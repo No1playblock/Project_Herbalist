@@ -45,6 +45,9 @@ namespace Herbalist.Networking
 
         private CinematicRun _stageCinematic;
         private int _cinematicId;
+#if UNITY_EDITOR
+        internal bool QaCinematicPlaying => _stageCinematic is { Playing: true };
+#endif
         internal bool HoldingCinematicArrival => _stageCinematic is { DestinationLoadStarted: true, ArrivalReleased: false };
 
         private int CinematicSceneIndex(string destination)
@@ -116,10 +119,10 @@ namespace Herbalist.Networking
             throw new OperationCanceledException();
         }
 
-        private async Task WaitForLocalCinematicCamera(NetworkRunner source, CinematicRun cinematic)
+        private async Task WaitForLocalCinematicCamera(NetworkRunner source, CinematicRun cinematic, double playbackAllowance = 0)
         {
             await WaitForCinematic(source, cinematic, () => NetworkPlayer.Local != null &&
-                NetworkPlayer.Local.Player.View.Camera.isActiveAndEnabled, settings.cinematicLoadTimeout);
+                NetworkPlayer.Local.Player.View.Camera.isActiveAndEnabled, settings.cinematicLoadTimeout + playbackAllowance);
             // Let the newly enabled gameplay camera render a frame behind the cover.
             await Task.Yield();
         }
@@ -167,7 +170,8 @@ namespace Herbalist.Networking
             if (source.IsServer) return;
             try
             {
-                await WaitForLocalCinematicCamera(source, cinematic);
+                // A client can preload the destination well before the host finishes playing the clip and spawns the actors.
+                await WaitForLocalCinematicCamera(source, cinematic, cinematic.View.PlaybackLimitSeconds);
                 SendLocalCinematic(cinematic, CinematicMessage.ViewReady);
             }
             catch (OperationCanceledException) { }
