@@ -23,10 +23,12 @@ MonoBehaviour:
   orbitRipple: 0.026666664
   orbitFlowSpeed: 3
   hoseHoverOffset: {x: 0, y: 0.38333333, z: 0.18333334}
-  hoseExtendSpeed: 32
-  hoseRetractSpeed: 28
-  hoseLaunchSpeed: 14
-  hoseGravity: 8
+  hoseExtendSpeed: 128
+  hoseRetractSpeed: 144
+  hoseLaunchSpeed: 64
+  hoseDirectRange: 80
+  hoseFalloffSpeedMultiplier: 0.5
+  hoseGravity: 48
   hoseMaxFlightTime: 3.5
   hoseCollisionStep: 0.04
   hoseGrowthPerSecond: 0
