@@ -33,7 +33,18 @@ namespace Herbalist.GameUI
         private float _contextHintCandidateSince = -1f;
         private bool _contextHintCandidateSeenThisFrame;
         private string previousFeedback;
+        private StageActor _feedbackActor;
+        private string _observedActorFeedback;
         private float feedbackTime;
+        private float _minigameResultFeedbackUntil;
+        private RectTransform _feedbackRect;
+        [SerializeField] private TMP_FontAsset _feedbackFont;
+        [SerializeField] private RawImage _feedbackScroll;
+        private Vector2 _feedbackShownPosition, _feedbackHiddenPosition, _feedbackEnterStart, _feedbackExitStart;
+        private string _displayedFeedback = string.Empty;
+        private float _feedbackMotionElapsed;
+        private bool _feedbackEntering, _feedbackExiting;
+        private const float FeedbackSlideDuration = .3f;
         private uint _abilityFeedback;
         private uint _minigameResult;
         private StageNarrativePresenter _narrative;
@@ -50,6 +61,30 @@ namespace Herbalist.GameUI
         {
             screen=FindFirstObjectByType<PlayScreenController>();
             _narrative=FindAnyObjectByType<StageNarrativePresenter>();
+            if (feedback != null)
+            {
+                _feedbackRect = feedback.rectTransform;
+                if (_feedbackFont != null) feedback.font = _feedbackFont;
+                feedback.enableAutoSizing = true;
+                feedback.fontSize = 18f;
+                feedback.fontSizeMax = 18f;
+                feedback.fontSizeMin = 12f;
+                feedback.textWrappingMode = TextWrappingModes.NoWrap;
+                feedback.overflowMode = TextOverflowModes.Overflow;
+                feedback.color = new Color(.24f, .16f, .09f, 1f);
+                if (_feedbackScroll != null)
+                {
+                    _feedbackScroll.raycastTarget = false;
+                    _feedbackScroll.gameObject.SetActive(false);
+                }
+                _feedbackShownPosition = _feedbackRect.anchoredPosition;
+                var parent = _feedbackRect.parent as RectTransform;
+                float parentWidth = parent != null && parent.rect.width > 0f ? parent.rect.width : Screen.width;
+                float hiddenDistance = parentWidth * .5f + _feedbackRect.rect.width * .5f + 32f;
+                _feedbackHiddenPosition = _feedbackShownPosition + Vector2.right * hiddenDistance;
+                _feedbackRect.anchoredPosition = _feedbackHiddenPosition;
+                feedback.text = string.Empty;
+            }
             ApplyQuestTrackerStyle();
             _questOriginalPositions = new Vector3[_questLayoutTargets.Length];
             for (int i = 0; i < _questLayoutTargets.Length; i++)
@@ -69,7 +104,7 @@ namespace Herbalist.GameUI
                 float scale = canvas != null ? Mathf.Max(.001f, canvas.scaleFactor) : 1f;
                 viewport = new Vector2(Screen.width / scale, Screen.height / scale);
             }
-            float width = viewport.x * .22f;
+            float width = viewport.x * .26f;
             float height = viewport.y * .09f;
             float rightMargin = viewport.x * .02f;
             float topMargin = viewport.y * .21f;
@@ -93,7 +128,7 @@ namespace Herbalist.GameUI
                 rect.anchorMin = new Vector2(0f, .5f);
                 rect.anchorMax = Vector2.one;
                 rect.offsetMin = new Vector2(16f, 0f);
-                rect.offsetMax = new Vector2(-44f, 0f);
+                rect.offsetMax = new Vector2(-92f, 0f);
                 _questTitle.alignment = TextAlignmentOptions.MidlineLeft;
                 _questTitle.enableAutoSizing = true;
                 _questTitle.fontSizeMin = 20f;
@@ -107,11 +142,11 @@ namespace Herbalist.GameUI
             if (_questCount != null)
             {
                 var rect = _questCount.rectTransform;
-                rect.anchorMin = new Vector2(1f, 0f);
-                rect.anchorMax = new Vector2(1f, .5f);
+                rect.anchorMin = new Vector2(1f, .5f);
+                rect.anchorMax = Vector2.one;
                 rect.pivot = new Vector2(1f, .5f);
                 rect.anchoredPosition = new Vector2(-16f, 0f);
-                rect.sizeDelta = new Vector2(72f, 0f);
+                rect.sizeDelta = new Vector2(64f, 0f);
                 _questCount.alignment = TextAlignmentOptions.MidlineRight;
                 _questCount.enableAutoSizing = true;
                 _questCount.fontSizeMin = 13f;
@@ -131,7 +166,7 @@ namespace Herbalist.GameUI
                 rect.anchorMin = Vector2.zero;
                 rect.anchorMax = new Vector2(1f, .5f);
                 rect.offsetMin = new Vector2(28f, 0f);
-                rect.offsetMax = new Vector2(-132f, 0f);
+                rect.offsetMax = new Vector2(-16f, 0f);
                 _questDetail.alignment = TextAlignmentOptions.MidlineLeft;
                 _questDetail.enableAutoSizing = true;
                 _questDetail.fontSizeMin = 14f;
@@ -220,6 +255,30 @@ namespace Herbalist.GameUI
             }
             line.gameObject.SetActive(false);
         }
+
+        private static void ConfigureQuestHierarchyDivider(RectTransform content, RectTransform title, bool includeCount)
+        {
+            if (content == null || title == null) return;
+            var divider = content.Find("QuestHierarchyDivider") as RectTransform;
+            if (divider == null) return;
+
+            var image = divider.GetComponent<Image>();
+            float aspect = image != null && image.sprite != null && image.sprite.rect.height > 0f
+                ? image.sprite.rect.width / image.sprite.rect.height : 16f;
+            // The source sprite has transparent padding near both ends. Extend its
+            // rect beyond the title bounds so the visible stroke spans the full line.
+            float left = title.offsetMin.x - 32f;
+            float right = includeCount ? 32f : title.offsetMax.x + 32f;
+            float width = Mathf.Max(1f, content.rect.width + right - left);
+            float height = width / Mathf.Max(.1f, aspect);
+
+            divider.anchorMin = new Vector2(0f, .5f);
+            divider.anchorMax = new Vector2(1f, .5f);
+            divider.pivot = new Vector2(.5f, .5f);
+            divider.localScale = Vector3.one;
+            divider.offsetMin = new Vector2(left, 5f - height * .5f);
+            divider.offsetMax = new Vector2(right, 5f + height * .5f);
+        }
         private static Texture2D GetSoftQuestBackdropTexture()
         {
             if (_softQuestBackdropTexture != null) return _softQuestBackdropTexture;
@@ -271,7 +330,7 @@ namespace Herbalist.GameUI
             _contextHintCandidateSeenThisFrame = false;
             var rootRect = transform as RectTransform;
             if (rootRect != null && _questPanel != null && rootRect.rect.width > 0f && rootRect.rect.height > 0f &&
-                (Mathf.Abs(_questPanel.sizeDelta.x - rootRect.rect.width * .22f) > 1f || Mathf.Abs(_questPanel.sizeDelta.y - rootRect.rect.height * .09f) > 1f))
+                (Mathf.Abs(_questPanel.sizeDelta.x - rootRect.rect.width * .26f) > 1f || Mathf.Abs(_questPanel.sizeDelta.y - rootRect.rect.height * .09f) > 1f))
                 ApplyQuestTrackerStyle();
             PositionQuestPanel((RectTransform)transform, _questPanel, _questLayoutTargets,
                 _questOriginalPositions, screen != null && screen.IsSplitVisible, _questRightMargin);
@@ -279,6 +338,8 @@ namespace Herbalist.GameUI
             if(view==null)
             {
                 _contextHintCandidateSince = -1f;
+                feedbackTime = 0f;
+                PresentFeedback(false);
                 PresentQuest(false);
                 if (markers.Length > 0 && markers[0] != null) markers[0].gameObject.SetActive(false);
                 if (_mazeVolumeDisplay != null) _mazeVolumeDisplay.Present(0, 0, false);
@@ -368,7 +429,20 @@ namespace Herbalist.GameUI
             pocket.text="";
             var flow=StageOneFlow.Instance;
             var actor=view.GetComponent<StageActor>();
-            if (actor != null && actor.Feedback != previousFeedback) { previousFeedback = actor.Feedback; feedbackTime = settings.feedbackDuration; }
+            if (_feedbackActor != actor)
+            {
+                _feedbackActor = actor;
+                _observedActorFeedback = actor != null ? actor.Feedback : null;
+            }
+            if (actor != null && actor.Feedback != _observedActorFeedback)
+            {
+                _observedActorFeedback = actor.Feedback;
+                if (Time.unscaledTime >= _minigameResultFeedbackUntil && !string.IsNullOrEmpty(actor.Feedback))
+                {
+                    previousFeedback = actor.Feedback;
+                    feedbackTime = settings.feedbackDuration;
+                }
+            }
             if (local && rules != null && ability != null && ability.Leaf.FeedbackSequence != _abilityFeedback)
             {
                 _abilityFeedback = ability.Leaf.FeedbackSequence;
@@ -379,16 +453,17 @@ namespace Herbalist.GameUI
             if(flow!=null&&actor!=null&&actor.Available)
             {
                 var item=flow.settings.Item(flow.Progress.Held[actor.Slot]); pocket.text=item!=null?item.displayName:settings.emptyPocket;
-                if(actor.Feedback!=previousFeedback) { previousFeedback=actor.Feedback; feedbackTime=settings.feedbackDuration; }
             }
             if (local && flow != null && flow.MinigameResultSequence != _minigameResult)
             {
                 _minigameResult = flow.MinigameResultSequence;
                 previousFeedback = flow.MinigameSucceeded ? flow.settings.successMessage : flow.settings.minigameFailedMessage;
                 feedbackTime = settings.feedbackDuration;
+                _minigameResultFeedbackUntil = Time.unscaledTime + settings.feedbackDuration;
+                _observedActorFeedback = actor != null ? actor.Feedback : null;
             }
             if(!GameplayPause.IsPaused)feedbackTime-=Time.unscaledDeltaTime;
-            feedback.text=local&&feedbackTime>0?previousFeedback:"";
+            PresentFeedback(local && !mazeView && feedbackTime > 0f);
             prompt.SetActive(false);
             if (clothPrompt != null) clothPrompt.SetActive(false);
             StageInteraction interaction = StageInteraction.None;
@@ -413,7 +488,7 @@ namespace Herbalist.GameUI
                 {
                     bool useClothPrompt = clothPrompt != null && interaction is StageInteraction.GrabCloth or StageInteraction.ReleaseCloth;
                     string hintBinding = interaction == StageInteraction.ReleaseCloth && !string.IsNullOrEmpty(player.Input.JumpBinding)
-                        ? player.Input.JumpBinding
+                        ? $"{actor.InteractBinding}/{player.Input.JumpBinding}"
                         : actor.InteractBinding;
                     PresentHint(useClothPrompt ? _clothHintView : _interactionHintView,
                         useClothPrompt ? clothPromptText : promptText, hintBinding, description);
@@ -450,6 +525,103 @@ namespace Herbalist.GameUI
                 !_contextHintCandidateSeenThisFrame)
                 _contextHintCandidateSince = -1f;
         }
+
+        private void PresentFeedback(bool shouldShow)
+        {
+            if (feedback == null || _feedbackRect == null) return;
+            UpdateFeedbackLayout();
+            string nextMessage = shouldShow ? previousFeedback : string.Empty;
+            if (!string.IsNullOrEmpty(nextMessage))
+            {
+                if (nextMessage != _displayedFeedback)
+                {
+                    _displayedFeedback = nextMessage;
+                    feedback.text = nextMessage;
+                    _feedbackRect.anchoredPosition = _feedbackHiddenPosition;
+                    _feedbackEnterStart = _feedbackHiddenPosition;
+                    _feedbackMotionElapsed = 0f;
+                    _feedbackEntering = true;
+                    _feedbackExiting = false;
+                }
+                else if (_feedbackExiting)
+                {
+                    _feedbackEnterStart = _feedbackRect.anchoredPosition;
+                    _feedbackMotionElapsed = 0f;
+                    _feedbackEntering = true;
+                    _feedbackExiting = false;
+                }
+            }
+            else if (!string.IsNullOrEmpty(_displayedFeedback) && !_feedbackExiting)
+            {
+                _feedbackExitStart = _feedbackRect.anchoredPosition;
+                _feedbackMotionElapsed = 0f;
+                _feedbackEntering = false;
+                _feedbackExiting = true;
+            }
+
+            if (_feedbackEntering)
+            {
+                _feedbackMotionElapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(_feedbackMotionElapsed / FeedbackSlideDuration);
+                t = t * t * (3f - 2f * t);
+                _feedbackRect.anchoredPosition = Vector2.LerpUnclamped(_feedbackEnterStart, _feedbackShownPosition, t);
+                if (t >= 1f) _feedbackEntering = false;
+            }
+            else if (_feedbackExiting)
+            {
+                _feedbackMotionElapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(_feedbackMotionElapsed / FeedbackSlideDuration);
+                t = t * t * (3f - 2f * t);
+                _feedbackRect.anchoredPosition = Vector2.LerpUnclamped(_feedbackExitStart, _feedbackHiddenPosition, t);
+                if (t >= 1f)
+                {
+                    _feedbackRect.anchoredPosition = _feedbackHiddenPosition;
+                    feedback.text = string.Empty;
+                    _displayedFeedback = string.Empty;
+                    _feedbackExiting = false;
+                }
+            }
+
+            if (_feedbackScroll != null)
+            {
+                RectTransform scrollRect = _feedbackScroll.rectTransform;
+                scrollRect.anchoredPosition = _feedbackRect.anchoredPosition;
+                bool showScroll = !string.IsNullOrEmpty(_displayedFeedback) && feedback.gameObject.activeInHierarchy;
+                _feedbackScroll.uvRect = new Rect(0f, 0f, .5f, 1f);
+                _feedbackScroll.gameObject.SetActive(showScroll);
+            }
+        }
+
+        private void UpdateFeedbackLayout()
+        {
+            if (_feedbackRect == null || _questPanel == null) return;
+            var parent = _feedbackRect.parent as RectTransform;
+            if (parent == null || _questPanel.parent != parent) return;
+
+            var corners = new Vector3[4];
+            _questPanel.GetWorldCorners(corners);
+            Vector3 bottomLeft = parent.InverseTransformPoint(corners[0]);
+            Vector3 bottomRight = parent.InverseTransformPoint(corners[3]);
+            float width = Mathf.Max(1f, bottomRight.x - bottomLeft.x);
+            const float feedbackTextSideInset = 24f;
+            _feedbackRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,
+                Mathf.Max(1f, width - feedbackTextSideInset * 2f));
+            if (_feedbackScroll != null)
+            {
+                RectTransform scrollRect = _feedbackScroll.rectTransform;
+                scrollRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width + 88f);
+                scrollRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
+                    Mathf.Max(90f, _feedbackRect.rect.height * 1.8f));
+            }
+
+            _feedbackShownPosition = new Vector2(
+                (bottomLeft.x + bottomRight.x) * .5f,
+                bottomLeft.y - 10f - _feedbackRect.rect.height * .5f);
+            _feedbackHiddenPosition = new Vector2(
+                parent.rect.xMax + _feedbackRect.rect.width * .5f + 32f,
+                _feedbackShownPosition.y);
+        }
+
         private void PresentQuest(bool local)
         {
             if (_questTitle == null || _narrative == null) return;
@@ -467,10 +639,20 @@ namespace Herbalist.GameUI
                 hasCount = parts.Length == 2 && System.Int32.TryParse(parts[0].Trim(), out _) && System.Int32.TryParse(parts[1].Trim(), out _);
                 if (hasCount) progress = candidate;
             }
-            _questTitle.text = hasCount ? title.Substring(0, countStart).TrimEnd() : title;
+            string titleWithoutCount = hasCount ? title.Substring(0, countStart).TrimEnd() : title;
+            bool countOnMainQuest = hasCount && string.Equals(titleWithoutCount,
+                "약제를 복용해 능력을 획득하세요.", System.StringComparison.Ordinal);
+            _questTitle.text = titleWithoutCount;
+            if (_questTitle != null)
+                _questTitle.rectTransform.offsetMax = new Vector2(countOnMainQuest ? -92f : -44f, 0f);
+            ConfigureQuestHierarchyDivider(_questLayoutTargets.Length > 1 ? _questLayoutTargets[1] : null,
+                _questTitle.rectTransform, countOnMainQuest);
             if (_questCount != null)
             {
                 _questCount.text = hasCount ? progress : string.Empty;
+                var countRect = _questCount.rectTransform;
+                countRect.anchorMin = countOnMainQuest ? new Vector2(1f, .5f) : new Vector2(1f, 0f);
+                countRect.anchorMax = countOnMainQuest ? Vector2.one : new Vector2(1f, .5f);
                 _questCount.gameObject.SetActive(hasCount);
             }
             var progressLine = _questLayoutTargets.Length > 1
@@ -480,7 +662,7 @@ namespace Herbalist.GameUI
 
             if (_questDetail != null)
             {
-                _questDetail.rectTransform.offsetMax = new Vector2(hasCount ? -132f : -16f, 0f);
+                _questDetail.rectTransform.offsetMax = new Vector2(hasCount && !countOnMainQuest ? -132f : -16f, 0f);
                 _questDetail.text = _narrative.DetailQuestText;
             }
         }

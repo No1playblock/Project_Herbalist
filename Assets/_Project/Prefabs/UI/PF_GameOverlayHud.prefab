@@ -245,8 +245,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
-  m_fontSizeBase: 24
+  m_fontSize: 14
+  m_fontSizeBase: 14
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -529,7 +529,7 @@ RectTransform:
   m_GameObject: {fileID: 985391758041059888}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 0.71639, z: 1}
+  m_LocalScale: {x: 0.8, y: 0.573112, z: 0.8}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7957414924116240599}
@@ -748,6 +748,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7957414924116240599}
+  - {fileID: 8934227168894012302}
   - {fileID: 7260859023954959163}
   - {fileID: 4459199557303094759}
   - {fileID: 3435436942741014379}
@@ -851,6 +852,7 @@ MonoBehaviour:
   stageName: {fileID: 0}
   objective: {fileID: 0}
   subtitle: {fileID: 4797128071024510586}
+  _subtitleBackdrop: {fileID: 8934227168894012304}
   resume: {fileID: 911335555916222849}
   optionButton: {fileID: 2580140760148252297}
   mainMenu: {fileID: 3040458156023346428}
@@ -858,11 +860,83 @@ MonoBehaviour:
   defaultObjective: 
   _stageHeaderGroup: {fileID: 6498284465660720278}
   _stageHeaderFirstArt: {fileID: 8909553995468330401}
-  _stageHeaderSecondArt: {fileID: 0}
+  _stageHeaderSecondArt: {fileID: 2624008604633558543}
   _stageHeaderFadeInDuration: 0.6
   _stageHeaderHoldDuration: 2
   _stageHeaderFadeOutDuration: 0.6
   _playtestHud: {fileID: 1641928576492585312}
+--- !u!1 &8934227168894012301
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8934227168894012302}
+  - component: {fileID: 8934227168894012303}
+  - component: {fileID: 8934227168894012304}
+  m_Layer: 0
+  m_Name: SubtitleDialogueOverlay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &8934227168894012302
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8934227168894012301}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4390580910896429864}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: -255}
+  m_SizeDelta: {x: 1160, y: 50}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &8934227168894012303
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8934227168894012301}
+  m_CullTransparentMesh: 1
+--- !u!114 &8934227168894012304
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8934227168894012301}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RawImage
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.6}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Texture: {fileID: 2800000, guid: 8c5ab7434b6f40f283d17325be20d957, type: 3}
+  m_UVRect:
+    serializedVersion: 2
+    x: 0
+    y: 0.474
+    width: 1
+    height: 0.047
 --- !u!114 &3348535450943759721
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -898,6 +972,7 @@ MonoBehaviour:
   _worldRingSetup: {fileID: 7999000000000000003}
   _worldRingMaterial: {fileID: 2100000, guid: fcca6a4c6eb4b90478ae09ce0eaeb8f8, type: 2}
   _guideArrow: {fileID: 0}
+  _guideArrowSprite: {fileID: -8175378919521765148, guid: 2ebeb961a19ed884fad8e2000836a75f, type: 3}
   _guideText: {fileID: 1618506004321863415}
   _captionMinimumSize: {x: 260, y: 64}
   _captionMaximumSize: {x: 900, y: 120}
@@ -2477,7 +2552,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "L \uB2EB\uAE30"
+  m_text: "L / Esc \uB2EB\uAE30"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f6d6db893a076304b96ff122c79e3d7c, type: 2}
   m_sharedMaterial: {fileID: -1729637501063944873, guid: f6d6db893a076304b96ff122c79e3d7c, type: 2}

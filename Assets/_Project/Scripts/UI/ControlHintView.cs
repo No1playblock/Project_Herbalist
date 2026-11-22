@@ -36,15 +36,43 @@ namespace Herbalist.GameUI
         [SerializeField] private bool _centerPromptRow;
         [SerializeField, Min(0f)] private float _promptRowGap = 9f;
         [SerializeField] private float _promptRowYOffset = 30f;
+        [SerializeField, Range(.5f, 1f)] private float _alternativeKeyScale = .72f;
+
+        [Header("Space 키 눌림 효과")]
+        [SerializeField, Min(.05f)] private float _spaceKeyPulseDuration = .24f;
+        [SerializeField, Min(1f)] private float _spaceKeyPulseScale = 1.18f;
+        private float _spaceKeyPulseElapsed;
+
+        private void OnEnable()
+        {
+            _spaceKeyPulseElapsed = Mathf.Max(.05f, _spaceKeyPulseDuration);
+        }
 
         private void Update()
         {
-            if (!Application.isPlaying) Present(_previewBinding, _previewDescription);
+            if (!Application.isPlaying)
+            {
+                Present(_previewBinding, _previewDescription);
+                return;
+            }
+
+            if (_spaceKeyPulseElapsed < _spaceKeyPulseDuration)
+                _spaceKeyPulseElapsed = Mathf.Min(_spaceKeyPulseDuration, _spaceKeyPulseElapsed + Time.unscaledDeltaTime);
+        }
+
+        public void PulseSpaceKey()
+        {
+            if (Application.isPlaying) _spaceKeyPulseElapsed = 0f;
         }
 
         public void Present(string binding, string description)
         {
-            if (_description != null) _description.text = description;
+            if (_description != null)
+            {
+                bool showDescription = !string.IsNullOrWhiteSpace(description);
+                _description.text = showDescription ? description : string.Empty;
+                _description.gameObject.SetActive(showDescription);
+            }
             var parts = (binding ?? string.Empty).Split('/');
             bool overflow = _keys != null && parts.Length > _keys.Length;
             string singleKey = parts.Length == 1 ? parts[0].Trim() : string.Empty;
@@ -64,11 +92,17 @@ namespace Herbalist.GameUI
                 if (!IsSpaceKey(key) && slot.hasOriginalSprite && slot.image.sprite == _spaceKeySprite)
                     slot.image.sprite = slot.originalSprite;
                 SetKeySlotWidth(slot, key);
+                float ordinaryKeyScale = parts.Length > 1 && !overflow && !IsSpaceKey(key)
+                    ? Mathf.Clamp(_alternativeKeyScale, .5f, 1f) : 1f;
+                float spaceKeyScale = GetSpaceKeyScale();
+                slot.image.rectTransform.localScale = IsSpaceKey(key)
+                    ? new Vector3(spaceKeyScale, spaceKeyScale, 1f)
+                    : new Vector3(ordinaryKeyScale, ordinaryKeyScale, 1f);
+                slot.fallback.rectTransform.localScale = new Vector3(ordinaryKeyScale, ordinaryKeyScale, 1f);
                 if (IsSpaceKey(key) && _spaceKeySprite != null)
                 {
                     slot.image.sprite = _spaceKeySprite;
                     slot.image.preserveAspect = true;
-                    slot.image.rectTransform.localScale = Vector3.one;
                     slot.image.gameObject.SetActive(true);
                     slot.fallback.gameObject.SetActive(false);
                     continue;
@@ -84,7 +118,8 @@ namespace Herbalist.GameUI
                         slot.image.sprite = artwork;
                         slot.image.preserveAspect = true;
                         slot.image.rectTransform.localScale = leftMouse || rightMouse
-                            ? new Vector3(_mouseIconScale, _mouseIconScale, 1f) : Vector3.one;
+                            ? new Vector3(_mouseIconScale, _mouseIconScale, 1f)
+                            : new Vector3(ordinaryKeyScale, ordinaryKeyScale, 1f);
                         slot.image.gameObject.SetActive(true);
                         slot.fallback.gameObject.SetActive(!leftMouse && !rightMouse);
                         slot.fallback.text = FormatKeyLabel(key);
@@ -101,6 +136,13 @@ namespace Herbalist.GameUI
             // Always recalculate that row, even for older scene instances that
             // do not yet have the centering flag serialized.
             if (_centerPromptRow || IsSpaceKey(binding)) CenterPromptRow(binding);
+        }
+
+        private float GetSpaceKeyScale()
+        {
+            if (_spaceKeyPulseElapsed >= _spaceKeyPulseDuration) return 1f;
+            float normalized = Mathf.Clamp01(_spaceKeyPulseElapsed / Mathf.Max(.05f, _spaceKeyPulseDuration));
+            return Mathf.Lerp(1f, _spaceKeyPulseScale, Mathf.Sin(normalized * Mathf.PI));
         }
 
         private static void CacheKeySlotDefaults(KeySlot slot)
@@ -133,15 +175,34 @@ namespace Herbalist.GameUI
 
         private void CenterPromptRow(string binding)
         {
-            if (_description == null || _keys == null || _keys.Length == 0 || _keys[0]?.root == null) return;
+            if (_keys == null || _keys.Length == 0 || _keys[0]?.root == null) return;
             RectTransform rowRect = transform as RectTransform;
             RectTransform keycapsRect = _keys[0].root.transform.parent as RectTransform;
-            RectTransform descriptionRect = _description.rectTransform;
-            if (rowRect == null || keycapsRect == null || descriptionRect == null) return;
+            if (rowRect == null || keycapsRect == null) return;
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(keycapsRect);
             float keyWidth = MeasureVisibleKeyWidth(rowRect);
             if (keyWidth <= 0.1f) keyWidth = Mathf.Max(24f, LayoutUtility.GetPreferredWidth(keycapsRect));
+
+            keycapsRect.anchorMin = new Vector2(0.5f, keycapsRect.anchorMin.y);
+            keycapsRect.anchorMax = new Vector2(0.5f, keycapsRect.anchorMax.y);
+            keycapsRect.pivot = new Vector2(0.5f, keycapsRect.pivot.y);
+            keycapsRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, keyWidth);
+            Vector2 keyPosition = keycapsRect.anchoredPosition;
+            keyPosition.x = 0f;
+            keyPosition.y = _promptRowYOffset;
+            keycapsRect.anchoredPosition = keyPosition;
+            LayoutRebuilder.ForceRebuildLayoutImmediate(keycapsRect);
+
+            if (_description == null || string.IsNullOrWhiteSpace(_description.text))
+            {
+                InteractionTargetOrnament keyOnlyOrnament = FindNearbyOrnament();
+                if (keyOnlyOrnament != null) keyOnlyOrnament.SetContentWidth(keyWidth);
+                return;
+            }
+
+            RectTransform descriptionRect = _description.rectTransform;
+            if (descriptionRect == null) return;
 
             float availableWidth = Mathf.Max(48f, rowRect.rect.width - 28f);
             // The illustrated Space key is much wider than a letter key. Keep a
@@ -151,11 +212,6 @@ namespace Herbalist.GameUI
             float textWidth = Mathf.Min(preferredTextWidth, Mathf.Max(32f, availableWidth - keyWidth - gap));
             float totalWidth = Mathf.Min(availableWidth, keyWidth + gap + textWidth);
 
-            keycapsRect.anchorMin = new Vector2(0.5f, keycapsRect.anchorMin.y);
-            keycapsRect.anchorMax = new Vector2(0.5f, keycapsRect.anchorMax.y);
-            keycapsRect.pivot = new Vector2(0.5f, keycapsRect.pivot.y);
-            keycapsRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, keyWidth);
-            Vector2 keyPosition = keycapsRect.anchoredPosition;
             keyPosition.x = -totalWidth * 0.5f + keyWidth * 0.5f;
             keyPosition.y = _promptRowYOffset;
             keycapsRect.anchoredPosition = keyPosition;
