@@ -16,6 +16,7 @@ namespace Herbalist.GameUI
         public TMP_Text pauseMessage, stageName, objective, subtitle;
         public Button resume, optionButton, mainMenu;
         public string title, defaultObjective;
+        [SerializeField] private RawImage _subtitleBackdrop;
         private InputAction pause;
         private bool lastPaused;
         private bool lastUiOpen;
@@ -98,13 +99,9 @@ namespace Herbalist.GameUI
         }
         private void ToggleOptions()
         {
-            if (options.activeSelf)
-            {
-                if (options.TryGetComponent<OptionsPanel>(out var panel)) panel.CloseOptions();
-                else options.SetActive(false);
-                return;
-            }
-            if (_playtestHud != null && _playtestHud.CloseHistory()) return;
+            if (_playtestHud != null &&
+                (_playtestHud.HistoryOpen || _playtestHud.HistoryEscapeConsumedThisFrame)) return;
+            if(options.activeSelf) { options.SetActive(false); return; }
             if (!GameplayPause.IsPaused && TryCloseMinigame())
             {
                 recaptureAfterMinigame = true;
@@ -134,6 +131,7 @@ namespace Herbalist.GameUI
             if(FusionLobbySession.Instance!=null)await FusionLobbySession.Instance.LeaveAsync();
             else { GameplayPause.SetOffline(false); UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(settings.menuScene); }
         }
+        public void ReturnToMenuFromOptions() => ReturnToMenu();
         public void ShowSubtitle(string text) => ShowSubtitle(text,settings.feedbackDuration);
         public void ShowSubtitle(string text,float duration)
         {
@@ -181,7 +179,9 @@ namespace Herbalist.GameUI
             }
             UpdateStageHeader(!mazeView && (flow == null || flow.Minigame == StageMinigameKind.None), paused, Time.unscaledDeltaTime);
             if(!paused)subtitleRemaining-=Time.unscaledDeltaTime;
-            subtitle.gameObject.SetActive(subtitleRemaining>0&&!string.IsNullOrEmpty(subtitle.text));
+            bool subtitleVisible = subtitleRemaining > 0 && !string.IsNullOrEmpty(subtitle.text);
+            subtitle.gameObject.SetActive(subtitleVisible);
+            if (_subtitleBackdrop != null) _subtitleBackdrop.gameObject.SetActive(subtitleVisible);
         }
         private void UpdateStageHeader(bool visible, bool paused, float deltaTime)
         {

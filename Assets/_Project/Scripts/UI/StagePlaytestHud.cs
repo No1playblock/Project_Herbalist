@@ -7,6 +7,9 @@ using Herbalist.StageOne;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Herbalist.GameUI
 {
@@ -23,7 +26,12 @@ namespace Herbalist.GameUI
         [SerializeField] private Material _worldRingMaterial;
         [SerializeField] private SpotlightWorldRingSetup _worldRingSetup;
         [SerializeField] private RectTransform _guideArrow;
+        [SerializeField] private Sprite _guideArrowSprite;
         [SerializeField] private RectTransform _guideConnector;
+        [SerializeField, Range(.01f, .08f)] private float _guideArrowWidth = .035f;
+        [SerializeField, Range(.01f, .1f)] private float _guideArrowHeight = .045f;
+        [SerializeField, Range(0f, .04f)] private float _guideArrowBounceAmplitude = .012f;
+        [SerializeField, Min(.1f)] private float _guideArrowBounceSpeed = 3.8f;
         [SerializeField] private TMP_Text _guideText;
         [SerializeField] private Vector2 _captionMinimumSize = new(260, 76);
         [SerializeField] private Vector2 _captionMaximumSize = new(560, 180);
@@ -60,6 +68,8 @@ namespace Herbalist.GameUI
         private readonly Queue<string> _dialogue = new();
         private readonly uint[] _seenRecovery = new uint[2];
         private InputAction _historyAction;
+        private InputAction _historyCloseAction;
+        private int _historyEscapeConsumedFrame = -1;
         private bool _openingSeen, _harvestSeen, _leafFallSeen;
         private bool _sapOnlyBranchGuideSeen;
         private int _abilityGuides;
@@ -76,6 +86,8 @@ namespace Herbalist.GameUI
         private string _captionCopy;
         public bool NarrativeControlled { get; set; }
         public bool GuideActive => _guideRemaining > 0f;
+        public bool HistoryOpen => _historyPanel != null && _historyPanel.activeSelf;
+        public bool HistoryEscapeConsumedThisFrame => _historyEscapeConsumedFrame == Time.frameCount;
         public void QueueDialogue(string text) { if (!string.IsNullOrEmpty(text)) _dialogue.Enqueue(text); }
         public bool ShowGuide(Camera camera, Vector3 point, string message, LeafInstallTarget target = null)
         {
@@ -126,6 +138,10 @@ namespace Herbalist.GameUI
             _historyAction = _dialogueAction.action.Clone();
             _historyAction.performed += _ => ToggleHistory();
             _historyAction.Enable();
+            _historyCloseAction = new InputAction("Close Dialogue History", InputActionType.Button);
+            _historyCloseAction.AddBinding("<Keyboard>/escape");
+            _historyCloseAction.performed += _ => CloseHistoryFromEscape();
+            _historyCloseAction.Enable();
         }
 
         private void OnDisable()
@@ -134,6 +150,8 @@ namespace Herbalist.GameUI
             CloseHistory();
             _historyAction?.Dispose();
             _historyAction = null;
+            _historyCloseAction?.Dispose();
+            _historyCloseAction = null;
         }
 
         private void OnDestroy()
@@ -159,6 +177,11 @@ namespace Herbalist.GameUI
                 if (!GameplayCursor.WorldPointerActive) GameplayCursor.Instance.Capture();
             }
             return true;
+        }
+
+        private void CloseHistoryFromEscape()
+        {
+            if (CloseHistory()) _historyEscapeConsumedFrame = Time.frameCount;
         }
 
         private void ToggleHistory()
@@ -211,10 +234,52 @@ namespace Herbalist.GameUI
         {
             if (_spotlight != null) _spotlight.gameObject.SetActive(false);
             if (_spotlightOverlay != null) _spotlightOverlay.gameObject.SetActive(false);
-            if (_guideArrow != null) _guideArrow.gameObject.SetActive(false);
+            var guideArrow = ResolveGuideArrow();
+            if (guideArrow != null) guideArrow.gameObject.SetActive(false);
+            if (_guideArrow != null && _guideArrow != guideArrow)
+                _guideArrow.gameObject.SetActive(false);
             if (_guideText != null && _guideText.transform.parent != null)
                 _guideText.transform.parent.gameObject.SetActive(false);
-            if (_guideConnector != null) _guideConnector.gameObject.SetActive(false);
+            if (_guideConnector != null && _guideConnector != guideArrow)
+                _guideConnector.gameObject.SetActive(false);
+        }
+
+        private RectTransform ResolveGuideArrow()
+        {
+            RectTransform arrow = _guideArrow;
+            if (arrow == null && _guideConnector != null && _guideConnector.GetComponent<UnityEngine.UI.Image>() != null)
+                arrow = _guideConnector;
+            if (arrow == null && _spotlight != null)
+            {
+                var namedArrow = _spotlight.Find("GuideConnector1117");
+                if (namedArrow is RectTransform rect && rect.GetComponent<UnityEngine.UI.Image>() != null)
+                    arrow = rect;
+            }
+            if (arrow == null) return null;
+
+            var image = arrow.GetComponent<UnityEngine.UI.Image>();
+            if (image == null) image = arrow.GetComponentInChildren<UnityEngine.UI.Image>(true);
+            if (image == null) return null;
+
+            if (_guideArrowSprite == null)
+            {
+#if UNITY_EDITOR
+                _guideArrowSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
+                    "Assets/_Project/Art/UI/Textures/ArtistDrop/UI/UI/GuideUI/GuideUI_Arrow.png");
+#endif
+                if (_guideArrowSprite == null) _guideArrowSprite = image.sprite;
+            }
+            if (_guideArrowSprite != null)
+            {
+                image.sprite = _guideArrowSprite;
+                image.color = Color.white;
+                image.preserveAspect = true;
+                image.type = UnityEngine.UI.Image.Type.Simple;
+                image.useSpriteMesh = true;
+                image.enabled = true;
+                image.raycastTarget = false;
+            }
+            return arrow;
         }
 
         private void UpdateStageOne(StageActor local, StageOneFlow flow, float dt)
@@ -308,11 +373,15 @@ namespace Herbalist.GameUI
             Vector3 targetProjection = _guideCamera.WorldToViewportPoint(target);
             bool visible = IsVisible(targetProjection);
             if (!visible && !_guideAllowOffscreen) return false;
+            RectTransform guideArrow = ResolveGuideArrow();
             Fit(_spotlight, viewport.min, viewport.max);
             _spotlightOverlay.gameObject.SetActive(visible);
-            if (_guideArrow != null) _guideArrow.gameObject.SetActive(visible);
+            if (_guideArrow != null && _guideArrow != guideArrow)
+                _guideArrow.gameObject.SetActive(false);
+            if (_guideConnector != null && _guideConnector != guideArrow)
+                _guideConnector.gameObject.SetActive(false);
+            if (guideArrow != null) guideArrow.gameObject.SetActive(visible);
             _guideText.transform.parent.gameObject.SetActive(visible);
-            if (_guideConnector != null) _guideConnector.gameObject.SetActive(visible);
             if (!visible) return true;
 
             var cameraTransform = _guideCamera.transform;
@@ -358,28 +427,19 @@ namespace Herbalist.GameUI
             if (left - halfCaption.x >= .03f) captionCenter.x = left;
             else if (rightSide + halfCaption.x <= .97f) captionCenter.x = rightSide;
             captionRect.anchoredPosition = Vector2.Scale(captionCenter - Vector2.one * .5f, viewportSize);
-            if (_guideConnector != null)
-            {
-                var caption = (RectTransform)_guideText.transform.parent;
-                Vector2 towardTarget = center - captionCenter;
-                float edgeFraction = Mathf.Min(halfCaption.x / Mathf.Max(.0001f, Mathf.Abs(towardTarget.x)),
-                    halfCaption.y / Mathf.Max(.0001f, Mathf.Abs(towardTarget.y)));
-                Vector2 from = captionCenter + towardTarget * edgeFraction;
-                Vector2 towardText = (from - center).normalized;
-                Vector2 end = center + Vector2.Scale(towardText, radii);
-                Vector2 size = _spotlight.rect.size;
-                Vector2 startPixels = Vector2.Scale(from, size);
-                Vector2 delta = Vector2.Scale(end, size) - startPixels;
-                _guideConnector.anchorMin = _guideConnector.anchorMax = Vector2.zero;
-                _guideConnector.pivot = new Vector2(0f, .5f);
-                _guideConnector.anchoredPosition = startPixels;
-                _guideConnector.sizeDelta = new Vector2(delta.magnitude, 2f);
-                _guideConnector.localRotation = Quaternion.Euler(0,0,Mathf.Atan2(delta.y,delta.x)*Mathf.Rad2Deg);
-            }
-
-            float arrowY = Mathf.Min(.93f, center.y + radii.y + .025f);
+            float arrowY = Mathf.Min(.93f, center.y + radii.y + .012f);
             float arrowX = Mathf.Clamp(center.x, .03f, .97f);
-            if (_guideArrow != null) Fit(_guideArrow, new(arrowX - .03f, arrowY), new(arrowX + .03f, arrowY + .05f));
+            if (guideArrow != null)
+            {
+                float arrowWidth = Mathf.Clamp(_guideArrowWidth, .01f, .08f);
+                float arrowHeight = Mathf.Clamp(_guideArrowHeight, .01f, .1f);
+                float bounce = Mathf.Sin(Time.unscaledTime * _guideArrowBounceSpeed) * _guideArrowBounceAmplitude;
+                float bouncedY = Mathf.Clamp(arrowY + bounce, .02f, .95f - arrowHeight);
+                Fit(guideArrow,
+                    new(arrowX - arrowWidth * .5f, bouncedY),
+                    new(arrowX + arrowWidth * .5f, bouncedY + arrowHeight));
+                guideArrow.SetAsLastSibling();
+            }
             return true;
         }
 

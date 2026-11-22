@@ -446,9 +446,16 @@ namespace Herbalist.Editor
             {
                 var go = new GameObject("GuideConnector1117", typeof(RectTransform), typeof(Image));
                 go.transform.SetParent(spotlight, false);
-                go.GetComponent<Image>().color = new Color(1f, .92f, .66f, .85f);
-                go.GetComponent<Image>().raycastTarget = false;
-                Set(hud, "_guideConnector", go.transform);
+                connector = go.transform;
+                Set(hud, "_guideConnector", connector);
+            }
+            var pointerImage = connector.GetComponent<Image>();
+            if (pointerImage != null)
+            {
+                pointerImage.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/UI/Textures/ArtistDrop/UI/UI/GuideUI/GuideUI_Arrow.png");
+                pointerImage.color = Color.white;
+                pointerImage.preserveAspect = true;
+                pointerImage.raycastTarget = false;
             }
         }
 
