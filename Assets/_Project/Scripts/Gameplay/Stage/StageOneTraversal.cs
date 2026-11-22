@@ -10,6 +10,8 @@ namespace Herbalist.Levels
     // Stage-one authored tree hazards and safe moss areas are independent of leaf targets.
     public sealed partial class StageOneTraversal : MonoBehaviour
     {
+        private const int BothPlayersArrived = (1 << 0) | (1 << 1);
+
         [System.Serializable]
         private sealed class CheckpointGroup
         {
@@ -235,12 +237,11 @@ namespace Herbalist.Levels
                         ? group.recoveryPoint.position + _starts[slot].position - _starts[0].position
                         : actor.transform.position;
                     group.arrived |= arrival;
-                    int partner = 1 - slot;
-                    if ((group.arrived & (1 << partner)) == 0)
-                        group.positions[partner] = group.positions[slot] +
-                            _starts[partner].position - _starts[slot].position;
-                    _activeCheckpoint = i;
-                    _activeCheckpointHeight = surface.bounds.max.y;
+                    if (group.arrived == BothPlayersArrived)
+                    {
+                        _activeCheckpoint = i;
+                        _activeCheckpointHeight = surface.bounds.max.y;
+                    }
                     break;
                 }
             }
