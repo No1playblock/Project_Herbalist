@@ -299,6 +299,8 @@ namespace Herbalist.Levels
                 _turns[i] = Mathf.MoveTowards(_turns[i], (_branchMask & (1 << i)) != 0 ? 1 : 0, dt / _switches[i].RotationDuration);
                 _switches[i].Present(_turns[i]);
             }
+            float previousClock = _stoneClock;
+            _stoneClock += dt;
             if (_phase != BranchRidePhase.Riding)
             {
                 for (int i = 0; i < 2; i++)
@@ -324,8 +326,6 @@ namespace Herbalist.Levels
             Vector3 previous = _carrierPosition;
             _blocked = false;
             Advance(dt);
-            float previousClock = _stoneClock;
-            _stoneClock += dt;
             if (_phase == BranchRidePhase.Riding) ResolveStones(previousClock, previous);
             CarryRiders();
         }
@@ -438,7 +438,7 @@ namespace Herbalist.Levels
                     foreach (var leaf in rider.Abilities.Leaf.Projectiles)
                         if (leaf != null && leaf.State == LeafState.Flying &&
                             BranchRideTrack.DistanceToSegment(leaf.transform.position, before, now) <=
-                            stone.Radius + rider.Abilities.Leaf.Settings.collisionRadius)
+                            stone.HitRadius + rider.Abilities.Leaf.Settings.collisionRadius)
                         {
                             destroyed = TryBreakStone(stone, rider.transform);
                             if (destroyed) leaf.BeginReturn();
@@ -448,9 +448,9 @@ namespace Herbalist.Levels
                 }
                 if (destroyed) continue;
                 foreach (var leaf in _leaves)
-                    if (leaf.Installed && BranchRideTrack.DistanceToSegment(leaf.ContactPoint, before, now) <= stone.Radius + .25f)
+                    if (leaf.Installed && BranchRideTrack.DistanceToSegment(leaf.ContactPoint, before, now) <= stone.HitRadius + .25f)
                         leaf.BeginReturn();
-                if (BranchRideTrack.DistanceToSegment(Vector3.zero, before - previousCarrier, now - _carrierPosition) <= stone.Radius + _collisionRadius)
+                if (BranchRideTrack.DistanceToSegment(Vector3.zero, before - previousCarrier, now - _carrierPosition) <= stone.HitRadius + _collisionRadius)
                 { FailRide(); return; }
             }
         }
@@ -593,7 +593,7 @@ namespace Herbalist.Levels
                     var stone = _hazards[i];
                     if (stone == null) continue;
                     stone.SetDestroyedCycle(Online ? DestroyedStoneCycles[i] : _destroyedStoneCycles[i]);
-                    stone.Present(PresentationStoneClock, CurrentPhase == BranchRidePhase.Riding);
+                    stone.Present(PresentationStoneClock, CurrentPhase is BranchRidePhase.Boarding or BranchRidePhase.Riding);
                 }
             if (_endingPanel != null) _endingPanel.SetActive(CurrentPhase == BranchRidePhase.Complete);
         }

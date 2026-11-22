@@ -14,6 +14,7 @@ namespace Herbalist.Levels
         [SerializeField, Min(.1f)] private float _respawnDelay = 3;
         [SerializeField, Min(0)] private float _phaseOffset;
         [SerializeField, Min(.1f)] private float _radius = .8f;
+        [SerializeField, Min(0f)] private float _hitRadiusPadding;
         [SerializeField] private ParticleSystem _breakParticles;
         [SerializeField] private int _breakSoundId = 57;
         private int _destroyedCycle = int.MinValue;
@@ -22,6 +23,7 @@ namespace Herbalist.Levels
         public void SetDestroyedCycle(int cycle) => _destroyedCycle = cycle;
         public Transform Visual => _visual;
         public float Radius => _radius;
+        public float HitRadius => _radius + _hitRadiusPadding;
         public float RollLength
         {
             get
