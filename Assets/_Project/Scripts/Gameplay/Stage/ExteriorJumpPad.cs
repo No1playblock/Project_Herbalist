@@ -109,6 +109,7 @@ namespace Herbalist.Levels
             if (_voiceSource == null) _voiceSource = gameObject.AddComponent<AudioSource>();
             _voiceSource.playOnAwake = false;
             _voiceSource.spatialBlend = 0f;
+            _voiceSource.outputAudioMixerGroup = Herbalist.GameUI.UserOptions.SfxOutput;
             _voiceSource.volume = _settings.voiceVolume;
             for (int i = 0; i < _leafCenters.Length; i++)
             {

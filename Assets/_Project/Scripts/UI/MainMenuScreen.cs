@@ -35,7 +35,7 @@ namespace Herbalist.GameUI
             _closeOptionsAction.performed += _ =>
             {
                 if (options.activeSelf && options.TryGetComponent<OptionsPanel>(out var panel))
-                    panel.CloseOptions();
+                    panel.CloseOptionsImmediately();
             };
             _closeOptionsAction.Enable();
         }
@@ -47,7 +47,7 @@ namespace Herbalist.GameUI
 
         private void Start()
         {
-            AudioListener.volume=UserOptions.Volume;
+            UserOptions.ApplyAudioVolumes();
             _joinActionText = _entryActionLabel.text;
             create.onClick.AddListener(CreateRoom); join.onClick.AddListener(OpenJoin);
             entryBack.onClick.AddListener(()=>{ entering=false; Session.ClearError(); });

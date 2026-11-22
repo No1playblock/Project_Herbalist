@@ -92,10 +92,9 @@ namespace Herbalist.GameUI
         }
         private void Start()
         {
+            UserOptions.ApplyAudioVolumes();
             resume.onClick.AddListener(()=>SetPause(false)); optionButton.onClick.AddListener(()=>options.SetActive(true));
             mainMenu.onClick.AddListener(ReturnToMenu); if (stageName != null) stageName.text=title;
-            if (options.TryGetComponent<OptionsPanel>(out var panel))
-                panel.BindReturnToMenu(ReturnToMenu);
         }
         private void ToggleOptions()
         {
