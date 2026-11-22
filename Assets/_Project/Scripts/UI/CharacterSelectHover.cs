@@ -249,7 +249,7 @@ namespace Herbalist.GameUI
                 SetSelectedIndex(approvedRole);
 
             bool inputBlocked = _room != null && _room.InputBlocked;
-            bool startButtonHovered = !inputBlocked && IsPointerOverStartButton();
+            bool startButtonHovered = (_room == null || _room.Previewing || _room.CanHoverStartButton) && IsPointerOverStartButton();
             bool backButtonHovered = !inputBlocked &&
                                      (_room == null || _room.CanHoverBackButton) &&
                                      IsPointerOverRect(backButtonRectTransform);

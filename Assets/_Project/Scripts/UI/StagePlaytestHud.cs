@@ -17,6 +17,7 @@ namespace Herbalist.GameUI
         [SerializeField] private GameObject _historyPanel;
         [SerializeField] private TMP_Text _historyText;
         [SerializeField] private UnityEngine.UI.ScrollRect _historyScroll;
+        [SerializeField] private UnityEngine.UI.Button _historyClose;
         [SerializeField] private RectTransform _spotlight;
         [SerializeField] private UnityEngine.UI.RawImage _spotlightOverlay;
         [SerializeField] private Material _worldRingMaterial;
@@ -55,6 +56,7 @@ namespace Herbalist.GameUI
         [SerializeField] private string _sapOnlyBranchGuide = "가지에 붙인 나뭇잎은 수액 능력자만 탈 수 있어요.";
 
         private static readonly List<string> History = new();
+        private static readonly HashSet<string> RecordedDialogue = new();
         private readonly Queue<string> _dialogue = new();
         private readonly uint[] _seenRecovery = new uint[2];
         private InputAction _historyAction;
@@ -87,11 +89,16 @@ namespace Herbalist.GameUI
         private static readonly int RadiiId = Shader.PropertyToID("_Radii");
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetHistory() => History.Clear();
+        private static void ResetHistory()
+        {
+            History.Clear();
+            RecordedDialogue.Clear();
+        }
 
         private void Awake()
         {
-            if (StageOneFlow.Instance != null) History.Clear();
+            if (StageOneFlow.Instance != null) ResetHistory();
+            if (_historyClose != null) _historyClose.onClick.AddListener(() => CloseHistory());
             _sapMarkers = FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None)
                 .Where(t => t.name.StartsWith("CuredBlueSap")).ToArray();
         }
@@ -137,6 +144,7 @@ namespace Herbalist.GameUI
 
         public void RecordDialogue(string text)
         {
+            if (string.IsNullOrWhiteSpace(text) || !RecordedDialogue.Add(text)) return;
             History.Add(text);
             if (_historyPanel.activeSelf) UpdateHistory();
         }

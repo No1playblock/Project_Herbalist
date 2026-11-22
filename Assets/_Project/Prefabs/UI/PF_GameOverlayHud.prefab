@@ -892,6 +892,7 @@ MonoBehaviour:
   _dialogueAction: {fileID: 11400000, guid: 3b653ec2bbde4a96839487e2be8cd8aa, type: 2}
   _historyPanel: {fileID: 6495544471107591499}
   _historyText: {fileID: 1096220397043220517}
+  _historyClose: {fileID: 9000000000000112201}
   _historyScroll: {fileID: 530122404354820417}
   _spotlight: {fileID: 839208636312936983}
   _spotlightOverlay: {fileID: 7813609472018445004}
@@ -2423,8 +2424,9 @@ GameObject:
   - component: {fileID: 2560569472495356676}
   - component: {fileID: 8306859239560150421}
   - component: {fileID: 1804026345276050409}
+  - component: {fileID: 9000000000000112201}
   m_Layer: 0
-  m_Name: CloseHint
+  m_Name: CloseHistory
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2444,10 +2446,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 3507788289975833228}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.05, y: 0.015}
-  m_AnchorMax: {x: 0.95, y: 0.13}
+  m_AnchorMin: {x: 0.5, y: 0.025}
+  m_AnchorMax: {x: 0.5, y: 0.025}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 160, y: 36}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8306859239560150421
 CanvasRenderer:
@@ -2471,13 +2473,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
+  m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "L \uB2EB\uAE30"
+  m_text: "\uB2EB\uAE30"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f6d6db893a076304b96ff122c79e3d7c, type: 2}
   m_sharedMaterial: {fileID: -1729637501063944873, guid: f6d6db893a076304b96ff122c79e3d7c, type: 2}
@@ -3206,10 +3208,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4390580910896429864}
     m_Modifications:
-    - target: {fileID: 3802102884955570941, guid: e8867de3d8eb9b847a6251caa6cac959, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 5071366217366820261, guid: e8867de3d8eb9b847a6251caa6cac959, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -3289,10 +3287,6 @@ PrefabInstance:
     - target: {fileID: 5071366217366820261, guid: e8867de3d8eb9b847a6251caa6cac959, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5694577736197974109, guid: e8867de3d8eb9b847a6251caa6cac959, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6158892487115395117, guid: e8867de3d8eb9b847a6251caa6cac959, type: 3}
       propertyPath: m_Name
@@ -3449,3 +3443,47 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 6535106280575158265, guid: 870594f28abe4df49b30619d067c28ae, type: 3}
   m_PrefabInstance: {fileID: 7576903116766109135}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &9000000000000112201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7696646061697364451}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_Navigation:
+    m_Mode: 3
+    m_WrapAround: 0
+    m_SelectOnUp: {fileID: 0}
+    m_SelectOnDown: {fileID: 0}
+    m_SelectOnLeft: {fileID: 0}
+    m_SelectOnRight: {fileID: 0}
+  m_Transition: 1
+  m_Colors:
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.85, g: 0.91, b: 0.85, a: 1}
+    m_PressedColor: {r: 0.68, g: 0.78, b: 0.69, a: 1}
+    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_DisabledColor: {r: 0.55, g: 0.55, b: 0.55, a: 0.5}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  m_SpriteState:
+    m_HighlightedSprite: {fileID: 0}
+    m_PressedSprite: {fileID: 0}
+    m_SelectedSprite: {fileID: 0}
+    m_DisabledSprite: {fileID: 0}
+  m_AnimationTriggers:
+    m_NormalTrigger: Normal
+    m_HighlightedTrigger: Highlighted
+    m_PressedTrigger: Pressed
+    m_SelectedTrigger: Selected
+    m_DisabledTrigger: Disabled
+  m_Interactable: 1
+  m_TargetGraphic: {fileID: 1804026345276050409}
+  m_OnClick:
+    m_PersistentCalls:
+      m_Calls: []

@@ -93,10 +93,18 @@ namespace Herbalist.GameUI
         {
             resume.onClick.AddListener(()=>SetPause(false)); optionButton.onClick.AddListener(()=>options.SetActive(true));
             mainMenu.onClick.AddListener(ReturnToMenu); if (stageName != null) stageName.text=title;
+            if (options.TryGetComponent<OptionsPanel>(out var panel))
+                panel.BindReturnToMenu(ReturnToMenu);
         }
         private void ToggleOptions()
         {
-            if(options.activeSelf) { options.SetActive(false); return; }
+            if (options.activeSelf)
+            {
+                if (options.TryGetComponent<OptionsPanel>(out var panel)) panel.CloseOptions();
+                else options.SetActive(false);
+                return;
+            }
+            if (_playtestHud != null && _playtestHud.CloseHistory()) return;
             if (!GameplayPause.IsPaused && TryCloseMinigame())
             {
                 recaptureAfterMinigame = true;

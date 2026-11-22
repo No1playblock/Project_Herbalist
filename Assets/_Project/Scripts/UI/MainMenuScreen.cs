@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using Herbalist.Networking;
 using UnityEngine.SceneManagement;
+using UnityEngine.InputSystem;
 namespace Herbalist.GameUI
 {
     [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "Herbalist.GameUI", sourceAssembly: "Assembly-CSharp", sourceClassName: "MainMenuUI")]
@@ -26,7 +27,24 @@ namespace Herbalist.GameUI
         [SerializeField] private GameObject _titleBackdrop;
         private AsyncOperation _characterSelectOperation;
         private GameObject[] _menuBackdrop;
+        private InputAction _closeOptionsAction;
         private FusionLobbySession Session => FusionLobbySession.Instance;
+        private void OnEnable()
+        {
+            _closeOptionsAction = settings.pauseAction.action.Clone();
+            _closeOptionsAction.performed += _ =>
+            {
+                if (options.activeSelf && options.TryGetComponent<OptionsPanel>(out var panel))
+                    panel.CloseOptions();
+            };
+            _closeOptionsAction.Enable();
+        }
+        private void OnDisable()
+        {
+            _closeOptionsAction?.Dispose();
+            _closeOptionsAction = null;
+        }
+
         private void Start()
         {
             AudioListener.volume=UserOptions.Volume;
@@ -113,6 +131,7 @@ namespace Herbalist.GameUI
                 unassignedPlayers.text=list.ToString();
             }
             readiness.text=control.Ready?settings.readyText:settings.waitingText;
+            start.gameObject.SetActive(control.IsHost && control.Players.Length >= 2);
             start.interactable=control.IsHost&&control.Ready;
             for(int i=0;i<characterButtons.Length;i++)
             {

@@ -47,6 +47,7 @@ namespace Herbalist.GameUI
         private RectTransform[] _questLayoutTargets;
         private PlayScreenController _screen;
         public string MainQuestText => _mainQuest != null ? _mainQuest.text : string.Empty;
+        public bool InlineQuestCount { get; private set; }
         public string DetailQuestText => _subQuest != null && _subQuest.gameObject.activeSelf ? _subQuest.text : string.Empty;
         public bool QuestVisible => _mainQuest != null && _mainQuest.transform.parent.gameObject.activeSelf;
         public bool TryNavigationTarget(out Vector3 point, out string label)
@@ -110,6 +111,7 @@ namespace Herbalist.GameUI
 
         private void Quest(string main, string detail = null, int count = -1, int detailCount = -1)
         {
+            InlineQuestCount = main == "M1-01";
             _detailId = detail;
             _mainQuest.text = _text.Find(main);
             if (count >= 0)

@@ -68,6 +68,7 @@ namespace Herbalist.GameUI
             vh.AddVert(vertex);
         }
 
+#if UNITY_EDITOR
         protected override void OnValidate()
         {
             base.OnValidate();
@@ -75,5 +76,6 @@ namespace Herbalist.GameUI
             _panelHorizontalPadding = Mathf.Max(0f, _panelHorizontalPadding);
             SetVerticesDirty();
         }
+#endif
     }
 }

@@ -413,7 +413,7 @@ namespace Herbalist.GameUI
                 {
                     bool useClothPrompt = clothPrompt != null && interaction is StageInteraction.GrabCloth or StageInteraction.ReleaseCloth;
                     string hintBinding = interaction == StageInteraction.ReleaseCloth && !string.IsNullOrEmpty(player.Input.JumpBinding)
-                        ? player.Input.JumpBinding
+                        ? $"{actor.InteractBinding}/{player.Input.JumpBinding}"
                         : actor.InteractBinding;
                     PresentHint(useClothPrompt ? _clothHintView : _interactionHintView,
                         useClothPrompt ? clothPromptText : promptText, hintBinding, description);
@@ -467,11 +467,13 @@ namespace Herbalist.GameUI
                 hasCount = parts.Length == 2 && System.Int32.TryParse(parts[0].Trim(), out _) && System.Int32.TryParse(parts[1].Trim(), out _);
                 if (hasCount) progress = candidate;
             }
-            _questTitle.text = hasCount ? title.Substring(0, countStart).TrimEnd() : title;
+            bool inlineCount = hasCount && _narrative.InlineQuestCount;
+            string titleWithoutCount = hasCount ? title.Substring(0, countStart).TrimEnd() : title;
+            _questTitle.text = inlineCount ? $"{titleWithoutCount} {progress}" : titleWithoutCount;
             if (_questCount != null)
             {
-                _questCount.text = hasCount ? progress : string.Empty;
-                _questCount.gameObject.SetActive(hasCount);
+                _questCount.text = hasCount && !inlineCount ? progress : string.Empty;
+                _questCount.gameObject.SetActive(hasCount && !inlineCount);
             }
             var progressLine = _questLayoutTargets.Length > 1
                 ? _questLayoutTargets[1].Find("QuestProgressBar")
@@ -480,7 +482,7 @@ namespace Herbalist.GameUI
 
             if (_questDetail != null)
             {
-                _questDetail.rectTransform.offsetMax = new Vector2(hasCount ? -132f : -16f, 0f);
+                _questDetail.rectTransform.offsetMax = new Vector2(hasCount && !inlineCount ? -132f : -16f, 0f);
                 _questDetail.text = _narrative.DetailQuestText;
             }
         }

@@ -25,6 +25,7 @@ namespace Herbalist.GameUI
         internal bool InputBlocked => _actionPending || (_menu != null && (!InRoom || _menu.RoomOptionsOpen));
         internal bool CanHoverBackButton => !InputBlocked && _back != null && _back.isActiveAndEnabled && _back.IsInteractable();
         internal bool CanHoverOptionsButton => !InputBlocked && _options != null && _options.isActiveAndEnabled && _options.IsInteractable();
+        internal bool CanHoverStartButton => !InputBlocked && _start.isActiveAndEnabled && _start.IsInteractable();
         internal bool Previewing => _menu == null && !InRoom;
 
         private void Awake()
@@ -73,9 +74,11 @@ namespace Herbalist.GameUI
             }
 
             bool ready = room?.IsHost == true && room.Ready;
+            _start.gameObject.SetActive(Previewing || (room?.IsHost == true && count >= 2));
+            _start.image.enabled = ready || Previewing;
             _start.interactable = ready && !InputBlocked;
             _startPlate.interactable = _start.interactable;
-            _startLabel.text = ready ? "시작하기" : "대기 중";
+            _startLabel.text = ready || Previewing ? "게임 시작" : "대기 중";
             _copy.interactable = InRoom && !InputBlocked;
             _options.interactable = _menu != null && !InputBlocked;
             _back.interactable = _menu != null && !InputBlocked;
