@@ -7,11 +7,19 @@ using UnityEngine.Video;
 
 namespace Herbalist.GameUI
 {
+    internal enum StageCinematicClip : byte
+    {
+        DuyeongSap,
+        SodamSap,
+        Opening,
+        StageTwoExit
+    }
+
     public sealed class StageCinematicView : MonoBehaviour
     {
         [SerializeField] private VideoPlayer _videoPlayer;
         [SerializeField] private Camera _backgroundCamera;
-        [SerializeField] private VideoClip _duyeongSapClip, _sodamSapClip, _openingClip;
+        [SerializeField] private VideoClip _duyeongSapClip, _sodamSapClip, _openingClip, _stageTwoExitClip;
         [SerializeField] private RawImage _video;
         [SerializeField] private AspectRatioFitter _aspect;
         [SerializeField] private GameObject _skipPrompt;
@@ -32,7 +40,7 @@ namespace Herbalist.GameUI
         internal float SkipHoldSeconds => _skipHoldSeconds;
         internal double PlaybackLimitSeconds => (_videoPlayer.clip != null ? _videoPlayer.clip.length : 0d) + _playbackGraceSeconds;
 
-        internal void Prepare(bool opening, int sapSlot, Action prepared, Action<bool> holdChanged, Action finished)
+        internal void Prepare(StageCinematicClip clip, Action prepared, Action<bool> holdChanged, Action finished)
         {
             _onPrepared = prepared;
             _onHoldChanged = holdChanged;
@@ -40,7 +48,14 @@ namespace Herbalist.GameUI
             _videoPlayer.prepareCompleted += VideoPrepared;
             _videoPlayer.errorReceived += VideoError;
             _videoPlayer.loopPointReached += VideoEnded;
-            _videoPlayer.clip = opening ? _openingClip : sapSlot == 0 ? _duyeongSapClip : _sodamSapClip;
+            _videoPlayer.clip = clip switch
+            {
+                StageCinematicClip.Opening => _openingClip,
+                StageCinematicClip.DuyeongSap => _duyeongSapClip,
+                StageCinematicClip.SodamSap => _sodamSapClip,
+                StageCinematicClip.StageTwoExit => _stageTwoExitClip,
+                _ => null
+            };
             _preparing = true;
             _prepareDeadline = Time.realtimeSinceStartupAsDouble + _prepareTimeoutSeconds;
             if (_videoPlayer.clip != null) _videoPlayer.Prepare();
@@ -97,9 +112,7 @@ namespace Herbalist.GameUI
             {
                 _voted = true;
                 _skipLabel.text = "스킵 동의 완료";
-#if UNITY_EDITOR
                 if (_onHoldChanged == null) FinishVideo();
-#endif
             }
         }
 

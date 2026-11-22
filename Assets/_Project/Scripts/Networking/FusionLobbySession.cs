@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
+using Herbalist.GameUI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -57,11 +58,16 @@ namespace Herbalist.Networking
                 saved[id]=new StagePlayerState{Slot=player.Slot,Ability=ability.Kind};
             }
             int cinematicIndex = CinematicSceneIndex(scenePath);
-            var sapPlayers = saved.Values.Where(player => player.Ability == Herbalist.Abilities.PlayerAbilityKind.Sap).ToArray();
-            if (cinematicIndex >= 0 && (sapPlayers.Length != 1 || sapPlayers[0].Slot < 0 || sapPlayers[0].Slot > 1))
+            var clip = StageCinematicClip.StageTwoExit;
+            if (cinematicIndex >= 0 && scenePath == settings.stageOneCinematicDestinationPath)
             {
-                Debug.LogError("Stage 1 cinematic requires one Sap player with an assigned character.");
-                return;
+                var sapPlayers = saved.Values.Where(player => player.Ability == Herbalist.Abilities.PlayerAbilityKind.Sap).ToArray();
+                if (sapPlayers.Length != 1 || sapPlayers[0].Slot < 0 || sapPlayers[0].Slot > 1)
+                {
+                    Debug.LogError("Stage 1 cinematic requires one Sap player with an assigned character.");
+                    return;
+                }
+                clip = sapPlayers[0].Slot == 0 ? StageCinematicClip.DuyeongSap : StageCinematicClip.SodamSap;
             }
             var stageRunner = runner;
             _stageEntryId=entryId;stageTransition=true;stagePlayers.Clear();foreach(var pair in saved)stagePlayers.Add(pair.Key,pair.Value);
@@ -69,7 +75,7 @@ namespace Herbalist.Networking
             try
             {
                 foreach(var id in current)if(stageRunner.TryGetPlayerObject(id,out var obj))stageRunner.Despawn(obj);
-                if (cinematicIndex >= 0) await RunStageCinematic(stageRunner, current, sapPlayers[0].Slot, cinematicIndex, sceneIndex);
+                if (cinematicIndex >= 0) await RunStageCinematic(stageRunner, current, clip, cinematicIndex, sceneIndex);
                 else await stageRunner.LoadScene(SceneRef.FromIndex(sceneIndex),LoadSceneMode.Single);
             }
             catch (OperationCanceledException) when (stopping || runner != stageRunner) { }
@@ -177,7 +183,7 @@ namespace Herbalist.Networking
             try
             {
                 string destination = settings.playScenePath;
-                byte clip = OpeningCinematic;
+                var clip = StageCinematicClip.Opening;
                 int cinematicIndex = CinematicSceneIndex(destination);
 #if UNITY_EDITOR
                 if (_qaDestination != null)
@@ -187,7 +193,7 @@ namespace Herbalist.Networking
                     cinematicIndex = _qaCinematic ? SceneUtility.GetBuildIndexByScenePath(settings.stageOneCinematicScenePath) : -1;
                     if (destination != settings.playScenePath)
                     {
-                        clip = (byte)_qaSapSlot;
+                        clip = _qaSapSlot == 0 ? StageCinematicClip.DuyeongSap : StageCinematicClip.SodamSap;
                         foreach (var player in players)
                         {
                             var state = stagePlayers[player];

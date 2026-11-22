@@ -68,7 +68,9 @@ namespace Herbalist.Development
                 {
                     var view = UnityEngine.Object.FindAnyObjectByType<StageCinematicView>();
                     if (view == null) throw new InvalidOperationException("영상 재생기를 찾을 수 없습니다.");
-                    view.Prepare(point == "s1/opening", sapSlot, view.Play, null, () =>
+                    var clip = point == "s1/opening" ? StageCinematicClip.Opening :
+                        sapSlot == 0 ? StageCinematicClip.DuyeongSap : StageCinematicClip.SodamSap;
+                    view.Prepare(clip, view.Play, null, () =>
                         SceneManager.LoadSceneAsync(point == "s1/opening" ? StageOne : Maze));
                     return;
                 }

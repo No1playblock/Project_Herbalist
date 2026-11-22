@@ -13,7 +13,6 @@ namespace Herbalist.Networking
     public sealed partial class FusionLobbySession
     {
         private const int CinematicProtocol = 0x5343494E;
-        private const byte OpeningCinematic = 2;
         private enum CinematicMessage { SceneReady = 1, Begin, Prepared, Play, Hold, Finished, DestinationReady, Votes, ViewReady, Reveal, Revealed }
 
         private sealed class CinematicParticipant
@@ -31,7 +30,7 @@ namespace Herbalist.Networking
         private sealed class CinematicRun
         {
             public int Id;
-            public byte Clip;
+            public StageCinematicClip Clip;
             public string DestinationPath;
             public int Sequence;
             public bool Playing;
@@ -56,18 +55,20 @@ namespace Herbalist.Networking
             string source = SceneManager.GetActiveScene().path;
             bool opening = source == settings.mainScenePath && destination == settings.playScenePath;
             bool stageTwo = source == settings.playScenePath && destination == settings.stageOneCinematicDestinationPath;
-            if (!opening && !stageTwo) return -1;
+            bool stageThree = source == settings.stageOneCinematicDestinationPath &&
+                destination == settings.stageTwoCinematicDestinationPath;
+            if (!opening && !stageTwo && !stageThree) return -1;
             int index = SceneUtility.GetBuildIndexByScenePath(settings.stageOneCinematicScenePath);
             if (index < 0) throw new InvalidOperationException("Stage cinematic is missing from Build Settings.");
             return index;
         }
 
-        private async Task RunStageCinematic(NetworkRunner stageRunner, PlayerRef[] players, int clip, int sceneIndex, int destinationIndex)
+        private async Task RunStageCinematic(NetworkRunner stageRunner, PlayerRef[] players, StageCinematicClip clip, int sceneIndex, int destinationIndex)
         {
             var cinematic = new CinematicRun
             {
                 Id = ++_cinematicId,
-                Clip = (byte)clip,
+                Clip = clip,
                 DestinationPath = SceneUtility.GetScenePathByBuildIndex(destinationIndex)
             };
             foreach (var player in players) cinematic.Participants.Add(player, new CinematicParticipant());
@@ -154,7 +155,7 @@ namespace Herbalist.Networking
             var view = FindAnyObjectByType<StageCinematicView>();
             if (view == null || view.gameObject.scene.path != settings.stageOneCinematicScenePath) return;
             cinematic.View = view;
-            view.Prepare(cinematic.Clip == OpeningCinematic, cinematic.Clip,
+            view.Prepare(cinematic.Clip,
                 () => SendLocalCinematic(cinematic, CinematicMessage.Prepared),
                 held => SendLocalCinematic(cinematic, CinematicMessage.Hold, held ? (byte)1 : (byte)0),
                 () => SendLocalCinematic(cinematic, CinematicMessage.Finished));
@@ -210,20 +211,25 @@ namespace Herbalist.Networking
                 {
                     source.SendReliableDataToPlayer(player,
                         ReliableKey.FromInts(CinematicProtocol, cinematic.Id, (int)CinematicMessage.Begin, ++cinematic.Sequence),
-                        new[] { cinematic.Clip });
+                        new[] { (byte)cinematic.Clip });
                 }
                 else if (cinematic.Id == id) RecordCinematic(cinematic, player, message, sequence, data[0]);
                 return true;
             }
 
-            if (message == CinematicMessage.Begin && id > 0 && data[0] <= OpeningCinematic && cinematic == null)
+            if (message == CinematicMessage.Begin && id > 0 && data[0] <= (byte)StageCinematicClip.StageTwoExit && cinematic == null)
             {
-                byte clip = data[0];
+                var clip = (StageCinematicClip)data[0];
                 _stageCinematic = new CinematicRun
                 {
                     Id = id,
                     Clip = clip,
-                    DestinationPath = clip == OpeningCinematic ? settings.playScenePath : settings.stageOneCinematicDestinationPath,
+                    DestinationPath = clip switch
+                    {
+                        StageCinematicClip.Opening => settings.playScenePath,
+                        StageCinematicClip.StageTwoExit => settings.stageTwoCinematicDestinationPath,
+                        _ => settings.stageOneCinematicDestinationPath
+                    },
                     DestinationLoadStarted = true
                 };
                 AttachStageCinematicView();

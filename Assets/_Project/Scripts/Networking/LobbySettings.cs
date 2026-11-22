@@ -14,6 +14,7 @@ namespace Herbalist.Networking
         public string playScenePath;
         public string stageOneCinematicScenePath;
         public string stageOneCinematicDestinationPath;
+        public string stageTwoCinematicDestinationPath;
         [SerializeField, Tooltip("Grant configured prototype abilities only when starting a stage directly from the lobby.")]
         private bool _grantPrototypeAbilitiesOnDirectStart;
         public bool GrantPrototypeAbilitiesOnDirectStart => _grantPrototypeAbilitiesOnDirectStart;
