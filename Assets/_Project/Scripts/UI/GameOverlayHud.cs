@@ -31,6 +31,7 @@ namespace Herbalist.GameUI
         [SerializeField, Min(0f)] private float _stageHeaderFadeOutDuration = 0.6f;
         [SerializeField] private StagePlaytestHud _playtestHud;
         private Coroutine _stageHeaderSequence;
+        internal bool StageHeaderPlaying => _stageHeaderSequence != null;
         private string _shownObjective;
         private float _objectiveElapsed;
         private void OnEnable()
