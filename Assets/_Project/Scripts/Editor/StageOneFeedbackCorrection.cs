@@ -40,7 +40,7 @@ namespace Herbalist.Editor
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             if (Application.isPlaying || scene.path != StageOneDocumentAuthoring.ScenePath) throw new InvalidOperationException("Imported Stage One Edit mode required.");
             var root = GameObject.Find("Stage1_DocumentGimmicks").transform;
-            if (root.Find(PairName) != null) throw new InvalidOperationException("Feedback correction already applied.");
+            if (root.Find(PairName) != null || root.Find(CurrentStagePaths.StageOneBranchHole) != null) throw new InvalidOperationException("Feedback correction already applied.");
             System.IO.Directory.CreateDirectory("Temp/Stage1Feedback_20261109");
             EditorSceneManager.SaveScene(scene, "Temp/Stage1Feedback_20261109/before.unity", true);
 
@@ -109,7 +109,7 @@ namespace Herbalist.Editor
                 stream.RefreshPresentation(); cones++;
             }
 
-            var source = root.GetComponentsInChildren<ExteriorJumpPad>().Single(p => p.name == "Photo1_Branch_UpperLeaf_LowerWater");
+            var source = root.GetComponentsInChildren<ExteriorJumpPad>().Single(p => p.name is "Photo1_Branch_UpperLeaf_LowerWater" or "BranchHole_01_JumpPad");
             var sourceData = new SerializedObject(source);
             var pair = new GameObject(PairName); pair.transform.SetParent(root, false); pair.AddComponent<NetworkObject>();
             var pad = pair.AddComponent<ExteriorJumpPad>(); EditorUtility.CopySerialized(source, pad);

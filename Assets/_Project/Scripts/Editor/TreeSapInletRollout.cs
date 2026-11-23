@@ -116,7 +116,8 @@ namespace Herbalist.Editor
             var originalPads = all.Select(t=>t.GetComponent<ExteriorJumpPad>()).Where(p=>p!=null && p.enabled && p.gameObject.activeInHierarchy).ToArray();
             var template = originalPads.First(p=>p.name.StartsWith("EntryPad_"));
             var root = GameObject.Find("Stage1_DocumentGimmicks").transform;
-            if (root.Find("MushroomFbxJumpPads") != null) throw new InvalidOperationException("Six-pad binding already exists.");
+            if (root.Find("MushroomFbxJumpPads") != null || root.Find("Sap_Gameplay/01_JumpPads/Mushroom_JumpPadPairs") != null)
+                throw new InvalidOperationException("Mushroom jump pad binding already exists.");
             var group = new GameObject("MushroomFbxJumpPads").transform; group.SetParent(root,false);
             var ports = all.Where(t=>t.name.StartsWith("WallWaterInlet")).Select(t=>t.GetComponent<SapInjectionPort>()).Where(p=>p!=null).ToList();
             var report = new System.Text.StringBuilder();

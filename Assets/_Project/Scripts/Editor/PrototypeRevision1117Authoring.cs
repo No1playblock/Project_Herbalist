@@ -730,7 +730,7 @@ namespace Herbalist.Editor
         {
             Open(CurrentStagePaths.StageOne);
             var mushroom = Named("03_Mushroom (6)");
-            var existing = _transforms.FirstOrDefault(t => t.name == "Sap_GrowingCircledMushroom1117");
+            var existing = _transforms.FirstOrDefault(t => t.name is "Sap_GrowingCircledMushroom1117" or "MushroomGrowth_03_CircledMushroom");
             if (existing != null)
                 return "Circled mushroom already bound.";
             var source = _transforms.Select(t => t.GetComponent<StageOneDocumentMechanism>()).First(m => m != null && m.Kind == StageOneDocumentMechanismKind.GrowingMushrooms);

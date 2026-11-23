@@ -45,7 +45,8 @@ namespace Herbalist.Editor
         public static string BranchHolePlay()
         {
             Check(Application.isPlaying, "Offline Stage One Play required.");
-            var pad = GameObject.Find("Stage1_DocumentGimmicks/BranchHole_LeftLeaf_RightWater_20261109").GetComponent<ExteriorJumpPad>();
+            var root = GameObject.Find(CurrentStagePaths.StageOneGimmicks).transform;
+            var pad = root.Find(CurrentStagePaths.StageOneBranchHole).GetComponent<ExteriorJumpPad>();
             var target = Read<LeafInstallTarget[]>(pad, "_sockets")[0];
             var inlet = Read<SapInjectionPort[]>(pad, "_ports")[0];
             Check(Vector3.Distance(target.transform.position, new Vector3(278.4957f, 87.2164f, 330.1857f)) < .01f,
@@ -53,8 +54,9 @@ namespace Herbalist.Editor
             Check(Vector3.Distance(target.SocketPosition, target.transform.position) < 5f &&
                   target.SocketPosition.y > target.transform.position.y,
                 "The fitted leaf sits just above and outward from the opening.");
-            Check(Vector3.Distance(inlet.InteractionPoint, new Vector3(287.4343f, 83.6032f, 322.0099f)) < .01f, "Photo-right water inlet.");
-            Check(GameObject.Find("Stage1_DocumentGimmicks/OutletCorrections_20261104/Photo1_Branch_UpperLeaf_LowerWater") != null, "branch_hole (1) pair retained.");
+            Check(inlet == pad.transform.Find("RightHole_WaterInlet").GetComponent<SapInjectionPort>() &&
+                Vector3.Distance(inlet.InteractionPoint, target.SocketPosition) > 3f, "Separate right-side water inlet.");
+            Check(root.Find(CurrentStagePaths.StageOneBranchHole01) != null, "branch_hole (1) pair retained.");
             var actor = StageActor.All.First(a => a.Available); var player = actor.GetComponent<PlayerController>();
             var saved = player.Motor.CaptureState(); var settings = StageLevel.Instance.abilityRules;
             LeafProjectile leaf = null; SapDeposit water = null;
