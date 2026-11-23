@@ -37,6 +37,7 @@ namespace Herbalist.StageOne
         public bool MinigameSucceeded { get; private set; }
         public int TransferPendingSlot { get; private set; } = -1;
         public float TransferRemaining { get; private set; }
+        private readonly RaycastHit[] _interactionHits = new RaycastHit[32];
         private int _sourceIndex = -1;
         private int _recipeIndex = -1;
         private readonly Queue<float> _fanPressTimes = new();
@@ -225,8 +226,22 @@ namespace Herbalist.StageOne
             Vector3 origin = actor.transform.position + settings.interactionOffset;
             Vector3 delta = target - origin;
             if (delta.sqrMagnitude > settings.interactionRange * settings.interactionRange) return false;
-            foreach (var hit in Physics.RaycastAll(origin, delta.normalized, delta.magnitude, settings.obstructionMask, QueryTriggerInteraction.Ignore))
-                if (hit.collider.GetComponentInParent<StageActor>() == null && hit.collider.GetComponentInParent<HerbSource>() == null) return false;
+            var hits = _interactionHits;
+            int count = Physics.RaycastNonAlloc(origin, delta.normalized, hits, delta.magnitude,
+                settings.obstructionMask, QueryTriggerInteraction.Ignore);
+            if (count == hits.Length)
+            {
+                hits = Physics.RaycastAll(origin, delta.normalized, delta.magnitude,
+                    settings.obstructionMask, QueryTriggerInteraction.Ignore);
+                count = hits.Length;
+            }
+            for (int i = 0; i < count; i++)
+            {
+                var collider = hits[i].collider;
+                if (collider.GetComponentInParent<StageActor>() == null &&
+                    collider.GetComponentInParent<HerbSource>() == null)
+                    return false;
+            }
             return true;
         }
         internal StageInteraction ResolveInteraction(StageActor actor, out Vector3 point, out int target)

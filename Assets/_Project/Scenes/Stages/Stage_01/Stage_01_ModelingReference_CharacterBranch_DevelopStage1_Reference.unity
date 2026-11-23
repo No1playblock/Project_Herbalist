@@ -48198,7 +48198,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: c55c566fa8f978a498fe272b02483320, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 932655191}
   m_SourcePrefab: {fileID: 100100000, guid: c55c566fa8f978a498fe272b02483320, type: 3}
 --- !u!1 &273060402
 GameObject:
@@ -50066,59 +50069,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1de914004bd88e842b06e6affc0ccb3d, type: 3}
---- !u!1 &289101797
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 289101798}
-  - component: {fileID: 289101799}
-  m_Layer: 0
-  m_Name: Bank_034
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &289101798
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 289101797}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.12177933, z: -0, w: 0.9925572}
-  m_LocalPosition: {x: 149.00221, y: 31.750122, z: 425.4772}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 529435148}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &289101799
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 289101797}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 60, z: 5.091701}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &290092135 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8523303481934584795, guid: c853802537f775f44af1d6ec04834cf1, type: 3}
@@ -76800,19 +76750,6 @@ Transform:
   - {fileID: 1875245765}
   - {fileID: 604640736}
   - {fileID: 1199760445}
-  - {fileID: 2027448147}
-  - {fileID: 289101798}
-  - {fileID: 532650626}
-  - {fileID: 1462573325}
-  - {fileID: 852191289}
-  - {fileID: 1307081816}
-  - {fileID: 1955044268}
-  - {fileID: 2028190746}
-  - {fileID: 1502923012}
-  - {fileID: 2095626180}
-  - {fileID: 1903141119}
-  - {fileID: 882026625}
-  - {fileID: 1901756534}
   m_Father: {fileID: 1297459218}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &531098599
@@ -76911,59 +76848,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7a3a09ba460e4813a54a6d9a2512fb24, type: 3}
   m_PrefabInstance: {fileID: 466261592}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &532650625
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 532650626}
-  - component: {fileID: 532650627}
-  m_Layer: 0
-  m_Name: Bank_035
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &532650626
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 532650625}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.021352775, z: -0, w: 0.999772}
-  m_LocalPosition: {x: 147.05228, y: 31.750122, z: 444.9772}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 529435148}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &532650627
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 532650625}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 60, z: 26.021906}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &534953910
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -125093,59 +124977,6 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     vectorLabel1_3: W
---- !u!1 &852191288
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 852191289}
-  - component: {fileID: 852191290}
-  m_Layer: 0
-  m_Name: Bank_037
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &852191289
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 852191288}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.49223867, z: -0, w: 0.8704603}
-  m_LocalPosition: {x: 155.89574, y: 31.750122, z: 471.9772}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 529435148}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &852191290
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 852191288}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 60, z: 13.641394}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &852417398
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -130097,59 +129928,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c01abf4bf7a25dd459f2d785431d7335, type: 3}
   m_PrefabInstance: {fileID: 881586193}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &882026624
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 882026625}
-  - component: {fileID: 882026626}
-  m_Layer: 0
-  m_Name: Bank_044
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &882026625
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 882026624}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.4660609, z: -0, w: 0.8847527}
-  m_LocalPosition: {x: 164.42194, y: 31.750122, z: 584.4772}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 529435148}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &882026626
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 882026624}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 60, z: 28.521704}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &882780378 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4241842408777189643, guid: 7f0a0d33a224e2a4a986b2603cbce1e7, type: 3}
@@ -140472,6 +140250,32 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c01abf4bf7a25dd459f2d785431d7335, type: 3}
   m_PrefabInstance: {fileID: 932240248}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &932655188 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: c55c566fa8f978a498fe272b02483320, type: 3}
+  m_PrefabInstance: {fileID: 272921122}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &932655191
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 932655188}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: -0.09, y: 2.3702195, z: 0.21485145}
+  m_Center: {x: 0.038804438, y: 1.1854991, z: -0.0005836556}
 --- !u!1001 &932695663
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -188186,59 +187990,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -9143062076135157791, guid: 79f6fa4e7402ab3409139a02eaf6ff7e, type: 3}
---- !u!1 &1307081815
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1307081816}
-  - component: {fileID: 1307081817}
-  m_Layer: 0
-  m_Name: Bank_038
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1307081816
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1307081815}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.5334765, z: -0, w: 0.8458149}
-  m_LocalPosition: {x: 170.3103, y: 31.750122, z: 479.4772}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 529435148}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &1307081817
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1307081815}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 60, z: 22.891094}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1307163760
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -230266,59 +230017,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1461852926}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1462573324
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1462573325}
-  - component: {fileID: 1462573326}
-  m_Layer: 0
-  m_Name: Bank_036
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1462573325
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1462573324}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.17366984, z: -0, w: 0.984804}
-  m_LocalPosition: {x: 148.72357, y: 31.750122, z: 462.9772}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 529435148}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &1462573326
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1462573324}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 60, z: 14.770338}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1463045862
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -237764,59 +237462,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 42e41755e907ce34ca8d6bc8c549241e, type: 3}
   m_PrefabInstance: {fileID: 1502400491}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1502923011
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1502923012}
-  - component: {fileID: 1502923013}
-  m_Layer: 0
-  m_Name: Bank_041
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1502923012
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1502923011}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.10651654, z: -0, w: 0.994311}
-  m_LocalPosition: {x: 202.27122, y: 31.750122, z: 527.4772}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 529435148}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &1502923013
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1502923011}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 60, z: 29.626896}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1503065270
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -290715,6 +290360,8 @@ GameObject:
   - component: {fileID: 1742026599}
   - component: {fileID: 1742026598}
   - component: {fileID: 1742026597}
+  - component: {fileID: 1742026600}
+  - component: {fileID: 1742026601}
   m_Layer: 0
   m_Name: cave_rock_low
   m_TagString: Untagged
@@ -290816,6 +290463,48 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1742026595}
   m_Mesh: {fileID: 5120692899750172049, guid: f99c577a300070649a532c1c1dd49ac1, type: 3}
+--- !u!65 &1742026600
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1742026595}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 191, y: 79.843254, z: 19}
+  m_Center: {x: -94.50526, y: 5, z: -49.4}
+--- !u!65 &1742026601
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1742026595}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 35.4, y: 29.7, z: 159.54507}
+  m_Center: {x: -14.1, y: 38.4, z: 21.65}
 --- !u!1001 &1743057863
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -312666,7 +312355,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2, y: 60, z: 5.028865}
+  m_Size: {x: 39.15, y: 60, z: 5.028865}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1876481690 stripped
 GameObject:
@@ -319027,59 +318716,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!1 &1901756533
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1901756534}
-  - component: {fileID: 1901756535}
-  m_Layer: 0
-  m_Name: Bank_045
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1901756534
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1901756533}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.57640296, z: -0, w: 0.8171656}
-  m_LocalPosition: {x: 149.27422, y: 31.750122, z: 593.4772}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 529435148}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &1901756535
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1901756533}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 60, z: 10.941366}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1901991720
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -319375,59 +319011,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 43eac387e8a13594481b67a01cf21ff1, type: 3}
---- !u!1 &1903141118
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1903141119}
-  - component: {fileID: 1903141120}
-  m_Layer: 0
-  m_Name: Bank_043
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1903141119
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1903141118}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.41494602, z: -0, w: 0.90984607}
-  m_LocalPosition: {x: 183.99557, y: 31.750122, z: 569.4772}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 529435148}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &1903141120
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1903141118}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 60, z: 24.878424}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1903146705
 GameObject:
   m_ObjectHideFlags: 0
@@ -324645,59 +324228,6 @@ MonoBehaviour:
   onReleased:
     m_PersistentCalls:
       m_Calls: []
---- !u!1 &1955044267
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1955044268}
-  - component: {fileID: 1955044269}
-  m_Layer: 0
-  m_Name: Bank_039
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1955044268
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1955044267}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.4071158, z: -0, w: 0.91337657}
-  m_LocalPosition: {x: 189.74905, y: 31.750122, z: 492.9772}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 529435148}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &1955044269
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1955044267}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 60, z: 28.925411}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1955253404 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5212568962869044316, guid: ae19d4f5b3fb9c641a2f5d3a19ded08e, type: 3}
@@ -340664,59 +340194,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.000012, y: 1.1767261, z: 1.8197829}
   m_Center: {x: 0.0000046491623, y: 0.58835727, z: 0.0000024437904}
---- !u!1 &2027448146
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2027448147}
-  - component: {fileID: 2027448148}
-  m_Layer: 0
-  m_Name: Bank_033
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2027448147
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2027448146}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.42435482, z: -0, w: 0.905496}
-  m_LocalPosition: {x: 176.81198, y: 31.750122, z: 419.4772}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 529435148}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &2027448148
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2027448146}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 60, z: 6.688628}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &2027918559
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -340900,59 +340377,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3078261191923197036, guid: 745d85693c6e10a4797baeb11e4d7e22, type: 3}
   m_PrefabInstance: {fileID: 2027994848}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &2028190745
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2028190746}
-  - component: {fileID: 2028190747}
-  m_Layer: 0
-  m_Name: Bank_040
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2028190746
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2028190745}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.21107197, z: -0, w: 0.9774705}
-  m_LocalPosition: {x: 202.47923, y: 31.750122, z: 507.97717}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 529435148}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &2028190747
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2028190745}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 60, z: 15.17379}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &2029877398
 GameObject:
   m_ObjectHideFlags: 0
@@ -354899,59 +354323,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 854c683b5631a484fa8b6ef8e76bab7e, type: 3}
---- !u!1 &2095626179
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2095626180}
-  - component: {fileID: 2095626181}
-  m_Layer: 0
-  m_Name: Bank_042
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2095626180
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2095626179}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.1540673, z: -0, w: 0.98806036}
-  m_LocalPosition: {x: 195.98914, y: 31.750122, z: 551.4772}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 529435148}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &2095626181
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2095626179}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 60, z: 24.046629}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &2095783457 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6907773436622429127, guid: 0b3186c37e70df24d93420f358298bfe, type: 3}

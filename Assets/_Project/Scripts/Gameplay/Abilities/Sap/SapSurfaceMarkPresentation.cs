@@ -9,6 +9,12 @@ namespace Herbalist.Abilities
     {
         [SerializeField] private DecalProjector projector;
 
+        private static int _activeMarkCount;
+        internal static bool HasActiveMarks => _activeMarkCount > 0;
+
+        private void OnEnable() => _activeMarkCount++;
+        private void OnDisable() => _activeMarkCount--;
+
         public bool Available => projector != null && projector.material != null;
 
         public void SetVisible(bool visible, SapAbilitySettings settings, float growth, float absorptionProgress)
