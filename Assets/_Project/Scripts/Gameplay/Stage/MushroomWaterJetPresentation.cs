@@ -89,6 +89,12 @@ namespace Herbalist.Levels
         internal static float PourRippleEnvelope(float spread) => 1f + spread * (PrimaryRipple + SecondaryRipple);
 
         public void Present(Vector3 start, Vector3 end, float rise = 0f, float drop = 0f, Vector3? visibleMouth = null)
+            => PresentStream(start, end, rise, drop, visibleMouth, _settings != null ? _settings.waterStreamSway : 0f);
+
+        internal void PresentVertical(Vector3 origin, float height)
+            => PresentStream(origin, origin + Vector3.up * height, 0f, 0f, null, 0f);
+
+        private void PresentStream(Vector3 start, Vector3 end, float rise, float drop, Vector3? visibleMouth, float streamSway)
         {
             if (_stream == null || _settings == null) return;
             if (_pathPoints == null) Initialize(_settings);
@@ -102,7 +108,7 @@ namespace Herbalist.Levels
             Vector3 reference = Mathf.Abs(Vector3.Dot(axis, Vector3.up)) > .94f ? Vector3.right : Vector3.up;
             Vector3 side = Vector3.Cross(reference, axis).normalized;
             Vector3 lift = Vector3.Cross(axis, side).normalized;
-            float sway = _settings.waterStreamSway * Mathf.Clamp(length, .3f, 1.4f);
+            float sway = streamSway * Mathf.Clamp(length, .3f, 1.4f);
             for (int i = 0; i < _pathPoints.Length; i++)
             {
                 float t = (float)i / (_pathPoints.Length - 1);

@@ -173,7 +173,7 @@ namespace Herbalist.Levels
                 _leafCenters[i].position = LaunchPoint(i) + (erupting ? Vector3.up * rise : Vector3.zero);
                 _jets[i].SetActive(erupting);
                 if (erupting && _waterJets[i] != null)
-                    _waterJets[i].Present(_jetOrigins[i], _leafCenters[i].position);
+                    _waterJets[i].PresentVertical(_jetOrigins[i], rise);
             }
         }
         public void Tick(float dt)
