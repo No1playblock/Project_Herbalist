@@ -12,6 +12,8 @@ namespace Herbalist.Levels
         [SerializeField, Range(0, 85)] private float _maximumTrackPitch;
         [SerializeField, Tooltip("Paper footprint in world units: half width (X) and front reach (Y).")]
         private Vector2 _leafStopFootprint = new(2.8f, 2.05f);
+        [SerializeField, Min(0), Tooltip("Extra clearance between the front edge of the paper and the leaf contact.")]
+        private float _leafStopClearance = .5f;
 
         public struct StepResult
         {
@@ -71,7 +73,8 @@ namespace Herbalist.Levels
         {
             Vector3 forward = Vector3.ProjectOnPlane(direction, Vector3.up).normalized;
             Vector3 right = Vector3.Cross(Vector3.up, forward);
-            float frontReach = _leafStopFootprint.y + Mathf.Max(0f, Vector3.Dot(candidate - start, forward));
+            float frontReach = _leafStopFootprint.y + _leafStopClearance +
+                Mathf.Max(0f, Vector3.Dot(candidate - start, forward));
             float horizontalFraction = Vector3.Dot(direction, forward);
             foreach (var leaf in leaves)
             {

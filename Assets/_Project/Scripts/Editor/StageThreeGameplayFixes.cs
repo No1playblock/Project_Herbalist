@@ -48,7 +48,7 @@ namespace Herbalist.Editor
             const string legacyRules = "Assets/_Project/Data/Stages/Stage_03/SO_BranchRideAbilityRules.asset";
             if (AssetDatabase.GetAssetPath(level.abilityRules) != legacyRules)
                 throw new InvalidOperationException("This scene uses its own ability tuning. Edit its StageLevel ability rules instead of applying the legacy defaults.");
-            var reference = EditorSceneManager.OpenPreviewScene(StageOneEnvironmentModelPromotion.Main);
+            var reference = EditorSceneManager.OpenPreviewScene(CurrentStagePaths.StageOne);
             try
             {
                 var roots = reference.GetRootGameObjects();

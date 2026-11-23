@@ -8,8 +8,10 @@ using UnityEngine.InputSystem;
 namespace Herbalist.Levels
 {
     // Stage-one authored tree hazards and safe moss areas are independent of leaf targets.
-    public sealed class StageOneTraversal : MonoBehaviour
+    public sealed partial class StageOneTraversal : MonoBehaviour
     {
+        private const int BothPlayersArrived = (1 << 0) | (1 << 1);
+
         [System.Serializable]
         private sealed class CheckpointGroup
         {
@@ -41,6 +43,7 @@ namespace Herbalist.Levels
         private readonly HashSet<StageActor> _forestExitReached = new();
         private readonly Collider[] _overlaps = new Collider[128];
         private int _activeCheckpoint = -1;
+        private float _activeCheckpointHeight = float.NegativeInfinity;
         private static readonly HashSet<Collider> CameraPassThrough = new();
         public static StageOneTraversal Instance { get; private set; }
         public InputActionReference RecoverAction => _recoverAction;
@@ -135,11 +138,19 @@ namespace Herbalist.Levels
                     if (branch != null) branch.RestoreFallenBranch();
             }
             actor.Abilities.Sap?.Cancel();
-            var motor = actor.GetComponent<PlayerController>().Motor;
+            var player = actor.GetComponent<PlayerController>();
+            player.ClearClothLanding();
+            var motor = player.Motor;
             motor.ResetMotion();
             var net = actor.GetComponent<NetworkPlayer>();
             Vector3 destination = _starts[actor.Slot].position;
-            if (_activeCheckpoint >= 0) destination = _sharedCheckpoints[_activeCheckpoint].positions[actor.Slot];
+            if (_activeCheckpoint >= 0)
+            {
+                var group = _sharedCheckpoints[_activeCheckpoint];
+                destination = group.recoveryPoint != null
+                    ? group.recoveryPoint.position + _starts[actor.Slot].position - _starts[0].position
+                    : group.positions[actor.Slot];
+            }
             else if (_recovery.TryGetValue(actor, out var checkpoint)) destination = checkpoint;
             if (net != null && net.Object != null && net.Object.IsValid) net.TeleportAuthoritatively(destination);
             else motor.Teleport(destination);
@@ -169,7 +180,7 @@ namespace Herbalist.Levels
                 StageOneFlow.Instance.TrackLeafPlatformFall(actor, player.Motor.IsGrounded);
                 if (_sharedCheckpoints.Length > 0)
                 {
-                    if (!usingCloth && player.Motor.IsGrounded) UpdateSharedCheckpoint(actor, cc);
+                    if (!usingCloth && cc.enabled) UpdateSharedCheckpoint(actor, cc, player.Motor);
                     continue;
                 }
                 if (_forestExitRecoveryPoint != null && _forestExitCheckpoint != null &&
@@ -194,35 +205,45 @@ namespace Herbalist.Levels
             }
         }
 
-        private void UpdateSharedCheckpoint(StageActor actor, CharacterController character)
+        private void UpdateSharedCheckpoint(StageActor actor, CharacterController character, PlayerMotor motor)
         {
-            Vector3 feet = character.transform.TransformPoint(character.center) -
-                Vector3.up * character.height * Mathf.Abs(character.transform.lossyScale.y) * .5f;
-            Physics.Raycast(feet + Vector3.up * _checkpointProbeHeight, Vector3.down,
-                out var ground, _checkpointProbeDistance, ~0, QueryTriggerInteraction.Ignore);
-            for (int i = _sharedCheckpoints.Length - 1; i > _activeCheckpoint; i--)
+            Collider ground = null;
+            if (motor.IsGrounded)
+            {
+                ground = (motor as CharacterControllerMotor)?.WalkableGround;
+                if (ground == null)
+                {
+                    Vector3 feet = character.transform.TransformPoint(character.center) -
+                        Vector3.up * character.height * Mathf.Abs(character.transform.lossyScale.y) * .5f;
+                    if (Physics.Raycast(feet + Vector3.up * _checkpointProbeHeight, Vector3.down,
+                        out var hit, _checkpointProbeDistance, ~0, QueryTriggerInteraction.Ignore))
+                        ground = hit.collider;
+                }
+            }
+            int slot = actor.Slot;
+            int arrival = 1 << slot;
+            for (int i = _sharedCheckpoints.Length - 1; i >= 0; i--)
             {
                 var group = _sharedCheckpoints[i];
-                bool reached = false;
+                if ((group.arrived & arrival) != 0) continue;
                 foreach (var surface in group.surfaces)
                 {
                     if (surface == null || !surface.enabled || !surface.gameObject.activeInHierarchy) continue;
-                    if (surface == ground.collider || (surface.isTrigger && Physics.ComputePenetration(
+                    if (surface.bounds.max.y < _activeCheckpointHeight) continue;
+                    if (surface != ground && (!surface.isTrigger || !Physics.ComputePenetration(
                         surface, surface.transform.position, surface.transform.rotation,
-                        character, character.transform.position, character.transform.rotation, out _, out _)))
+                        character, character.transform.position, character.transform.rotation, out _, out _))) continue;
+                    group.positions[slot] = group.recoveryPoint != null
+                        ? group.recoveryPoint.position + _starts[slot].position - _starts[0].position
+                        : actor.transform.position;
+                    group.arrived |= arrival;
+                    if (group.arrived == BothPlayersArrived)
                     {
-                        reached = true;
-                        break;
+                        _activeCheckpoint = i;
+                        _activeCheckpointHeight = surface.bounds.max.y;
                     }
+                    break;
                 }
-                if (!reached) continue;
-                int slot = actor.Slot;
-                group.positions[slot] = group.recoveryPoint != null
-                    ? group.recoveryPoint.position + _starts[slot].position - _starts[0].position
-                    : actor.transform.position;
-                group.arrived |= 1 << slot;
-                if (group.arrived == 0b11) _activeCheckpoint = i;
-                return;
             }
         }
         private void Update() => Tick(Time.deltaTime);

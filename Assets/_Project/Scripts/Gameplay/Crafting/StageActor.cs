@@ -7,7 +7,7 @@ using Herbalist.Levels;
 namespace Herbalist.StageOne
 {
     public enum StageCommand { Interact, Craft, Drink, Up, Left, Down, Right, FanEnd, CancelMinigame, ReleaseCloth, Recover }
-    public enum StageInteraction { None, Gather, Give, OfferHerb, Receive, Brew, Drink, PickupPotion, GrabCloth, ReleaseCloth, BoardTalisman }
+    public enum StageInteraction { None, Gather, Give, OfferHerb, Receive, Brew, Drink, PickupPotion, GrabCloth, ReleaseCloth, BoardTalisman, DismountTalisman }
     [RequireComponent(typeof(PlayerController))]
     public sealed class StageActor : MonoBehaviour
     {
@@ -16,6 +16,7 @@ namespace Herbalist.StageOne
         private void OnEnable() { All.Add(this); }
         public InputActionReference interact, craft, drink;
         public int offlineSlot;
+        [SerializeField] private int _recoverSoundId = 59;
         private InputAction _interactAction;
         private InputAction _fanAction;
         private InputAction _recoverAction;
@@ -48,8 +49,9 @@ namespace Herbalist.StageOne
         private void Start()
         {
             var recover = Herbalist.Levels.StageOneTraversal.Instance?.RecoverAction;
-            if (recover == null) return;
-            _recoverAction = recover.action.Clone();
+            var action = recover != null ? recover.action : interact.action.actionMap.FindAction("Recover");
+            if (action == null) return;
+            _recoverAction = action.Clone();
             _recoverAction.performed += _ => Request(StageCommand.Recover);
         }
         private void OnMovePerformed(Vector2 move)
@@ -94,6 +96,7 @@ namespace Herbalist.StageOne
             var interaction = command == StageCommand.Interact ? ResolveInteraction(out _) : StageInteraction.None;
             if (command == StageCommand.Interact && interaction == StageInteraction.None) return;
             LocalCommandRequested?.Invoke(command);
+            if (command == StageCommand.Recover) GetComponent<Herbalist.Audio.SfxEmitter>()?.Play(_recoverSoundId);
             if (adapter != null && adapter.Object != null && adapter.Object.IsValid) adapter.RPC_Command(command, interaction);
             else SetFeedback(ExecuteCommand(command, interaction));
         }
@@ -102,7 +105,8 @@ namespace Herbalist.StageOne
             if (Herbalist.GameUI.GameplayPause.IsPaused || !Available) return string.Empty;
             if (command == StageCommand.Recover)
             {
-                Herbalist.Levels.StageOneTraversal.Instance?.TryRecover(this);
+                if (!SapMazeBoard.TryRestart(this))
+                    Herbalist.Levels.StageOneTraversal.Instance?.TryRecover(this);
                 return string.Empty;
             }
             var flow = StageOneFlow.Instance;
@@ -122,6 +126,9 @@ namespace Herbalist.StageOne
                         return HangingCloth.TryInteract(this, out var clothMessage) ? clothMessage : string.Empty;
                     case StageInteraction.BoardTalisman:
                         return BranchRideFlow.TryBoard(this, out var rideMessage) ? rideMessage : string.Empty;
+                    case StageInteraction.DismountTalisman:
+                        BranchRideFlow.TryDismount(this);
+                        return string.Empty;
                     case StageInteraction.None:
                         return string.Empty;
                 }
@@ -138,6 +145,7 @@ namespace Herbalist.StageOne
                 (flow != null && flow.Minigame != StageMinigameKind.None)) return StageInteraction.None;
             if (HangingCloth.TryInteractionHint(this, out point, out bool release))
                 return release ? StageInteraction.ReleaseCloth : StageInteraction.GrabCloth;
+            if (BranchRideFlow.TryDismountHint(this, out point)) return StageInteraction.DismountTalisman;
             if (HangingCloth.IsGrabbing(this) || player.Motor.MovementLocked) return StageInteraction.None;
             if (BranchRideFlow.TryBoardHint(this, out point)) return StageInteraction.BoardTalisman;
             if (SoloPotionPickup.TryHint(this, out point)) return StageInteraction.PickupPotion;

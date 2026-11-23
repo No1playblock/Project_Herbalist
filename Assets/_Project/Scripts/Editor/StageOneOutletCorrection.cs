@@ -124,7 +124,8 @@ namespace Herbalist.Editor
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             if (Application.isPlaying || scene.path != StageOneDocumentAuthoring.ScenePath) throw new InvalidOperationException("Imported Stage One Edit mode required.");
             var root = GameObject.Find("Stage1_DocumentGimmicks").transform;
-            var route = root.Find("OutletCorrections_20261104/Photo2_MushroomRoute_LeafBlockedOutlets");
+            var route = root.Find(CurrentStagePaths.StageOneLeafBlockedStreams)
+                ?? root.Find("OutletCorrections_20261104/Photo2_MushroomRoute_LeafBlockedOutlets");
             var keep = new[] { "LeafBlock_04_Musroom (10)", "LeafBlock_04_Musroom (11)", "LeafBlock_04_Musroom (6)" };
             int removed = 0;
             foreach (var mechanism in route.GetComponentsInChildren<StageOneDocumentMechanism>(true))

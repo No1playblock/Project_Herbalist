@@ -56,7 +56,7 @@ namespace Herbalist.Tests
                     RoomControl.Instance.StartGame();
                 }
                 await Wait(() => StageOneFlow.Instance != null && NetworkPlayer.Local != null &&
-                    session.State == LobbyState.Playing && StageActor.All.Count(a => a.Available) == 2, "Stage 1 network actors");
+                    session.State == LobbyState.Playing && StageActor.All.Count(a => a.Available) == 2, "Stage 1 network actors after the opening cinematic", 240);
                 if (host)
                 {
                     var flow = StageOneFlow.Instance;
@@ -253,7 +253,8 @@ namespace Herbalist.Tests
         {
             await Wait(() => Object.FindFirstObjectByType<T>() != null && NetworkPlayer.Local != null &&
                 session.State == LobbyState.Playing && StageActor.All.Count(a => a.Available && a.Abilities.Unlocked) == 2,
-                typeof(T).Name + " with both retained abilities");
+                // Stage 1 -> 2 includes a 128-130 second cinematic before arrival.
+                typeof(T).Name + " with both retained abilities", 240f);
             return Object.FindFirstObjectByType<T>();
         }
     }

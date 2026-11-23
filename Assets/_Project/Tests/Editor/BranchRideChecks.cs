@@ -143,15 +143,25 @@ namespace Herbalist.Editor
             var hazards=Get<BranchRideStone[]>(flow,"_hazards");var switches=Get<BranchRideSwitch[]>(flow,"_switches");
             var respawns=Get<Transform[]>(flow,"_respawns");var dismounts=Get<Transform[]>(flow,"_dismounts");
             var results=new List<string>();
-            void Board()
+            void Board(bool sapFirst = false)
             {
                 for(int i=0;i<2;i++)actors[i].GetComponent<PlayerController>().Motor.Teleport(respawns[i].position);
-                Check(BranchRideFlow.TryBoard(actors[0],out _),"first rider boards");
-                Check(BranchRideFlow.TryBoard(actors[1],out _),"second rider boards");
+                var sap = actors.Single(a => a.Abilities.Kind == PlayerAbilityKind.Sap);
+                var leaf = actors.Single(a => a.Abilities.Kind == PlayerAbilityKind.Leaf);
+                Check(BranchRideFlow.TryBoard(sapFirst ? sap : leaf,out _),"first rider boards");
+                Check(BranchRideFlow.TryBoard(sapFirst ? leaf : sap,out _),"second rider boards");
                 Check(flow.CurrentPhase==BranchRidePhase.Boarding,"paired riders wait for boarding animations");
                 var before=flow.Position;
                 float delay=Get<float[]>(flow,"_boardingRemaining").Max();
                 float elapsed = 0f;
+                Vector3 Seat(StageActor actor)
+                {
+                    Check(BranchRideFlow.TryGetBoardingSeat(actor, out var seat, out _), "boarding seat is available");
+                    return seat;
+                }
+                Vector3 betweenSeats = Seat(sap) - Seat(leaf);
+                Check(Vector3.Dot(betweenSeats, flow.Forward) > 0f &&
+                    Vector3.Cross(betweenSeats, flow.Forward).sqrMagnitude < .0001f, "Sap rides in front on the same centerline");
                 foreach (var actor in actors.OrderBy(a => a.GetComponent<SodamAnimationPresentation>().Profile.Find(SodamPose.TalismanBoard).ContactTime))
                 {
                     float contact = actor.GetComponent<SodamAnimationPresentation>().Profile.Find(SodamPose.TalismanBoard).ContactTime;
@@ -178,10 +188,10 @@ namespace Herbalist.Editor
             }
             Ray AimFromRide(StageActor actor, Vector3 point)
             {
-                var rotation = Get<Quaternion>(flow, "_carrierRotation");
-                var offsets = Get<Vector3[]>(flow, "_riderOffsets");
+                var riderPosition = typeof(BranchRideFlow).GetMethod("RiderPosition", Private);
                 foreach (var rider in actors)
-                    rider.GetComponent<PlayerController>().Motor.Teleport(flow.Position + rotation * offsets[rider.Slot]);
+                    rider.GetComponent<PlayerController>().Motor.Teleport(
+                        (Vector3)riderPosition.Invoke(flow, new object[] { rider.Slot }));
                 Physics.SyncTransforms();
                 var view = actor.GetComponent<PlayerController>().View;
                 var pivot = Get<Transform>(view, "cameraTarget");
@@ -216,7 +226,7 @@ namespace Herbalist.Editor
                 Check(actors.All(a=>!BranchRideFlow.IsRiding(a)&&!a.GetComponent<PlayerController>().Motor.MovementLocked),"reset releases both riders");
                 Check(actors.Select((a,i)=>Vector3.Distance(a.transform.position,respawns[i].position)<.1f).All(x=>x),"reset respawn positions");
                 results.Add("A branch traversal, disconnected tip fall, full restart and transport release");
-                Reset(flow);Board();var first=switches[0];first.Port.Inject(.3f);flow.Tick(.02f);Check((flow.PresentationBranchMask&1)!=0,"water activates T1");
+                Reset(flow);Board(sapFirst: true);var first=switches[0];first.Port.Inject(.3f);flow.Tick(.02f);Check((flow.PresentationBranchMask&1)!=0,"water activates T1");
                 for(int n=0;n<10;n++){first.Port.Inject(.05f);flow.Tick(.05f);}Check((flow.PresentationBranchMask&1)!=0,"held spray does not toggle repeatedly");
                 flow.Tick(.5f);first.Port.Inject(.3f);flow.Tick(.02f);Check((flow.PresentationBranchMask&1)==0,"release and re-hit toggles again");
                 results.Add("authoritative injection, one activation per burst and re-arm");
@@ -249,9 +259,9 @@ namespace Herbalist.Editor
                 Check(flow.PresentationBlockedByLeaf,"path-installed leaf stops carrier");var stopped=flow.Position;
                 var forward = Vector3.ProjectOnPlane(flow.Forward, Vector3.up).normalized;
                 var carrier = Get<BranchRideCarrier>(flow, "_carrier");
-                float frontReach = Get<Vector2>(carrier, "_leafStopFootprint").y;
+                float frontReach = Get<Vector2>(carrier, "_leafStopFootprint").y + Get<float>(carrier, "_leafStopClearance");
                 Check(Vector3.Dot(leaf.ContactPoint - stopped, forward) >= frontReach - .05f,
-                    "the front of the paper stops before reaching the leaf");
+                    "the paper leaves the configured clearance before the leaf");
                 flow.Tick(.3f);Check(Vector3.Distance(stopped,flow.Position)<.001f,"stop persists while installed");
                 abilities.Tick(cycle, unchecked(use + 1), aim, .02f);
                 Check(leaf.State == LeafState.Returning, "normal recall input releases the blocker");

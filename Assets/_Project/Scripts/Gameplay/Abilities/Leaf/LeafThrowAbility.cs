@@ -29,6 +29,7 @@ namespace Herbalist.Abilities
         public event Action<float> FacingRequested;
         public LeafAbilitySettings Settings => settings;
         public int ActiveCount => leaves.Count;
+        internal IReadOnlyList<LeafProjectile> Projectiles => leaves;
         private const int HudSlotCount = 3;
         private const int SlotStateBits = 2;
         private const int ProgressBits = 8;

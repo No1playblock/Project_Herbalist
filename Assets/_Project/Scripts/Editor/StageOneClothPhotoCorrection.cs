@@ -107,8 +107,10 @@ namespace Herbalist.Editor
                 count++;
             }
 
-            var root = GameObject.Find("Stage1_DocumentGimmicks/OutletCorrections_20261104").transform;
-            var pad = root.GetComponentsInChildren<ExteriorJumpPad>(true).Single();
+            var root = GameObject.Find(CurrentStagePaths.StageOneGimmicks).transform;
+            var padRoot = root.Find(CurrentStagePaths.StageOneBranchHole01)
+                ?? root.Find("OutletCorrections_20261104/Photo1_Branch_UpperLeaf_LowerWater");
+            var pad = padRoot.GetComponent<ExteriorJumpPad>();
             var left = GameObject.Find("DesignStage1_Traversal/origin_tree (4)/InletOpening").transform;
             var right = GameObject.Find("DesignStage1_Traversal/origin_tree (3)/InletOpening").transform;
             var ps = new SerializedObject(pad);

@@ -224,13 +224,18 @@ namespace Herbalist.Editor
                     var knot=Read<Transform>(c,"_knot");var cc=rider.GetComponent<CharacterController>();
                     rider.GetComponent<PlayerController>().Motor.Teleport(knot.position-cc.transform.TransformVector(cc.center));Physics.SyncTransforms();
                     var approachOrigin = rider.transform.position;
-                    float contact = rider.GetComponent<SodamAnimationPresentation>().Profile.Find(SodamPose.ClothGrab).ContactTime;
-                    Check(contact > .02f, "Grab contact is timed in the active character profile.");
+                    var grab = rider.GetComponent<SodamAnimationPresentation>().Profile.Find(SodamPose.ClothGrab);
+                    float contact = grab.ContactTime;
+                    float takeoff = grab.approachStartSeconds;
+                    Check(takeoff > 0f && contact > takeoff, "Grab takeoff and contact are timed in the active profile.");
                     Check(HangingCloth.TryInteract(rider,out var feedback),"Grab authored cloth: "+c.name+" "+feedback);
-                    c.Tick(contact - .02f);
+                    c.Tick(takeoff * .5f);
+                    Check(Vector3.Distance(rider.transform.position, approachOrigin) < .001f,
+                        "The grab animation begins at the original position.");
+                    c.Tick(contact * .5f);
                     Check(HangingCloth.IsGrabbing(rider) && !HangingCloth.IsRiding(rider) && !c.WasUsed &&
-                        Vector3.Distance(rider.transform.position, approachOrigin) < .001f, "Before contact the cloth reserves the grab without transporting the rider.");
-                    c.Tick(.03f);
+                        rider.transform.position.y > approachOrigin.y, "The rider rises during the grab jump before attaching.");
+                    c.Tick((contact - takeoff) * .5f + .01f);
                     Check(HangingCloth.IsRiding(rider) &&
                         Vector3.Distance(rider.transform.position, knot.position + Vector3.down * Read<float>(c, "_knotHangHeight")) < .001f,
                         "At contact the rider begins following the knot.");
@@ -263,7 +268,13 @@ namespace Herbalist.Editor
             {
                 foreach(var a in actors)HangingCloth.TryRelease(a,out _);
                 if(leaf!=null)UnityEngine.Object.DestroyImmediate(leaf.gameObject);
-                for(int i=0;i<actors.Length;i++){var m=actors[i].GetComponent<PlayerController>().Motor;m.Teleport(positions[i]);m.ResetMotion();}
+                for(int i=0;i<actors.Length;i++)
+                {
+                    var player=actors[i].GetComponent<PlayerController>();
+                    typeof(PlayerController).GetMethod("ClearClothLanding", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(player, null);
+                    player.Motor.Teleport(positions[i]);
+                    player.Motor.ResetMotion();
+                }
             }
         }
         public static string HoseAndPadPlay()

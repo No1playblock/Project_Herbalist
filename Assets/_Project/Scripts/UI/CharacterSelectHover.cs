@@ -24,6 +24,8 @@ namespace Herbalist.GameUI
         [SerializeField, Range(-45f, 45f)] private float hoverShineAngle = -24f;
         [SerializeField, Range(0f, 1f)] private float hoverShineOpacity = 0.68f;
         [SerializeField, Min(1f)] private float hoverShineWidth = 42f;
+        [SerializeField, Range(1f, 1.2f)] private float actionButtonHoverScale = 1.06f;
+        [SerializeField, Min(0.01f)] private float actionButtonHoverTransitionSpeed = 12f;
         [SerializeField, Range(1f, 1.2f)] private float startButtonClickScale = 1.06f;
         [SerializeField, Min(0.05f)] private float startButtonClickDuration = 0.24f;
         [SerializeField, Range(0f, 0.12f)] private float startButtonPlateLeadTime = 0.05f;
@@ -52,6 +54,9 @@ namespace Herbalist.GameUI
         private Vector3 startButtonBackdropBaseScale;
         private Vector3 settingsGearBaseScale;
         private Vector3 backButtonBaseScale;
+        private float startButtonHoverMultiplier = 1f;
+        private float backButtonHoverMultiplier = 1f;
+        private float settingsGearHoverMultiplier = 1f;
         private bool startButtonPulseActive;
         private float startButtonPulseElapsed;
         private bool settingsGearPulseActive;
@@ -244,7 +249,13 @@ namespace Herbalist.GameUI
                 SetSelectedIndex(approvedRole);
 
             bool inputBlocked = _room != null && _room.InputBlocked;
-            bool startButtonHovered = !inputBlocked && IsPointerOverStartButton();
+            bool startButtonHovered = (_room == null || _room.Previewing || _room.CanHoverStartButton) && IsPointerOverStartButton();
+            bool backButtonHovered = !inputBlocked &&
+                                     (_room == null || _room.CanHoverBackButton) &&
+                                     IsPointerOverRect(backButtonRectTransform);
+            bool settingsGearHovered = !inputBlocked &&
+                                       (_room == null || _room.CanHoverOptionsButton) &&
+                                       IsPointerOverRect(settingsGearRectTransform);
             int hoveredIndex = inputBlocked || IsPointerOverUi() ? -1 : FindHoveredTarget();
             if (hoveredIndex >= 0 && _room != null && !_room.CanHoverRole(hoveredIndex))
                 hoveredIndex = -1;
@@ -276,6 +287,8 @@ namespace Herbalist.GameUI
             previousStartButtonHovered = startButtonHovered;
 
             UpdateHoverShines();
+            UpdateActionButtonHover(startButtonHovered, backButtonHovered);
+            UpdateSettingsGearHover(settingsGearHovered);
             UpdateStartButtonClickPulse();
             UpdateSettingsGearClickPulse();
             UpdateBackButtonClickPulse();
@@ -431,6 +444,20 @@ namespace Herbalist.GameUI
                 uiCamera);
         }
 
+        private void UpdateActionButtonHover(bool startHovered, bool backHovered)
+        {
+            float blend = 1f - Mathf.Exp(-actionButtonHoverTransitionSpeed * Time.unscaledDeltaTime);
+            float startTarget = startHovered ? actionButtonHoverScale : 1f;
+            float backTarget = backHovered ? actionButtonHoverScale : 1f;
+            startButtonHoverMultiplier = Mathf.Lerp(startButtonHoverMultiplier, startTarget, blend);
+            backButtonHoverMultiplier = Mathf.Lerp(backButtonHoverMultiplier, backTarget, blend);
+
+            if (!startButtonPulseActive)
+                SetStartButtonScale(1f, 1f);
+            if (!backButtonPulseActive && backButtonRectTransform != null)
+                backButtonRectTransform.localScale = backButtonBaseScale * backButtonHoverMultiplier;
+        }
+
         private void StartStartButtonClickPulse()
         {
             if (startButtonRectTransform == null)
@@ -438,6 +465,19 @@ namespace Herbalist.GameUI
 
             startButtonPulseElapsed = 0f;
             startButtonPulseActive = true;
+        }
+
+        private void UpdateSettingsGearHover(bool hovered)
+        {
+            if (settingsGearRectTransform == null)
+                return;
+
+            float blend = 1f - Mathf.Exp(-actionButtonHoverTransitionSpeed * Time.unscaledDeltaTime);
+            float target = hovered ? actionButtonHoverScale : 1f;
+            settingsGearHoverMultiplier = Mathf.Lerp(settingsGearHoverMultiplier, target, blend);
+
+            if (!settingsGearPulseActive)
+                settingsGearRectTransform.localScale = settingsGearBaseScale * settingsGearHoverMultiplier;
         }
 
         private void StartSettingsGearClickPulse()
@@ -503,12 +543,12 @@ namespace Herbalist.GameUI
             settingsGearPulseElapsed += Time.unscaledDeltaTime;
             float progress = Mathf.Clamp01(settingsGearPulseElapsed / duration);
             float multiplier = EvaluateClickPulseScale(progress, 0.3f);
-            settingsGearRectTransform.localScale = settingsGearBaseScale * multiplier;
+            settingsGearRectTransform.localScale = settingsGearBaseScale * multiplier * settingsGearHoverMultiplier;
 
             if (progress >= 1f)
             {
                 settingsGearPulseActive = false;
-                settingsGearRectTransform.localScale = settingsGearBaseScale;
+                settingsGearRectTransform.localScale = settingsGearBaseScale * settingsGearHoverMultiplier;
             }
         }
 
@@ -521,19 +561,19 @@ namespace Herbalist.GameUI
             backButtonPulseElapsed += Time.unscaledDeltaTime;
             float progress = Mathf.Clamp01(backButtonPulseElapsed / duration);
             float multiplier = EvaluateClickPulseScale(progress, 0.3f);
-            backButtonRectTransform.localScale = backButtonBaseScale * multiplier;
+            backButtonRectTransform.localScale = backButtonBaseScale * multiplier * backButtonHoverMultiplier;
 
             if (progress >= 1f)
             {
                 backButtonPulseActive = false;
-                backButtonRectTransform.localScale = backButtonBaseScale;
+                backButtonRectTransform.localScale = backButtonBaseScale * backButtonHoverMultiplier;
             }
         }
 
         private void SetStartButtonScale(float buttonMultiplier, float plateMultiplier)
         {
             if (startButtonRectTransform != null)
-                startButtonRectTransform.localScale = startButtonBaseScale * buttonMultiplier;
+                startButtonRectTransform.localScale = startButtonBaseScale * buttonMultiplier * startButtonHoverMultiplier;
 
             if (startButtonPlateRectTransform != null)
             {
@@ -544,7 +584,7 @@ namespace Herbalist.GameUI
             }
 
             if (startButtonBackdropRectTransform != null)
-                startButtonBackdropRectTransform.localScale = startButtonBackdropBaseScale * buttonMultiplier;
+                startButtonBackdropRectTransform.localScale = startButtonBackdropBaseScale * buttonMultiplier * startButtonHoverMultiplier;
         }
 
         private GameObject FindChildObject(string objectName)
@@ -892,6 +932,9 @@ namespace Herbalist.GameUI
             hoverSuppressedIndex = -1;
             hoverSuppressedUntil = 0f;
             previousStartButtonHovered = false;
+            startButtonHoverMultiplier = 1f;
+            backButtonHoverMultiplier = 1f;
+            settingsGearHoverMultiplier = 1f;
             startButtonPulseActive = false;
             settingsGearPulseActive = false;
             backButtonPulseActive = false;

@@ -27,7 +27,7 @@ namespace Herbalist.Editor
         public static void Run()
         {
             _heading = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(Project + "Fonts/Diphylleia/DiphylleiaSdf.asset");
-            _body = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(Project + "Fonts/Obangju/ObangjuDynamicSdf.asset");
+            _body = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(Project + "Fonts/MaruBuri/MaruBuri-Light SDF.asset");
             if (_heading == null || _body == null) throw new InvalidOperationException("Gathering HUD fonts are missing.");
             var copy = AssetDatabase.LoadAssetAtPath<StageMinigameUiText>(Project + "Data/UI/SO_StageMinigameUiText.asset");
             copy.gatherDuyeongInputHint = "약초의 생김새를 소담에게 설명하고, 들은 순서대로 W · A · S · D를 누르세요.";
@@ -117,7 +117,9 @@ namespace Herbalist.Editor
             var root = Rect(parent, "DuyeongGatheringHud", 0, 0, 1, 1);
             Image(root, "Backdrop", 0, 0, 1, 1, Dark);
             var stage = Fit(root, "ForestCloseUp");
-            Image(stage, "ForestFloor", 0, 0, 1, 1, Color.white, Sprite(Art + "GatherBackground.png", 2048));
+            var parchment = AssetDatabase.LoadAssetAtPath<Sprite>(Project + "Art/UI/Textures/Brewing/T_BrewingBackground.png");
+            if (parchment == null) throw new InvalidOperationException("Brewing parchment sprite is missing.");
+            Image(stage, "ParchmentBackground", 0, 0, 1, 1, Color.white, parchment);
             var plant = Image(stage, "HerbPullFrame", .255f, .122f, .745f, .992f, Color.white);
             plant.preserveAspect = true;
             Image(stage, "TitlePlate", .35f, .875f, .65f, .976f, Dark);

@@ -11,9 +11,8 @@ namespace Herbalist.Editor
     public static class SapMazeDensityBaker
     {
         private const string MaterialPath = "Assets/_Project/Art/Materials/Environments/Stage_02/MAT_Maze1Density.mat";
-        private const string MaskPath = "Assets/_Project/Art/Environments/Stage_02/Textures/TEX_Maze1VisibleCorners.png";
 
-        [MenuItem("Tools/Herbalist/Stage 2/Bake Maze 1 Density View")]
+        [MenuItem("Tools/Herbalist/Stage 2/Bake Selected Maze Density View")]
         public static void BakeSelectedMaze()
         {
             var board = Selection.activeGameObject != null
@@ -23,15 +22,17 @@ namespace Herbalist.Editor
 
         public static string Bake(SapMazeBoard board)
         {
-            if (Application.isPlaying || board == null || board.name != "SapMaze_1")
-                throw new InvalidOperationException("Select the first maze in Edit mode.");
+            if (Application.isPlaying || board == null)
+                throw new InvalidOperationException("Select a maze in Edit mode.");
             var surface = board.Surface;
             if (!surface.Build(board.transform) || surface.WaterWallCollider == null)
                 throw new InvalidOperationException("Bake the maze's WaterWalls first.");
             var view = board.GetComponentInChildren<SapMazeTrailView>(true);
             var viewData = new SerializedObject(view);
             var legacyRenderer = (MeshRenderer)viewData.FindProperty("_fluidRenderer").objectReferenceValue;
-            var mask = BakeMask(board.transform, surface);
+            string maskPath = "Assets/_Project/Art/Environments/Stage_02/Textures/TEX_Maze" +
+                board.name.Replace("SapMaze_", "") + "VisibleCorners.png";
+            var mask = BakeMask(board.transform, surface, maskPath);
             var material = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
             if (material == null)
             {
@@ -47,7 +48,7 @@ namespace Herbalist.Editor
             if (child == null)
             {
                 var obj = new GameObject("Density Water", typeof(MeshFilter), typeof(MeshRenderer), typeof(SapMazeDensitySurface));
-                Undo.RegisterCreatedObjectUndo(obj, "Author Maze 1 density view");
+                Undo.RegisterCreatedObjectUndo(obj, "Author maze density view");
                 child = obj.transform;
                 child.SetParent(relief.transform, false);
             }
@@ -70,10 +71,10 @@ namespace Herbalist.Editor
             viewData.ApplyModifiedProperties();
             UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(board.gameObject.scene);
             AssetDatabase.SaveAssets();
-            return $"Maze 1 density view: {mask.width}x{mask.height} wall mask, {relief.sharedMesh.vertexCount} static vertices.";
+            return $"{board.name} density view: {mask.width}x{mask.height} wall mask, {relief.sharedMesh.vertexCount} static vertices.";
         }
 
-        private static Texture2D BakeMask(Transform board, SapMazeSurface surface)
+        private static Texture2D BakeMask(Transform board, SapMazeSurface surface, string maskPath)
         {
             int subdivisions = SapMazeDensitySurface.MaskSamplesPerCell;
             int columns = surface.GridWidth - 1;
@@ -154,11 +155,11 @@ namespace Herbalist.Editor
             try
             {
                 source.SetPixels32(pixels);
-                File.WriteAllBytes(MaskPath, source.EncodeToPNG());
+                File.WriteAllBytes(maskPath, source.EncodeToPNG());
             }
             finally { UnityEngine.Object.DestroyImmediate(source); }
-            AssetDatabase.ImportAsset(MaskPath, ImportAssetOptions.ForceSynchronousImport);
-            var importer = (TextureImporter)AssetImporter.GetAtPath(MaskPath);
+            AssetDatabase.ImportAsset(maskPath, ImportAssetOptions.ForceSynchronousImport);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(maskPath);
             importer.textureType = TextureImporterType.SingleChannel;
             var settings = new TextureImporterSettings();
             importer.ReadTextureSettings(settings);
@@ -172,7 +173,7 @@ namespace Herbalist.Editor
             importer.wrapMode = TextureWrapMode.Clamp;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.SaveAndReimport();
-            return AssetDatabase.LoadAssetAtPath<Texture2D>(MaskPath);
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(maskPath);
         }
 
         private static bool Intersects(Vector2 from, Vector2 to, Rect bounds)

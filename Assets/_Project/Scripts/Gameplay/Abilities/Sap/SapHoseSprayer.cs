@@ -65,7 +65,9 @@ namespace Herbalist.Abilities
 
                 Vector3 toTarget = target - origin;
                 if (toTarget.sqrMagnitude > 0.000001f)
-                    _lastDirection = hasTarget ? ResolveDirection(toTarget, settings.hoseLaunchSpeed, settings.hoseGravity) : toTarget.normalized;
+                    _lastDirection = hasTarget && settings.hoseDirectRange <= 0f
+                        ? ResolveDirection(toTarget, settings.hoseLaunchSpeed, settings.hoseGravity)
+                        : toTarget.normalized;
                 else if (aim.direction.sqrMagnitude > 0.000001f)
                     _lastDirection = aim.direction.normalized;
 
@@ -88,7 +90,7 @@ namespace Herbalist.Abilities
 
             Vector3 launchVelocity = _lastDirection * settings.hoseLaunchSpeed;
             float travelTime = _reach / settings.hoseLaunchSpeed;
-            Vector3 end = Position(origin, launchVelocity, settings.hoseGravity, travelTime);
+            Vector3 end = SamplePosition(origin, launchVelocity, travelTime, settings);
             bool impact = false;
             Vector3 impactNormal = Vector3.up;
             int segments = Mathf.CeilToInt(travelTime / settings.hoseCollisionStep);
@@ -96,7 +98,7 @@ namespace Herbalist.Abilities
             for (int i = 1; i <= segments; i++)
             {
                 float nextTime = travelTime * i / segments;
-                Vector3 next = Position(origin, launchVelocity, settings.hoseGravity, nextTime);
+                Vector3 next = SamplePosition(origin, launchVelocity, nextTime, settings);
                 Vector3 step = next - previous;
                 if (step.sqrMagnitude > 0.000001f && StageOneLeafZone.Cast(new Ray(previous, step.normalized), 0f,
                     step.magnitude, settings.collisionMask, out var hit, _owner, includeLeafZones: false))
@@ -122,8 +124,19 @@ namespace Herbalist.Abilities
                 _retractedLength / settings.hoseLaunchSpeed, impact, impactNormal);
         }
 
-        private static Vector3 Position(Vector3 origin, Vector3 velocity, float gravity, float time) =>
-            origin + velocity * time + Vector3.down * (0.5f * gravity * time * time);
+        internal static Vector3 SamplePosition(Vector3 origin, Vector3 velocity, float time, SapAbilitySettings settings)
+        {
+            if (settings.hoseDirectRange > 0f)
+            {
+                float directTime = settings.hoseDirectRange / settings.hoseLaunchSpeed;
+                if (time <= directTime) return origin + velocity * time;
+                origin += velocity * directTime;
+                velocity *= settings.hoseFalloffSpeedMultiplier;
+                time -= directTime;
+            }
+
+            return origin + velocity * time + Vector3.down * (0.5f * settings.hoseGravity * time * time);
+        }
 
         private static Vector3 ResolveDirection(Vector3 toTarget, float speed, float gravity)
         {

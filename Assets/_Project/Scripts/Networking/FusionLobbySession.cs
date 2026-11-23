@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
+using Herbalist.GameUI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -13,7 +14,7 @@ namespace Herbalist.Networking
 {
     public enum LobbyState { Idle, Connecting, Waiting, Loading, Playing, Leaving, Error }
 
-    public sealed class FusionLobbySession : MonoBehaviour, INetworkRunnerCallbacks
+    public sealed partial class FusionLobbySession : MonoBehaviour, INetworkRunnerCallbacks
     {
         [SerializeField] private LobbySettings settings;
         [SerializeField] private NetworkRunner runnerPrefab;
@@ -28,17 +29,17 @@ namespace Herbalist.Networking
         public NetworkRunner Runner => runner;
         private bool connecting, stopping, loadRequested, started;
         private CancellationTokenSource cancellation;
-        private struct StagePlayerState { public int Slot; public Herbalist.Abilities.PlayerAbilityKind Ability; }
+        private struct StagePlayerState { public int Slot; public Herbalist.Abilities.PlayerAbilityKind? Ability; }
         private readonly Dictionary<PlayerRef, StagePlayerState> stagePlayers = new();
         private bool stageTransition;
         private string _stageEntryId;
         public bool AllowDirectStartPrototypeAbilities =>
-            settings.GrantPrototypeAbilitiesOnDirectStart && stagePlayers.Count == 0 &&
+            settings.GrantPrototypeAbilitiesOnDirectStart && stagePlayers.Values.All(state => !state.Ability.HasValue) &&
             SceneManager.GetActiveScene().path == settings.playScenePath;
         public int ResolveStageSlot(PlayerRef player, int fallback) => stagePlayers.TryGetValue(player,out var state)?state.Slot: (Herbalist.GameUI.RoomControl.Instance != null && Herbalist.GameUI.RoomControl.Instance.Choice(player.RawEncoded) >= 0 ? Herbalist.GameUI.RoomControl.Instance.Choice(player.RawEncoded) : fallback);
         public bool RestoreStageAbility(PlayerRef player, Herbalist.Abilities.PlayerAbilityController ability)
         {
-            if(runner==null || !runner.IsServer || !stagePlayers.TryGetValue(player,out var state))return false;
+            if(runner==null || !runner.IsServer || !stagePlayers.TryGetValue(player,out var state) || !state.Ability.HasValue)return false;
             return state.Ability==Herbalist.Abilities.PlayerAbilityKind.Leaf?ability.UnlockLeaf():ability.UnlockSap();
         }
         public async void AdvanceStage(string scenePath, string entryId = null)
@@ -56,15 +57,30 @@ namespace Herbalist.Networking
                 if(player==null||ability==null||!ability.Unlocked)return;
                 saved[id]=new StagePlayerState{Slot=player.Slot,Ability=ability.Kind};
             }
+            int cinematicIndex = CinematicSceneIndex(scenePath);
+            var clip = StageCinematicClip.StageTwoExit;
+            if (cinematicIndex >= 0 && scenePath == settings.stageOneCinematicDestinationPath)
+            {
+                var sapPlayers = saved.Values.Where(player => player.Ability == Herbalist.Abilities.PlayerAbilityKind.Sap).ToArray();
+                if (sapPlayers.Length != 1 || sapPlayers[0].Slot < 0 || sapPlayers[0].Slot > 1)
+                {
+                    Debug.LogError("Stage 1 cinematic requires one Sap player with an assigned character.");
+                    return;
+                }
+                clip = sapPlayers[0].Slot == 0 ? StageCinematicClip.DuyeongSap : StageCinematicClip.SodamSap;
+            }
+            var stageRunner = runner;
             _stageEntryId=entryId;stageTransition=true;stagePlayers.Clear();foreach(var pair in saved)stagePlayers.Add(pair.Key,pair.Value);
             SetState(LobbyState.Loading,settings.loadingMessage);
             try
             {
-                foreach(var id in current)if(runner.TryGetPlayerObject(id,out var obj))runner.Despawn(obj);
-                await runner.LoadScene(SceneRef.FromIndex(sceneIndex),LoadSceneMode.Single);
+                foreach(var id in current)if(stageRunner.TryGetPlayerObject(id,out var obj))stageRunner.Despawn(obj);
+                if (cinematicIndex >= 0) await RunStageCinematic(stageRunner, current, clip, cinematicIndex, sceneIndex);
+                else await stageRunner.LoadScene(SceneRef.FromIndex(sceneIndex),LoadSceneMode.Single);
             }
+            catch (OperationCanceledException) when (stopping || runner != stageRunner) { }
             catch(Exception exception){await FinishAsync(string.Format(settings.failureFormat,exception.Message));}
-            finally{stageTransition=false;}
+            finally{stageTransition=false; ClearStageCinematic();}
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -75,6 +91,7 @@ namespace Herbalist.Networking
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            SceneManager.sceneUnloaded += OnCinematicSceneUnloaded;
             SetState(LobbyState.Idle, settings.idleMessage);
         }
 
@@ -87,6 +104,9 @@ namespace Herbalist.Networking
             if (!Guid.TryParse(PhotonAppSettings.Global.AppSettings.AppIdFusion, out _))
             { SetState(LobbyState.Error, settings.missingAppIdMessage); return; }
             stagePlayers.Clear(); stageTransition = false; _stageEntryId = null;
+#if UNITY_EDITOR
+            _qaDestination = null;
+#endif
             Herbalist.GameUI.RoomControl.Instance?.ResetRoom();
             connecting = true; loadRequested = false; started = false; RoomName = name;
             SetState(LobbyState.Connecting, settings.connectingMessage);
@@ -129,6 +149,20 @@ namespace Herbalist.Networking
             if (!started || loadRequested || State == LobbyState.Playing || stopping) return;
             SetState(LobbyState.Waiting, string.Format(settings.waitingFormat, ConnectedCount, settings.playerCount));
         }
+#if UNITY_EDITOR
+        private string _qaDestination;
+        private int _qaSapSlot;
+        private bool _qaCinematic;
+
+        internal void ConfigureQaStart(string destination, int sapSlot, bool cinematic)
+        {
+            if (runner == null || !runner.IsServer || State != LobbyState.Waiting)
+                throw new InvalidOperationException("QA 시작은 Host 로비에서만 설정할 수 있습니다.");
+            _qaDestination = destination;
+            _qaSapSlot = sapSlot;
+            _qaCinematic = cinematic;
+        }
+#endif
         public void StartSelectedGame() => TryStart(true);
         private async void TryStart(bool requested = false)
         {
@@ -136,14 +170,47 @@ namespace Herbalist.Networking
             if (settings.manualCharacterSelection && (!requested || Herbalist.GameUI.RoomControl.Instance == null || !Herbalist.GameUI.RoomControl.Instance.Ready)) return;
             loadRequested = true;
             runner.SessionInfo.IsOpen = false;
+            var stageRunner = runner;
+            var players = stageRunner.ActivePlayers.ToArray();
+            var room = Herbalist.GameUI.RoomControl.Instance;
+            stagePlayers.Clear();
+            for (int i = 0; i < players.Length; i++)
+            {
+                int slot = room != null ? room.Choice(players[i].RawEncoded) : -1;
+                stagePlayers.Add(players[i], new StagePlayerState { Slot = slot >= 0 ? slot : i });
+            }
             SetState(LobbyState.Loading, settings.loadingMessage);
             try
             {
-                int sceneIndex = SceneUtility.GetBuildIndexByScenePath(settings.playScenePath);
+                string destination = settings.playScenePath;
+                var clip = StageCinematicClip.Opening;
+                int cinematicIndex = CinematicSceneIndex(destination);
+#if UNITY_EDITOR
+                if (_qaDestination != null)
+                {
+                    destination = _qaDestination;
+                    _qaDestination = null;
+                    cinematicIndex = _qaCinematic ? SceneUtility.GetBuildIndexByScenePath(settings.stageOneCinematicScenePath) : -1;
+                    if (destination != settings.playScenePath)
+                    {
+                        clip = _qaSapSlot == 0 ? StageCinematicClip.DuyeongSap : StageCinematicClip.SodamSap;
+                        foreach (var player in players)
+                        {
+                            var state = stagePlayers[player];
+                            state.Ability = state.Slot == _qaSapSlot ? Herbalist.Abilities.PlayerAbilityKind.Sap : Herbalist.Abilities.PlayerAbilityKind.Leaf;
+                            stagePlayers[player] = state;
+                        }
+                    }
+                }
+#endif
+                int sceneIndex = SceneUtility.GetBuildIndexByScenePath(destination);
                 if (sceneIndex < 0) throw new InvalidOperationException("Play scene is missing from Build Settings.");
-                await runner.LoadScene(SceneRef.FromIndex(sceneIndex), LoadSceneMode.Single);
+                if (cinematicIndex >= 0) await RunStageCinematic(stageRunner, players, clip, cinematicIndex, sceneIndex);
+                else await stageRunner.LoadScene(SceneRef.FromIndex(sceneIndex), LoadSceneMode.Single);
             }
+            catch (OperationCanceledException) when (stopping || runner != stageRunner) { }
             catch (Exception exception) { await FinishAsync(string.Format(settings.failureFormat, exception.Message)); }
+            finally { ClearStageCinematic(); }
         }
         public Task LeaveAsync() => FinishAsync(null);
         public void ClearError() { if (runner == null && !connecting && !stopping) SetState(LobbyState.Idle, settings.idleMessage); }
@@ -152,6 +219,7 @@ namespace Herbalist.Networking
         {
             if (stopping) return;
             stopping = true;
+            ClearStageCinematic();
             SetState(LobbyState.Leaving, settings.leavingMessage);
             var oldRunner = runner;
             runner = null; started = false; stagePlayers.Clear(); _stageEntryId = null;
@@ -186,30 +254,58 @@ namespace Herbalist.Networking
         private void OnDestroy()
         {
             if (Instance != this) return;
+            SceneManager.sceneUnloaded -= OnCinematicSceneUnloaded;
             cancellation?.Cancel();
+            ClearStageCinematic();
             if (runner != null) runner.RemoveCallbacks(this);
             Instance = null;
         }
         public void OnPlayerJoined(NetworkRunner r, PlayerRef player) { RefreshWaiting(); TryStart(); }
-        public void OnPlayerLeft(NetworkRunner r, PlayerRef player) { if (r.IsServer && r.TryGetPlayerObject(player, out var obj)) r.Despawn(obj); if (!loadRequested && State != LobbyState.Playing) RefreshWaiting(); }
+        public void OnPlayerLeft(NetworkRunner r, PlayerRef player)
+        {
+            if (r.IsServer && r.TryGetPlayerObject(player, out var obj)) r.Despawn(obj);
+            if (r.IsServer && _stageCinematic is { } cinematic && cinematic.Participants.Remove(player))
+            {
+                stagePlayers.Remove(player);
+                if (cinematic.Playing) PublishCinematicVotes(cinematic);
+                else TryPlayCinematic(cinematic);
+            }
+            if (!loadRequested && State != LobbyState.Playing) RefreshWaiting();
+        }
         public async void OnShutdown(NetworkRunner r, ShutdownReason reason)
         { if (!stopping && !connecting) await FinishAsync(string.Format(settings.failureFormat, reason)); }
         public void OnConnectRequest(NetworkRunner r, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token)
         { if (!loadRequested && r.ActivePlayers.Count() < settings.playerCount) request.Accept(); else request.Refuse(); }
-        public void OnSceneLoadStart(NetworkRunner r) { if (loadRequested || started) SetState(LobbyState.Loading, settings.loadingMessage); }
+        public void OnSceneLoadStart(NetworkRunner r)
+        {
+            if ((loadRequested || started) && _stageCinematic?.Revealing != true)
+                SetState(LobbyState.Loading, settings.loadingMessage);
+        }
         public void OnSceneLoadDone(NetworkRunner r)
         {
+            if (_stageCinematic?.DestinationLoadStarted == true)
+            {
+                MarkCinematicDestinationLoaded(r);
+                return;
+            }
+            if (SceneManager.GetActiveScene().path == settings.stageOneCinematicScenePath)
+            {
+                OnStageCinematicSceneLoaded(r);
+                return;
+            }
+            if (!r.IsServer) ClearStageCinematic();
             if (SceneManager.GetActiveScene().path == settings.playScenePath || Herbalist.Levels.StageLevel.Instance != null)
             {
-                var layout = string.IsNullOrEmpty(_stageEntryId)
-                    ? FindFirstObjectByType<PlayerSpawnLayout>()
-                    : FindObjectsByType<PlayerSpawnLayout>(FindObjectsSortMode.None).FirstOrDefault(p => p.EntryId == _stageEntryId);
+                var layout = FindSpawnLayout(SceneManager.GetActiveScene());
                 if (r.IsServer && layout == null) { Debug.LogError("Stage arrival spawn layout not found: " + _stageEntryId); return; }
                 if (layout != null) layout.SpawnPlayers(r);
                 SetState(LobbyState.Playing, settings.playingMessage);
             }
             else if (started) RefreshWaiting();
         }
+        private PlayerSpawnLayout FindSpawnLayout(Scene scene) =>
+            FindObjectsByType<PlayerSpawnLayout>(FindObjectsSortMode.None).FirstOrDefault(layout =>
+                layout.gameObject.scene == scene && (string.IsNullOrEmpty(_stageEntryId) || layout.EntryId == _stageEntryId));
         public void OnDisconnectedFromServer(NetworkRunner r, NetDisconnectReason reason) { }
         public void OnConnectFailed(NetworkRunner r, NetAddress address, NetConnectFailedReason reason) { }
         public void OnConnectedToServer(NetworkRunner r) { }
@@ -217,7 +313,11 @@ namespace Herbalist.Networking
         public void OnInputMissing(NetworkRunner r, PlayerRef player, NetworkInput input) { }
         public void OnObjectEnterAOI(NetworkRunner r, NetworkObject obj, PlayerRef player) { }
         public void OnObjectExitAOI(NetworkRunner r, NetworkObject obj, PlayerRef player) { }
-        public void OnReliableDataReceived(NetworkRunner r, PlayerRef player, ReliableKey key, ReadOnlySpan<byte> data) { Herbalist.GameUI.RoomControl.Instance?.Receive(r, player, key, data); }
+        public void OnReliableDataReceived(NetworkRunner r, PlayerRef player, ReliableKey key, ReadOnlySpan<byte> data)
+        {
+            if (!ReceiveStageCinematic(r, player, key, data))
+                Herbalist.GameUI.RoomControl.Instance?.Receive(r, player, key, data);
+        }
         public void OnReliableDataProgress(NetworkRunner r, PlayerRef player, ReliableKey key, float progress) { }
         public void OnSessionListUpdated(NetworkRunner r, List<SessionInfo> sessions) { }
         public void OnCustomAuthenticationResponse(NetworkRunner r, Dictionary<string, object> data) { }

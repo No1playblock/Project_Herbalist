@@ -1,55 +1,59 @@
+# Asset content is stored directly in Git on this branch; old commits may still use LFS.
+* -filter
 # Auto detect text files and perform LF normalization
 * text=auto
-Assets/_Project/Audio/SFX/**/*.wav filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Audio/SFX/**/*.mp3 filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/Stage_01/CharacterBranchImport/**/*.[Pp][Nn][Gg] filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/Stage_01/CharacterBranchImport/**/*.[Tt][Gg][Aa] filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/Stage_01/CharacterBranchImport/**/*.[Ff][Bb][Xx] filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/Stage_01/CharacterBranchImport/**/*.asset filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/Stage_01/CharacterModelingImport/**/*.[Pp][Nn][Gg] filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/Stage_01/CharacterModelingImport/**/*.[Tt][Gg][Aa] filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/Stage_01/CharacterModelingImport/**/*.[Ff][Bb][Xx] filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/Stage_01/CharacterModelingImport/**/*.[Jj][Pp][Gg] filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/Stage_01/CharacterModelingImport/**/*.asset filter=lfs diff=lfs merge=lfs -text
+Assets/_Project/Art/senario/Stage01_to_Stage02_Cinematic_*.mp4 -filter -diff -merge -text
+Assets/_Project/Art/senario/Stage01_Opening.mp4 -filter -diff -merge -text
+Assets/_Project/Audio/SFX/**/*.wav -filter -diff -merge -text
+Assets/_Project/Audio/SFX/**/*.mp3 -filter -diff -merge -text
+Assets/_Project/Art/Environments/Stage_01/CharacterBranchImport/**/*.[Pp][Nn][Gg] -filter -diff -merge -text
+Assets/_Project/Art/Environments/Stage_01/CharacterBranchImport/**/*.[Tt][Gg][Aa] -filter -diff -merge -text
+Assets/_Project/Art/Environments/Stage_01/CharacterBranchImport/**/*.[Ff][Bb][Xx] -filter -diff -merge -text
+Assets/_Project/Art/Environments/Stage_01/CharacterBranchImport/**/*.asset -filter -diff -merge -text
+Assets/_Project/Art/Environments/Stage_01/CharacterModelingImport/**/*.[Pp][Nn][Gg] -filter -diff -merge -text
+Assets/_Project/Art/Environments/Stage_01/CharacterModelingImport/**/*.[Tt][Gg][Aa] -filter -diff -merge -text
+Assets/_Project/Art/Environments/Stage_01/CharacterModelingImport/**/*.[Ff][Bb][Xx] -filter -diff -merge -text
+Assets/_Project/Art/Environments/Stage_01/CharacterModelingImport/**/*.[Jj][Pp][Gg] -filter -diff -merge -text
+Assets/_Project/Art/Environments/Stage_01/CharacterModelingImport/**/*.asset -filter -diff -merge -text
 ci/*.sh text eol=lf
-Assets/_Project/Art/Environments/Stage_01/Stage1_Assets/Fabrics_Final.fbx filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/Stage_01/Stage1_Assets/New[[:space:]]Terrain[[:space:]]3.asset filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Data/Stages/Stage_01/Stage1_ModelingTerrain.asset filter=lfs diff=lfs merge=lfs -text
-Assets/Stage1_Assets/01_Assets/Fabrics/Fabrics_Final.fbx filter=lfs diff=lfs merge=lfs -text
-Assets/New[[:space:]]Terrain[[:space:]]3.asset filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/Stage_01/Stage1_Assets/Materials/ImportedFromLatest/**/*.png filter=lfs diff=lfs merge=lfs -text
-Assets/interraction/**/*.png filter=lfs diff=lfs merge=lfs -text
-Assets/NamuFX/StylizedWaterEffects/Textures/Tex_Particles_01.tga filter=lfs diff=lfs merge=lfs -text
-Assets/Enviroment_urpasset/**/*.tga filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/Stage_02/**/*.fbx filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/Stage_02/**/*.png filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Character_anime/**/*.fbx filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Character_anime/**/*.FBX filter=lfs diff=lfs merge=lfs -text
+Assets/_Project/Art/Environments/Stage_01/Stage1_Assets/Fabrics_Final.fbx -filter -diff -merge -text
+Assets/_Project/Art/Environments/Stage_01/Stage1_Assets/New[[:space:]]Terrain[[:space:]]3.asset -filter -diff -merge -text
+Assets/_Project/Data/Stages/Stage_01/Stage1_ModelingTerrain.asset -filter -diff -merge -text
+Assets/Stage1_Assets/01_Assets/Fabrics/Fabrics_Final.fbx -filter -diff -merge -text
+Assets/New[[:space:]]Terrain[[:space:]]3.asset -filter -diff -merge -text
+Assets/_Project/Art/Environments/Stage_01/Stage1_Assets/Materials/ImportedFromLatest/**/*.png -filter -diff -merge -text
+Assets/interraction/**/*.png -filter -diff -merge -text
+Assets/NamuFX/StylizedWaterEffects/Textures/Tex_Particles_01.tga -filter -diff -merge -text
+Assets/Enviroment_urpasset/**/*.tga -filter -diff -merge -text
+Assets/_Project/Art/Environments/Stage_02/**/*.fbx -filter -diff -merge -text
+Assets/_Project/Art/Environments/Stage_02/**/*.png -filter -diff -merge -text
+Assets/_Project/Art/Character_anime/**/*.fbx -filter -diff -merge -text
+Assets/_Project/Art/Character_anime/**/*.FBX -filter -diff -merge -text
 
 # Isolated environment modeling source assets
-Assets/_Project/Art/Environments/EnvironmentModelingImport_20261103/**/*.png filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/EnvironmentModelingImport_20261103/**/*.jpeg filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/EnvironmentModelingImport_20261103/**/*.fbx filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/EnvironmentModelingImport_20261103/**/*.asset filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/EnvironmentModelingImport_20261107/**/*.png filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/EnvironmentModelingImport_20261107/**/*.fbx filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/EnvironmentModelingImport_20261107/BakedMeshes/*.asset filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/EnvironmentModelingImport_20261111/**/*.png filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/EnvironmentModelingImport_20261111/**/*.fbx filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/EnvironmentModelingImport_20261111/New[[:space:]]Terrain[[:space:]]4.asset filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Scenes/Stages/Stage_03/Stage_03_EnvironmentModeling_FinalReference/*.png filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Scenes/Stages/Stage_03/Stage_03_EnvironmentModeling_FinalReference/*.exr filter=lfs diff=lfs merge=lfs -text
+Assets/_Project/Art/Environments/EnvironmentModelingImport_20261103/**/*.png -filter -diff -merge -text
+Assets/_Project/Art/Environments/EnvironmentModelingImport_20261103/**/*.jpeg -filter -diff -merge -text
+Assets/_Project/Art/Environments/EnvironmentModelingImport_20261103/**/*.fbx -filter -diff -merge -text
+Assets/_Project/Art/Environments/EnvironmentModelingImport_20261103/**/*.asset -filter -diff -merge -text
+Assets/_Project/Art/Environments/EnvironmentModelingImport_20261107/**/*.png -filter -diff -merge -text
+Assets/_Project/Art/Environments/EnvironmentModelingImport_20261107/**/*.fbx -filter -diff -merge -text
+Assets/_Project/Art/Environments/EnvironmentModelingImport_20261107/BakedMeshes/*.asset -filter -diff -merge -text
+Assets/_Project/Art/Environments/EnvironmentModelingImport_20261111/**/*.png -filter -diff -merge -text
+Assets/_Project/Art/Environments/EnvironmentModelingImport_20261111/**/*.fbx -filter -diff -merge -text
+Assets/_Project/Art/Environments/EnvironmentModelingImport_20261111/New[[:space:]]Terrain[[:space:]]4.asset -filter -diff -merge -text
+Assets/_Project/Scenes/Stages/Stage_03/Stage_03_EnvironmentModeling_FinalReference/*.png -filter -diff -merge -text
+Assets/_Project/Scenes/Stages/Stage_03/Stage_03_EnvironmentModeling_FinalReference/*.exr -filter -diff -merge -text
 
 # Isolated Stage 1 redesign visual source assets
 # Stage 1 environment refresh source assets
-Assets/_Project/Art/Environments/Stage_01/DevelopStage1Import_20261108/**/*.png filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/Stage_01/DevelopStage1Import_20261108/**/*.fbx filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Environments/Stage_01/DevelopStage1Import_20261108/**/*.asset filter=lfs diff=lfs merge=lfs -text
+Assets/_Project/Art/Environments/Stage_01/DevelopStage1Import_20261108/**/*.png -filter -diff -merge -text
+Assets/_Project/Art/Environments/Stage_01/DevelopStage1Import_20261108/**/*.fbx -filter -diff -merge -text
+Assets/_Project/Art/Environments/Stage_01/DevelopStage1Import_20261108/**/*.asset -filter -diff -merge -text
 
-Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Ff][Bb][Xx] filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Pp][Nn][Gg] filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Tt][Gg][Aa] filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Jj][Pp][Ee][Gg] filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Bb][Mm][Pp] filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Pp][Ss][Dd] filter=lfs diff=lfs merge=lfs -text
-Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Tt][Ii][Ff] filter=lfs diff=lfs merge=lfs -text
+Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Ff][Bb][Xx] -filter -diff -merge -text
+Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Pp][Nn][Gg] -filter -diff -merge -text
+Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Tt][Gg][Aa] -filter -diff -merge -text
+Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Jj][Pp][Ee][Gg] -filter -diff -merge -text
+Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Bb][Mm][Pp] -filter -diff -merge -text
+Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Pp][Ss][Dd] -filter -diff -merge -text
+Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Tt][Ii][Ff] -filter -diff -merge -text

@@ -10,10 +10,24 @@ namespace Herbalist.GameUI
         public bool offlineTestOnly;
         [SerializeField] private InputActionReference _stageOneAction;
         [SerializeField] private string _stageOneLabel;
+        [SerializeField] private bool _stageOneOnly;
+        [SerializeField] private string _mazeLabel;
+        [SerializeField] private bool _hideInMaze;
 
         private bool UsesStageOneOverride => _stageOneAction != null && Herbalist.Levels.StageOneTraversal.Instance != null;
+        private static bool IsMazeStage => Herbalist.Levels.StageLevel.Instance != null &&
+            Herbalist.Levels.StageLevel.Instance.TryGetComponent<Herbalist.Levels.DescendingMazeFlow>(out _);
         public InputActionReference Action => UsesStageOneOverride ? _stageOneAction : action;
-        public string Label => UsesStageOneOverride ? _stageOneLabel : label;
+        public string Label
+        {
+            get
+            {
+                if (UsesStageOneOverride) return _stageOneLabel;
+                return !string.IsNullOrEmpty(_mazeLabel) && IsMazeStage ? _mazeLabel : label;
+            }
+        }
+        internal bool IsAvailableInStage => (!_stageOneOnly || Herbalist.StageOne.StageOneFlow.Instance != null) &&
+            (!_hideInMaze || !IsMazeStage);
     }
     [CreateAssetMenu(menuName="Herbalist/Game UI Settings")]
     public sealed class GameUiSettings : ScriptableObject
@@ -30,7 +44,9 @@ namespace Herbalist.GameUI
         public string pausedText="게임을 일시 정지하였습니다.", partnerPausedText="다른 플레이어가 게임을 일시 정지하였습니다.";
         public string leafText="잎", sapText="액", gatherText="채집", giveText="전달", craftText="약제 제조";
         public string receiveText = "약초 받기", drinkText = "물약 마시기", pickupPotionText = "물약 집기", boardTalismanText = "부적 탑승";
+        public string dismountTalismanText = "부적에서 내리기";
         public string clothGrabText="천 잡기", clothReleaseText="천 놓기", sapInjectText="수액 주입 (누르고 있기)";
+        public string sapPushClothText = "천 밀기 (누르고 있기)";
         public string leafInstallText="나뭇잎 설치";
         [Min(.1f)] public float leafInstallHintRange=12f;
         public string leafHeldText="보유", leafInstalledText="설치 중", leafReturningText="회수 중";
@@ -47,6 +63,13 @@ namespace Herbalist.GameUI
         public string jumpPadCountdownFormat = "점프대 발사까지 <b>{0:0.0}</b>초";
         public InputActionReference pauseAction, helpAction;
         public ControlHint[] controls;
+
+        internal bool ShowsInControlHelp(ControlHint hint)
+        {
+            var action = hint?.Action;
+            return action != null && hint.IsAvailableInStage && !hint.offlineTestOnly && action != pauseAction && action != helpAction;
+        }
+
         public Vector3 markerOffset = new Vector3(-.65f, 1.9f, 0);
         [Min(.1f)] public float feedbackDuration=4;
         [Min(0)] public float objectiveHoldDuration = 5f;

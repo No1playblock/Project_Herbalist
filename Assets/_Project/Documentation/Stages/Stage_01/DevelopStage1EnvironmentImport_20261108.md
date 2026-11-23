@@ -46,7 +46,7 @@
 - 기존 MonoBehaviour 1,438개, 트리거 51개, 기존 Transform 5,605개의 배치·활성 상태·부모 및 게임 설정이 변경되지 않았음을 적용 전후 대조했다. 옛 충돌체를 참조하는 기믹 필드도 없음을 확인했다.
 - 기존 씬의 직렬화 블록 변경은 옛 충돌체 2개, 프리팹 오버라이드 12개, 루트 목록 1개에 한정된다. 기존 게임 스크립트 블록과 Transform 블록은 변경하지 않았다.
 
-`StageOneEnvironmentModelPromotion.Apply()`는 중복 적용을 막는 Editor 전용 도구다. `StageOneEnvironmentModelPromotionChecks.RunPlay()`로 실제 물리 엔진을 검사한다.
+2026-11-16 정리에서 비교 씬과 일회성 적용 도구를 삭제했다. 메인 씬에 적용된 모델은 `StageOneEnvironmentModelPromotionChecks.RunPlay()`로 검사할 수 있다.
 
 최종 플레이 검사에서 모델 충돌 26/26, 계단 상면 19/19, 실제 플레이어 크기 캡슐의 계단 지지 공간 19/19를 확인했다. 이 중 2곳은 가지 아래 계단이므로 위에서 낙하하는 검사와 별도로 발판 위의 서기 공간과 나무 침투 여부를 확인했다. 원본 계단 배치를 변경하거나 나무 충돌을 제거하지 않았다.
 

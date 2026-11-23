@@ -14,6 +14,9 @@ namespace Herbalist.Abilities
         [Tooltip("Stand the installed leaf upright with its pointed end up. Applies to free surface placement.")]
         [SerializeField] private bool _pointUpOnInstall;
         [SerializeField] private bool _singleOccupant;
+        [SerializeField] private bool _replaceOnInstall;
+        [SerializeField] private ParticleSystem _installSplash;
+        [SerializeField] private GameObject _readyMarker;
         [Tooltip("Keep an installed leaf until its owning mechanism consumes it or the player recalls it.")]
         [SerializeField] private bool _keepLeafUntilUsed;
         [Tooltip("Wait after an installed leaf detaches before accepting another leaf. Zero disables the restriction.")]
@@ -37,6 +40,9 @@ namespace Herbalist.Abilities
         public bool PerpendicularToSurfaceOnInstall => _perpendicularToSurfaceOnInstall && socket == null;
         public LeafProjectile InstalledLeaf { get { foreach(var leaf in occupants) if(leaf != null && leaf.Installed) return leaf; return null; } }
         public bool HasLeaf => InstalledLeaf != null;
+        public float ReuseRemaining => _reuseRemaining;
+        public float ReuseDelay => _reuseDelayAfterRelease;
+        internal bool ReplaceOnInstall => _replaceOnInstall;
         public void CopyInstalledLeavesTo(List<LeafProjectile> destination)
         {
             foreach (var leaf in occupants) if (leaf != null && leaf.Installed) destination.Add(leaf);
@@ -49,7 +55,8 @@ namespace Herbalist.Abilities
         }
         private void OnDisable() { if (targets.TryGetValue(targetId, out var current) && current == this) targets.Remove(targetId); }
         public static LeafInstallTarget Find(int id) => targets.TryGetValue(id, out var target) ? target : null;
-        public bool CanInstall => isActiveAndEnabled && _reuseRemaining <= 0f && (!_singleOccupant || !HasLeaf) &&
+        public bool CanInstall => isActiveAndEnabled && _reuseRemaining <= 0f && (_replaceOnInstall || !_singleOccupant || !HasLeaf) &&
+            (GetComponentInParent<Herbalist.Levels.ExteriorJumpPad>() is not { } pad || pad.Ready) &&
             (!TryGetComponent<Herbalist.Levels.StageOneTargetGate>(out var gate) || gate.AllowsInstallation);
         public Vector3 Position(Vector3 hit, Vector3 normal, float offset) => socket != null ? socket.position : hit + normal * offset;
         public Quaternion Rotation(Vector3 normal, Vector3 heading)
@@ -78,7 +85,15 @@ namespace Herbalist.Abilities
         public void Attach(LeafProjectile leaf)
         {
             bool before = HasLeaf; occupants.Add(leaf);
-            if (!before && HasLeaf) onInstalled.Invoke();
+            if (!before && HasLeaf)
+            {
+                onInstalled.Invoke();
+                if (_installSplash != null)
+                {
+                    _installSplash.Play(true);
+                    Herbalist.Audio.SfxEmitter.ScenePool?.PlayAt(32, SocketPosition);
+                }
+            }
         }
         public void Detach(LeafProjectile leaf)
         {
@@ -93,6 +108,11 @@ namespace Herbalist.Abilities
         {
             if (!Herbalist.GameUI.GameplayPause.IsPaused)
                 _reuseRemaining = Mathf.Max(0f, _reuseRemaining - Mathf.Max(0f, dt));
+            if (_readyMarker != null)
+            {
+                var pad = GetComponentInParent<Herbalist.Levels.ExteriorJumpPad>();
+                _readyMarker.SetActive(_reuseRemaining <= 0f && !HasLeaf && (pad == null || pad.Ready));
+            }
         }
     }
 }

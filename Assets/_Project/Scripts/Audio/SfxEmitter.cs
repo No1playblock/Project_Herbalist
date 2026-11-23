@@ -22,7 +22,15 @@ namespace Herbalist.Audio
         public int ActiveLoopCount => _loops.Count;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetPool() => ScenePool = null;
-        private void Awake() { _playing = new int[_channels.Length]; _paused = new bool[_channels.Length]; }
+        private void Awake()
+        {
+            _playing = new int[_channels.Length];
+            _paused = new bool[_channels.Length];
+            var output = UserOptions.SfxOutput;
+            if (output == null) return;
+            foreach (var channel in _channels)
+                if (channel != null) channel.outputAudioMixerGroup = output;
+        }
         private void OnEnable() { if (_scenePool) ScenePool = this; }
         public bool Play(int id, float gain = 1, bool light = false) => PlayAt(id, transform.position, gain, light);
         public bool PlayAt(int id, Vector3 position, float gain = 1, bool light = false, int ownerKey = 0)

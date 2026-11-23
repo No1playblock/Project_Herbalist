@@ -25,7 +25,7 @@ namespace Herbalist.Editor
         {
             if (!Application.isPlaying || Time.frameCount < 2) throw new Exception("Run in advancing Play mode.");
             var root = SceneManager.GetActiveScene().GetRootGameObjects()
-                .Single(g => g.name == StageOneEnvironmentModelPromotion.RootName);
+                .Single(g => g.name == "Stage1_EnvironmentModels_20261108");
             var filters = root.GetComponentsInChildren<MeshFilter>();
             if (filters.Length != 26 || root.GetComponentsInChildren<MeshCollider>().Length != 26)
                 throw new Exception("Expected 26 visual meshes and matching solid colliders.");

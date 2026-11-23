@@ -11,6 +11,7 @@ namespace Herbalist.GameUI
     [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "Herbalist.GameUI", sourceAssembly: "Assembly-CSharp", sourceClassName: "PlayerHudUI")]
     public sealed class PlayerHud : MonoBehaviour
     {
+        private const float ContextHintShowDelaySeconds = .16f;
         public GameUiSettings settings;
         public int slot;
         public GameObject helpPanel, reticle, prompt, clothPrompt, sapPrompt;
@@ -29,11 +30,296 @@ namespace Herbalist.GameUI
         private PlayScreenController screen;
         private InputAction help;
         private bool expanded;
+        internal bool ControlHelpExpanded => expanded;
+        private float _contextHintCandidateSince = -1f;
+        private bool _contextHintCandidateSeenThisFrame;
         private string previousFeedback;
+        private StageActor _feedbackActor;
+        private string _observedActorFeedback;
         private float feedbackTime;
+        private float _minigameResultFeedbackUntil;
+        private RectTransform _feedbackRect;
+        [SerializeField] private TMP_FontAsset _feedbackFont;
+        [SerializeField] private RawImage _feedbackScroll;
+        private Vector2 _feedbackShownPosition, _feedbackHiddenPosition, _feedbackEnterStart, _feedbackExitStart;
+        private string _displayedFeedback = string.Empty;
+        private float _feedbackMotionElapsed;
+        private bool _feedbackEntering, _feedbackExiting;
+        private const float FeedbackSlideDuration = .3f;
         private uint _abilityFeedback;
         private uint _minigameResult;
-        private void Awake() { screen=FindFirstObjectByType<PlayScreenController>(); }
+        private StageNarrativePresenter _narrative;
+        private StagePlaytestHud _stagePlaytestHud;
+        [SerializeField] private TMP_Text _questTitle, _questCount, _questDetail;
+        [SerializeField] private RectTransform _questPanel;
+        [SerializeField] private RectTransform[] _questLayoutTargets = System.Array.Empty<RectTransform>();
+        [SerializeField, Min(0)] private float _questRightMargin = 24f;
+        private Vector3[] _questOriginalPositions;
+        private static Texture2D _softQuestBackdropTexture;
+
+
+        private void Awake()
+        {
+            screen=FindFirstObjectByType<PlayScreenController>();
+            _narrative=FindAnyObjectByType<StageNarrativePresenter>();
+            if (feedback != null)
+            {
+                _feedbackRect = feedback.rectTransform;
+                if (_feedbackFont != null) feedback.font = _feedbackFont;
+                feedback.enableAutoSizing = true;
+                feedback.fontSize = 18f;
+                feedback.fontSizeMax = 18f;
+                feedback.fontSizeMin = 12f;
+                feedback.textWrappingMode = TextWrappingModes.NoWrap;
+                feedback.overflowMode = TextOverflowModes.Overflow;
+                feedback.color = new Color(.24f, .16f, .09f, 1f);
+                if (_feedbackScroll != null)
+                {
+                    _feedbackScroll.raycastTarget = false;
+                    _feedbackScroll.gameObject.SetActive(false);
+                }
+                _feedbackShownPosition = _feedbackRect.anchoredPosition;
+                var parent = _feedbackRect.parent as RectTransform;
+                float parentWidth = parent != null && parent.rect.width > 0f ? parent.rect.width : Screen.width;
+                float hiddenDistance = parentWidth * .5f + _feedbackRect.rect.width * .5f + 32f;
+                _feedbackHiddenPosition = _feedbackShownPosition + Vector2.right * hiddenDistance;
+                _feedbackRect.anchoredPosition = _feedbackHiddenPosition;
+                feedback.text = string.Empty;
+            }
+            ApplyQuestTrackerStyle();
+            _questOriginalPositions = new Vector3[_questLayoutTargets.Length];
+            for (int i = 0; i < _questLayoutTargets.Length; i++)
+                if (_questLayoutTargets[i] != null) _questOriginalPositions[i] = _questLayoutTargets[i].anchoredPosition3D;
+        }
+
+        private void ApplyQuestTrackerStyle()
+        {
+            if (_questPanel == null || _questLayoutTargets == null || _questLayoutTargets.Length < 2) return;
+
+            var content = _questLayoutTargets[1];
+            var hudRoot = transform as RectTransform;
+            Vector2 viewport = hudRoot != null ? hudRoot.rect.size : Vector2.zero;
+            if (viewport.x <= 0f || viewport.y <= 0f)
+            {
+                var canvas = _questPanel.GetComponentInParent<Canvas>();
+                float scale = canvas != null ? Mathf.Max(.001f, canvas.scaleFactor) : 1f;
+                viewport = new Vector2(Screen.width / scale, Screen.height / scale);
+            }
+            float width = viewport.x * .26f;
+            float height = viewport.y * .09f;
+            float rightMargin = viewport.x * .02f;
+            float topMargin = viewport.y * .21f;
+            ConfigureQuestRoot(_questPanel, width, height, rightMargin, topMargin);
+            ConfigureQuestRoot(content, width, height, rightMargin, topMargin);
+            _questRightMargin = rightMargin;
+
+            var banner = _questPanel.GetComponent<Image>();
+            if (banner != null)
+            {
+                banner.enabled = false;
+                banner.raycastTarget = false;
+            }
+            EnsureSoftQuestOverlay(_questPanel, content);
+            ConfigureQuestProgressLine(content);
+
+
+            if (_questTitle != null)
+            {
+                var rect = _questTitle.rectTransform;
+                rect.anchorMin = new Vector2(0f, .5f);
+                rect.anchorMax = Vector2.one;
+                rect.offsetMin = new Vector2(16f, 0f);
+                rect.offsetMax = new Vector2(-92f, 0f);
+                _questTitle.alignment = TextAlignmentOptions.MidlineLeft;
+                _questTitle.enableAutoSizing = true;
+                _questTitle.fontSizeMin = 20f;
+                _questTitle.fontSizeMax = 28f;
+                _questTitle.fontSize = 28f;
+                _questTitle.color = new Color(.96f, .93f, .84f, 1f);
+                _questTitle.margin = Vector4.zero;
+                AddQuestTextShadow(_questTitle);
+            }
+
+            if (_questCount != null)
+            {
+                var rect = _questCount.rectTransform;
+                rect.anchorMin = new Vector2(1f, .5f);
+                rect.anchorMax = Vector2.one;
+                rect.pivot = new Vector2(1f, .5f);
+                rect.anchoredPosition = new Vector2(-16f, 0f);
+                rect.sizeDelta = new Vector2(64f, 0f);
+                _questCount.alignment = TextAlignmentOptions.MidlineRight;
+                _questCount.enableAutoSizing = true;
+                _questCount.fontSizeMin = 13f;
+                _questCount.fontSizeMax = 15f;
+                _questCount.fontSize = 15f;
+                _questCount.margin = Vector4.zero;
+                _questCount.color = new Color(.96f, .93f, .84f, 1f);
+                _questCount.text = string.Empty;
+                _questCount.gameObject.SetActive(false);
+                AddQuestTextShadow(_questCount);
+            }
+
+            if (_questDetail != null)
+            {
+                var rect = _questDetail.rectTransform;
+                rect.SetParent(content, false);
+                rect.anchorMin = Vector2.zero;
+                rect.anchorMax = new Vector2(1f, .5f);
+                rect.offsetMin = new Vector2(28f, 0f);
+                rect.offsetMax = new Vector2(-16f, 0f);
+                _questDetail.alignment = TextAlignmentOptions.MidlineLeft;
+                _questDetail.enableAutoSizing = true;
+                _questDetail.fontSizeMin = 14f;
+                _questDetail.fontSizeMax = 16f;
+                _questDetail.fontSize = 16f;
+                _questDetail.color = new Color(.96f, .93f, .84f, 1f);
+                _questDetail.margin = Vector4.zero;
+                AddQuestTextShadow(_questDetail);
+            }
+
+            var leafIcon = transform.Find("QuestLogIcon") as RectTransform;
+            if (leafIcon != null)
+            {
+                leafIcon.SetParent(content, false);
+                leafIcon.anchorMin = Vector2.one;
+                leafIcon.anchorMax = Vector2.one;
+                leafIcon.pivot = Vector2.one;
+                leafIcon.anchoredPosition = new Vector2(-16f, -8f);
+                leafIcon.sizeDelta = new Vector2(20f, 20f);
+                var iconImage = leafIcon.GetComponent<Image>();
+                if (iconImage != null)
+                {
+                    iconImage.color = new Color(.78f, .64f, .31f, 1f);
+
+                }
+                leafIcon.localScale = Vector3.one;
+            }
+
+            if (_questOriginalPositions != null)
+            {
+                for (int i = 0; i < _questLayoutTargets.Length && i < _questOriginalPositions.Length; i++)
+                    if (_questLayoutTargets[i] != null) _questOriginalPositions[i] = _questLayoutTargets[i].anchoredPosition3D;
+            }
+        }
+
+        private static void ConfigureQuestRoot(RectTransform rect, float width, float height, float rightMargin, float topMargin)
+        {
+            if (rect == null) return;
+            rect.anchorMin = Vector2.one;
+            rect.anchorMax = Vector2.one;
+            rect.pivot = Vector2.one;
+            rect.anchoredPosition = new Vector2(-rightMargin, -topMargin);
+            rect.sizeDelta = new Vector2(width, height);
+            rect.localScale = Vector3.one;
+        }
+
+        private void EnsureSoftQuestOverlay(RectTransform panel, RectTransform content)
+        {
+            var overlay = content.Find("QuestSoftOverlay") as RectTransform;
+            if (overlay == null) return;
+
+            overlay.anchorMin = Vector2.zero;
+            overlay.anchorMax = Vector2.one;
+            overlay.pivot = new Vector2(.5f, .5f);
+            overlay.offsetMin = Vector2.zero;
+            overlay.offsetMax = Vector2.zero;
+            overlay.localScale = Vector3.one;
+            overlay.SetAsFirstSibling();
+
+            var image = overlay.GetComponent<RawImage>();
+            if (image != null)
+            {
+                image.texture = GetSoftQuestBackdropTexture();
+                image.raycastTarget = false;
+                image.color = Color.white;
+            }
+        }
+
+        private static void ConfigureQuestProgressLine(RectTransform content)
+        {
+            var line = content.Find("QuestProgressBar") as RectTransform;
+            if (line == null) return;
+
+            line.anchorMin = new Vector2(1f, .25f);
+            line.anchorMax = line.anchorMin;
+            line.pivot = new Vector2(1f, .5f);
+            line.anchoredPosition = new Vector2(-100f, 0f);
+            line.sizeDelta = new Vector2(22f, 1.5f);
+            line.localScale = Vector3.one;
+
+            var image = line.GetComponent<RawImage>();
+            if (image != null)
+            {
+                image.raycastTarget = false;
+                image.color = new Color(.72f, .56f, .29f, .9f);
+            }
+            line.gameObject.SetActive(false);
+        }
+
+        private static void ConfigureQuestHierarchyDivider(RectTransform content, RectTransform title, bool includeCount)
+        {
+            if (content == null || title == null) return;
+            var divider = content.Find("QuestHierarchyDivider") as RectTransform;
+            if (divider == null) return;
+
+            var image = divider.GetComponent<Image>();
+            float aspect = image != null && image.sprite != null && image.sprite.rect.height > 0f
+                ? image.sprite.rect.width / image.sprite.rect.height : 16f;
+            // The source sprite has transparent padding near both ends. Extend its
+            // rect beyond the title bounds so the visible stroke spans the full line.
+            float left = title.offsetMin.x - 32f;
+            float right = includeCount ? 32f : title.offsetMax.x + 32f;
+            float width = Mathf.Max(1f, content.rect.width + right - left);
+            float height = width / Mathf.Max(.1f, aspect);
+
+            divider.anchorMin = new Vector2(0f, .5f);
+            divider.anchorMax = new Vector2(1f, .5f);
+            divider.pivot = new Vector2(.5f, .5f);
+            divider.localScale = Vector3.one;
+            divider.offsetMin = new Vector2(left, 5f - height * .5f);
+            divider.offsetMax = new Vector2(right, 5f + height * .5f);
+        }
+        private static Texture2D GetSoftQuestBackdropTexture()
+        {
+            if (_softQuestBackdropTexture != null) return _softQuestBackdropTexture;
+
+            const int width = 512;
+            const int height = 160;
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            texture.name = "SoftQuestBackdropTexture";
+            texture.hideFlags = HideFlags.HideAndDontSave;
+            texture.wrapMode = TextureWrapMode.Clamp;
+            texture.filterMode = FilterMode.Bilinear;
+            var pixels = new Color[width * height];
+            for (int y = 0; y < height; y++)
+            {
+                float vertical = y / (float)(height - 1) * 2f - 1f;
+                float verticalT = Mathf.Clamp01((Mathf.Abs(vertical) - .5f) / .5f);
+                float verticalFade = 1f - verticalT * verticalT * (3f - 2f * verticalT);
+                for (int x = 0; x < width; x++)
+                {
+                    float horizontal = x / (float)(width - 1) * 2f - 1f;
+                    float horizontalT = Mathf.Clamp01((Mathf.Abs(horizontal) - .55f) / .45f);
+                    float horizontalFade = 1f - horizontalT * horizontalT * (3f - 2f * horizontalT);
+                    float alpha = .70f * horizontalFade * verticalFade;
+                    pixels[y * width + x] = new Color(0f, 0f, 0f, alpha);
+                }
+            }
+            texture.SetPixels(pixels);
+            texture.Apply(false, true);
+            _softQuestBackdropTexture = texture;
+            return texture;
+        }
+        private static void AddQuestTextShadow(TMP_Text text)
+        {
+            var shadow = text.GetComponent<Shadow>();
+            if (shadow == null) shadow = text.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(.025f, .035f, .02f, .9f);
+            shadow.effectDistance = new Vector2(1.5f, -1.5f);
+            shadow.useGraphicAlpha = true;
+        }
+
         private void OnEnable()
         {
             foreach (var marker in markers)
@@ -42,9 +328,23 @@ namespace Herbalist.GameUI
         }
         private void Update()
         {
+            _contextHintCandidateSeenThisFrame = false;
+            var rootRect = transform as RectTransform;
+            if (rootRect != null && _questPanel != null && rootRect.rect.width > 0f && rootRect.rect.height > 0f &&
+                (Mathf.Abs(_questPanel.sizeDelta.x - rootRect.rect.width * .26f) > 1f || Mathf.Abs(_questPanel.sizeDelta.y - rootRect.rect.height * .09f) > 1f))
+                ApplyQuestTrackerStyle();
+            PositionQuestPanel((RectTransform)transform, _questPanel, _questLayoutTargets,
+                _questOriginalPositions, screen != null && screen.IsSplitVisible, _questRightMargin);
             var view=screen!=null?screen.ViewForSlot(slot):null;
             if(view==null)
             {
+                helpPanel.SetActive(false);
+                helpHint.gameObject.SetActive(false);
+                _contextHintCandidateSince = -1f;
+                feedbackTime = 0f;
+                PresentFeedback(false);
+                PresentQuest(false);
+                if (markers.Length > 0 && markers[0] != null) markers[0].gameObject.SetActive(false);
                 if (_mazeVolumeDisplay != null) _mazeVolumeDisplay.Present(0, 0, false);
                 if(jumpPadCountdown!=null) jumpPadCountdown.gameObject.SetActive(false);
                 prompt.SetActive(false);
@@ -55,9 +355,13 @@ namespace Herbalist.GameUI
             }
             var player=view.GetComponent<Herbalist.Player.PlayerController>();
             bool local=player.LocallyControlled;
+            if (_stagePlaytestHud == null) _stagePlaytestHud = FindFirstObjectByType<StagePlaytestHud>();
+            bool showContextHints = _stagePlaytestHud == null || !_stagePlaytestHud.GuideActive;
+            PresentQuest(local || (screen != null && screen.IsSplitVisible));
+            PresentNavigation(local, view.Camera);
             var maze = SapMazeBoard.LocalMazeView;
             bool mazeView = maze != null && maze.IsViewedBy(view);
-            helpHint.gameObject.SetActive(!mazeView);
+            helpHint.gameObject.SetActive(local && !mazeView);
             pocket.gameObject.SetActive(!mazeView);
             abilityText.gameObject.SetActive(!mazeView);
             feedback.gameObject.SetActive(!mazeView);
@@ -69,20 +373,11 @@ namespace Herbalist.GameUI
                 if (show) jumpPadCountdown.text = string.Format(settings.jumpPadCountdownFormat, remaining);
             }
             PresentHint(_helpHintView, helpHint, settings.helpAction.action.GetBindingDisplayString(), settings.helpHint);
-            helpPanel.SetActive(local&&expanded&&!mazeView);
-            if(local&&expanded)
+            bool showHelp = local && expanded && !mazeView;
+            helpPanel.SetActive(showHelp);
+            if(showHelp)
             {
-                var switcher = player.GetComponent<OfflineAbilitySwitcher>();
-                bool offlineTest = switcher != null && switcher.isActiveAndEnabled;
-                if (_helpControls != null) _helpControls.Present(settings, offlineTest);
-                else
-                {
-                    var lines = new System.Text.StringBuilder();
-                    foreach (var h in settings.controls)
-                        if (h.Action != null && (!h.offlineTestOnly || offlineTest))
-                            lines.AppendLine(string.Format(settings.controlHintFormat, h.Action.action.GetBindingDisplayString(), h.Label));
-                    helpText.text = lines.ToString();
-                }
+                if (_helpControls != null) _helpControls.Present(settings, (RectTransform)helpPanel.transform);
             }
             var ability=view.GetComponent<PlayerAbilityController>();
             if (_mazeVolumeDisplay != null)
@@ -137,7 +432,20 @@ namespace Herbalist.GameUI
             pocket.text="";
             var flow=StageOneFlow.Instance;
             var actor=view.GetComponent<StageActor>();
-            if (actor != null && actor.Feedback != previousFeedback) { previousFeedback = actor.Feedback; feedbackTime = settings.feedbackDuration; }
+            if (_feedbackActor != actor)
+            {
+                _feedbackActor = actor;
+                _observedActorFeedback = actor != null ? actor.Feedback : null;
+            }
+            if (actor != null && actor.Feedback != _observedActorFeedback)
+            {
+                _observedActorFeedback = actor.Feedback;
+                if (Time.unscaledTime >= _minigameResultFeedbackUntil && !string.IsNullOrEmpty(actor.Feedback))
+                {
+                    previousFeedback = actor.Feedback;
+                    feedbackTime = settings.feedbackDuration;
+                }
+            }
             if (local && rules != null && ability != null && ability.Leaf.FeedbackSequence != _abilityFeedback)
             {
                 _abilityFeedback = ability.Leaf.FeedbackSequence;
@@ -148,21 +456,23 @@ namespace Herbalist.GameUI
             if(flow!=null&&actor!=null&&actor.Available)
             {
                 var item=flow.settings.Item(flow.Progress.Held[actor.Slot]); pocket.text=item!=null?item.displayName:settings.emptyPocket;
-                if(actor.Feedback!=previousFeedback) { previousFeedback=actor.Feedback; feedbackTime=settings.feedbackDuration; }
             }
             if (local && flow != null && flow.MinigameResultSequence != _minigameResult)
             {
                 _minigameResult = flow.MinigameResultSequence;
                 previousFeedback = flow.MinigameSucceeded ? flow.settings.successMessage : flow.settings.minigameFailedMessage;
                 feedbackTime = settings.feedbackDuration;
+                _minigameResultFeedbackUntil = Time.unscaledTime + settings.feedbackDuration;
+                _observedActorFeedback = actor != null ? actor.Feedback : null;
             }
             if(!GameplayPause.IsPaused)feedbackTime-=Time.unscaledDeltaTime;
-            feedback.text=local&&feedbackTime>0?previousFeedback:"";
+            PresentFeedback(local && !mazeView && feedbackTime > 0f);
             prompt.SetActive(false);
             if (clothPrompt != null) clothPrompt.SetActive(false);
-            if (local && actor != null)
+            StageInteraction interaction = StageInteraction.None;
+            if (showContextHints && local && actor != null)
             {
-                var interaction = actor.ResolveInteraction(out var point);
+                interaction = actor.ResolveInteraction(out var point);
                 string description = interaction switch
                 {
                     StageInteraction.Gather => settings.gatherText,
@@ -174,26 +484,39 @@ namespace Herbalist.GameUI
                     StageInteraction.GrabCloth => settings.clothGrabText,
                     StageInteraction.ReleaseCloth => settings.clothReleaseText,
                     StageInteraction.BoardTalisman => settings.boardTalismanText,
+                    StageInteraction.DismountTalisman => settings.dismountTalismanText,
                     _ => null
                 };
                 if (description != null)
                 {
                     bool useClothPrompt = clothPrompt != null && interaction is StageInteraction.GrabCloth or StageInteraction.ReleaseCloth;
+                    string hintBinding = interaction == StageInteraction.ReleaseCloth && !string.IsNullOrEmpty(player.Input.JumpBinding)
+                        ? $"{actor.InteractBinding}/{player.Input.JumpBinding}"
+                        : actor.InteractBinding;
                     PresentHint(useClothPrompt ? _clothHintView : _interactionHintView,
-                        useClothPrompt ? clothPromptText : promptText, actor.InteractBinding, description);
+                        useClothPrompt ? clothPromptText : promptText, hintBinding, description);
                     Position((RectTransform)(useClothPrompt ? clothPrompt : prompt).transform, view.Camera, point + promptOffset);
                 }
             }
             if (sapPrompt != null)
             {
                 sapPrompt.SetActive(false);
-                if (local && actor != null && SapInjectionPort.TryInteractionHint(actor, out var portPoint))
+                if (showContextHints && local && actor != null && SapInjectionPort.TryInteractionHint(actor, out var portPoint))
                 {
                     string binding = rules != null && rules.usePrimaryButton ? ability.Input.UseBinding : ability.Input.CycleBinding;
                     PresentHint(_sapHintView, sapPromptText, binding, settings.sapInjectText);
                     Position((RectTransform)sapPrompt.transform, view.Camera, portPoint + promptOffset);
                 }
-                else if (local && actor != null &&
+                else if (showContextHints && local && !mazeView && rules is { contextualUse: true } &&
+                    HangingCloth.TryWaterPushHint(actor, view.GetAimRay(view.Yaw, view.Pitch), out var clothPoint))
+                {
+                    string binding = rules.usePrimaryButton ? ability.Input.UseBinding : ability.Input.CycleBinding;
+                    PresentHint(_sapHintView, sapPromptText, binding, settings.sapPushClothText);
+                    Position((RectTransform)sapPrompt.transform, view.Camera, clothPoint + promptOffset);
+                    if (sapPrompt.activeSelf && interaction == StageInteraction.GrabCloth && clothPrompt != null)
+                        clothPrompt.SetActive(false);
+                }
+                else if (showContextHints && local && actor != null &&
                     ExteriorJumpPad.TryLeafInstallHint(actor, out var leafPoint))
                 {
                     string binding = rules != null && rules.usePrimaryButton ? ability.Input.UseBinding : ability.Input.CycleBinding;
@@ -201,16 +524,195 @@ namespace Herbalist.GameUI
                     Position((RectTransform)sapPrompt.transform, view.Camera, leafPoint + promptOffset);
                 }
             }
+            if ((_stagePlaytestHud == null || !_stagePlaytestHud.GuideActive) &&
+                !_contextHintCandidateSeenThisFrame)
+                _contextHintCandidateSince = -1f;
+        }
+
+        private void PresentFeedback(bool shouldShow)
+        {
+            if (feedback == null || _feedbackRect == null) return;
+            UpdateFeedbackLayout();
+            string nextMessage = shouldShow ? previousFeedback : string.Empty;
+            if (!string.IsNullOrEmpty(nextMessage))
+            {
+                if (nextMessage != _displayedFeedback)
+                {
+                    _displayedFeedback = nextMessage;
+                    feedback.text = nextMessage;
+                    _feedbackRect.anchoredPosition = _feedbackHiddenPosition;
+                    _feedbackEnterStart = _feedbackHiddenPosition;
+                    _feedbackMotionElapsed = 0f;
+                    _feedbackEntering = true;
+                    _feedbackExiting = false;
+                }
+                else if (_feedbackExiting)
+                {
+                    _feedbackEnterStart = _feedbackRect.anchoredPosition;
+                    _feedbackMotionElapsed = 0f;
+                    _feedbackEntering = true;
+                    _feedbackExiting = false;
+                }
+            }
+            else if (!string.IsNullOrEmpty(_displayedFeedback) && !_feedbackExiting)
+            {
+                _feedbackExitStart = _feedbackRect.anchoredPosition;
+                _feedbackMotionElapsed = 0f;
+                _feedbackEntering = false;
+                _feedbackExiting = true;
+            }
+
+            if (_feedbackEntering)
+            {
+                _feedbackMotionElapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(_feedbackMotionElapsed / FeedbackSlideDuration);
+                t = t * t * (3f - 2f * t);
+                _feedbackRect.anchoredPosition = Vector2.LerpUnclamped(_feedbackEnterStart, _feedbackShownPosition, t);
+                if (t >= 1f) _feedbackEntering = false;
+            }
+            else if (_feedbackExiting)
+            {
+                _feedbackMotionElapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(_feedbackMotionElapsed / FeedbackSlideDuration);
+                t = t * t * (3f - 2f * t);
+                _feedbackRect.anchoredPosition = Vector2.LerpUnclamped(_feedbackExitStart, _feedbackHiddenPosition, t);
+                if (t >= 1f)
+                {
+                    _feedbackRect.anchoredPosition = _feedbackHiddenPosition;
+                    feedback.text = string.Empty;
+                    _displayedFeedback = string.Empty;
+                    _feedbackExiting = false;
+                }
+            }
+
+            if (_feedbackScroll != null)
+            {
+                RectTransform scrollRect = _feedbackScroll.rectTransform;
+                scrollRect.anchoredPosition = _feedbackRect.anchoredPosition;
+                bool showScroll = !string.IsNullOrEmpty(_displayedFeedback) && feedback.gameObject.activeInHierarchy;
+                _feedbackScroll.gameObject.SetActive(showScroll);
+            }
+        }
+
+        private void UpdateFeedbackLayout()
+        {
+            if (_feedbackRect == null || _questPanel == null) return;
+            var parent = _feedbackRect.parent as RectTransform;
+            if (parent == null || _questPanel.parent != parent) return;
+
+            var corners = new Vector3[4];
+            _questPanel.GetWorldCorners(corners);
+            Vector3 bottomLeft = parent.InverseTransformPoint(corners[0]);
+            Vector3 bottomRight = parent.InverseTransformPoint(corners[3]);
+            float width = Mathf.Max(1f, bottomRight.x - bottomLeft.x);
+            const float feedbackTextSideInset = 24f;
+            _feedbackRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,
+                Mathf.Max(1f, width - feedbackTextSideInset * 2f));
+            if (_feedbackScroll != null)
+            {
+                RectTransform scrollRect = _feedbackScroll.rectTransform;
+                scrollRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width + 88f);
+                scrollRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
+                    Mathf.Max(90f, _feedbackRect.rect.height * 1.8f));
+            }
+
+            _feedbackShownPosition = new Vector2(
+                (bottomLeft.x + bottomRight.x) * .5f,
+                bottomLeft.y - 10f - _feedbackRect.rect.height * .5f);
+            _feedbackHiddenPosition = new Vector2(
+                parent.rect.xMax + _feedbackRect.rect.width * .5f + 32f,
+                _feedbackShownPosition.y);
+        }
+
+        private void PresentQuest(bool local)
+        {
+            if (_questTitle == null || _narrative == null) return;
+            bool visible = local && _narrative.QuestVisible;
+            for (int i = 0; i < _questLayoutTargets.Length; i++)
+                if (_questLayoutTargets[i] != null) _questLayoutTargets[i].gameObject.SetActive(visible && i <= 1);
+            string title = _narrative.MainQuestText;
+            int countStart = title.LastIndexOf('(');
+            string progress = string.Empty;
+            bool hasCount = false;
+            if (countStart >= 0 && title.EndsWith(")"))
+            {
+                string candidate = title.Substring(countStart + 1, title.Length - countStart - 2).Trim();
+                string[] parts = candidate.Split('/');
+                hasCount = parts.Length == 2 && System.Int32.TryParse(parts[0].Trim(), out _) && System.Int32.TryParse(parts[1].Trim(), out _);
+                if (hasCount) progress = candidate;
+            }
+            string titleWithoutCount = hasCount ? title.Substring(0, countStart).TrimEnd() : title;
+            bool countOnMainQuest = hasCount && _narrative.InlineQuestCount;
+            _questTitle.text = titleWithoutCount;
+            if (_questTitle != null)
+                _questTitle.rectTransform.offsetMax = new Vector2(countOnMainQuest ? -92f : -44f, 0f);
+            ConfigureQuestHierarchyDivider(_questLayoutTargets.Length > 1 ? _questLayoutTargets[1] : null,
+                _questTitle.rectTransform, countOnMainQuest);
+            if (_questCount != null)
+            {
+                _questCount.text = !hasCount ? string.Empty : _narrative.ParenthesizeQuestCount ? $"({progress})" : progress;
+                var countRect = _questCount.rectTransform;
+                countRect.anchorMin = countOnMainQuest ? new Vector2(1f, .5f) : new Vector2(1f, 0f);
+                countRect.anchorMax = countOnMainQuest ? Vector2.one : new Vector2(1f, .5f);
+                _questCount.gameObject.SetActive(hasCount);
+            }
+            var progressLine = _questLayoutTargets.Length > 1
+                ? _questLayoutTargets[1].Find("QuestProgressBar")
+                : null;
+            if (progressLine != null) progressLine.gameObject.SetActive(visible && hasCount);
+
+            if (_questDetail != null)
+            {
+                _questDetail.rectTransform.offsetMax = new Vector2(hasCount && !countOnMainQuest ? -132f : -16f, 0f);
+                _questDetail.text = _narrative.DetailQuestText;
+            }
+        }
+
+        internal static void PositionQuestPanel(RectTransform root, RectTransform panel, RectTransform[] targets,
+            Vector3[] originals, bool split, float margin)
+        {
+            if (panel == null || originals == null) return;
+            for (int i = 0; i < targets.Length && i < originals.Length; i++)
+                // CanvasScaler and viewport layout can resize the parent after Awake.
+                // Preserve authored anchor offsets instead of the pre-layout local pose.
+                if (targets[i] != null) targets[i].anchoredPosition3D = originals[i];
+            if (split) return;
+            var canvas = root.GetComponentInParent<Canvas>();
+            float scale = canvas != null ? canvas.scaleFactor : 1f;
+            // Positions always start from the authored pose, including after a mode change.
+            var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(root, panel);
+            float delta = root.rect.xMax - margin / Mathf.Max(.001f, scale) - bounds.max.x;
+            Vector3 worldDelta = root.TransformVector(Vector3.right * delta);
+            foreach (var target in targets)
+                if (target != null) target.position += worldDelta;
         }
         private void PresentHint(ControlHintView view, TMP_Text fallback, string binding, string description)
         {
             if (view != null) view.Present(binding, description);
             else if (fallback != null) fallback.text = string.Format(settings.controlHintFormat, binding, description);
         }
+
+        internal void HideContextHints()
+        {
+            if (prompt != null) prompt.SetActive(false);
+            if (clothPrompt != null) clothPrompt.SetActive(false);
+            if (sapPrompt != null) sapPrompt.SetActive(false);
+        }
+
         private void Position(RectTransform rect,Camera camera,Vector3 point)
         {
             Vector3 pos=camera.WorldToScreenPoint(point);
             bool visible=pos.z>0&&camera.pixelRect.Contains(pos);
+            if (visible)
+            {
+                _contextHintCandidateSeenThisFrame = true;
+                if (_contextHintCandidateSince < 0f) _contextHintCandidateSince = Time.unscaledTime;
+                visible = Time.unscaledTime - _contextHintCandidateSince >= ContextHintShowDelaySeconds;
+            }
+            else if (_stagePlaytestHud == null || !_stagePlaytestHud.GuideActive)
+            {
+                _contextHintCandidateSince = -1f;
+            }
             rect.gameObject.SetActive(visible);
             if(visible&&RectTransformUtility.ScreenPointToLocalPointInRectangle((RectTransform)transform,pos,null,out var local))
             {
@@ -219,6 +721,28 @@ namespace Herbalist.GameUI
                 local.y=Mathf.Clamp(local.y,bounds.yMin+half.y,bounds.yMax-half.y);
                 rect.anchoredPosition=local;
             }
+        }
+        private void PresentNavigation(bool local, Camera camera)
+        {
+            if (markers.Length == 0 || markers[0] == null) return;
+            var marker = markers[0];
+            bool show = local && _narrative != null && !GameplayPause.IsPaused;
+            Vector3 point = default;
+
+            show = show && _narrative.TryNavigationTarget(out point, out _);
+            marker.gameObject.SetActive(show);
+            if (!show) return;
+            Vector3 viewport = camera.WorldToViewportPoint(point);
+            if (viewport.z < 0f)
+            {
+                viewport.x = 1f - viewport.x;
+                viewport.y = 1f - viewport.y;
+            }
+            Vector2 screenPoint = camera.pixelRect.min + Vector2.Scale(camera.pixelRect.size,
+                new Vector2(Mathf.Clamp(viewport.x,.08f,.92f), Mathf.Clamp(viewport.y,.12f,.88f)));
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle((RectTransform)transform,
+                screenPoint, null, out var position)) marker.anchoredPosition = position;
+            if (markerLabels.Length > 0 && markerLabels[0] != null) markerLabels[0].text = string.Empty;
         }
         private void OnDisable() { help?.Dispose(); help=null; }
     }

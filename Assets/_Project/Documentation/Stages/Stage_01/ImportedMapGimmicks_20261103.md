@@ -73,7 +73,7 @@
 
 - 현재 메인: `Assets/_Project/Scenes/Stages/Stage_01/Stage_01_ModelingReference_CharacterBranch_DevelopStage1_Reference.unity`.
 - 씬 GUID `b23211105baa2164d8c614f1f68298bf` 유지. MainMenu 솔로, 멀티플레이 로비, 빌드 설정, 다른 스테이지의 솔로 단축키 및 편집 검사 경로가 이 씬을 사용한다.
-- 이전 `Stage_01_ModelingReference_CharacterBranch`는 이번에 외형을 덮어쓰거나 삭제하지 않았다. 이전 기믹 수정 도구는 여전히 이전 씬을 대상으로 하므로 새 맵에 실행하지 않는다.
+- 이전 `Stage_01_ModelingReference_CharacterBranch`는 당시 보존했다. 2026-11-16 정리에서 이전 씬과 전용 기믹 수정 도구를 삭제했다.
 - 새 설정은 `Stage1_DocumentGimmicks` 아래에 모았다. 기존 천·발판·나무는 복제하거나 재배치하지 않는다. 동작 시에만 원본 버섯의 크기, 천의 흔들림/말림, 가지의 위치가 변한다.
 - 원본 Transform 5,145개의 부모, 위치·회전·크기, 활성 상태, 렌더러 활성 상태, 메시·재질 참조를 적용 전후 비교했다. 차이 0건. 원래 배치된 일반 버섯을 비활성화하지 않았다.
 - 오래된 점프대·천·잎 타깃·주입구의 동작 컴포넌트만 비활성화하고 새 연결에서 필요한 주입구를 활성화했다. 판정용 충돌체를 추가하고, 기존 보이는 메시와 연결이 끊긴 충돌체는 그 오브젝트의 메시로 연결했다. 원본 모델 임포트 배율이나 렌더러 메시를 바꾸지 않았다.

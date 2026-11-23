@@ -1264,7 +1264,7 @@ CharacterController:
   serializedVersion: 3
   m_Height: 1.8
   m_Radius: 0.3
-  m_SlopeLimit: 45
+  m_SlopeLimit: 40
   m_StepOffset: 0.25
   m_SkinWidth: 0.03
   m_MinMoveDistance: 0.001
@@ -1775,8 +1775,10 @@ MonoBehaviour:
   potion: {fileID: 719849114677340026}
   herbRenderer: {fileID: 6377512701838681114}
   potionRenderer: {fileID: 4644563210997844766}
-  _handOffset: {x: 0, y: 0, z: 0}
-  _handEuler: {x: 0, y: 0, z: 0}
+  _handOffset: {x: 0, y: 0.08, z: 0.055}
+  _handEuler: {x: 90, y: 0, z: 0}
+  _sodamHandOffset: {x: 0, y: 0.13, z: 0.055}
+  _sodamHandEuler: {x: 90, y: 0, z: 0}
   _herbHandOffset: {x: -0.337, y: 0.159, z: 0}
   _herbHandEuler: {x: 0, y: 0, z: 74.626}
   _herbHandScale: {x: 0.2959749, y: 0.2959749, z: 0.2959749}

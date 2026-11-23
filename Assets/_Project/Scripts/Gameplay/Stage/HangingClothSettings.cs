@@ -7,6 +7,7 @@ namespace Herbalist.Levels
     {
         [Header("Interaction")]
         [Min(.1f)] public float grabRange = 16f;
+        [Min(0f)] public float grabJumpHeight = .65f;
         [Min(0)] public float minimumHoldSeconds = 1f;
 
         [Header("Swing")]

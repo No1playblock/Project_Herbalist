@@ -57,6 +57,9 @@ namespace Herbalist.Player
         [Min(0)] public float idleLookDelaySeconds;
         public SodamPoseDefinition[] poses;
 
+        public SodamPose ClothLandingPose(float releaseY, float landingY)
+            => landingY >= releaseY - successLandingDrop ? SodamPose.ClothSwingLand : SodamPose.ClothHardLand;
+
         public SodamPoseDefinition Find(SodamPose pose)
         {
             if (poses == null) return null;

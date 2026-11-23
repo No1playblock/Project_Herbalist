@@ -19,15 +19,15 @@ namespace Herbalist.Editor
         {
             Check(Application.isPlaying && StageOneFlow.Instance != null && StageOneFlow.Instance.Authority, "Offline Stage One Play required.");
             var root = GameObject.Find("Stage1_DocumentGimmicks").transform;
-            var correction = root.Find("OutletCorrections_20261104");
+            var streamGroup = root.Find(CurrentStagePaths.StageOneLeafBlockedStreams);
             var actor = StageActor.All.First(a => a.Available); var player = actor.GetComponent<PlayerController>();
             Vector3 saved = actor.transform.position; LeafProjectile leaf = null; SapDeposit held = null;
             var settings = StageLevel.Instance.abilityRules;
             try
             {
-                var blockers = correction.GetComponentsInChildren<StageOneDocumentMechanism>().Where(m => m.Kind == StageOneDocumentMechanismKind.BlockJet).ToArray();
+                var blockers = streamGroup.GetComponentsInChildren<StageOneDocumentMechanism>().Where(m => m.Kind == StageOneDocumentMechanismKind.BlockJet).ToArray();
                 Check(blockers.Length == 3 && blockers.All(m => m.name.StartsWith("LeafBlock_04_Musroom")) &&
-                    !root.Find("Leaf_1_BlockingEruption").gameObject.activeSelf, "Only three 04_Musroom outlets replace the wrong branch jet.");
+                    !root.Find("Sap_Legacy/05_RetiredGimmicks/Leaf_1_BlockingEruption").gameObject.activeSelf, "Only three 04_Musroom outlets replace the wrong branch jet.");
                 var traversal = root.GetComponent<StageOneTraversal>();
                 foreach (var mechanism in blockers)
                 {
@@ -64,7 +64,7 @@ namespace Herbalist.Editor
                     UnityEngine.Object.DestroyImmediate(leaf.gameObject); leaf = null;
                 }
                 player.Motor.Teleport(saved); player.Motor.ResetMotion(); Physics.SyncTransforms();
-                var pad = correction.Find("Photo1_Branch_UpperLeaf_LowerWater").GetComponent<ExteriorJumpPad>();
+                var pad = root.Find(CurrentStagePaths.StageOneBranchHole01).GetComponent<ExteriorJumpPad>();
                 var socket = Read<LeafInstallTarget[]>(pad, "_sockets")[0]; var port = Read<SapInjectionPort[]>(pad, "_ports")[0];
                 Check(socket.KeepsLeafUntilUsed && socket.GetComponent<StageOneLeafUse>() == null && Vector3.Distance(socket.SocketPosition, port.transform.position) > 3,
                     "Photo1 upper leaf socket and distinct lower water inlet.");

@@ -46,6 +46,8 @@ namespace Herbalist.Editor
         [MenuItem("Herbalist/Stages/Rebuild Stage Three Blockout")]
         public static void Rebuild()
         {
+            if (!System.IO.File.Exists(CurrentStagePaths.BranchRideBlockout))
+                throw new InvalidOperationException("The archived Stage Three blockout was removed during unused-asset cleanup. Restore its source scene from the local backup before rebuilding it.");
             if (Application.isPlaying) throw new InvalidOperationException("Stop Play first.");
             var scene = SceneManager.GetActiveScene();
             if (scene.path != CurrentStagePaths.BranchRideBlockout)
@@ -75,8 +77,9 @@ namespace Herbalist.Editor
             Folder(DataRoot.TrimEnd('/'));
             var rules = AssetDatabase.LoadAssetAtPath<StageAbilityRules>(DataRoot+"SO_BranchRideAbilityRules.asset");
             if (rules == null) { rules = Object.Instantiate(baseRules); AssetDatabase.CreateAsset(rules,DataRoot+"SO_BranchRideAbilityRules.asset"); }
-            rules.leafInstructions = "R: 경로에 잎 설치 · 좌클릭: 회수";
-            rules.sapInstructions = "R 유지: 과녁 작동";
+            rules.usePrimaryButton = true;
+            rules.leafInstructions = "좌클릭: 경로에 잎 설치 · 우클릭: 회수";
+            rules.sapInstructions = "좌클릭 유지: 과녁 작동";
             EditorUtility.SetDirty(rules); level.abilityRules = rules; level.requireEarnedAbilities = true; level.nextScenePath = "";
             Fixed("Entry", V(0,24,0), V(5,24,2), V(10,24,3));
             Junction(0, 2, V(10,24,3));

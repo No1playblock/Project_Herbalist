@@ -94,10 +94,51 @@ namespace Herbalist.Levels
             if ((_checkedEdges[from] & bit) == 0)
             {
                 _checkedEdges[from] |= bit; _checkedEdges[index] |= reverse;
-                if (ClearSegment(GridPoint(from), GridPoint(index)))
+                var start = GridPoint(from);
+                var end = GridPoint(index);
+                if (ClearSegment(start, end) && FineWallEdgeIsOpen(from, index, direction, start, end))
                 { _openEdges[from] |= bit; _openEdges[index] |= reverse; }
             }
             return (_openEdges[from] & bit) != 0 ? index : -1;
+        }
+
+        private bool FineWallEdgeIsOpen(int from, int to, int direction, Vector2 start, Vector2 end)
+        {
+            if (!UsesWaterWalls) return true;
+            int across = direction < 2 ? _width : 1;
+            // Only refine edges beside a blocked coarse cell. The mesh segment
+            // test still catches isolated thin walls between open coarse cells.
+            bool besideWall = direction >= 2 && (from % _width == 0 || from % _width == _width - 1) ||
+                !GridOpen(from - across) || !GridOpen(from + across) ||
+                !GridOpen(to - across) || !GridOpen(to + across);
+            if (!besideWall) return true;
+
+            int subdivisions = WallSubdivisions;
+            for (int i = 1; i < subdivisions; i++)
+                if (!OpenPoint(Vector2.Lerp(start, end, (float)i / subdivisions))) return false;
+            return true;
+        }
+
+        private int WallSubdivisions => Mathf.Clamp(
+            Mathf.CeilToInt(CellSize / Mathf.Max(.005f, _wallBakeSampleSize)), 1, 16);
+
+        public bool TryResolveFluidTarget(Vector2 point, out Vector2 target)
+        {
+            target = point;
+            if (!Ready) return false;
+            if (!UsesWaterWalls)
+            {
+                target = Snap(point);
+                return true;
+            }
+            if (!OpenPoint(point)) return false;
+
+            // A click on a wall must not pick an open cell on the other side.
+            // Resolve the point within the same fine wall grid used for edge checks.
+            float step = CellSize / WallSubdivisions;
+            var offset = (point - _origin) / step;
+            var sample = _origin + new Vector2(Mathf.Round(offset.x), Mathf.Round(offset.y)) * step;
+            return OpenPoint(sample) && ClearSegment(point, sample);
         }
 
         public bool Build(Transform board)
@@ -446,5 +487,33 @@ namespace Herbalist.Levels
             return _mazeCollider.Raycast(new Ray(world, _rayDirection), out var hit, _rayLength)
                 ? _board.InverseTransformPoint(hit.point).z : SurfaceZ(point, fallback);
         }
+
+        // Presentation accepts floor-facing relief only. A wall crest must never pull
+        // liquid towards the camera, even when the navigation silhouette is open.
+        public bool TryLiquidFloor(Vector2 point, float maximumHeightWorld, out float height)
+        {
+            height = SurfaceZ(point, 0);
+            if (!Ready || _board == null || _mazeCollider == null) return false;
+            var world = _board.TransformPoint(new Vector3(point.x, point.y, _rayStartZ));
+            if (!_mazeCollider.Raycast(new Ray(world, _rayDirection), out var hit, _rayLength) ||
+                !IsFloorNormal(hit.normal)) return false;
+            float relief = _board.InverseTransformPoint(hit.point).z;
+            float depthScale = _board.TransformVector(Vector3.forward).magnitude;
+            if (UsesFloorPlane && Mathf.Abs(relief - PlaneDepth(point)) * depthScale > maximumHeightWorld)
+                return false;
+            height = relief;
+            return true;
+        }
+
+        public Vector4 LiquidFloorPlaneWorld
+        {
+            get
+            {
+                var normal = UsesFloorPlane ? _floorPlane.forward.normalized : -_rayDirection;
+                var point = UsesFloorPlane ? _floorPlane.position : _board.position;
+                return new Vector4(normal.x, normal.y, normal.z, -Vector3.Dot(normal, point));
+            }
+        }
+        public float MaximumFloorSlope => _maximumFloorSlope;
     }
 }

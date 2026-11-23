@@ -9,8 +9,12 @@ namespace Herbalist.Networking
         [Min(2)] public int playerCount = 2;
         [Min(1)] public int roomNameLimit = 32;
         [Min(1)] public float connectTimeout = 30;
+        [Min(1)] public float cinematicLoadTimeout = 120;
         public string mainScenePath;
         public string playScenePath;
+        public string stageOneCinematicScenePath;
+        public string stageOneCinematicDestinationPath;
+        public string stageTwoCinematicDestinationPath;
         [SerializeField, Tooltip("Grant configured prototype abilities only when starting a stage directly from the lobby.")]
         private bool _grantPrototypeAbilitiesOnDirectStart;
         public bool GrantPrototypeAbilitiesOnDirectStart => _grantPrototypeAbilitiesOnDirectStart;

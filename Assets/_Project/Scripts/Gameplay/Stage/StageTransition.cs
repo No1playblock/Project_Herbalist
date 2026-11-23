@@ -2,6 +2,8 @@ using UnityEngine;
 using Herbalist.StageOne;
 using Herbalist.Networking;
 using Herbalist.Abilities;
+using Herbalist.GameUI;
+using UnityEngine.SceneManagement;
 namespace Herbalist.Levels
 {
     public static class StageTransition
@@ -25,8 +27,26 @@ namespace Herbalist.Levels
             if (_loading) return false;
             foreach (var actor in StageActor.All) if (actor.Local) { _offlineUnlocked = actor.Abilities.Unlocked; _offlineKind = actor.Abilities.Kind; _offlineBothUnlocked = actor.Abilities.OfflineBothUnlocked; break; }
             _loading = true;
-            UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(level.nextScenePath);
+            string destination = level.nextScenePath;
+            string cinematic = level.OfflineCinematicScenePath;
+            if (string.IsNullOrEmpty(cinematic) || SceneUtility.GetBuildIndexByScenePath(cinematic) < 0)
+                SceneManager.LoadSceneAsync(destination);
+            else
+                SceneManager.LoadSceneAsync(cinematic).completed += _ => PlayOfflineCinematic(destination);
             return true;
+        }
+
+        private static void PlayOfflineCinematic(string destination)
+        {
+            var view = Object.FindAnyObjectByType<StageCinematicView>();
+            if (view == null)
+            {
+                SceneManager.LoadSceneAsync(destination);
+                return;
+            }
+
+            view.Prepare(StageCinematicClip.StageTwoExit, view.Play, null,
+                () => SceneManager.LoadSceneAsync(destination));
         }
         public static void RestoreOffline(PlayerAbilityController ability)
         {

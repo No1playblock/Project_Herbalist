@@ -12,7 +12,7 @@ namespace Herbalist.Levels
     public enum MazeControlView { KeepPlayerCamera, MazeCamera }
 
     [RequireComponent(typeof(NetworkObject))]
-    public sealed class SapMazeBoard : NetworkBehaviour,IAbilityCycleReceiver,IAbilityPointerReceiver
+    public sealed partial class SapMazeBoard : NetworkBehaviour,IAbilityCycleReceiver,IAbilityPointerReceiver
     {
         [SerializeField] private SapMazeDefinition _definition;
         [SerializeField] private SapMazeSurface _surface;
@@ -54,8 +54,12 @@ namespace Herbalist.Levels
         [Networked] private int TrailCount {get;set;}
         [Networked, Capacity(TrailCapacity)] private NetworkArray<Vector2> TrailPoints => default;
         [Networked] private int FluidCount { get; set; }
+        [Networked] private int FluidVersion { get; set; }
         [Networked, Capacity(SapMazeFluidField.SnapshotCapacity)] private NetworkArray<uint> FluidCells => default;
         private readonly List<uint> _fluidSnapshot = new List<uint>();
+        private SapMazeFluidField _publishedFluid, _readFluid;
+        private double _nextFluidSnapshot;
+        private int _readFluidVersion = int.MinValue;
         private SapMazeFluidField _fluid;
         public SapMazeFluidField Fluid => _fluid;
         private bool UsesFluid => _definition != null && _definition.useRefillVolumeRules &&
@@ -86,6 +90,7 @@ namespace Herbalist.Levels
         private bool Online => Object!=null&&Object.IsValid;
         private bool Authority => !Online||HasStateAuthority;
         public SapMazeDefinition Definition=>_definition;
+        public IReadOnlyList<Transform> RefillMarkers => _refillMarkers;
         public bool UsesRefillVolumeRules=>_definition!=null&&_definition.useRefillVolumeRules;
         public float RemainingVolume=>State.Volume;
         public float RequiredVolume=>_definition!=null?_definition.requiredVolume:0;
@@ -353,7 +358,7 @@ namespace Herbalist.Levels
                     if(DistanceToWater(_surfaceGoal)<=Mathf.Max(.12f,_definition.speed*stepTime))
                     {
                         if(_state.Volume>=_definition.requiredVolume)_state.Phase=MazePhase.Solved;
-                        else if(AllRefillsCollected())BeginRetry();
+                        else if(!CanReachRequiredVolume())BeginRetry();
                     }
                 }
             }
@@ -383,7 +388,7 @@ namespace Herbalist.Levels
             if (_state.Phase == MazePhase.Running && DistanceToWater(_surfaceGoal) <= .12f)
             {
                 if (_state.Volume >= _definition.requiredVolume) _state.Phase = MazePhase.Solved;
-                else if (AllRefillsCollected()) BeginRetry();
+                else if (!CanReachRequiredVolume()) BeginRetry();
             }
         }
         private float PathWorldLength(List<Vector2> path)
@@ -425,11 +430,35 @@ namespace Herbalist.Levels
             if (UsesTube && _tube != null) _tube.SetVolume(_state.Volume);
             if(_state.Volume<=0)BeginRetry();
         }
-        private bool AllRefillsCollected()
+        internal bool CanReachRequiredVolume()
         {
+            var state = Authority ? _state : State;
+            float possible = state.Volume;
             for(int i=0;i<_refillMarkers.Length && i<32;i++)
-                if(_refillMarkers[i]!=null && (_state.CollectedRefillMask&(1<<i))==0)return false;
-            return true;
+                if(_refillMarkers[i]!=null && (state.CollectedRefillMask&(1<<i))==0)
+                    possible += _definition.refillAmount;
+            return possible >= _definition.requiredVolume;
+        }
+        public static bool TryRestart(StageActor actor)
+        {
+            if (actor == null || !actor.Available || GameplayPause.IsPaused) return false;
+            foreach (var board in FindObjectsByType<SapMazeBoard>())
+            {
+                if (!board.Authority || !board.Active || board.State.Phase != MazePhase.Running ||
+                    (!board._controlArea.ContainsPlayer(actor.transform.position) &&
+                     StageLevel.Instance?.GetComponent<DescendingMazeFlow>()?.CurrentBoard != board)) continue;
+                board.StopControl();
+                foreach (var leak in board._leaks) leak.ResetSocket();
+                board._state = SapMazeSimulation.Initial(board._definition, board._state.Attempt + 1);
+                board._surfacePosition = board._surfaceStart;
+                board._surfaceHeading = Vector2.zero;
+                board._leakMask = 0;
+                board.ResetTrail();
+                board.Publish();
+                board.UpdateController();
+                return true;
+            }
+            return false;
         }
         private void BeginRetry()
         {
@@ -448,9 +477,27 @@ namespace Herbalist.Levels
             if (UsesTube) SyncTube();
             if (UsesFluid && _fluid != null && Online && HasStateAuthority)
             {
-                var cells = FluidCells;
-                FluidCount = _fluid.ActiveCells.Count;
-                for (int i = 0; i < FluidCount; i++) cells.Set(i, _fluid.Pack(i));
+                // Phase/attempt changes and resets bypass the visual snapshot throttle.
+                double now = Runner.SimulationTime;
+                if (_publishedFluid != _fluid || now >= _nextFluidSnapshot ||
+                    PhaseValue != (int)_state.Phase || Attempt != _state.Attempt ||
+                    (_fluid.ActiveCells.Count == 0 && FluidCount != 0))
+                {
+                    var cells = FluidCells;
+                    int count = _fluid.ActiveCells.Count;
+                    bool changed = _publishedFluid != _fluid || FluidCount != count;
+                    for (int i = 0; i < count; i++)
+                    {
+                        uint packed = _fluid.Pack(i);
+                        if (cells[i] == packed) continue;
+                        cells.Set(i, packed);
+                        changed = true;
+                    }
+                    FluidCount = count;
+                    if (changed) FluidVersion++;
+                    _publishedFluid = _fluid;
+                    _nextFluidSnapshot = now + _trailView.Settings.fluidSnapshotInterval;
+                }
             }
             if(!Online)return;
             From=_state.From;To=_state.To;Progress=_state.Progress;Volume=_state.Volume;
@@ -593,8 +640,11 @@ namespace Herbalist.Levels
             _hasTarget = (!UsesTube || _grabbed) && held && valid && State.Phase == MazePhase.Running &&
                 !float.IsNaN(boardPoint.x) && !float.IsNaN(boardPoint.y) &&
                 !float.IsInfinity(boardPoint.x) && !float.IsInfinity(boardPoint.y);
-            if (_hasTarget) _targetPoint = _surface != null && _surface.Ready ?
-                _surface.Snap(boardPoint) : boardPoint;
+            if (!_hasTarget) return;
+            if (UsesFluid && _surface != null && _surface.Ready)
+                _hasTarget = _surface.TryResolveFluidTarget(boardPoint, out _targetPoint);
+            else
+                _targetPoint = _surface != null && _surface.Ready ? _surface.Snap(boardPoint) : boardPoint;
         }
         private void StopControl()
         {
@@ -678,11 +728,14 @@ namespace Herbalist.Levels
             {
                 bool visible = Active && state.Phase == MazePhase.Running;
                 if (_sapVisual != null) _sapVisual.gameObject.SetActive(false);
-                if (Online && !HasStateAuthority)
+                if (Online && !HasStateAuthority &&
+                    (_readFluid != _fluid || _readFluidVersion != FluidVersion))
                 {
                     _fluidSnapshot.Clear();
                     for (int i = 0; i < FluidCount; i++) _fluidSnapshot.Add(FluidCells[i]);
                     _fluid.ReadSnapshot(_fluidSnapshot);
+                    _readFluid = _fluid;
+                    _readFluidVersion = FluidVersion;
                 }
                 if (visible) _trailView.PresentField(_fluid, _surface);
                 else _trailView.Clear();

@@ -6,6 +6,8 @@ namespace Herbalist.Levels
     {
         public static StageLevel Instance { get; private set; }
         public string nextScenePath;
+        [SerializeField] private string _offlineCinematicScenePath;
+        public string OfflineCinematicScenePath => _offlineCinematicScenePath;
         public bool requireEarnedAbilities = true;
         public StageAbilityRules abilityRules;
         [SerializeField] private bool _playerCameraPostProcessing;

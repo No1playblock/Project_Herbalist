@@ -8,7 +8,7 @@ namespace Herbalist.StageOne
 {
     public enum StageMinigameKind { None, Gathering, Crafting }
     [DefaultExecutionOrder(-500)]
-    public sealed class StageOneFlow : MonoBehaviour
+    public sealed partial class StageOneFlow : MonoBehaviour
     {
         public static StageOneFlow Instance { get; private set; }
         public StageOneSettings settings;
@@ -18,6 +18,10 @@ namespace Herbalist.StageOne
         public UnityEvent onEntranceOpened = new UnityEvent();
         public UnityEvent onCleared = new UnityEvent();
         public MonoBehaviour entranceCondition;
+        [SerializeField] private SapInjectionPort _firstSapGuidePort;
+        [SerializeField] private LeafInstallTarget[] _sapOnlyBranchGuideTargets = System.Array.Empty<LeafInstallTarget>();
+        internal SapInjectionPort FirstSapGuidePort => _firstSapGuidePort;
+        internal IReadOnlyList<LeafInstallTarget> SapOnlyBranchGuideTargets => _sapOnlyBranchGuideTargets;
         public bool GateOpen => Progress != null && Progress.GateOpen && (!(entranceCondition is Herbalist.Levels.IStageExitCondition condition) || condition.CanExit);
         public StageProgress Progress { get; private set; }
         public StageActor[] Actors { get; private set; } = new StageActor[2];
@@ -250,8 +254,8 @@ namespace Herbalist.StageOne
             {
                 Vector3 direction = Vector3.ProjectOnPlane(otherPoint - origin, Vector3.up);
                 Vector3 facing = Quaternion.Euler(0, actor.InteractionYaw, 0) * Vector3.forward;
-                if (other != null && Progress.Held[otherSlot] == 0 && Progress.Consumed[otherSlot] == 0 &&
-                    !other.Abilities.Unlocked && direction.sqrMagnitude > .0001f &&
+                if (other != null && Progress.Held[otherSlot] == 0 && CanDrink(other) &&
+                    direction.sqrMagnitude > .0001f &&
                     Vector3.Angle(facing, direction) <= settings.potionTransferFacingAngle && Reach(actor, otherPoint))
                 {
                     point = otherPoint;
@@ -291,9 +295,17 @@ namespace Herbalist.StageOne
             return target >= 0 ? StageInteraction.Gather : StageInteraction.None;
         }
 
-        private bool CanDrink(StageActor actor) => !actor.Abilities.Unlocked && Progress.Consumed[actor.Slot] == 0;
+        internal bool CanDrink(StageActor actor) => Progress.Consumed[actor.Slot] == 0 &&
+            (!actor.Abilities.Unlocked || (actor.Abilities.OfflineBothUnlocked && IsSoloRoleTest(actor)));
+
         private bool Drink(StageActor actor) => Progress.Consume(actor.Slot, item =>
-            item.ability == PlayerAbilityKind.Leaf ? actor.Abilities.UnlockLeaf() : actor.Abilities.UnlockSap());
+        {
+            var abilities = actor.Abilities;
+            if (abilities.OfflineBothUnlocked && IsSoloRoleTest(actor))
+                return abilities.Kind == item.ability || abilities.TrySwitchOfflineAbility();
+
+            return item.ability == PlayerAbilityKind.Leaf ? abilities.UnlockLeaf() : abilities.UnlockSap();
+        });
 
         internal bool CanFan(StageActor actor) => Minigame == StageMinigameKind.Crafting &&
             actor.Slot is >= 0 and < 2 && settings.slotRoles[actor.Slot] == CharacterRole.Sodam;

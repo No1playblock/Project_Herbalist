@@ -10,7 +10,7 @@ namespace Herbalist.Levels
     public enum ClothRiderAbility { Any, Leaf, Sap }
 
     [RequireComponent(typeof(NetworkObject))]
-    public sealed class HangingCloth : NetworkBehaviour, IPlayerMovementReceiver
+    public sealed partial class HangingCloth : NetworkBehaviour, IPlayerMovementReceiver
     {
         [SerializeField] private Transform _knot;
         [SerializeField] private Transform _cloth;
@@ -91,11 +91,32 @@ namespace Herbalist.Levels
         private Vector2 _angles, _velocity, _drive, _heldInput;
         private Vector2 _waterImpulse;
         public bool WaterDriven => _waterDriven;
+        private bool CanReceiveWater => _waterDriven && isActiveAndEnabled && _settings != null &&
+            (_loweringPort == null || DeploymentProgress >= 1f);
+
+        internal static bool TryWaterPushHint(StageActor actor, Ray aim, out Vector3 point)
+        {
+            point = default;
+            if (actor == null || !actor.Available ||
+                actor.Abilities is not { Unlocked: true, Kind: PlayerAbilityKind.Sap } ability ||
+                ability.Sap == null || ability.Sap.Settings == null ||
+                actor.GetComponent<PlayerController>().Motor.MovementLocked) return false;
+
+            var sap = ability.Sap.Settings;
+            float range = sap.controlRange + Vector3.Distance(aim.origin, ability.Sap.OrbitCenter);
+            if (!StageOneLeafZone.Cast(aim, 0f, range, sap.collisionMask, out var hit, actor.transform,
+                includeLeafZones: false)) return false;
+
+            var cloth = hit.collider.GetComponentInParent<HangingCloth>();
+            if (cloth == null || !cloth.CanReceiveWater) return false;
+            point = hit.point;
+            return true;
+        }
+
         // Called only by the authoritative hose simulation, with its actual impact direction.
         public bool PushWithWater(Vector3 direction, float seconds)
         {
-            if (!_waterDriven || (_loweringPort != null && DeploymentProgress < 1f) ||
-                !isActiveAndEnabled || !Authority || _settings == null ||
+            if (!CanReceiveWater || !Authority ||
                 Herbalist.GameUI.GameplayPause.IsPaused || seconds <= 0 || float.IsNaN(seconds) || float.IsInfinity(seconds)) return false;
             Vector3 planar = Vector3.ProjectOnPlane(direction, Vector3.up);
             if (planar.sqrMagnitude < .000001f) return true;
@@ -112,7 +133,9 @@ namespace Herbalist.Levels
         private readonly StageActor[] _riders = new StageActor[2];
         private Vector2 _grabRemaining;
         private readonly float[] _grabbedAt = new float[2];
-        private readonly Vector3[] _lastPoints = new Vector3[2];
+        private readonly Vector3[] _grabOrigins = new Vector3[2];
+        private readonly float[] _grabDurations = new float[2];
+        private readonly float[] _grabTakeoffs = new float[2];
         private Quaternion _authoredRootRotation;
         private Vector3 _authoredRootPosition;
         private Vector3 _visualTopLocal;
@@ -249,6 +272,22 @@ namespace Herbalist.Levels
             }
             return false;
         }
+
+        internal bool TryReleaseFromInput(StageActor actor)
+        {
+            if (!Authority || actor == null || !actor.Available) return false;
+            for (int i = 0; i < _riders.Length; i++)
+                if (_riders[i] == actor) return TryReleaseFromInput(i);
+            return false;
+        }
+
+        private bool TryReleaseFromInput(int side)
+        {
+            if (_grabRemaining[side] > 0f || Time.time - _grabbedAt[side] < _settings.minimumHoldSeconds)
+                return false;
+            Detach(side);
+            return true;
+        }
         internal static void ResetApproachAfterFall(StageActor actor)
         {
             foreach (var cloth in Cloths)
@@ -267,11 +306,8 @@ namespace Herbalist.Levels
                 if (!cloth.Authority) continue;
                 for (int i = 0; i < 2; i++) if (cloth._riders[i] == actor)
                 {
-                    if (cloth._grabRemaining[i] <= 0f && Time.time - cloth._grabbedAt[i] >= cloth._settings.minimumHoldSeconds)
-                    {
-                        cloth.Detach(i);
+                    if (cloth.TryReleaseFromInput(i))
                         feedback = cloth._releaseText;
-                    }
                     return true;
                 }
                 if (cloth._knot == null || !cloth.CanBoard || !cloth.AllowsRider(actor) ||
@@ -286,11 +322,15 @@ namespace Herbalist.Levels
                 if (nearest._riders[i] == null)
                 {
                     nearest._riders[i] = actor;
-                    nearest._grabRemaining[i] = nearest._knotHangHeight > 0f
-                        ? actor.GetComponent<SodamAnimationPresentation>()?.Profile?.Find(SodamPose.ClothGrab)?.ContactTime ?? 0f
-                        : 0f;
+                    // An airborne player is already reaching the knot; do not replay
+                    // the grounded jump anticipation before attaching.
+                    var grab = nearest._knotHangHeight > 0f && player.Motor.IsGrounded
+                        ? actor.GetComponent<SodamAnimationPresentation>()?.Profile?.Find(SodamPose.ClothGrab)
+                        : null;
+                    nearest._grabRemaining[i] = nearest._grabDurations[i] = grab?.ContactTime ?? 0f;
+                    nearest._grabTakeoffs[i] = grab?.approachStartSeconds ?? 0f;
+                    nearest._grabOrigins[i] = actor.transform.position;
                     if (nearest._grabRemaining[i] <= 0f) nearest.Attach(i);
-                    nearest._lastPoints[i] = actor.transform.position;
                     if (i == 0) { nearest._heldInput = Vector2.zero; nearest._drive = Vector2.zero; nearest._pendingDrive = Vector2.zero; nearest._pendingDriveTime = Vector2.zero; }
                     player.SetMovementReceiver(nearest); player.Motor.SetMovementLock(nearest, true);
                     actor.Abilities.Sap?.Cancel(); actor.Abilities.SetInputLock(nearest, true);
@@ -369,13 +409,15 @@ namespace Herbalist.Levels
             for (int i = 0; i < 2; i++)
             {
                 var actor = _riders[i]; if (actor == null) continue;
+                Vector3 point = Position(_angles, _bendAngles, i);
                 if (_grabRemaining[i] > 0f)
                 {
                     _grabRemaining[i] = Mathf.Max(0f, _grabRemaining[i] - dt);
-                    if (_grabRemaining[i] > 0f) continue;
-                    Attach(i);
+                    float elapsed = _grabDurations[i] - _grabRemaining[i];
+                    float progress = Mathf.InverseLerp(_grabTakeoffs[i], _grabDurations[i], elapsed);
+                    if (_grabRemaining[i] > 0f) point = GrabJumpPoint(_grabOrigins[i], point, progress, _settings.grabJumpHeight);
+                    else Attach(i);
                 }
-                Vector3 point = Position(_angles, _bendAngles, i); _lastPoints[i] = point;
                 var net = actor.GetComponent<NetworkPlayer>();
                 if (net != null && net.Object != null && net.Object.IsValid) net.SetTransportAuthoritatively(true, point);
                 else
@@ -386,6 +428,12 @@ namespace Herbalist.Levels
                 }
             }
             Publish();
+        }
+        private static Vector3 GrabJumpPoint(Vector3 start, Vector3 end, float progress, float height)
+        {
+            Vector3 midpoint = (start + end) * .5f;
+            float arc = Mathf.Max(start.y, end.y) - midpoint.y + 2f * height;
+            return Vector3.Lerp(start, end, progress) + Vector3.up * (2f * progress * (1f - progress) * arc);
         }
         private bool HasRider => _riders[0] != null || _riders[1] != null;
         private void TrackApproachingRider()
@@ -603,11 +651,14 @@ namespace Herbalist.Levels
             var velocity = (_bendActive ? Position(_angles, _bendAngles + _bendVelocity * .01f, side) - Position(_angles, _bendAngles, side)
                                         : Position(_angles + _velocity * .01f, _bendAngles, side) - Position(_angles, _bendAngles, side)) / .01f * _settings.releaseSpeed;
             player.ClearMovementReceiver(this); player.ClearTransport(this); player.Motor.SetMovementLock(this, false); actor.Abilities.SetInputLock(this, false);
-            if (_grabRemaining[side] <= 0f)
+            var net = actor.GetComponent<NetworkPlayer>();
+            if (net != null && net.Object != null && net.Object.IsValid && net.HasStateAuthority)
+                net.SetTransportAuthoritatively(false, actor.transform.position);
+            if (attached && actor.Available)
             {
-                var net = actor.GetComponent<NetworkPlayer>();
+                player.BeginClothLanding();
                 float gravity = _releaseGravityOverride > 0f ? _releaseGravityOverride : player.Tuning.gravity;
-                if (net != null && net.Object != null && net.Object.IsValid && net.HasStateAuthority) { net.SetTransportAuthoritatively(false, actor.transform.position); net.LaunchAuthoritatively(velocity, gravity, true); }
+                if (net != null && net.Object != null && net.Object.IsValid && net.HasStateAuthority) net.LaunchAuthoritatively(velocity, gravity, true);
                 else if (!Online) player.Motor.Launch(velocity, gravity, true);
             }
             _riders[side] = null;
@@ -617,6 +668,9 @@ namespace Herbalist.Levels
                 _riders[0] = _riders[1];
                 _grabbedAt[0] = _grabbedAt[1];
                 _grabRemaining[0] = _grabRemaining[1];
+                _grabOrigins[0] = _grabOrigins[1];
+                _grabDurations[0] = _grabDurations[1];
+                _grabTakeoffs[0] = _grabTakeoffs[1];
                 _grabRemaining[1] = 0f;
                 _riders[1] = null;
             }

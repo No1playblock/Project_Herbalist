@@ -8,7 +8,7 @@ using Herbalist.Presentation;
 namespace Herbalist.Levels
 {
     [RequireComponent(typeof(NetworkObject))]
-    public sealed class DescendingMazeFlow : NetworkBehaviour
+    public sealed partial class DescendingMazeFlow : NetworkBehaviour
     {
         [SerializeField] private SapMazeBoard[] _mazes;
         [SerializeField] private Transform[] _rafts;
@@ -47,17 +47,8 @@ namespace Herbalist.Levels
             CurrentMaze < _mazes.Length ? _mazes[CurrentMaze] : null;
         public bool Finished => CurrentMaze >= _mazes.Length;
         public string Objective => (Online ? Phase : _phase) == 0 ? _waitingText : (Online ? Phase : _phase) == 1 ? _introText : (Online ? Phase : _phase) == 2 ? _descentText : _mazeText;
-        private bool Solo
-        {
-            get
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                return _allowSoloTesting && !Online && (FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession);
-#else
-                return false;
-#endif
-            }
-        }
+        private bool Solo => _allowSoloTesting && !Online &&
+            (FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession);
 #if UNITY_EDITOR
         [ContextMenu("Align Raft Stations To Maze Bounds")]
         private void AlignRaftStationsToMazeBounds()
@@ -138,12 +129,24 @@ namespace Herbalist.Levels
             _actors[0] = _actors[1] = null;
             foreach (var actor in StageActor.All)
             {
-                if (!actor.Available || !actor.Abilities.Unlocked) continue;
+                if (!actor.Available) continue;
+                if (Solo && actor.Local && !_soloViews.ContainsKey(actor) && actor.Abilities.TryUnlockBothOfflineAbilities() &&
+                    actor.Abilities.Kind == PlayerAbilityKind.Leaf)
+                    actor.Abilities.TrySwitchOfflineAbility();
+
+                if (!actor.Abilities.Unlocked) continue;
                 int side = actor.Abilities.Kind == PlayerAbilityKind.Sap ? 0 : 1;
                 _actors[side] = actor;
                 if (Solo && actor.Local) RestoreSoloSideView(actor, side);
             }
-            bool ready = Solo ? _actors[0] != null || _actors[1] != null : _actors[0] != null && _actors[1] != null && _actors[0].Slot != _actors[1].Slot;
+            if (_phase == 0 && FusionLobbySession.Instance?.HoldingCinematicArrival == true)
+            {
+                for (int i = 0; i < _actors.Length; i++)
+                    Carry(_actors[i], _rafts[i].position + _riderOffset + Vector3.up * _fallMargin);
+                return;
+            }
+            bool singleRider = Solo || (Online && FusionLobbySession.Instance?.ConnectedCount == 1);
+            bool ready = singleRider ? _actors[0] != null || _actors[1] != null : _actors[0] != null && _actors[1] != null && _actors[0].Slot != _actors[1].Slot;
             if (_phase == 0 && ready) { _phase = 1; _travel = 0; }
             if (_phase == 1)
             {
@@ -246,6 +249,7 @@ namespace Herbalist.Levels
         {
             if (!Online && Authority) Tick(Time.deltaTime);
             int phase = Online ? Phase : _phase;
+            bool introView = phase == 1 || (phase == 0 && FusionLobbySession.Instance?.HoldingCinematicArrival == true);
             Present(CurrentMaze, Online ? Travel : _travel, phase == 2);
             foreach (var actor in StageActor.All)
             {
@@ -255,7 +259,7 @@ namespace Herbalist.Levels
                 if (!_masks.ContainsKey(camera)) _masks[camera] = camera.cullingMask;
                 camera.cullingMask = _masks[camera] & ~(1 << (side == 0 ? _backLayer : _frontLayer));
                 var view = actor.GetComponent<PlayerController>().View;
-                if (phase == 1) view.SetCameraOverride(this, _introCameras[side]); else view.ClearCameraOverride(this);
+                if (introView) view.SetCameraOverride(this, _introCameras[side]); else view.ClearCameraOverride(this);
             }
         }
         private void OnDisable()

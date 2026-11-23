@@ -4,6 +4,10 @@ Shader "Herbalist/Maze Density Water"
     {
         _BaseColor ("Water", Color) = (0.025, 0.36, 0.82, 0.94)
         _EdgeColor ("Water Rim", Color) = (0.27, 0.72, 1, 1)
+        _FlowColor ("Flow Reflection", Color) = (0.65, 0.88, 1, 1)
+        _FlowStrength ("Flow Reflection Strength", Range(0, 1)) = 0.45
+        _FlowSpeed ("Flow Speed", Float) = 1.8
+        _FlowPatternScale ("Flow Pattern Scale", Float) = 7
         [HideInInspector] _Density ("Density", 2D) = "black" {}
         [HideInInspector] _VisibleCorners ("Wall Visibility", 2D) = "black" {}
     }
@@ -30,25 +34,36 @@ Shader "Herbalist/Maze Density Water"
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
                 half4 _EdgeColor;
+                half4 _FlowColor;
+                float _FlowStrength;
+                float _FlowSpeed;
+                float _FlowPatternScale;
                 float4x4 _MazeFromObject;
                 float4 _Grid;
                 float4 _GridExtent;
                 float4 _WetBounds;
                 float _Threshold;
                 float _WaterUvScale;
+                float4 _LiquidFloorPlane;
+                float _ReliefLimit;
+                float4 _FloorFacing;
             CBUFFER_END
 
-            struct Attributes { float3 positionOS : POSITION; };
+            struct Attributes { float3 positionOS : POSITION; float3 normalOS : NORMAL; };
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
                 float2 grid : TEXCOORD0;
+                float3 world : TEXCOORD1;
+                float3 normal : TEXCOORD2;
             };
 
             Varyings Vert(Attributes input)
             {
                 Varyings output;
                 output.positionCS = TransformObjectToHClip(input.positionOS);
+                output.world = TransformObjectToWorld(input.positionOS);
+                output.normal = TransformObjectToWorldNormal(input.normalOS);
                 float2 local = mul(_MazeFromObject, float4(input.positionOS, 1)).xy;
                 output.grid = (local - _Grid.xy) * _Grid.z;
                 return output;
@@ -57,7 +72,12 @@ Shader "Herbalist/Maze Density Water"
             half4 Frag(Varyings input) : SV_Target
             {
                 float2 grid = input.grid;
+                float3 face = normalize(cross(ddy(input.world), ddx(input.world)));
                 if (any(grid < _WetBounds.xy) || any(grid >= _WetBounds.zw)) discard;
+                // Use the geometric face, not smoothed model normals: bevels and
+                // vertical walls must not acquire a water coating.
+                clip(abs(dot(face, _FloorFacing.xyz)) - _FloorFacing.w);
+                clip(_ReliefLimit - abs(dot(float4(input.world, 1), _LiquidFloorPlane)));
                 int2 square = (int2)floor(grid);
                 int2 extent = (int2)_GridExtent.xy;
                 if (any(square < 0) || any(square >= extent)) discard;
@@ -81,7 +101,14 @@ Shader "Herbalist/Maze Density Water"
                 float ripple = sin(dot(local, float2(9, 7)) * _WaterUvScale - _Time.y * 2.1) *
                                sin(dot(local, float2(-5, 11)) * _WaterUvScale + _Time.y * 1.7);
                 half rim = 1 - smoothstep(0, 0.12, water - _Threshold);
-                return lerp(_BaseColor, _EdgeColor, saturate(rim * 0.7 + 0.12 + ripple * 0.06));
+                half4 color = lerp(_BaseColor, _EdgeColor, saturate(rim * 0.7 + 0.12 + ripple * 0.06));
+                float phase = local.x * _FlowPatternScale - _Time.y * _FlowSpeed;
+                float ribbon = sin(phase + sin(local.y * _FlowPatternScale * 0.8 + _Time.y * 0.4) * 1.15);
+                float reflection = smoothstep(0.65, 0.95, ribbon);
+                float fresnel = 1 - saturate(dot(normalize(input.normal), normalize(GetWorldSpaceViewDir(input.world))));
+                fresnel = fresnel * fresnel * fresnel;
+                color.rgb = lerp(color.rgb, _FlowColor.rgb, saturate((reflection + fresnel * 0.5) * _FlowStrength));
+                return color;
             }
             ENDHLSL
         }

@@ -10,7 +10,7 @@ namespace Herbalist.Levels
 
     // Scene-specific bindings. Original art stays at its authored rest pose in edit mode.
     [RequireComponent(typeof(NetworkObject))]
-    public sealed class StageOneDocumentMechanism : NetworkBehaviour
+    public sealed partial class StageOneDocumentMechanism : NetworkBehaviour
     {
         [SerializeField] private StageOneDocumentMechanismKind _kind;
         [SerializeField] private SapInjectionPort _port;
@@ -25,6 +25,7 @@ namespace Herbalist.Levels
         [SerializeField, Min(.01f)] private float _restoreSeconds = 3f;
         [SerializeField, Min(.01f)] private float _moveSeconds = 1f;
         [SerializeField, Min(1)] private float _grownScale = 2.5f;
+        [SerializeField, Range(.05f, 1f)] private float _restScaleMultiplier = 1f;
         [SerializeField, Min(0)] private float _grownLocalScale;
         [SerializeField] private Vector3 _growthWorldOffset;
         [SerializeField] private GameObject _jet;
@@ -85,7 +86,14 @@ namespace Herbalist.Levels
             _positions = new Vector3[_movingArt.Length]; _scales = new Vector3[_movingArt.Length]; _rotations = new Quaternion[_movingArt.Length];
             _pivot = _motionPivot != null ? _motionPivot.position : transform.position;
             for (int i = 0; i < _movingArt.Length; i++)
-            { _positions[i] = _movingArt[i].position; _scales[i] = _movingArt[i].localScale; _rotations[i] = _movingArt[i].rotation; }
+            {
+                var art = _movingArt[i];
+                if (art == null) continue;
+                _positions[i] = art.position;
+                _scales[i] = art.localScale *
+                    (_kind == StageOneDocumentMechanismKind.GrowingMushrooms ? _restScaleMultiplier : 1f);
+                _rotations[i] = art.rotation;
+            }
         }
         public override void Spawned() { if (HasStateAuthority) { Amount = 0; Completed = false; } }
         private bool CanActivate()
@@ -124,7 +132,8 @@ namespace Herbalist.Levels
                     if (_branchResetSeconds > 0 && _leafTarget != null && !_leafTarget.isActiveAndEnabled)
                         _leafTarget.TickReuseDelay(dt);
                     _amount = Mathf.MoveTowards(_amount, 1, dt / _moveSeconds);
-                    if (_amount >= 1f && _branchResetSeconds > 0 && (_branchResetRemaining -= dt) <= 0f)
+                    _branchResetRemaining -= dt;
+                    if (_amount >= 1f && _branchResetSeconds > 0 && _branchResetRemaining <= 0f)
                     {
                         RestoreFallenBranch();
                         return;
@@ -154,6 +163,7 @@ namespace Herbalist.Levels
             for (int i = 0; i < _movingArt.Length; i++)
             {
                 var art = _movingArt[i];
+                if (art == null) continue;
                 if (_kind == StageOneDocumentMechanismKind.GrowingMushrooms)
                 {
                     var grown = _grownLocalScale > 0 ? Vector3.one * _grownLocalScale : _scales[i] * _grownScale;

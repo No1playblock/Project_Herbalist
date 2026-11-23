@@ -70,7 +70,13 @@ namespace Herbalist.Abilities
                 if (delta.sqrMagnitude > 0.000001f && Herbalist.Levels.StageOneLeafZone.Cast(new Ray(transform.position, delta.normalized), settings.collisionRadius, delta.magnitude, settings.hitMask, out var hit, owner))
                 {
                     var target = hit.collider.GetComponentInParent<LeafInstallTarget>();
-                    if (target != null && target.TryGetComponent<StageOneTargetGate>(out var gate) && gate.TryHitBranch())
+                    var stone = hit.collider.GetComponentInParent<Herbalist.Levels.BranchRideStone>();
+                    if (stone != null && Herbalist.Levels.BranchRideFlow.TryBreakStone(stone, owner))
+                    {
+                        transform.position += delta.normalized * hit.distance;
+                        BeginReturn();
+                    }
+                    else if (target != null && target.TryGetComponent<StageOneTargetGate>(out var gate) && gate.TryHitBranch())
                     {
                         transform.position += delta.normalized * hit.distance;
                         BeginMissReturn(hit.normal);
@@ -182,6 +188,12 @@ namespace Herbalist.Abilities
         }
         private void Install(LeafInstallTarget target, Vector3 hit, Vector3 normal, Vector3 heading)
         {
+            if (target.ReplaceOnInstall)
+            {
+                var previous = target.InstalledLeaf;
+                if (previous != null && previous != this) previous.BeginReturn();
+                target.ResetReuseDelay();
+            }
             Target = target;
             localContactPoint = target.transform.InverseTransformPoint(hit);
             transform.SetPositionAndRotation(hit, target.Rotation(normal, heading));

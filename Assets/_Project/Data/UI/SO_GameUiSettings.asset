@@ -43,6 +43,7 @@ MonoBehaviour:
   clothGrabText: "\uCC9C \uC7A1\uAE30"
   clothReleaseText: "\uCC9C \uB193\uAE30"
   sapInjectText: "\uC218\uC561 \uC8FC\uC785 (\uB204\uB974\uACE0 \uC788\uAE30)"
+  sapPushClothText: "\uCC9C \uBC00\uAE30 (\uB204\uB974\uACE0 \uC788\uAE30)"
   leafInstallText: "\uB098\uBB47\uC78E \uC124\uCE58"
   leafInstallHintRange: 12
   leafHeldText: "\uBCF4\uC720"
@@ -80,11 +81,12 @@ MonoBehaviour:
   - label: "\uB2A5\uB825 \uC804\uD658 (\uC194\uB85C \uD14C\uC2A4\uD2B8)"
     action: {fileID: 11400000, guid: 2f3895318fb57804baf216a7cb39e92e, type: 2}
     offlineTestOnly: 1
-  - label: "\uB2A5\uB825 \uC0AC\uC6A9 / \uBBF8\uB85C \uC81C\uC5B4 \uC804\uD658"
+  - label: "\uB2A5\uB825 \uC0AC\uC6A9"
     action: {fileID: 11400000, guid: ead40294ab6cdf540a3eb1133fc66dd2, type: 2}
     offlineTestOnly: 0
     _stageOneAction: {fileID: 11400000, guid: 74a07ea931714267ac29f682967f8f5a, type: 2}
     _stageOneLabel: "\uCCB4\uD06C\uD3EC\uC778\uD2B8 \uBCF5\uADC0"
+    _mazeLabel: "\uB2A5\uB825 \uC0AC\uC6A9 / \uBBF8\uB85C \uC81C\uC5B4 \uC804\uD658"
   - label: "\uB098\uBB47\uC78E \uD68C\uC218"
     action: {fileID: 11400000, guid: 90c914f183676a846b010a5dc1f82c38, type: 2}
     offlineTestOnly: 0
@@ -96,12 +98,17 @@ MonoBehaviour:
   - label: "\uBD80\uCC44\uC9C8 (\uC81C\uC870 \uC911)"
     action: {fileID: 11400000, guid: c346868c992d0a8479016014ceb8038a, type: 2}
     offlineTestOnly: 0
+    _stageOneOnly: 1
   - label: "\uC194\uB85C \uD14C\uC2A4\uD2B8: \uB098\uBB47\uC78E\xB7\uC218\uC561 \uBAA8\uB450 \uD574\uAE08"
     action: {fileID: 11400000, guid: 9ee627606ca3b0a4089084116887d214, type: 2}
     offlineTestOnly: 1
   - label: "\uCE90\uB9AD\uD130 \uBE59\uC758 (\uC194\uB85C \uD14C\uC2A4\uD2B8)"
     action: {fileID: 11400000, guid: 3a5e82eb6b1478648968182d514f392b, type: 2}
     offlineTestOnly: 1
+  - label: "\uB098\uBB47\uC78E \uD68C\uC218"
+    action: {fileID: 11400000, guid: 78cb285a731a4deeb39e39174e56ca7b, type: 2}
+    offlineTestOnly: 0
+    _stageOneOnly: 1
   markerOffset: {x: -0.65, y: 1.9, z: 0}
   feedbackDuration: 4
   objectiveHoldDuration: 5

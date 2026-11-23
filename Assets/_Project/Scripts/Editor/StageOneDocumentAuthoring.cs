@@ -156,7 +156,7 @@ namespace Herbalist.Editor
             leaf.permanentInstallation = false; leaf.lifetime = 5;
             rules.leaf = leaf;
             rules.usePrimaryButton = true;
-            rules.leafInstructions = "좌클릭: 나뭇잎 투척 · 지정된 곳에 설치";
+            rules.leafInstructions = "좌클릭: 나뭇잎 투척 · 지정된 곳에 설치 / 우클릭: 회수";
             rules.sapInstructions = "좌클릭 유지: 수액 발사 · 주입구/버섯/천에 사용";
             level.abilityRules = rules; EditorUtility.SetDirty(rules); EditorUtility.SetDirty(leaf);
             var cube = At("Tree_playobject/Cube");

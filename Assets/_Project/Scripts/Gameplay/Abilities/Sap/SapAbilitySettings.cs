@@ -27,6 +27,10 @@ namespace Herbalist.Abilities
         [Min(0.01f)] public float hoseRetractSpeed = 12f;
         [Tooltip("Initial speed of the water stream in meters per second.")]
         [Min(0.01f)] public float hoseLaunchSpeed = 16f;
+        [Tooltip("Distance in world units the stream travels straight before losing speed and falling. Zero uses the original ballistic aim.")]
+        [Min(0f)] public float hoseDirectRange;
+        [Tooltip("Fraction of launch speed carried into the falling part of the stream.")]
+        [Range(0.01f, 1f)] public float hoseFalloffSpeedMultiplier = 0.5f;
         [Tooltip("Downward acceleration of the water stream in meters per second squared.")]
         [Min(0.01f)] public float hoseGravity = 12f;
         [Tooltip("Longest time water can travel before the stream ends in open air.")]

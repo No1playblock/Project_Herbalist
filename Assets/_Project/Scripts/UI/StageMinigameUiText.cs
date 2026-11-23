@@ -14,6 +14,9 @@ namespace Herbalist.GameUI
         public string gatherSodamProgress;
         public string gatherDuyeongInputHint;
         public string gatherCompleteText;
+        [TextArea] public string gatherSodamHelp;
+        [TextArea] public string craftSodamHelp;
+        [TextArea] public string craftDuyeongHelp;
         public string craftSodamTitle;
         [TextArea] public string craftSodamBodyFormat;
         public string craftSodamProgressFormat;

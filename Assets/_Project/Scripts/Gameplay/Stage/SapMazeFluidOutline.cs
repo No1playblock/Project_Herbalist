@@ -8,6 +8,7 @@ namespace Herbalist.Levels
     {
         private float[] _values = System.Array.Empty<float>();
         private float[] _scratch = System.Array.Empty<float>();
+        private float[] _wallDensity = System.Array.Empty<float>();
         private bool[] _listed = System.Array.Empty<bool>();
         private int[] _adjacent = System.Array.Empty<int>();
         private readonly List<int> _cells = new List<int>();
@@ -15,13 +16,18 @@ namespace Herbalist.Levels
         public float Maximum { get; private set; }
         public float Value(int cell) => cell >= 0 && cell < _values.Length ? _values[cell] : 0;
 
-        public void Build(SapMazeFluidField field, float radiusLocal, int maximumPasses)
+        public void Build(SapMazeFluidField field, float radiusLocal, int maximumPasses,
+            int wallSpreadCells = 0, float wallSpreadFalloff = 0f)
         {
             if (_values.Length != field.Count)
             {
                 _values = new float[field.Count]; _scratch = new float[field.Count]; _listed = new bool[field.Count];
             }
-            else foreach (int cell in _cells) { _values[cell] = 0; _scratch[cell] = 0; _listed[cell] = false; }
+            else foreach (int cell in _cells)
+            {
+                _values[cell] = 0; _scratch[cell] = 0; _listed[cell] = false;
+                if (_wallDensity.Length == field.Count) _wallDensity[cell] = 0;
+            }
             _cells.Clear(); Maximum = 0;
             foreach (int cell in field.ActiveCells)
             {
@@ -32,8 +38,10 @@ namespace Herbalist.Levels
             float radiusCells = Mathf.Min(radiusLocal / field.CellSize,
                 Mathf.Sqrt(field.TotalVolume / field.CellCapacity) * .5f);
             int passes = Mathf.Clamp(Mathf.CeilToInt(radiusCells * radiusCells), 0, maximumPasses);
+            int spread = Mathf.Clamp(wallSpreadCells, 0, Mathf.FloorToInt(radiusCells));
+            if (wallSpreadFalloff <= 0f) spread = 0;
             int head = 0, end = _cells.Count;
-            for (int ring = 0; ring < Mathf.CeilToInt(radiusCells) + 2; ring++)
+            for (int ring = 0; ring < Mathf.CeilToInt(radiusCells) + 2 + spread; ring++)
             {
                 for (; head < end; head++)
                     for (int direction = 0; direction < 4; direction++)
@@ -61,7 +69,38 @@ namespace Herbalist.Levels
                 }
                 var previous = _values; _values = _scratch; _scratch = previous;
             }
+            if (spread > 0) WidenWallContours(field.Count, spread, Mathf.Clamp01(wallSpreadFalloff));
             foreach (int cell in _cells) Maximum = Mathf.Max(Maximum, Value(cell));
+        }
+
+        private void WidenWallContours(int count, int passes, float falloff)
+        {
+            if (_wallDensity.Length != count) _wallDensity = new float[count];
+            for (int i = 0; i < _cells.Count; i++)
+            {
+                int edge = i * 4;
+                if (_adjacent[edge] < 0 || _adjacent[edge + 1] < 0 || _adjacent[edge + 2] < 0 || _adjacent[edge + 3] < 0)
+                    _wallDensity[_cells[i]] = _values[_cells[i]];
+            }
+
+            // Extend a wall-following contour into the channel using only open graph edges.
+            // The source field, including mass and connections, stays untouched.
+            for (int pass = 0; pass < passes; pass++)
+            {
+                for (int i = 0; i < _cells.Count; i++)
+                {
+                    int cell = _cells[i];
+                    float density = _wallDensity[cell];
+                    for (int d = 0; d < 4; d++)
+                    {
+                        int next = _adjacent[i * 4 + d];
+                        if (next >= 0) density = Mathf.Max(density, _wallDensity[next] * falloff);
+                    }
+                    _scratch[cell] = density;
+                }
+                var previous = _wallDensity; _wallDensity = _scratch; _scratch = previous;
+            }
+            foreach (int cell in _cells) _values[cell] = Mathf.Max(_values[cell], _wallDensity[cell]);
         }
 
         public float Sample(SapMazeFluidField field, float x, float y)
