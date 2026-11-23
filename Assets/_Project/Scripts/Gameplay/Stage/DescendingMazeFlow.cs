@@ -47,17 +47,8 @@ namespace Herbalist.Levels
             CurrentMaze < _mazes.Length ? _mazes[CurrentMaze] : null;
         public bool Finished => CurrentMaze >= _mazes.Length;
         public string Objective => (Online ? Phase : _phase) == 0 ? _waitingText : (Online ? Phase : _phase) == 1 ? _introText : (Online ? Phase : _phase) == 2 ? _descentText : _mazeText;
-        private bool Solo
-        {
-            get
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                return _allowSoloTesting && !Online && (FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession);
-#else
-                return false;
-#endif
-            }
-        }
+        private bool Solo => _allowSoloTesting && !Online &&
+            (FusionLobbySession.Instance == null || !FusionLobbySession.Instance.HasNetworkSession);
 #if UNITY_EDITOR
         [ContextMenu("Align Raft Stations To Maze Bounds")]
         private void AlignRaftStationsToMazeBounds()
@@ -138,7 +129,12 @@ namespace Herbalist.Levels
             _actors[0] = _actors[1] = null;
             foreach (var actor in StageActor.All)
             {
-                if (!actor.Available || !actor.Abilities.Unlocked) continue;
+                if (!actor.Available) continue;
+                if (Solo && actor.Local && !_soloViews.ContainsKey(actor) && actor.Abilities.TryUnlockBothOfflineAbilities() &&
+                    actor.Abilities.Kind == PlayerAbilityKind.Leaf)
+                    actor.Abilities.TrySwitchOfflineAbility();
+
+                if (!actor.Abilities.Unlocked) continue;
                 int side = actor.Abilities.Kind == PlayerAbilityKind.Sap ? 0 : 1;
                 _actors[side] = actor;
                 if (Solo && actor.Local) RestoreSoloSideView(actor, side);

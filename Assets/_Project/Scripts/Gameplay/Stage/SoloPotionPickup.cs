@@ -70,7 +70,7 @@ namespace Herbalist.Levels
         {
             point = default;
             var pickup = Nearest(actor);
-            if (pickup == null || actor.Abilities.Unlocked || StageOneFlow.Instance.Progress.Held[actor.Slot] != 0) return false;
+            if (pickup == null || !StageOneFlow.Instance.CanDrink(actor) || StageOneFlow.Instance.Progress.Held[actor.Slot] != 0) return false;
             point = pickup.Point; return true;
         }
         public static bool TryPickup(StageActor actor, out string message)
@@ -79,7 +79,7 @@ namespace Herbalist.Levels
             var pickup = Nearest(actor);
             if (pickup == null) return false;
             var flow = StageOneFlow.Instance;
-            if (actor.Abilities.Unlocked) message = flow.settings.drinkBlockedMessage;
+            if (!flow.CanDrink(actor)) message = flow.settings.drinkBlockedMessage;
             else if (flow.Progress.Held[actor.Slot] != 0) message = pickup._holdingMessage;
             else
             {
