@@ -30,6 +30,7 @@ namespace Herbalist.GameUI
         [SerializeField] private GameObject fanPrompt;
         [SerializeField] private TMP_Text fanPromptText;
         [SerializeField] private ControlHintView _fanHint;
+        [SerializeField] private TMP_Text _minigameHelp;
         [SerializeField] private StageMinigameUiText copy;
         [SerializeField] private StageGatheringView _gatheringView;
         [SerializeField] private Sprite duyeongDialPanelSprite;
@@ -431,6 +432,15 @@ namespace Herbalist.GameUI
             bool legacyGathering = gathering && _gatheringView == null && panel != null;
             if (panel != null) panel.SetActive(legacyGathering);
             if (brewingHud != null) brewingHud.SetActive(crafting);
+            bool showHelp = _hud.ControlHelpExpanded && (gathering || crafting);
+            if (_minigameHelp != null)
+            {
+                _minigameHelp.transform.parent.gameObject.SetActive(showHelp);
+                if (showHelp)
+                    _minigameHelp.text = gathering
+                        ? role == CharacterRole.Duyeong ? copy.gatherDuyeongInputHint : copy.gatherSodamHelp
+                        : role == CharacterRole.Sodam ? copy.craftSodamHelp : copy.craftDuyeongHelp;
+            }
             if (legacyGathering)
             {
                 var rect = (RectTransform)panel.transform;
@@ -501,7 +511,7 @@ namespace Herbalist.GameUI
             }
             if (currentTemperatureMarker != null)
             {
-                currentTemperatureMarker.gameObject.SetActive(true);
+                currentTemperatureMarker.gameObject.SetActive(!sodam);
                 float level = Mathf.Clamp01(flow.Temperature / flow.settings.maximumTemperature);
                 currentTemperatureMarker.anchorMin = currentTemperatureMarker.anchorMax = new Vector2(.5f, .5f);
                 currentTemperatureMarker.anchoredPosition = Vector2.zero;

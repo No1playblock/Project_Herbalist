@@ -7,9 +7,6 @@ using Herbalist.StageOne;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Herbalist.GameUI
 {
@@ -261,24 +258,16 @@ namespace Herbalist.GameUI
             if (image == null) image = arrow.GetComponentInChildren<UnityEngine.UI.Image>(true);
             if (image == null) return null;
 
-            if (_guideArrowSprite == null)
-            {
-#if UNITY_EDITOR
-                _guideArrowSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
-                    "Assets/_Project/Art/UI/Textures/ArtistDrop/UI/UI/GuideUI/GuideUI_Arrow.png");
-#endif
-                if (_guideArrowSprite == null) _guideArrowSprite = image.sprite;
-            }
-            if (_guideArrowSprite != null)
-            {
-                image.sprite = _guideArrowSprite;
-                image.color = Color.white;
-                image.preserveAspect = true;
-                image.type = UnityEngine.UI.Image.Type.Simple;
-                image.useSpriteMesh = true;
-                image.enabled = true;
-                image.raycastTarget = false;
-            }
+            var sprite = _guideArrowSprite != null ? _guideArrowSprite : image.sprite;
+            image.enabled = sprite != null;
+            if (sprite == null) return null;
+
+            image.sprite = sprite;
+            image.color = Color.white;
+            image.preserveAspect = true;
+            image.type = UnityEngine.UI.Image.Type.Simple;
+            image.useSpriteMesh = true;
+            image.raycastTarget = false;
             return arrow;
         }
 

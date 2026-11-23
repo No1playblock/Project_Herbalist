@@ -30,7 +30,14 @@ namespace Herbalist.Tests
         private static void Write(object obj, string name, object value) => obj.GetType().GetField(name, Flags).SetValue(obj, value);
         private static void Check(bool value, string message) { if (!value) throw new Exception(message); }
         private static void Log(string text) => Debug.Log("[MazeNarrow] " + _peer + " " + text);
-        private static string Status(string name) { string path = Path.Combine(_folder, name + ".txt"); return File.Exists(path) ? File.ReadAllText(path) : ""; }
+        private static string Status(string name)
+        {
+            string path = Path.Combine(_folder, name + ".txt");
+            if (!File.Exists(path)) return string.Empty;
+            using var input = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(input);
+            return reader.ReadToEnd();
+        }
         private static void Set(string name, string text) => File.WriteAllText(Path.Combine(_folder, name + ".txt"), text);
         private static async Task Wait(Func<bool> predicate, string message, float timeout = 120)
         {
@@ -132,8 +139,10 @@ namespace Herbalist.Tests
                     InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
                     mouse = InputSystem.AddDevice<Mouse>(); InputSystem.EnableDevice(mouse);
                 }
+                if (!host) Set("client-ready", "1");
                 if (host)
                 {
+                    await Wait(() => Status("client-ready") == "1", "client joined the maze before seeding the fixture");
                     session.Runner.SetIsSimulated(flow.Object, false); Write(flow, "_current", 2); Write(flow, "_phase", 3); flow.Tick(0);
                     var rafts = Read<Transform[]>(flow, "_rafts");
                     foreach (var item in StageActor.All.Where(a => a.Available))
@@ -168,7 +177,10 @@ namespace Herbalist.Tests
                     if (host)
                     {
                         await Wait(() => Status("driver") == token + "-done", "pointer traversal " + token, 60);
-                        session.Runner.SetIsSimulated(flow.Object, false); await Task.Delay(100);
+                        session.Runner.SetIsSimulated(flow.Object, false);
+                        // The fixture stops ticking the board. Publish its final state before comparing replicas.
+                        Write(board, "_nextFluidSnapshot", double.NegativeInfinity);
+                        board.Tick(0);
                         Check(board.Fluid.Distance(route[to]) < board.Surface.CellSize * 1.5f, "authoritative arrival " + token);
                         File.WriteAllText(Path.Combine(folder, "expected.json"), Newtonsoft.Json.JsonConvert.SerializeObject(new { hash = Hash(board.Fluid), count = board.Fluid.ActiveCells.Count }));
                         Set("phase", token + "-check");

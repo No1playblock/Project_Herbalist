@@ -12,6 +12,7 @@ namespace Herbalist.GameUI
 {
     public sealed class StageNarrativePresenter : MonoBehaviour
     {
+        private const string StoneTutorial = "T3-03";
         [SerializeField]
         private StageNarrativeText _text;
         [SerializeField]
@@ -48,6 +49,7 @@ namespace Herbalist.GameUI
         private PlayScreenController _screen;
         public string MainQuestText => _mainQuest != null ? _mainQuest.text : string.Empty;
         public bool InlineQuestCount { get; private set; }
+        public bool ParenthesizeQuestCount { get; private set; }
         public string DetailQuestText => _subQuest != null && _subQuest.gameObject.activeSelf ? _subQuest.text : string.Empty;
         public bool QuestVisible => _mainQuest != null && _mainQuest.transform.parent.gameObject.activeSelf;
         public bool TryNavigationTarget(out Vector3 point, out string label)
@@ -89,7 +91,7 @@ namespace Herbalist.GameUI
                 return;
             if (_activeTutorial != null && !Near(actor, _tutorialPoint))
             {
-                _seen.Remove(_activeTutorial);
+                if (_activeTutorial != StoneTutorial) _seen.Remove(_activeTutorial);
                 _hud.HideGuide();
                 _activeTutorial = null;
             }
@@ -109,16 +111,15 @@ namespace Herbalist.GameUI
             RangeDialogue(actor);
         }
 
-        private void Quest(string main, string detail = null, int count = -1, int detailCount = -1)
+        private void Quest(string main, string detail = null, int count = -1)
         {
-            InlineQuestCount = main == "M1-01";
+            InlineQuestCount = main is "M1-01" or "M3-01";
+            ParenthesizeQuestCount = main == "M3-01";
             _detailId = detail;
             _mainQuest.text = _text.Find(main);
             if (count >= 0)
                 _mainQuest.text = _mainQuest.text.Replace("(0/", "(" + count + "/");
             _subQuest.text = detail != null ? _text.Find(detail) : string.Empty;
-            if (detailCount >= 0)
-                _subQuest.text = _subQuest.text.Replace("(0/", "(" + detailCount + "/");
             _subQuest.gameObject.SetActive(!string.IsNullOrEmpty(_subQuest.text));
         }
 
@@ -137,7 +138,7 @@ namespace Herbalist.GameUI
             {
                 if (!eligible || complete || !_hud.GuideActive)
                 {
-                    if (!eligible && !complete) _seen.Remove(id);
+                    if (!eligible && !complete && id != StoneTutorial) _seen.Remove(id);
                     _hud.HideGuide();
                     _activeTutorial = null;
                 }
@@ -317,9 +318,10 @@ namespace Herbalist.GameUI
                 _activeTutorial = null;
                 return;
             }
-            Quest("M3-01", _ride.CurrentPhase == BranchRidePhase.Boarding ? "S3-01" : null, detailCount: _ride.BoardedCount);
+            Quest("M3-01", _ride.CurrentPhase == BranchRidePhase.Boarding ? "S3-01" : null, _ride.BoardedCount);
             Dialogue("G3-01", "D-025", "D-026");
             Tutorial("T3-01", actor, _ride.Position, Near(actor, _ride.Position), _ride.CurrentPhase != BranchRidePhase.Boarding);
+            Tutorial(StoneTutorial, actor, _ride.Position, actor.Abilities.Kind == PlayerAbilityKind.Leaf, false);
             if (_ride.CurrentPhase != BranchRidePhase.Riding)
                 return;
             var first = _ride.Switches[0];
@@ -334,8 +336,6 @@ namespace Herbalist.GameUI
                 if (stone != null && stone.Sample(_ride.PresentationStoneClock, out var point) && Near(actor, point))
                 {
                     Dialogue("G3-03", "D-029", "D-030");
-                    if (actor.Abilities.Kind == PlayerAbilityKind.Leaf)
-                        Tutorial("T3-03", actor, point, true, stone.DestroyedCycle != int.MinValue);
                     break;
                 }
         }

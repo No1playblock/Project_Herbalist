@@ -30,6 +30,7 @@ namespace Herbalist.GameUI
         private PlayScreenController screen;
         private InputAction help;
         private bool expanded;
+        internal bool ControlHelpExpanded => expanded;
         private float _contextHintCandidateSince = -1f;
         private bool _contextHintCandidateSeenThisFrame;
         private string previousFeedback;
@@ -337,6 +338,8 @@ namespace Herbalist.GameUI
             var view=screen!=null?screen.ViewForSlot(slot):null;
             if(view==null)
             {
+                helpPanel.SetActive(false);
+                helpHint.gameObject.SetActive(false);
                 _contextHintCandidateSince = -1f;
                 feedbackTime = 0f;
                 PresentFeedback(false);
@@ -358,7 +361,7 @@ namespace Herbalist.GameUI
             PresentNavigation(local, view.Camera);
             var maze = SapMazeBoard.LocalMazeView;
             bool mazeView = maze != null && maze.IsViewedBy(view);
-            helpHint.gameObject.SetActive(!mazeView);
+            helpHint.gameObject.SetActive(local && !mazeView);
             pocket.gameObject.SetActive(!mazeView);
             abilityText.gameObject.SetActive(!mazeView);
             feedback.gameObject.SetActive(!mazeView);
@@ -587,7 +590,6 @@ namespace Herbalist.GameUI
                 RectTransform scrollRect = _feedbackScroll.rectTransform;
                 scrollRect.anchoredPosition = _feedbackRect.anchoredPosition;
                 bool showScroll = !string.IsNullOrEmpty(_displayedFeedback) && feedback.gameObject.activeInHierarchy;
-                _feedbackScroll.uvRect = new Rect(0f, 0f, .5f, 1f);
                 _feedbackScroll.gameObject.SetActive(showScroll);
             }
         }
@@ -640,8 +642,7 @@ namespace Herbalist.GameUI
                 if (hasCount) progress = candidate;
             }
             string titleWithoutCount = hasCount ? title.Substring(0, countStart).TrimEnd() : title;
-            bool countOnMainQuest = hasCount && string.Equals(titleWithoutCount,
-                "약제를 복용해 능력을 획득하세요.", System.StringComparison.Ordinal);
+            bool countOnMainQuest = hasCount && _narrative.InlineQuestCount;
             _questTitle.text = titleWithoutCount;
             if (_questTitle != null)
                 _questTitle.rectTransform.offsetMax = new Vector2(countOnMainQuest ? -92f : -44f, 0f);
@@ -649,7 +650,7 @@ namespace Herbalist.GameUI
                 _questTitle.rectTransform, countOnMainQuest);
             if (_questCount != null)
             {
-                _questCount.text = hasCount ? progress : string.Empty;
+                _questCount.text = !hasCount ? string.Empty : _narrative.ParenthesizeQuestCount ? $"({progress})" : progress;
                 var countRect = _questCount.rectTransform;
                 countRect.anchorMin = countOnMainQuest ? new Vector2(1f, .5f) : new Vector2(1f, 0f);
                 countRect.anchorMax = countOnMainQuest ? Vector2.one : new Vector2(1f, .5f);
