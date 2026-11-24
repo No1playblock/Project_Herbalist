@@ -12,6 +12,8 @@ namespace Herbalist.Levels
         public StageAbilityRules abilityRules;
         [SerializeField] private bool _playerCameraPostProcessing;
         public bool PlayerCameraPostProcessing => _playerCameraPostProcessing;
+        [SerializeField, Min(0f)] private float _minimumPlayerCameraFarClip;
+        public float MinimumPlayerCameraFarClip => _minimumPlayerCameraFarClip;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)] private static void ResetStatics() { Instance=null; }
         private void Awake() { Instance=this; }
         private void OnDestroy() { if(Instance==this)Instance=null; }

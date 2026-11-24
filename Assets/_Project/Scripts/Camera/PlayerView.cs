@@ -149,7 +149,7 @@ namespace Herbalist.Player
                 {
                     playerCamera.orthographic = true;
                     playerCamera.orthographicSize = size;
-                    playerCamera.farClipPlane = Mathf.Max(_baseFarClipPlane, mazeFrame.RequiredFarClip(position));
+                    playerCamera.farClipPlane = Mathf.Max(StageFarClipPlane, mazeFrame.RequiredFarClip(position));
                     playerCamera.transform.SetPositionAndRotation(position, cameraRotation);
                 }
                 else
@@ -203,13 +203,17 @@ namespace Herbalist.Player
 
         private void OnDisable() => SetLocalView(false);
 
+        private float StageFarClipPlane => StageLevel.Instance != null
+            ? Mathf.Max(_baseFarClipPlane, StageLevel.Instance.MinimumPlayerCameraFarClip)
+            : _baseFarClipPlane;
+
         private void RestoreProjection()
         {
             if (!initialized || playerCamera == null) return;
             playerCamera.orthographic = _baseOrthographic;
             playerCamera.orthographicSize = _baseOrthographicSize;
             playerCamera.fieldOfView = _baseFieldOfView;
-            playerCamera.farClipPlane = _baseFarClipPlane;
+            playerCamera.farClipPlane = StageFarClipPlane;
         }
     }
 }

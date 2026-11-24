@@ -24,6 +24,8 @@ namespace Herbalist.GameUI
         private LeafInstallTarget _firstPadLeaf;
         [SerializeField]
         private SapInjectionPort _firstPadInlet;
+        [SerializeField]
+        private bool _firstPadUsesVideoGuides;
         [SerializeField, Min(.1f)]
         private float _noticeRange = 12f;
         [SerializeField, Min(.1f)]
@@ -49,6 +51,7 @@ namespace Herbalist.GameUI
         public string MainQuestText => _mainQuest != null ? _mainQuest.text : string.Empty;
         public bool InlineQuestCount { get; private set; }
         public bool ParenthesizeQuestCount { get; private set; }
+        public bool ShowQuestCount { get; private set; } = true;
         public string DetailQuestText => _subQuest != null && _subQuest.gameObject.activeSelf ? _subQuest.text : string.Empty;
         public bool QuestVisible => _mainQuest != null && _mainQuest.transform.parent.gameObject.activeSelf;
         public bool TryNavigationTarget(out Vector3 point, out string label)
@@ -110,10 +113,11 @@ namespace Herbalist.GameUI
             RangeDialogue(actor);
         }
 
-        private void Quest(string main, string detail = null, int count = -1)
+        private void Quest(string main, string detail = null, int count = -1, bool showCount = true)
         {
-            InlineQuestCount = main is "M1-01" or "M3-01";
+            InlineQuestCount = main == "M1-01";
             ParenthesizeQuestCount = main == "M3-01";
+            ShowQuestCount = showCount;
             _detailId = detail;
             _mainQuest.text = _text.Find(main);
             if (count >= 0)
@@ -131,6 +135,9 @@ namespace Herbalist.GameUI
         }
 
         private bool Near(StageActor actor, Vector3 point) => (actor.transform.position - point).sqrMagnitude <= _noticeRange * _noticeRange;
+
+        internal bool IsAtFirstPad(StageActor actor) =>
+            _firstPad != null && Near(actor, _firstPad.transform.position);
         private void Tutorial(string id, StageActor actor, Vector3 point, bool eligible, bool complete, LeafInstallTarget target = null)
         {
             if (_activeTutorial == id)
@@ -217,12 +224,13 @@ namespace Herbalist.GameUI
                     else
                         Quest("M1-02", !_pairedPadArrival ? "S1-09" : _firstPadLeaf != null && _firstPadLeaf.HasLeaf ? "S1-11" : "S1-10");
                 }
-                bool atPad = actor.Abilities.Unlocked && Near(actor, _firstPad.transform.position);
-                if (actor.Abilities.Kind == PlayerAbilityKind.Sap && _firstPadInlet != null)
-                    Tutorial("T1-01", actor, _firstPadInlet.InteractionPoint, atPad, _firstPad.ChargeFraction > 0 || _firstPad.LaunchCount > 0);
-                if (actor.Abilities.Kind == PlayerAbilityKind.Leaf && _firstPadLeaf != null)
+                if (!_firstPadUsesVideoGuides)
                 {
-                    if (_hud.TryLeafGuidePoint(actor.transform.position, _noticeRange, _firstPadLeaf, out var leafPoint))
+                    bool atPad = actor.Abilities.Unlocked && IsAtFirstPad(actor);
+                    if (actor.Abilities.Kind == PlayerAbilityKind.Sap && _firstPadInlet != null)
+                        Tutorial("T1-01", actor, _firstPadInlet.InteractionPoint, atPad, _firstPad.ChargeFraction > 0 || _firstPad.LaunchCount > 0);
+                    if (actor.Abilities.Kind == PlayerAbilityKind.Leaf && _firstPadLeaf != null &&
+                        _hud.TryLeafGuidePoint(actor.transform.position, _noticeRange, _firstPadLeaf, out var leafPoint))
                         Tutorial("T1-02", actor, leafPoint, atPad, _firstPadLeaf.HasLeaf || _firstPad.LaunchCount > 0);
                 }
             }
@@ -312,7 +320,9 @@ namespace Herbalist.GameUI
             bool atBottom = _ride.CurrentPhase is BranchRidePhase.Landed or BranchRidePhase.Ending or BranchRidePhase.Complete;
             _mainQuest.transform.parent.gameObject.SetActive(!atBottom);
             if (atBottom) return;
-            Quest("M3-01", _ride.CurrentPhase == BranchRidePhase.Boarding ? "S3-01" : null, _ride.BoardedCount);
+            int boardedCount = _ride.BoardedCount;
+            Quest("M3-01", _ride.CurrentPhase == BranchRidePhase.Boarding ? "S3-01" : null, boardedCount,
+                showCount: boardedCount < 2);
             Dialogue("G3-01", "D-025", "D-026");
             if (_ride.CurrentPhase != BranchRidePhase.Riding)
                 return;
