@@ -645,7 +645,8 @@ namespace Herbalist.GameUI
                 if (hasCount) progress = candidate;
             }
             string titleWithoutCount = hasCount ? title.Substring(0, countStart).TrimEnd() : title;
-            bool countOnMainQuest = hasCount && _narrative.InlineQuestCount;
+            bool countVisible = hasCount && _narrative.ShowQuestCount;
+            bool countOnMainQuest = countVisible && _narrative.InlineQuestCount;
             _questTitle.text = titleWithoutCount;
             if (_questTitle != null)
                 _questTitle.rectTransform.offsetMax = new Vector2(countOnMainQuest ? -92f : -44f, 0f);
@@ -653,20 +654,20 @@ namespace Herbalist.GameUI
                 _questTitle.rectTransform, countOnMainQuest);
             if (_questCount != null)
             {
-                _questCount.text = !hasCount ? string.Empty : _narrative.ParenthesizeQuestCount ? $"({progress})" : progress;
+                _questCount.text = !countVisible ? string.Empty : _narrative.ParenthesizeQuestCount ? $"({progress})" : progress;
                 var countRect = _questCount.rectTransform;
                 countRect.anchorMin = countOnMainQuest ? new Vector2(1f, .5f) : new Vector2(1f, 0f);
                 countRect.anchorMax = countOnMainQuest ? Vector2.one : new Vector2(1f, .5f);
-                _questCount.gameObject.SetActive(hasCount);
+                _questCount.gameObject.SetActive(countVisible);
             }
             var progressLine = _questLayoutTargets.Length > 1
                 ? _questLayoutTargets[1].Find("QuestProgressBar")
                 : null;
-            if (progressLine != null) progressLine.gameObject.SetActive(visible && hasCount);
+            if (progressLine != null) progressLine.gameObject.SetActive(visible && countVisible);
 
             if (_questDetail != null)
             {
-                _questDetail.rectTransform.offsetMax = new Vector2(hasCount && !countOnMainQuest ? -132f : -16f, 0f);
+                _questDetail.rectTransform.offsetMax = new Vector2(countVisible && !countOnMainQuest ? -132f : -16f, 0f);
                 _questDetail.text = _narrative.DetailQuestText;
             }
         }

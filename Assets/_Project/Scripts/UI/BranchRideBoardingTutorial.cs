@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Herbalist.Abilities;
 using Herbalist.Levels;
 using Herbalist.Presentation;
@@ -13,6 +14,13 @@ namespace Herbalist.GameUI
     [DisallowMultipleComponent]
     public sealed class BranchRideBoardingTutorial : MonoBehaviour
     {
+        private enum Trigger
+        {
+            BranchRideBoarding,
+            FirstSapMaze,
+            FirstStageOnePad
+        }
+
         [Serializable]
         private struct Guide
         {
@@ -29,6 +37,9 @@ namespace Herbalist.GameUI
         [SerializeField] private VideoPlayer _videoPlayer;
         [SerializeField] private Button _closeButton;
         [SerializeField, Min(0)] private float _closeDelay = .2f;
+        [SerializeField] private Trigger _trigger;
+        [SerializeField] private DescendingMazeFlow _mazeFlow;
+        [SerializeField] private StageNarrativePresenter _stageOneNarrative;
         [SerializeField] private Guide _sapGuide;
         [SerializeField] private Guide _leafGuide;
 
@@ -45,20 +56,18 @@ namespace Herbalist.GameUI
             _overlay = FindAnyObjectByType<GameOverlayHud>();
             _panel.SetActive(false);
             _videoPlayer.isLooping = true;
-            _closeButton.onClick.AddListener(Dismiss);
         }
 
         private void Update()
         {
             if (_hasShown && !_panel.activeSelf) return;
 
-            var view = _ownerHud != null && _screen != null ? _screen.ViewForSlot(_ownerHud.slot) : null;
-            var actor = view != null ? view.GetComponent<StageActor>() : null;
+            var actor = FindLocalActor();
             if (actor == null || !actor.Local || actor.Abilities == null || !actor.Abilities.Unlocked ||
                 GameplayPause.IsPaused ||
                 (_overlay != null && (_overlay.StageHeaderPlaying ||
                     (_overlay.options != null && _overlay.options.activeInHierarchy))) ||
-                !BranchRideFlow.TryBoardHint(actor, out _))
+                !CanShowAtCurrentStage(actor))
             {
                 Hide();
                 return;
@@ -69,6 +78,9 @@ namespace Herbalist.GameUI
                 Hide();
                 return;
             }
+
+            if (_trigger == Trigger.FirstStageOnePad)
+                FitLocalViewport(actor);
 
             if (!_hasShown)
             {
@@ -89,6 +101,43 @@ namespace Herbalist.GameUI
             }
         }
 
+        private StageActor FindLocalActor()
+        {
+            if (_trigger == Trigger.FirstStageOnePad)
+                return StageActor.All.FirstOrDefault(actor => actor.Local);
+
+            var view = _ownerHud != null && _screen != null ? _screen.ViewForSlot(_ownerHud.slot) : null;
+            return view != null ? view.GetComponent<StageActor>() : null;
+        }
+
+        private void FitLocalViewport(StageActor actor)
+        {
+            if (transform is not RectTransform root || actor.Camera == null) return;
+
+            var viewport = actor.Camera.rect;
+            if (root.anchorMin == viewport.min && root.anchorMax == viewport.max) return;
+
+            root.anchorMin = viewport.min;
+            root.anchorMax = viewport.max;
+            root.offsetMin = root.offsetMax = Vector2.zero;
+        }
+
+        private bool CanShowAtCurrentStage(StageActor actor)
+        {
+            switch (_trigger)
+            {
+                case Trigger.FirstStageOnePad:
+                    return _stageOneNarrative != null && _stageOneNarrative.IsAtFirstPad(actor) &&
+                        (StageOneFlow.Instance?.Progress?.GateOpen == true || actor.Abilities.OfflineBothUnlocked);
+                case Trigger.FirstSapMaze:
+                    return _mazeFlow != null && _mazeFlow.CurrentMaze == 0 &&
+                        _mazeFlow.CurrentBoard is SapMazeBoard board && board.Active &&
+                        board.State.Phase == MazePhase.Running;
+                default:
+                    return BranchRideFlow.TryBoardHint(actor, out _);
+            }
+        }
+
         private void Show(Guide guide)
         {
             _hasShown = true;
@@ -96,6 +145,7 @@ namespace Herbalist.GameUI
             _instruction.text = guide.instruction;
             _clipImage.texture = guide.poster;
             _panel.SetActive(true);
+            _closeButton.onClick.AddListener(Dismiss);
             GameplayCursor.Instance?.SetUiMode(this, true);
             _videoPlayer.clip = guide.clip;
             if (guide.clip != null) _videoPlayer.Play();
@@ -112,15 +162,12 @@ namespace Herbalist.GameUI
             _videoPlayer.Stop();
             _videoPlayer.clip = null;
             _clipImage.texture = null;
+            _closeButton.onClick.RemoveListener(Dismiss);
             _panel.SetActive(false);
             GameplayCursor.Instance?.SetUiMode(this, false);
             GameplayCursor.Instance?.Capture();
         }
 
         private void OnDisable() => Hide();
-        private void OnDestroy()
-        {
-            if (_closeButton != null) _closeButton.onClick.RemoveListener(Dismiss);
-        }
     }
 }
