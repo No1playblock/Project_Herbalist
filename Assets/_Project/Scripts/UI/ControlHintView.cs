@@ -116,7 +116,6 @@ namespace Herbalist.GameUI
                     if (artwork != null)
                     {
                         slot.image.sprite = artwork;
-                        slot.image.preserveAspect = true;
                         slot.image.rectTransform.localScale = leftMouse || rightMouse
                             ? new Vector3(_mouseIconScale, _mouseIconScale, 1f)
                             : new Vector3(ordinaryKeyScale, ordinaryKeyScale, 1f);

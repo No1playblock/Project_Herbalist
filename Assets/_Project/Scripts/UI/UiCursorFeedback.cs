@@ -27,11 +27,10 @@ namespace Herbalist.GameUI
                 return;
             }
 
-            bool hovering = Cursor.visible && Cursor.lockState == CursorLockMode.None &&
-                IsOverInteractiveUi(mouse.deviceId);
-            SetHover(hovering);
+            bool cursorAvailable = Cursor.visible && Cursor.lockState == CursorLockMode.None;
+            SetHover(cursorAvailable && IsOverInteractiveUi(mouse.deviceId));
 
-            if (hovering && mouse.leftButton.wasPressedThisFrame)
+            if (cursorAvailable && mouse.leftButton.wasPressedThisFrame)
                 ShowClickRing(mouse.position.ReadValue());
 
             if (_clickRing != null && _clickRing.gameObject.activeSelf)
@@ -63,8 +62,9 @@ namespace Herbalist.GameUI
 
         private void ShowClickRing(Vector2 screenPosition)
         {
-            if (_clickRing == null || !RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    (RectTransform)transform, screenPosition, null, out var localPoint))
+            var overlayRect = (RectTransform)transform;
+            if (_clickRing == null || !RectTransformUtility.RectangleContainsScreenPoint(overlayRect, screenPosition) ||
+                !RectTransformUtility.ScreenPointToLocalPointInRectangle(overlayRect, screenPosition, null, out var localPoint))
                 return;
 
             _clickRing.rectTransform.anchoredPosition = localPoint;

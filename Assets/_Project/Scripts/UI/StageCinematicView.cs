@@ -128,6 +128,7 @@ namespace Herbalist.GameUI
             if (_loading) return;
             _loading = true;
             if (!_finished) _videoPlayer.Pause();
+            _video.gameObject.SetActive(false);
             _skipPrompt.SetActive(true);
             _skipLabel.text = "다음 스테이지 로딩 중…";
             _holdFill.fillAmount = 0;
