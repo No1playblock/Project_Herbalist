@@ -12,7 +12,6 @@ namespace Herbalist.GameUI
 {
     public sealed class StageNarrativePresenter : MonoBehaviour
     {
-        private const string StoneTutorial = "T3-03";
         [SerializeField]
         private StageNarrativeText _text;
         [SerializeField]
@@ -91,7 +90,7 @@ namespace Herbalist.GameUI
                 return;
             if (_activeTutorial != null && !Near(actor, _tutorialPoint))
             {
-                if (_activeTutorial != StoneTutorial) _seen.Remove(_activeTutorial);
+                _seen.Remove(_activeTutorial);
                 _hud.HideGuide();
                 _activeTutorial = null;
             }
@@ -138,7 +137,7 @@ namespace Herbalist.GameUI
             {
                 if (!eligible || complete || !_hud.GuideActive)
                 {
-                    if (!eligible && !complete && id != StoneTutorial) _seen.Remove(id);
+                    if (!eligible && !complete) _seen.Remove(id);
                     _hud.HideGuide();
                     _activeTutorial = null;
                 }
@@ -312,25 +311,14 @@ namespace Herbalist.GameUI
         {
             bool atBottom = _ride.CurrentPhase is BranchRidePhase.Landed or BranchRidePhase.Ending or BranchRidePhase.Complete;
             _mainQuest.transform.parent.gameObject.SetActive(!atBottom);
-            if (atBottom)
-            {
-                _hud.HideGuide();
-                _activeTutorial = null;
-                return;
-            }
+            if (atBottom) return;
             Quest("M3-01", _ride.CurrentPhase == BranchRidePhase.Boarding ? "S3-01" : null, _ride.BoardedCount);
             Dialogue("G3-01", "D-025", "D-026");
-            Tutorial("T3-01", actor, _ride.Position, Near(actor, _ride.Position), _ride.CurrentPhase != BranchRidePhase.Boarding);
-            Tutorial(StoneTutorial, actor, _ride.Position, actor.Abilities.Kind == PlayerAbilityKind.Leaf, false);
             if (_ride.CurrentPhase != BranchRidePhase.Riding)
                 return;
             var first = _ride.Switches[0];
             if (Near(actor, first.Port.InteractionPoint))
-            {
                 Dialogue("G3-02", "D-027", "D-028");
-                if (actor.Abilities.Kind == PlayerAbilityKind.Sap)
-                    Tutorial("T3-02", actor, first.Port.InteractionPoint, true, _ride.PresentationBranchMask != 0);
-            }
 
             foreach (var stone in _ride.Hazards)
                 if (stone != null && stone.Sample(_ride.PresentationStoneClock, out var point) && Near(actor, point))
