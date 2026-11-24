@@ -26,6 +26,8 @@ namespace Herbalist.GameUI
         [SerializeField] private CanvasGroup _stageHeaderGroup;
         [SerializeField] private Image _stageHeaderFirstArt;
         [SerializeField] private Image _stageHeaderSecondArt;
+        [SerializeField] private Sprite _stageTwoTitleArt;
+        [SerializeField] private Sprite _stageTwoGuidanceArt;
         [SerializeField, Min(0f)] private float _stageHeaderFadeInDuration = 0.6f;
         [SerializeField, Min(0f)] private float _stageHeaderHoldDuration = 2f;
         [SerializeField, Min(0f)] private float _stageHeaderFadeOutDuration = 0.6f;
@@ -34,6 +36,16 @@ namespace Herbalist.GameUI
         internal bool StageHeaderPlaying => _stageHeaderSequence != null;
         private string _shownObjective;
         private float _objectiveElapsed;
+        private void Awake()
+        {
+            if (FindAnyObjectByType<Herbalist.Levels.DescendingMazeFlow>() == null) return;
+
+            if (_stageHeaderFirstArt != null && _stageTwoTitleArt != null)
+                _stageHeaderFirstArt.sprite = _stageTwoTitleArt;
+            if (_stageHeaderSecondArt != null && _stageTwoGuidanceArt != null)
+                _stageHeaderSecondArt.sprite = _stageTwoGuidanceArt;
+        }
+
         private void OnEnable()
         {
             lastPaused = GameplayPause.IsPaused;

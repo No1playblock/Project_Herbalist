@@ -190,8 +190,11 @@ namespace Herbalist.GameUI
                 var iconImage = leafIcon.GetComponent<Image>();
                 if (iconImage != null)
                 {
-                    iconImage.color = new Color(.78f, .64f, .31f, 1f);
-
+                    bool hasIconSprite = iconImage.sprite != null;
+                    iconImage.enabled = hasIconSprite;
+                    iconImage.raycastTarget = hasIconSprite;
+                    if (hasIconSprite)
+                        iconImage.color = new Color(.78f, .64f, .31f, 1f);
                 }
                 leafIcon.localScale = Vector3.one;
             }
