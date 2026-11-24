@@ -511,7 +511,7 @@ namespace Herbalist.GameUI
             }
             if (currentTemperatureMarker != null)
             {
-                currentTemperatureMarker.gameObject.SetActive(!sodam);
+                currentTemperatureMarker.gameObject.SetActive(true);
                 float level = Mathf.Clamp01(flow.Temperature / flow.settings.maximumTemperature);
                 currentTemperatureMarker.anchorMin = currentTemperatureMarker.anchorMax = new Vector2(.5f, .5f);
                 currentTemperatureMarker.anchoredPosition = Vector2.zero;
