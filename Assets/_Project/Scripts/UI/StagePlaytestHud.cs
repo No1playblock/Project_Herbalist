@@ -30,6 +30,7 @@ namespace Herbalist.GameUI
         [SerializeField, Range(0f, .04f)] private float _guideArrowBounceAmplitude = .012f;
         [SerializeField, Min(.1f)] private float _guideArrowBounceSpeed = 3.8f;
         [SerializeField] private TMP_Text _guideText;
+        [SerializeField] private bool _showGuideCaption = true;
         [SerializeField] private Vector2 _captionMinimumSize = new(260, 76);
         [SerializeField] private Vector2 _captionMaximumSize = new(560, 180);
         [SerializeField] private Vector2 _captionPadding = new(88, 32);
@@ -346,7 +347,7 @@ namespace Herbalist.GameUI
             _guidePoint = point;
             _guideTarget = target;
             _guideAllowOffscreen = allowOffscreen;
-            _guideText.text = message;
+            if (_showGuideCaption) _guideText.text = message;
             _guideRemaining = _guideSeconds;
             foreach (var playerHud in FindObjectsByType<PlayerHud>(FindObjectsSortMode.None))
                 playerHud.HideContextHints();
@@ -370,7 +371,8 @@ namespace Herbalist.GameUI
             if (_guideConnector != null && _guideConnector != guideArrow)
                 _guideConnector.gameObject.SetActive(false);
             if (guideArrow != null) guideArrow.gameObject.SetActive(visible);
-            _guideText.transform.parent.gameObject.SetActive(visible);
+            var captionRect = (RectTransform)_guideText.transform.parent;
+            captionRect.gameObject.SetActive(visible && _showGuideCaption);
             if (!visible) return true;
 
             var cameraTransform = _guideCamera.transform;
@@ -398,7 +400,25 @@ namespace Herbalist.GameUI
             _worldRing ??= new SpotlightWorldRing();
             _worldRing.Configure(_worldRingSetup);
             _worldRing.Draw(_guideCamera, ringCenter, radius * ringScale, _worldRingMaterial);
-            var captionRect = (RectTransform)_guideText.transform.parent;
+            if (_showGuideCaption) PositionCaption(captionRect, center, radii);
+            float arrowY = Mathf.Min(.93f, center.y + radii.y + .012f);
+            float arrowX = Mathf.Clamp(center.x, .03f, .97f);
+            if (guideArrow != null)
+            {
+                float arrowWidth = Mathf.Clamp(_guideArrowWidth, .01f, .08f);
+                float arrowHeight = Mathf.Clamp(_guideArrowHeight, .01f, .1f);
+                float bounce = Mathf.Sin(Time.unscaledTime * _guideArrowBounceSpeed) * _guideArrowBounceAmplitude;
+                float bouncedY = Mathf.Clamp(arrowY + bounce, .02f, .95f - arrowHeight);
+                Fit(guideArrow,
+                    new(arrowX - arrowWidth * .5f, bouncedY),
+                    new(arrowX + arrowWidth * .5f, bouncedY + arrowHeight));
+                guideArrow.SetAsLastSibling();
+            }
+            return true;
+        }
+
+        private void PositionCaption(RectTransform captionRect, Vector2 center, Vector2 radii)
+        {
             Vector2 viewportSize = _spotlight.rect.size;
             Vector2 captionSize = MeasureCaption(viewportSize);
             captionRect.anchorMin = captionRect.anchorMax = new Vector2(.5f, .5f);
@@ -416,20 +436,6 @@ namespace Herbalist.GameUI
             if (left - halfCaption.x >= .03f) captionCenter.x = left;
             else if (rightSide + halfCaption.x <= .97f) captionCenter.x = rightSide;
             captionRect.anchoredPosition = Vector2.Scale(captionCenter - Vector2.one * .5f, viewportSize);
-            float arrowY = Mathf.Min(.93f, center.y + radii.y + .012f);
-            float arrowX = Mathf.Clamp(center.x, .03f, .97f);
-            if (guideArrow != null)
-            {
-                float arrowWidth = Mathf.Clamp(_guideArrowWidth, .01f, .08f);
-                float arrowHeight = Mathf.Clamp(_guideArrowHeight, .01f, .1f);
-                float bounce = Mathf.Sin(Time.unscaledTime * _guideArrowBounceSpeed) * _guideArrowBounceAmplitude;
-                float bouncedY = Mathf.Clamp(arrowY + bounce, .02f, .95f - arrowHeight);
-                Fit(guideArrow,
-                    new(arrowX - arrowWidth * .5f, bouncedY),
-                    new(arrowX + arrowWidth * .5f, bouncedY + arrowHeight));
-                guideArrow.SetAsLastSibling();
-            }
-            return true;
         }
 
         private Vector2 MeasureCaption(Vector2 viewportSize)
