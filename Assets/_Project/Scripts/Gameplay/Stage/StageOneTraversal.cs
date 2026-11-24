@@ -33,6 +33,7 @@ namespace Herbalist.Levels
         [SerializeField] private HangingCloth[] _respawnCloths = System.Array.Empty<HangingCloth>();
         [SerializeField] private StageOneDocumentMechanism[] _respawnBranches = System.Array.Empty<StageOneDocumentMechanism>();
         [SerializeField] private bool _placeOfflineAtStarts;
+        [SerializeField, Min(0f)] private float _terrainDetailDistanceLimit = 250f;
         [SerializeField] private float _fallHeight = -15;
         [SerializeField, Min(0)] private float _contactPadding = .08f;
         [SerializeField, Min(0)] private float _recoveryGrace = .5f;
@@ -69,6 +70,15 @@ namespace Herbalist.Levels
         public bool Authority => StageOneFlow.Instance != null && StageOneFlow.Instance.Authority;
         private void Start()
         {
+            if (Instance == this && gameObject.scene.name == "Stage_01_ModelingReference_CharacterBranch_DevelopStage1_Reference")
+            {
+                foreach (var terrain in Terrain.activeTerrains)
+                {
+                    if (terrain.gameObject.scene == gameObject.scene && terrain.detailObjectDistance > _terrainDetailDistanceLimit)
+                        terrain.detailObjectDistance = _terrainDetailDistanceLimit;
+                }
+            }
+
             if (!_placeOfflineAtStarts || !Authority || FusionLobbySession.Instance is { HasNetworkSession: true }) return;
             foreach (var actor in StageActor.All)
                 if (actor.Available && actor.Slot >= 0 && actor.Slot < _starts.Length && _starts[actor.Slot] != null)
