@@ -43,6 +43,7 @@ namespace Herbalist.Networking
         [Networked] public NetworkBool ExternalFlight { get; set; }
         [Networked] public float ExternalGravity { get; set; }
         [Networked] public NetworkBool ExternalAirControl { get; set; }
+        [Networked] private NetworkObject LaunchCollisionPartner { get; set; }
         [Networked] public NetworkBool Transported { get; set; }
         [Networked] public Vector3 TransportPosition { get; set; }
         [Networked] public float LiftSpeed { get; set; }
@@ -139,7 +140,14 @@ namespace Herbalist.Networking
             // All values needed for re-simulation come from Fusion's restored tick state.
             if (HasStateAuthority) MovementBlocked = player.Motor.HasMovementLockExcept(this);
             player.Motor.SetMovementLock(this, MovementBlocked);
-            player.Motor.RestoreState(new MotorState { Position = SimulationPosition, Velocity = SimulationVelocity, Grounded = Grounded, EnteredGateMask = EnteredGateMask, ExternalFlight = ExternalFlight, ExternalGravity = ExternalGravity, ExternalAirControl = ExternalAirControl });
+            var launchPartner = LaunchCollisionPartner;
+            player.Motor.RestoreState(new MotorState
+            {
+                Position = SimulationPosition, Velocity = SimulationVelocity, Grounded = Grounded,
+                EnteredGateMask = EnteredGateMask, ExternalFlight = ExternalFlight,
+                ExternalGravity = ExternalGravity, ExternalAirControl = ExternalAirControl,
+                LaunchCollisionPartner = launchPartner != null ? launchPartner.GetComponent<CharacterController>() : null
+            });
             player.Motor.SetLiftSpeed(LiftSpeed);
             Vector3 direction = Vector3.zero;
             if (GetInput(out PlayerNetworkInput input))
@@ -195,18 +203,22 @@ namespace Herbalist.Networking
             SimulationPosition = state.Position; SimulationVelocity = state.Velocity; Grounded = state.Grounded;
             EnteredGateMask = state.EnteredGateMask;
             ExternalFlight = state.ExternalFlight; ExternalGravity = state.ExternalGravity; ExternalAirControl = state.ExternalAirControl;
+            if (state.LaunchCollisionPartner == null) LaunchCollisionPartner = null;
         }
-        public void LaunchAuthoritatively(Vector3 velocity, float gravity, bool allowAirControl = false)
+        public void LaunchAuthoritatively(Vector3 velocity, float gravity, bool allowAirControl = false,
+            CharacterController collisionPartner = null)
         {
             if (!HasStateAuthority) return;
             ExternalAirControl = allowAirControl; SimulationVelocity = velocity; Grounded = false; ExternalFlight = true; ExternalGravity = gravity;
-            player.Motor.Launch(velocity, gravity, allowAirControl);
+            LaunchCollisionPartner = collisionPartner != null ? collisionPartner.GetComponent<NetworkObject>() : null;
+            player.Motor.Launch(velocity, gravity, allowAirControl, collisionPartner);
         }
         public void TeleportAuthoritatively(Vector3 position)
         {
             if (!HasStateAuthority) return;
             SimulationPosition = position; SimulationVelocity = Vector3.zero; Grounded = false;
             ExternalFlight = false; ExternalGravity = 0;
+            LaunchCollisionPartner = null;
             player.Motor.Teleport(position);
         }
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
