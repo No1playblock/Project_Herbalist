@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Herbalist.Levels;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
@@ -61,7 +62,7 @@ namespace Herbalist.Abilities
         public static LeafInstallTarget Find(int id) => targets.TryGetValue(id, out var target) ? target : null;
         public bool CanInstall => isActiveAndEnabled && _reuseRemaining <= 0f && (_replaceOnInstall || !_singleOccupant || !HasLeaf) &&
             (GetComponentInParent<Herbalist.Levels.ExteriorJumpPad>() is not { } pad || pad.Ready) &&
-            (!TryGetComponent<Herbalist.Levels.StageOneTargetGate>(out var gate) || gate.AllowsInstallation);
+            (!TryGetComponent<StageOneTargetGate>(out var gate) || gate.AllowsInstallation);
         public Vector3 Position(Vector3 hit, Vector3 normal, float offset) => socket != null ? socket.position : hit + normal * offset;
         public Quaternion Rotation(Vector3 normal, Vector3 heading)
         {
@@ -115,7 +116,8 @@ namespace Herbalist.Abilities
             if (_readyMarker != null)
             {
                 var pad = GetComponentInParent<Herbalist.Levels.ExteriorJumpPad>();
-                _readyMarker.SetActive(isActiveAndEnabled && _reuseRemaining <= 0f && !HasLeaf && (pad == null || pad.Ready));
+                _readyMarker.SetActive(isActiveAndEnabled && _reuseRemaining <= 0f && !HasLeaf &&
+                    (pad == null || pad.Ready) && (!TryGetComponent<StageOneTargetGate>(out var gate) || !gate.HidesReadyMarker));
             }
         }
     }

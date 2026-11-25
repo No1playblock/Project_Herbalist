@@ -9,6 +9,8 @@ namespace Herbalist.Levels
         [SerializeField] private bool _requiresCompleted = true;
         public bool AllowsInstallation => _mechanism != null && _mechanism.Kind != StageOneDocumentMechanismKind.LowerBranch &&
             (_requiresCompleted ? _mechanism.Solved : _mechanism.Ready);
+        internal bool HidesReadyMarker => _mechanism != null &&
+            _mechanism.Kind == StageOneDocumentMechanismKind.LowerBranch && _mechanism.Solved;
         public bool TryHitBranch() => _mechanism != null && _mechanism.TryHitBranch();
     }
 }
