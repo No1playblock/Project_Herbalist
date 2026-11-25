@@ -7,7 +7,7 @@ using Herbalist.Levels;
 namespace Herbalist.StageOne
 {
     public enum StageCommand { Interact, Craft, Drink, Up, Left, Down, Right, FanEnd, CancelMinigame, ReleaseCloth, Recover }
-    public enum StageInteraction { None, Gather, Give, OfferHerb, Receive, Brew, Drink, PickupPotion, GrabCloth, ReleaseCloth, BoardTalisman, DismountTalisman }
+    public enum StageInteraction { None, Gather, Give, OfferHerb, Receive, Brew, Drink, PickupPotion, GrabCloth, ReleaseCloth, BoardTalisman }
     [RequireComponent(typeof(PlayerController))]
     public sealed class StageActor : MonoBehaviour
     {
@@ -126,9 +126,6 @@ namespace Herbalist.StageOne
                         return HangingCloth.TryInteract(this, out var clothMessage) ? clothMessage : string.Empty;
                     case StageInteraction.BoardTalisman:
                         return BranchRideFlow.TryBoard(this, out var rideMessage) ? rideMessage : string.Empty;
-                    case StageInteraction.DismountTalisman:
-                        BranchRideFlow.TryDismount(this);
-                        return string.Empty;
                     case StageInteraction.None:
                         return string.Empty;
                 }
@@ -145,7 +142,6 @@ namespace Herbalist.StageOne
                 (flow != null && flow.Minigame != StageMinigameKind.None)) return StageInteraction.None;
             if (HangingCloth.TryInteractionHint(this, out point, out bool release))
                 return release ? StageInteraction.ReleaseCloth : StageInteraction.GrabCloth;
-            if (BranchRideFlow.TryDismountHint(this, out point)) return StageInteraction.DismountTalisman;
             if (HangingCloth.IsGrabbing(this) || player.Motor.MovementLocked) return StageInteraction.None;
             if (BranchRideFlow.TryBoardHint(this, out point)) return StageInteraction.BoardTalisman;
             if (SoloPotionPickup.TryHint(this, out point)) return StageInteraction.PickupPotion;

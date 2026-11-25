@@ -218,7 +218,13 @@ namespace Herbalist.Networking
         }
         public override void Render()
         {
-            if (characterPresentation != null) characterPresentation.SetNetworkGrounded(Grounded);
+            if (characterPresentation != null)
+            {
+                var level = Herbalist.Levels.StageLevel.Instance;
+                bool ridingMazeRaft = Transported && level != null &&
+                    level.TryGetComponent<Herbalist.Levels.DescendingMazeFlow>(out _);
+                characterPresentation.SetNetworkGrounded(Grounded, ridingMazeRaft);
+            }
             if (!HasInputAuthority) player.View.SetLookAngles(LookAngles.x, LookAngles.y);
             if (!HasInputAuthority) player.View.SetRemoteZoom(CameraZoomMultiplier);
             player.View.SetBodyYaw(player.Tuning.facingMode == PlayerFacingMode.CameraAligned && HasInputAuthority

@@ -43,11 +43,11 @@ MonoBehaviour:
   clothGrabText: "\uCC9C \uC7A1\uAE30"
   clothReleaseText: "\uCC9C \uB193\uAE30"
   sapInjectText: "\uC218\uC561 \uC8FC\uC785 (\uB204\uB974\uACE0 \uC788\uAE30)"
-  sapPushClothText: "\uCC9C \uBC00\uAE30 (\uB204\uB974\uACE0 \uC788\uAE30)"
+  sapPushClothText: "\uCC9C \uBC00\uAE30"
   leafInstallText: "\uB098\uBB47\uC78E \uC124\uCE58"
   leafInstallHintRange: 12
   leafHeldText: "\uBCF4\uC720"
-  leafInstalledText: "\uC124\uCE58 \uC911"
+  leafInstalledText: "\uC0AC\uC6A9"
   leafReturningText: "\uD68C\uC218 \uC911"
   leafHeldColor: {r: 0.49, g: 0.86, b: 0.66, a: 1}
   leafInstalledColor: {r: 0.96, g: 0.76, b: 0.36, a: 1}
@@ -55,7 +55,7 @@ MonoBehaviour:
   _leafRecallAvailableIcon: {fileID: 21300000, guid: 3d8e19cafb6f5c5fa31602c7aa999fc2, type: 3}
   _leafRecallUnavailableIcon: {fileID: 21300000, guid: f87d03965a915a15a9bb840e0b794ee0, type: 3}
   pauseHint: "\uC77C\uC2DC\uC815\uC9C0"
-  helpHint: "\uD0A4 \uD655\uC778"
+  helpHint: "\uB3C4\uC6C0\uB9D0 \uD655\uC778"
   emptyPocket: "\uBE48\uC190"
   controlHintFormat: <b>{0}</b>  {1}
   alternativeControlHintFormat: <b>{0}</b> / <b>{1}</b>  {2}
@@ -86,7 +86,8 @@ MonoBehaviour:
     offlineTestOnly: 0
     _stageOneAction: {fileID: 11400000, guid: 74a07ea931714267ac29f682967f8f5a, type: 2}
     _stageOneLabel: "\uCCB4\uD06C\uD3EC\uC778\uD2B8 \uBCF5\uADC0"
-    _mazeLabel: "\uB2A5\uB825 \uC0AC\uC6A9 / \uBBF8\uB85C \uC81C\uC5B4 \uC804\uD658"
+    _mazeLabel: "\uBBF8\uB85C \uC7AC\uC2DC\uC791"
+    _hideInBranchRide: 1
   - label: "\uB098\uBB47\uC78E \uD68C\uC218"
     action: {fileID: 11400000, guid: 90c914f183676a846b010a5dc1f82c38, type: 2}
     offlineTestOnly: 0

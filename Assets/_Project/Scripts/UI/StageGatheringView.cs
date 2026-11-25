@@ -101,6 +101,7 @@ namespace Herbalist.GameUI
         private void ResetPull()
         {
             _duyeongRoot.SetActive(false);
+            _inputHint.gameObject.SetActive(false);
             _duyeongFlow = null;
             _activeHerb = null;
             _shownSteps = -1;
@@ -110,6 +111,7 @@ namespace Herbalist.GameUI
         private void ShowPull(int steps, bool complete)
         {
             _duyeongRoot.SetActive(true);
+            _inputHint.gameObject.SetActive(true);
             steps = Mathf.Clamp(steps, 0, _stepFills.Length);
             if (steps == _shownSteps) return;
             _shownSteps = steps;

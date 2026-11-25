@@ -38,7 +38,7 @@ namespace Herbalist.Abilities
         internal const int SlotStatesMask = (1 << ProgressOffset) - 1;
         public int PackedSlotStates => PackedSlotPresentation & SlotStatesMask;
 
-        // Keep the two-bit states in the low six bits and append one progress byte per slot.
+        // The progress byte tracks return travel or remaining timed installation, depending on the slot state.
         public int PackedSlotPresentation
         {
             get
@@ -53,11 +53,18 @@ namespace Herbalist.Abilities
                     packed |= state << (i * SlotStateBits);
                     if (state == 2)
                         packed |= Mathf.RoundToInt(leaf.ReturnProgress * ProgressMax) << (ProgressOffset + i * ProgressBits);
+                    else if (state == 1)
+                    {
+                        float lifetime = leaf.RemainingLifetimeFraction;
+                        if (lifetime > 0f)
+                            packed |= Mathf.Clamp(Mathf.RoundToInt(lifetime * ProgressMax), 1, ProgressMax)
+                                << (ProgressOffset + i * ProgressBits);
+                    }
                 }
                 return packed;
             }
         }
-        public static float ReadSlotReturnProgress(int packed, int slot) =>
+        public static float ReadSlotProgress(int packed, int slot) =>
             ((packed >> (ProgressOffset + slot * ProgressBits)) & ProgressMax) / (float)ProgressMax;
         public bool Recovering { get; private set; }
         public bool RecallOldestInstalled()

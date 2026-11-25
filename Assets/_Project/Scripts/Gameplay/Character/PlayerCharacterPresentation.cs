@@ -32,6 +32,7 @@ namespace Herbalist.Player
         private bool headModified;
         private bool network;
         private bool grounded;
+        private bool _networkMazeRaft;
         private int speedId, groundedId, playbackId;
         private GameObject _activeRoot;
         private Animator _activeAnimator;
@@ -65,7 +66,11 @@ namespace Herbalist.Player
             return true;
         }
 
-        public void SetNetworkGrounded(bool value) => grounded = value;
+        public void SetNetworkGrounded(bool value, bool ridingMazeRaft)
+        {
+            grounded = value;
+            _networkMazeRaft = ridingMazeRaft;
+        }
         private void ApplyRole(GameObject root, Animator selectedAnimator)
         {
             if (headModified && head != null) head.localRotation = animatedHead;
@@ -100,7 +105,9 @@ namespace Herbalist.Player
             previousPosition = transform.position;
             if (_activeRoot == null || _activeAnimator == null || !_activeRoot.activeInHierarchy || Time.deltaTime <= 0) return;
             _activeAnimator.speed = Herbalist.GameUI.GameplayPause.IsPaused ? 0 : 1;
-            float speed = delta.magnitude > teleportDistance ? 0 : Vector3.ProjectOnPlane(delta, Vector3.up).magnitude / Time.deltaTime;
+            bool ridingMazeRaft = network ? _networkMazeRaft : player != null && player.IsRidingMazeRaft;
+            float speed = ridingMazeRaft || delta.magnitude > teleportDistance
+                ? 0 : Vector3.ProjectOnPlane(delta, Vector3.up).magnitude / Time.deltaTime;
             // Use a shorter blend when stopping without snapping the current speed to zero.
             bool stopping = speed <= stoppedSpeedThreshold;
             _activeAnimator.SetFloat(speedId, stopping ? 0 : speed, stopping ? stopDamping : speedDamping, Time.deltaTime);
@@ -108,7 +115,7 @@ namespace Herbalist.Player
             bool backpedaling = player != null && player.Tuning.facingMode == PlayerFacingMode.CameraAligned
                 && Vector3.Dot(planar.normalized, body.forward) < -backwardThreshold;
             _activeAnimator.SetFloat(playbackId, backpedaling ? -1f : 1f);
-            _activeAnimator.SetBool(groundedId, network ? grounded : motor.IsGrounded);
+            _activeAnimator.SetBool(groundedId, ridingMazeRaft || (network ? grounded : motor.IsGrounded));
         }
         private void LateUpdate()
         {

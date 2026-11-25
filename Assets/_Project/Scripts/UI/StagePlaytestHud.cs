@@ -87,11 +87,10 @@ namespace Herbalist.GameUI
         public bool HistoryOpen => _historyPanel != null && _historyPanel.activeSelf;
         public bool HistoryEscapeConsumedThisFrame => _historyEscapeConsumedFrame == Time.frameCount;
         public void QueueDialogue(string text) { if (!string.IsNullOrEmpty(text)) _dialogue.Enqueue(text); }
-        public bool ShowGuide(Camera camera, Vector3 point, string message, LeafInstallTarget target = null)
+        public bool ShowGuide(Camera camera, Vector3 point, string message, LeafInstallTarget target = null,
+            bool allowOffscreen = false)
         {
-            // Narrative tutorials are acknowledged only when their target is visible.
-            if (!StartGuide(camera, point, message, false, target)) return false;
-            return true;
+            return StartGuide(camera, point, message, allowOffscreen, target);
         }
         public void HideGuide() => _guideRemaining = 0f;
 
@@ -372,7 +371,9 @@ namespace Herbalist.GameUI
                 _guideConnector.gameObject.SetActive(false);
             if (guideArrow != null) guideArrow.gameObject.SetActive(visible);
             var captionRect = (RectTransform)_guideText.transform.parent;
-            captionRect.gameObject.SetActive(visible && _showGuideCaption);
+            captionRect.gameObject.SetActive(_showGuideCaption);
+            if (!visible && _showGuideCaption)
+                PositionCaption(captionRect, new Vector2(.5f, .14f), Vector2.zero);
             if (!visible) return true;
 
             var cameraTransform = _guideCamera.transform;

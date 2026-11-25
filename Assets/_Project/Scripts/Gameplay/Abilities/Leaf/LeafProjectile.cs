@@ -34,6 +34,9 @@ namespace Herbalist.Abilities
         public float ReturnProgress { get; private set; }
         public Vector3 ContactPoint => Target != null ? Target.transform.TransformPoint(localContactPoint) : transform.position;
         public bool Installed => State == LeafState.Installed;
+        internal float RemainingLifetimeFraction =>
+            Installed && Target != null && !settings.permanentInstallation && !Target.KeepsLeafUntilUsed &&
+            settings.lifetime > 0f ? Mathf.Clamp01(remaining / settings.lifetime) : 0f;
         public void Initialize(LeafAbilitySettings config, Transform returningOwner, Vector3 origin, Vector3 aim, Action<LeafProjectile> onRelease, bool network, Transform returnFrame = null)
         {
             settings = config; owner = returningOwner; start = origin; destination = aim;

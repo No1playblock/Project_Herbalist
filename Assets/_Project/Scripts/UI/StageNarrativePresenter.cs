@@ -42,6 +42,7 @@ namespace Herbalist.GameUI
         private BranchRideFlow _ride;
         private bool _pairedPadArrival;
         private Vector3 _tutorialPoint;
+        private bool _tutorialRequiresProximity;
         private string _detailId;
         [SerializeField, Min(0)] private float _questRightMargin = 24f;
         private RectTransform _questRoot;
@@ -91,7 +92,7 @@ namespace Herbalist.GameUI
             var actor = StageActor.All.FirstOrDefault(a => a.Local);
             if (actor == null)
                 return;
-            if (_activeTutorial != null && !Near(actor, _tutorialPoint))
+            if (_activeTutorial != null && _tutorialRequiresProximity && !Near(actor, _tutorialPoint))
             {
                 _seen.Remove(_activeTutorial);
                 _hud.HideGuide();
@@ -138,7 +139,8 @@ namespace Herbalist.GameUI
 
         internal bool IsAtFirstPad(StageActor actor) =>
             _firstPad != null && Near(actor, _firstPad.transform.position);
-        private void Tutorial(string id, StageActor actor, Vector3 point, bool eligible, bool complete, LeafInstallTarget target = null)
+        private void Tutorial(string id, StageActor actor, Vector3 point, bool eligible, bool complete,
+            LeafInstallTarget target = null, bool requiresProximity = true)
         {
             if (_activeTutorial == id)
             {
@@ -152,13 +154,14 @@ namespace Herbalist.GameUI
                 return;
             }
 
-            if (_activeTutorial != null || _seen.Contains(id) || !eligible || complete || !Near(actor, point))
+            if (_activeTutorial != null || _seen.Contains(id) || !eligible || complete || (requiresProximity && !Near(actor, point)))
                 return;
-            if (_hud.ShowGuide(actor.Camera, point, _text.Find(id), target))
+            if (_hud.ShowGuide(actor.Camera, point, _text.Find(id), target, !requiresProximity))
             {
                 _seen.Add(id);
                 _activeTutorial = id;
                 _tutorialPoint = point;
+                _tutorialRequiresProximity = requiresProximity;
             }
         }
 
@@ -237,7 +240,8 @@ namespace Herbalist.GameUI
 
             foreach (var target in flow.SapOnlyBranchGuideTargets)
                 if (target != null)
-                    Tutorial("T1-03", actor, target.SocketPosition, target.isActiveAndEnabled && target.HasLeaf && Near(actor, target.SocketPosition), !target.HasLeaf, target);
+                    Tutorial("T1-03", actor, target.SocketPosition, target.isActiveAndEnabled && target.HasLeaf,
+                        !target.HasLeaf, target, requiresProximity: false);
             if (actor.Abilities.Kind == PlayerAbilityKind.Leaf)
             {
                 bool hint = HangingCloth.TryInteractionHint(actor, out var knot, out bool release);
@@ -246,8 +250,6 @@ namespace Herbalist.GameUI
                     Dialogue("G1-07", flow.RoleFor(actor) == CharacterRole.Duyeong ? "D-011" : "D-012");
             }
 
-            if (flow.InsideCount == 2)
-                Dialogue("G1-08", "D-013");
         }
 
         private void StageTwo(StageActor actor)
@@ -317,9 +319,14 @@ namespace Herbalist.GameUI
 
         private void StageThree(StageActor actor)
         {
-            bool atBottom = _ride.CurrentPhase is BranchRidePhase.Landed or BranchRidePhase.Ending or BranchRidePhase.Complete;
-            _mainQuest.transform.parent.gameObject.SetActive(!atBottom);
-            if (atBottom) return;
+            bool showingEnding = _ride.CurrentPhase is BranchRidePhase.Landing or BranchRidePhase.Ending or BranchRidePhase.Complete;
+            _mainQuest.transform.parent.gameObject.SetActive(!showingEnding);
+            if (showingEnding)
+            {
+                _hud.HideGuide();
+                _activeTutorial = null;
+                return;
+            }
             int boardedCount = _ride.BoardedCount;
             Quest("M3-01", _ride.CurrentPhase == BranchRidePhase.Boarding ? "S3-01" : null, boardedCount,
                 showCount: boardedCount < 2);

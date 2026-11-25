@@ -432,13 +432,14 @@ namespace Herbalist.GameUI
             bool legacyGathering = gathering && _gatheringView == null && panel != null;
             if (panel != null) panel.SetActive(legacyGathering);
             if (brewingHud != null) brewingHud.SetActive(crafting);
+            if (fanPrompt != null) fanPrompt.SetActive(crafting && role == CharacterRole.Sodam);
             bool showHelp = _hud.ControlHelpExpanded && (gathering || crafting);
             if (_minigameHelp != null)
             {
                 _minigameHelp.transform.parent.gameObject.SetActive(showHelp);
                 if (showHelp)
                     _minigameHelp.text = gathering
-                        ? role == CharacterRole.Duyeong ? copy.gatherDuyeongInputHint : copy.gatherSodamHelp
+                        ? role == CharacterRole.Duyeong ? copy.gatherDuyeongHelp : copy.gatherSodamHelp
                         : role == CharacterRole.Sodam ? copy.craftSodamHelp : copy.craftDuyeongHelp;
             }
             if (legacyGathering)
@@ -491,7 +492,6 @@ namespace Herbalist.GameUI
                 brewingTime.text = string.Format(
                     copy != null ? copy.brewingTimeFormat : "남은 시간\n<b>{0:00}초</b>",
                     remainingSeconds);
-            if (fanPrompt != null) fanPrompt.SetActive(sodam);
             var craftingView = _screen != null ? _screen.ViewForSlot(_hud.slot) : null;
             var craftingActor = craftingView != null ? craftingView.GetComponent<StageActor>() : null;
             if (_fanHint != null) _fanHint.Present(craftingActor != null ? craftingActor.FanBinding : string.Empty, fanPromptDescription);
@@ -543,6 +543,8 @@ namespace Herbalist.GameUI
         private void OnDisable()
         {
             if (_gatheringView != null) _gatheringView.Hide();
+            if (_minigameHelp != null) _minigameHelp.transform.parent.gameObject.SetActive(false);
+            if (fanPrompt != null) fanPrompt.SetActive(false);
             if (!_personalViewOverride) return;
             _personalViewOverride = false;
             if (_screen != null) _screen.SetOverride(this, null);

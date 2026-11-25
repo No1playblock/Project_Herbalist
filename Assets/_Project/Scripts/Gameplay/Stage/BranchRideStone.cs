@@ -7,6 +7,7 @@ namespace Herbalist.Levels
     {
         [SerializeField] private Transform _visual;
         [SerializeField] private Transform[] _rollPoints;
+        [SerializeField] private BranchRideTrack _track;
         [SerializeField, Min(.1f)] private float _fallHeight = 8;
         [SerializeField, Min(.1f)] private float _fallDuration = .8f;
         [SerializeField, Min(.1f)] private float _rollSpeed = 6;
@@ -24,6 +25,12 @@ namespace Herbalist.Levels
         public Transform Visual => _visual;
         public float Radius => _radius;
         public float HitRadius => _radius + _hitRadiusPadding;
+        internal BranchRideTrack Track => _track;
+        internal bool IsFallingAt(float clock)
+        {
+            float phaseTime = Mathf.Repeat(clock + _phaseOffset, CycleDuration);
+            return phaseTime < _fallDuration || phaseTime >= _fallDuration + RollLength / _rollSpeed;
+        }
         public float RollLength
         {
             get

@@ -54,7 +54,7 @@ namespace Herbalist.Editor
                 "s1/cloth-swap", "s1/last-cloth", "s1/arrival-one", "s1/arrival-two",
                 "s2/arrival",
                 "s3/start", "s3/one", "s3/both", "s3/leaf", "s3/t1", "s3/drop1", "s3/t2", "s3/t3", "s3/stones",
-                "s3/retry", "s3/t4", "s3/drop2", "s3/landing", "s3/landed", "s3/moon", "s3/ending", "s3/credits"
+                "s3/retry", "s3/t4", "s3/drop2", "s3/landing", "s3/ending", "s3/credits"
             }.Concat(Enumerable.Range(1, 3).SelectMany(i => new[] { "descent", "start", "leak", "refill", "retry", "exit" }.Select(s => $"s2/{i}-{s}"))).Append("s2/final");
 
             var args = Environment.GetCommandLineArgs();
@@ -113,8 +113,8 @@ namespace Herbalist.Editor
                             await Task.Delay(50);
                         if (SceneManager.GetActiveScene().path != HerbalistQa.Ride) throw new InvalidOperationException("3스테이지로 전환되지 않았습니다.");
                     }
-                    if (point == "s3/credits" && UnityEngine.Object.FindAnyObjectByType<BranchRideFlow>().CurrentPhase != BranchRidePhase.Complete)
-                        throw new InvalidOperationException("엔딩 패널이 열리지 않았습니다.");
+                    if (point == "s3/landing") await VerifyStageThreeEnding();
+                    if (point == "s3/credits") VerifyCredits(UnityEngine.Object.FindAnyObjectByType<BranchRideFlow>());
                     if (point == "s1/leaf-gather" && StageOneFlow.Instance.Minigame != StageMinigameKind.Gathering)
                         throw new InvalidOperationException("채집 미니게임이 시작되지 않았습니다.");
                     if (point == "s2/2-start" && UnityEngine.Object.FindAnyObjectByType<DescendingMazeFlow>().CurrentMaze != 1)
@@ -132,6 +132,41 @@ namespace Herbalist.Editor
             HerbalistQaWindow.StopClient();
             Write("Failures=" + failures);
             EditorApplication.Exit(failures == 0 ? 0 : 1);
+        }
+
+        private static async Task VerifyStageThreeEnding()
+        {
+            var ride = UnityEngine.Object.FindAnyObjectByType<BranchRideFlow>();
+            var presentation = UnityEngine.Object.FindAnyObjectByType<BranchRidePresentation>();
+            var presentationFields = new SerializedObject(presentation);
+            var shot = (Transform)presentationFields.FindProperty("_endingShot").objectReferenceValue;
+            var screen = (Herbalist.Presentation.PlayScreenController)presentationFields.FindProperty("_screen").objectReferenceValue;
+            var view = StageActor.All.First(actor => actor.Available && actor.Local)
+                .GetComponent<Herbalist.Player.PlayerController>().View;
+            var cameraOverride = typeof(Herbalist.Player.PlayerView).GetField("_cameraOverride",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            double deadline = Time.realtimeSinceStartupAsDouble + 15;
+            bool cutDuringDrop = false;
+            var observedPhases = new HashSet<BranchRidePhase>();
+            while (ride.CurrentPhase != BranchRidePhase.Complete && Time.realtimeSinceStartupAsDouble < deadline)
+            {
+                observedPhases.Add(ride.CurrentPhase);
+                cutDuringDrop |= ride.CurrentPhase == BranchRidePhase.Landing && ride.EndingProgress > 0f &&
+                    screen.Mode == Herbalist.Presentation.PlayScreenMode.Personal &&
+                    ReferenceEquals(cameraOverride.GetValue(view), shot);
+                await Task.Yield();
+            }
+            if (!cutDuringDrop)
+                throw new InvalidOperationException("부적 낙하 중 엔딩 카메라를 확인하지 못했습니다. 관측 단계 " + string.Join(", ", observedPhases));
+            VerifyCredits(ride);
+        }
+
+        private static void VerifyCredits(BranchRideFlow ride)
+        {
+            var panel = (GameObject)new SerializedObject(ride).FindProperty("_endingPanel").objectReferenceValue;
+            var video = panel.GetComponentInChildren<UnityEngine.Video.VideoPlayer>();
+            if (ride.CurrentPhase != BranchRidePhase.Complete || !panel.activeInHierarchy || video == null || video.clip == null)
+                throw new InvalidOperationException("엔딩 영상 패널이 열리지 않았습니다.");
         }
 
         private static void Write(string line) => File.AppendAllText(Output, line + Environment.NewLine);

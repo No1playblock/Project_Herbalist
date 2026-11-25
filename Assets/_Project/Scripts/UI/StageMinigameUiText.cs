@@ -13,6 +13,7 @@ namespace Herbalist.GameUI
         public string codexStepsLabel;
         public string gatherSodamProgress;
         public string gatherDuyeongInputHint;
+        [TextArea] public string gatherDuyeongHelp;
         public string gatherCompleteText;
         [TextArea] public string gatherSodamHelp;
         [TextArea] public string craftSodamHelp;

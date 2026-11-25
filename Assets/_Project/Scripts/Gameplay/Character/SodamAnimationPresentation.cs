@@ -20,6 +20,8 @@ namespace Herbalist.Player
         private Vector3 _restVisualPosition;
         private float _poseElapsed;
         private float _previousVisualOffsetY;
+        private Transform _seatedHips;
+        private float? _seatedHipHeight;
         private SodamPose? _pose;
         private uint _poseSequence;
         private SodamPose? _oneShot;
@@ -74,6 +76,8 @@ namespace Herbalist.Player
                 if (_animator != null) _animator.transform.localPosition = _restVisualPosition;
                 _animator = animator;
                 _restVisualPosition = animator.transform.localPosition;
+                _seatedHips = animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.Hips) : null;
+                _seatedHipHeight = null;
                 _initialized = false;
                 _hasViewSample = false;
                 _cameraMoving = false;
@@ -394,6 +398,9 @@ namespace Herbalist.Player
                 int layer = _animator.GetLayerIndex(motion.layer);
                 if (layer < 0) continue;
                 int hash = Animator.StringToHash(motion.layer + "." + motion.state);
+                if (layer == 0 && _character.IsSodamActive && IsSeatedPose(pose) &&
+                    !_animator.IsInTransition(layer) && _animator.GetCurrentAnimatorStateInfo(layer).fullPathHash == hash)
+                    continue;
                 // Locomotion can change while the same carry pose remains on an upper layer.
                 if (keepContinuousLayers && layer > 0 &&
                     System.Array.Exists(previous.motions, prior => prior != null && prior.layer == motion.layer &&
@@ -425,6 +432,15 @@ namespace Herbalist.Player
         private void LateUpdate()
         {
             if (_animator == null || !_animator.isActiveAndEnabled) return;
+            if (_character.IsSodamActive && IsSeatedPose(_pose) && _seatedHips != null)
+            {
+                float hipHeight = _seatedHips.position.y - transform.position.y;
+                if (!_seatedHipHeight.HasValue && !_animator.IsInTransition(0))
+                    _seatedHipHeight = hipHeight;
+                if (_seatedHipHeight.HasValue)
+                    _animator.transform.position += Vector3.up * (_seatedHipHeight.Value - hipHeight);
+            }
+            else _seatedHipHeight = null;
             if (_wasGrounded && _animator.isHuman &&
                 (_pose is SodamPose.Idle or SodamPose.IdleCameraMoving or SodamPose.Land or SodamPose.ClothHardLand or SodamPose.ClothSwingLand))
             {
@@ -459,6 +475,9 @@ namespace Herbalist.Player
             _animator.transform.position += (knot - (leftPalm + rightPalm) * .5f) *
                 ApproachWeight(SodamPose.ClothGrab, grabRemaining);
         }
+
+        private static bool IsSeatedPose(SodamPose? pose) =>
+            pose is SodamPose.TalismanSit or SodamPose.TalismanSap or SodamPose.TalismanThrow or SodamPose.TalismanCatch;
 
         private float ContactElapsed(SodamPose pose, float remaining)
             => Mathf.Max(0f, (Profile.Find(pose)?.ContactTime ?? 0f) - remaining);

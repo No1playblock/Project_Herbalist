@@ -154,10 +154,8 @@ namespace Herbalist.Editor
 
                 if (Group(6, "착지 · 엔딩"))
                 {
-                    Ride("landing", "최종 지형 착지 직전");
-                    Ride("landed", "착지 후 하차 직전");
-                    Ride("moon", "달의 눈물 접근 직전");
-                    Ride("ending", "엔딩 카메라 시작");
+                    Ride("landing", "마지막 낙하 직전");
+                    Ride("ending", "낙하와 엔딩 카메라 시작");
                     Ride("credits", "엔딩 크레딧 영상 시작");
                 }
             }

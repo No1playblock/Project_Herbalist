@@ -206,8 +206,6 @@ namespace Herbalist.Levels
         }
         private void Erupt()
         {
-            _launchCount++;
-            _flight = _settings.flightDuration; _cooldown = _settings.cooldown;
             ReleaseRiders(false);
             var leaf = _sockets[_output].InstalledLeaf;
             if (leaf != null)
@@ -219,10 +217,13 @@ namespace Herbalist.Levels
                         actor.Abilities.Sap?.Cancel();
                         actor.Abilities.SetInputLock(this, true);
                     }
+            if (_riders == 0) return;
+            _launchCount++;
+            _flight = _settings.flightDuration;
+            _cooldown = _settings.cooldown;
             // Launch on eruption, while the leaf and water jet are still at their starting height.
-            bool launchedRider = _riders != 0;
             ReleaseRiders(true);
-            if (_recallLeafAfterLaunch && launchedRider && leaf != null) leaf.BeginReturn();
+            if (_recallLeafAfterLaunch && leaf != null) leaf.BeginReturn();
         }
         private void ReleaseRiders(bool launch)
         {

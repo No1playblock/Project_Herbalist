@@ -5032,11 +5032,11 @@ PrefabInstance:
       objectReference: {fileID: 2800000, guid: bc4094b8f95cab143ad58b83eec055fa, type: 3}
     - target: {fileID: 5070458029163639408, guid: 5a32b327cbe66734bb24fa61deffb8ee, type: 3}
       propertyPath: _sapGuide.instruction
-      value: "\uC218\uC561 \uAC00\uAE4C\uC6B4 \uD648 \uC870\uC900 + \uC88C\uD074\uB9AD \uC720\uC9C0\n\uC870\uC900\uC120\uC744 \uC6C0\uC9C1\uC5EC \uC218\uC561\uC744 \uC62E\uAE30\uC138\uC694."
+      value: "\uC218\uC561 \uADFC\uCC98 \uD648 \uC870\uC900 + \uC88C\uD074\uB9AD \uC720\uC9C0\n\uC870\uC900\uC120 \uC774\uB3D9\uC73C\uB85C \uC218\uC561 \uC774\uB3D9"
       objectReference: {fileID: 0}
     - target: {fileID: 5070458029163639408, guid: 5a32b327cbe66734bb24fa61deffb8ee, type: 3}
       propertyPath: _leafGuide.instruction
-      value: "\uC0C8\uB294 \uAD6C\uBA4D \uC870\uC900 + \uC88C\uD074\uB9AD\uC73C\uB85C \uB9C9\uAE30\n\uC6B0\uD074\uB9AD\uC73C\uB85C \uB098\uBB47\uC78E \uD68C\uC218"
+      value: "\uC218\uC561\uC774 \uC0C8\uB294 \uAD6C\uBA4D \uC870\uC900 + \uC88C\uD074\uB9AD\n\uC6B0\uD074\uB9AD\uC73C\uB85C \uB098\uBB47\uC78E \uD68C\uC218"
       objectReference: {fileID: 0}
     - target: {fileID: 6395994543940322369, guid: 5a32b327cbe66734bb24fa61deffb8ee, type: 3}
       propertyPath: m_Name
@@ -23272,11 +23272,11 @@ PrefabInstance:
       objectReference: {fileID: 2800000, guid: bc4094b8f95cab143ad58b83eec055fa, type: 3}
     - target: {fileID: 5070458029163639408, guid: 5a32b327cbe66734bb24fa61deffb8ee, type: 3}
       propertyPath: _sapGuide.instruction
-      value: "\uC218\uC561 \uAC00\uAE4C\uC6B4 \uD648 \uC870\uC900 + \uC88C\uD074\uB9AD \uC720\uC9C0\n\uC870\uC900\uC120\uC744 \uC6C0\uC9C1\uC5EC \uC218\uC561\uC744 \uC62E\uAE30\uC138\uC694."
+      value: "\uC218\uC561 \uADFC\uCC98 \uD648 \uC870\uC900 + \uC88C\uD074\uB9AD \uC720\uC9C0\n\uC870\uC900\uC120 \uC774\uB3D9\uC73C\uB85C \uC218\uC561 \uC774\uB3D9"
       objectReference: {fileID: 0}
     - target: {fileID: 5070458029163639408, guid: 5a32b327cbe66734bb24fa61deffb8ee, type: 3}
       propertyPath: _leafGuide.instruction
-      value: "\uC0C8\uB294 \uAD6C\uBA4D \uC870\uC900 + \uC88C\uD074\uB9AD\uC73C\uB85C \uB9C9\uAE30\n\uC6B0\uD074\uB9AD\uC73C\uB85C \uB098\uBB47\uC78E \uD68C\uC218"
+      value: "\uC218\uC561\uC774 \uC0C8\uB294 \uAD6C\uBA4D \uC870\uC900 + \uC88C\uD074\uB9AD\n\uC6B0\uD074\uB9AD\uC73C\uB85C \uB098\uBB47\uC78E \uD68C\uC218"
       objectReference: {fileID: 0}
     - target: {fileID: 6395994543940322369, guid: 5a32b327cbe66734bb24fa61deffb8ee, type: 3}
       propertyPath: m_Name
@@ -24079,7 +24079,7 @@ MonoBehaviour:
   - {fileID: 1506553975}
   - {fileID: 1052229203}
   _wheelRadius: 3.24
-  _wheelLocalAxis: {x: 0, y: 0, z: 1}
+  _wheelLocalAxis: {x: 0, y: 0, z: -1}
 --- !u!1 &681352687
 GameObject:
   m_ObjectHideFlags: 0
@@ -117617,6 +117617,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 920100000000000016, guid: 63607ec5d0a87144eaa3372acea2bd5d, type: 3}
+      propertyPath: m_text
+      value: 미로 재시작
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 9100000000000000001, guid: 63607ec5d0a87144eaa3372acea2bd5d, type: 3}
@@ -117933,6 +117937,10 @@ PrefabInstance:
     - target: {fileID: 8724542907956343395, guid: 63607ec5d0a87144eaa3372acea2bd5d, type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 920100000000000016, guid: 63607ec5d0a87144eaa3372acea2bd5d, type: 3}
+      propertyPath: m_text
+      value: 미로 재시작
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:

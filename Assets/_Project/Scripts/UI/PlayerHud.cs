@@ -376,7 +376,9 @@ namespace Herbalist.GameUI
                 if (show) jumpPadCountdown.text = string.Format(settings.jumpPadCountdownFormat, remaining);
             }
             PresentHint(_helpHintView, helpHint, settings.helpAction.action.GetBindingDisplayString(), settings.helpHint);
-            bool showHelp = local && expanded && !mazeView;
+            var flow = StageOneFlow.Instance;
+            bool showHelp = local && expanded && !mazeView &&
+                (flow == null || flow.Minigame == StageMinigameKind.None);
             helpPanel.SetActive(showHelp);
             if(showHelp)
             {
@@ -414,7 +416,7 @@ namespace Herbalist.GameUI
                                 if (state == 2)
                                 {
                                     fill.sprite = settings.LeafRecallAvailableIcon;
-                                    fill.fillAmount = LeafThrowAbility.ReadSlotReturnProgress(packed, i);
+                                    fill.fillAmount = LeafThrowAbility.ReadSlotProgress(packed, i);
                                 }
                             }
                         }
@@ -423,8 +425,15 @@ namespace Herbalist.GameUI
                             icon.color = state == 2 ? settings.leafReturningColor :
                                 state == 1 ? settings.leafInstalledColor : settings.leafHeldColor;
                         }
-                        leafStatusLabels[i].text = state == 2 ? settings.leafReturningText :
+                        string label = state == 2 ? settings.leafReturningText :
                             state == 1 ? settings.leafInstalledText : settings.leafHeldText;
+                        if (state == 1 && ability.Leaf.Settings != null)
+                        {
+                            float remaining = LeafThrowAbility.ReadSlotProgress(packed, i) * ability.Leaf.Settings.lifetime;
+                            if (remaining > 0)
+                                label += string.Format(settings.leafLifetimeFormat, Mathf.CeilToInt(remaining));
+                        }
+                        leafStatusLabels[i].text = label;
                     }
                 }
             }
@@ -433,7 +442,6 @@ namespace Herbalist.GameUI
             abilityText.text=ability!=null&&ability.Unlocked?(ability.Kind==PlayerAbilityKind.Sap?settings.sapText:settings.leafText):"";
             if (rules != null && ability != null && ability.Unlocked) abilityText.text = ability.Kind == PlayerAbilityKind.Sap ? rules.sapInstructions : rules.leafInstructions;
             pocket.text="";
-            var flow=StageOneFlow.Instance;
             var actor=view.GetComponent<StageActor>();
             if (_feedbackActor != actor)
             {
@@ -487,7 +495,6 @@ namespace Herbalist.GameUI
                     StageInteraction.GrabCloth => settings.clothGrabText,
                     StageInteraction.ReleaseCloth => settings.clothReleaseText,
                     StageInteraction.BoardTalisman => settings.boardTalismanText,
-                    StageInteraction.DismountTalisman => settings.dismountTalismanText,
                     _ => null
                 };
                 if (description != null)

@@ -13,21 +13,25 @@ namespace Herbalist.GameUI
         [SerializeField] private bool _stageOneOnly;
         [SerializeField] private string _mazeLabel;
         [SerializeField] private bool _hideInMaze;
+        [SerializeField] private bool _hideInBranchRide;
 
-        private bool UsesStageOneOverride => _stageOneAction != null && Herbalist.Levels.StageOneTraversal.Instance != null;
+        private bool UsesContextAction => _stageOneAction != null &&
+            (Herbalist.Levels.StageOneTraversal.Instance != null || (IsMazeStage && !string.IsNullOrEmpty(_mazeLabel)));
         private static bool IsMazeStage => Herbalist.Levels.StageLevel.Instance != null &&
             Herbalist.Levels.StageLevel.Instance.TryGetComponent<Herbalist.Levels.DescendingMazeFlow>(out _);
-        public InputActionReference Action => UsesStageOneOverride ? _stageOneAction : action;
+        public InputActionReference Action => UsesContextAction ? _stageOneAction : action;
         public string Label
         {
             get
             {
-                if (UsesStageOneOverride) return _stageOneLabel;
-                return !string.IsNullOrEmpty(_mazeLabel) && IsMazeStage ? _mazeLabel : label;
+                if (!string.IsNullOrEmpty(_mazeLabel) && IsMazeStage) return _mazeLabel;
+                return UsesContextAction ? _stageOneLabel : label;
             }
         }
         internal bool IsAvailableInStage => (!_stageOneOnly || Herbalist.StageOne.StageOneFlow.Instance != null) &&
-            (!_hideInMaze || !IsMazeStage);
+            (!_hideInMaze || !IsMazeStage) &&
+            (!_hideInBranchRide || Herbalist.Levels.StageLevel.Instance == null ||
+                !Herbalist.Levels.StageLevel.Instance.TryGetComponent<Herbalist.Levels.BranchRideFlow>(out _));
     }
     [CreateAssetMenu(menuName="Herbalist/Game UI Settings")]
     public sealed class GameUiSettings : ScriptableObject
@@ -44,12 +48,12 @@ namespace Herbalist.GameUI
         public string pausedText="게임을 일시 정지하였습니다.", partnerPausedText="다른 플레이어가 게임을 일시 정지하였습니다.";
         public string leafText="잎", sapText="액", gatherText="채집", giveText="전달", craftText="약제 제조";
         public string receiveText = "약초 받기", drinkText = "물약 마시기", pickupPotionText = "물약 집기", boardTalismanText = "부적 탑승";
-        public string dismountTalismanText = "부적에서 내리기";
         public string clothGrabText="천 잡기", clothReleaseText="천 놓기", sapInjectText="수액 주입 (누르고 있기)";
-        public string sapPushClothText = "천 밀기 (누르고 있기)";
+        public string sapPushClothText = "천 밀기";
         public string leafInstallText="나뭇잎 설치";
         [Min(.1f)] public float leafInstallHintRange=12f;
-        public string leafHeldText="보유", leafInstalledText="설치 중", leafReturningText="회수 중";
+        public string leafHeldText="보유", leafInstalledText="사용", leafReturningText="회수 중";
+        public string leafLifetimeFormat="\n<size=75%>{0}초</size>";
         public Color leafHeldColor = new Color(.49f, .86f, .66f);
         public Color leafInstalledColor = new Color(.96f, .76f, .36f);
         public Color leafReturningColor = new Color(.43f, .77f, .94f);

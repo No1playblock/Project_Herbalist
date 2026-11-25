@@ -53,7 +53,11 @@ namespace Herbalist.Abilities
             if (targetId <= 0 || (targets.TryGetValue(targetId, out var other) && other != this)) { Debug.LogError("Leaf targets require unique positive IDs.", this); return; }
             targets[targetId] = this;
         }
-        private void OnDisable() { if (targets.TryGetValue(targetId, out var current) && current == this) targets.Remove(targetId); }
+        private void OnDisable()
+        {
+            if (targets.TryGetValue(targetId, out var current) && current == this) targets.Remove(targetId);
+            if (_readyMarker != null) _readyMarker.SetActive(false);
+        }
         public static LeafInstallTarget Find(int id) => targets.TryGetValue(id, out var target) ? target : null;
         public bool CanInstall => isActiveAndEnabled && _reuseRemaining <= 0f && (_replaceOnInstall || !_singleOccupant || !HasLeaf) &&
             (GetComponentInParent<Herbalist.Levels.ExteriorJumpPad>() is not { } pad || pad.Ready) &&
@@ -111,7 +115,7 @@ namespace Herbalist.Abilities
             if (_readyMarker != null)
             {
                 var pad = GetComponentInParent<Herbalist.Levels.ExteriorJumpPad>();
-                _readyMarker.SetActive(_reuseRemaining <= 0f && !HasLeaf && (pad == null || pad.Ready));
+                _readyMarker.SetActive(isActiveAndEnabled && _reuseRemaining <= 0f && !HasLeaf && (pad == null || pad.Ready));
             }
         }
     }

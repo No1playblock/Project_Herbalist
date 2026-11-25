@@ -70,39 +70,24 @@ namespace Herbalist.Levels
                     QaPosition(stones, 0);
                     break;
                 case "landing":
-                case "landed":
-                case "moon":
                 case "ending":
                 case "credits":
                     QaSetBranches(4);
                     var finish = _track.First(t => t.IsFinish);
+                    if (point == "landing")
+                    {
+                        QaPosition(finish, Mathf.Max(0, finish.Length - _speed * .5f));
+                        break;
+                    }
                     QaPosition(finish, finish.Length);
                     BeginLanding();
                     if (_phase != BranchRidePhase.Landing) throw new InvalidOperationException("최종 착지 지형을 찾을 수 없습니다.");
-                    if (point != "landing")
+                    if (point == "credits")
                     {
                         _carrierPosition.y = _landingY;
                         _carrierRotation = _landingRotation;
-                        _phase = BranchRidePhase.Landed;
-                    }
-                    if (point is "moon" or "ending" or "credits")
-                    {
-                        foreach (var actor in actors)
-                        {
-                            if (!TryDismount(actor)) throw new InvalidOperationException("부적 하차 지형을 찾을 수 없습니다.");
-                            if (point == "moon")
-                            {
-                                var outward = Vector3.ProjectOnPlane(_carrierPosition - _moonTear.position, Vector3.up).normalized;
-                                var nearMoon = _moonTear.position + outward * (_moonTearRange + 2f + actor.Slot);
-                                QaStagePlacement.Near(actor, nearMoon, 1f);
-                            }
-                        }
-                        if (point is "ending" or "credits") BeginEnding();
-                        if (point == "credits")
-                        {
-                            _endingElapsed = _endingSeconds;
-                            _phase = BranchRidePhase.Complete;
-                        }
+                        _endingElapsed = _endingSeconds;
+                        _phase = BranchRidePhase.Complete;
                     }
                     break;
                 default: throw new ArgumentOutOfRangeException(nameof(point), point, "등록되지 않은 3스테이지 지점");

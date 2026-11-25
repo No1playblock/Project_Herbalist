@@ -34,6 +34,7 @@ namespace Herbalist.Player
         public void SetNetworkControl(bool local) { networkDriven = true; SetLocalControl(local); }
         public PlayerMotor Motor => motor;
         public bool LocallyControlled => locallyControlled;
+        internal bool IsRidingMazeRaft => _transportOwner is Herbalist.Levels.DescendingMazeFlow;
 
         internal void BeginClothLanding()
         {

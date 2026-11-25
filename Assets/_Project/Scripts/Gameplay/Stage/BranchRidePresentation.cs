@@ -49,11 +49,13 @@ namespace Herbalist.Levels
         {
             if (_flow == null || GameplayPause.IsPaused) return;
             UpdateBranchPreview();
-            if (_flow.HasTerrainEnding && (_flow.CurrentPhase is BranchRidePhase.Ending or BranchRidePhase.Complete))
+            if (_flow.HasTerrainEnding &&
+                (_flow.CurrentPhase is BranchRidePhase.Landing or BranchRidePhase.Ending or BranchRidePhase.Complete))
             {
                 PresentEnding();
                 return;
             }
+            ClearEnding();
             if (_frameRideCamera) UpdateRideCamera(Time.deltaTime);
             if (_narrativeControlled) return;
             if (_hud == null) return;
@@ -91,7 +93,7 @@ namespace Herbalist.Levels
         private void UpdateRideCamera(float dt)
         {
             PlayerController player = null;
-            if (_flow.CurrentPhase is BranchRidePhase.Boarding or BranchRidePhase.Riding or BranchRidePhase.Landing)
+            if (_flow.CurrentPhase is BranchRidePhase.Boarding or BranchRidePhase.Riding)
             {
                 foreach (var actor in StageActor.All)
                 {
@@ -142,6 +144,11 @@ namespace Herbalist.Levels
             foreach (var camera in _branchPreviewCameras) if (camera != null) camera.enabled = false;
             _rideCameraPlayer = null;
             _manualRideLook = false;
+            ClearEnding();
+        }
+
+        private void ClearEnding()
+        {
             if (!_showingEnding) return;
             _showingEnding = false;
             if (_screen != null)

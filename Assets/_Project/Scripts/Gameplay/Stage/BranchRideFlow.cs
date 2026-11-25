@@ -8,7 +8,7 @@ using Herbalist.StageOne;
 
 namespace Herbalist.Levels
 {
-    public enum BranchRidePhase { Boarding, Riding, Falling, Complete, Landing, Landed, Ending }
+    public enum BranchRidePhase { Boarding, Riding, Falling, Complete, Landing, Ending = 6 }
 
     // Host owns track, contacts, riders and reset. Actor input and abilities remain separate.
     [RequireComponent(typeof(NetworkObject))]
@@ -30,8 +30,6 @@ namespace Herbalist.Levels
         [SerializeField] private GameObject _endingPanel;
         [SerializeField] private TerrainCollider _landingTerrain;
         [SerializeField] private Transform _moonTear;
-        [SerializeField, Min(.1f)] private float _moonTearRange = 4f;
-        [SerializeField, Min(.1f)] private float _dismountSideDistance = 2.5f;
         [SerializeField, Min(.1f)] private float _endingSeconds = 5f;
         [SerializeField, Min(.1f)] private float _boardRange = 7;
         [SerializeField, Min(.1f)] private float _speed = 3;
@@ -55,8 +53,6 @@ namespace Herbalist.Levels
         [SerializeField] private string _failedText = "추락 또는 돌 충돌 · 시작 지점에서 다시 탑승하세요";
         [SerializeField] private string _completeText = "서낭당 최하단 도착 · 3스테이지 완료";
         [SerializeField] private string _landingText = "부적에 탄 채 지상으로 내려가는 중입니다.";
-        [SerializeField] private string _dismountText = "E로 하차한 뒤 달의 눈물에 가까이 가세요.";
-        [SerializeField] private string _moonTearText = "달의 눈물에 가까이 가세요.";
         [Networked] private int RiderMask { get; set; }
         [Networked] private int FrontRiderSlot { get; set; }
         [Networked] private Vector2 ContactRemaining { get; set; }
@@ -74,7 +70,6 @@ namespace Herbalist.Levels
         [Networked] private float EndingElapsed { get; set; }
         private static readonly HashSet<BranchRideFlow> Active = new();
         private readonly StageActor[] _riders = new StageActor[2];
-        private readonly StageActor[] _dismountedRiders = new StageActor[2];
         private readonly float[] _boardingRemaining = new float[2];
         private Vector2 _contactRemaining;
         private readonly List<LeafProjectile> _leaves = new();
@@ -107,7 +102,6 @@ namespace Herbalist.Levels
         public float EndingProgress => Mathf.Clamp01((Online ? EndingElapsed : _endingElapsed) / _endingSeconds);
         public string Objective => CurrentPhase == BranchRidePhase.Complete ? _completeText :
             CurrentPhase == BranchRidePhase.Landing ? _landingText :
-            CurrentPhase == BranchRidePhase.Landed ? ((Online ? RiderMask : _mask) != 0 ? _dismountText : _moonTearText) :
             CurrentPhase == BranchRidePhase.Ending ? string.Empty :
             CurrentPhase == BranchRidePhase.Falling ? _failedText : CurrentPhase == BranchRidePhase.Boarding ?
             (_failureBanner > 0 ? _failedText : _waitingText) : PresentationBlockedByLeaf ? _blockedText : _ridingText;
@@ -152,7 +146,6 @@ namespace Herbalist.Levels
         {
             Active.Remove(this);
             foreach (var actor in _riders) Release(actor);
-            foreach (var actor in _dismountedRiders) Release(actor);
         }
         public override void Spawned() { if (HasStateAuthority && Configured) { ResetRide(false); Publish(); } }
         public static bool TryBoardHint(StageActor actor, out Vector3 point)
@@ -210,33 +203,6 @@ namespace Herbalist.Levels
             }
             return false;
         }
-        public static bool TryDismountHint(StageActor actor, out Vector3 point)
-        {
-            var flow = FindRiderFlow(actor, out _);
-            point = flow != null ? flow.Position : default;
-            return flow != null && flow.CurrentPhase == BranchRidePhase.Landed;
-        }
-
-        public static bool TryDismount(StageActor actor)
-        {
-            var flow = FindRiderFlow(actor, out _);
-            if (flow == null || !flow.Authority || flow._phase != BranchRidePhase.Landed) return false;
-            int slot = actor.Slot;
-            if (flow._riders[slot] != actor) return false;
-
-            Vector3 position = flow._carrierPosition + flow._carrierRotation * Vector3.right *
-                (slot == 0 ? -flow._dismountSideDistance : flow._dismountSideDistance);
-            if (!flow.TryGetTerrain(position + Vector3.up * flow._dismountSideDistance, out var ground))
-                return false;
-            position = ground + Vector3.up * .05f;
-            flow.Release(actor);
-            flow._riders[slot] = null;
-            flow._mask &= ~(1 << slot);
-            flow._dismountedRiders[slot] = actor;
-            Teleport(actor, position);
-            flow.Publish();
-            return true;
-        }
         public override void FixedUpdateNetwork() { if (HasStateAuthority) Tick(Runner.DeltaTime); }
         private void Update()
         {
@@ -261,27 +227,17 @@ namespace Herbalist.Levels
                 if (_endingElapsed >= _endingSeconds) _phase = BranchRidePhase.Complete;
                 return;
             }
-            if (_phase == BranchRidePhase.Landed)
-            {
-                CarryRiders();
-                foreach (var actor in _dismountedRiders)
-                    if (actor != null && actor.Available &&
-                        (actor.transform.position - _moonTear.position).sqrMagnitude <= _moonTearRange * _moonTearRange)
-                    {
-                        BeginEnding();
-                        break;
-                    }
-                return;
-            }
             for (int i = 0; i < 2; i++)
                 if ((_mask & (1 << i)) != 0 && (_riders[i] == null || !_riders[i].Available)) { ResetRide(true); return; }
             if (_phase == BranchRidePhase.Landing)
             {
+                _endingElapsed = Mathf.Min(_endingSeconds, _endingElapsed + dt);
                 _fallTime += dt;
                 _carrierPosition.y = Mathf.Max(_landingY, _fallOrigin.y - .5f * _dropGravity * _fallTime * _fallTime);
                 _carrierRotation = Quaternion.Slerp(_landingStartRotation, _landingRotation,
                     Mathf.InverseLerp(_fallOrigin.y, _landingY, _carrierPosition.y));
-                if (_carrierPosition.y <= _landingY) _phase = BranchRidePhase.Landed;
+                if (_carrierPosition.y <= _landingY)
+                    _phase = _endingElapsed >= _endingSeconds ? BranchRidePhase.Complete : BranchRidePhase.Ending;
                 CarryRiders();
                 return;
             }
@@ -324,14 +280,15 @@ namespace Herbalist.Levels
             }
             GatherLeaves();
             Vector3 previous = _carrierPosition;
+            var previousTrack = _track[_segment];
             _blocked = false;
             Advance(dt);
-            if (_phase == BranchRidePhase.Riding) ResolveStones(previousClock, previous);
+            if (_phase == BranchRidePhase.Riding) ResolveStones(previousClock, previous, previousTrack);
             CarryRiders();
         }
         private void RecoverUnmountedActors()
         {
-            if (_phase is BranchRidePhase.Complete or BranchRidePhase.Landing or BranchRidePhase.Landed or BranchRidePhase.Ending ||
+            if (_phase is BranchRidePhase.Complete or BranchRidePhase.Landing or BranchRidePhase.Ending ||
                 _respawns == null) return;
             foreach (var actor in StageActor.All)
             {
@@ -367,13 +324,17 @@ namespace Herbalist.Levels
                 int index = System.Array.IndexOf(flow._hazards, stone);
                 if (index < 0 || index >= flow._destroyedStoneCycles.Length ||
                     !stone.Sample(flow._stoneClock, out _)) continue;
-                int cycle = stone.CycleAt(flow._stoneClock);
-                flow._destroyedStoneCycles[index] = cycle;
-                stone.SetDestroyedCycle(cycle);
+                flow.BreakStone(stone, index);
                 flow.Publish();
                 return true;
             }
             return false;
+        }
+        private void BreakStone(BranchRideStone stone, int index)
+        {
+            int cycle = stone.CycleAt(_stoneClock);
+            _destroyedStoneCycles[index] = cycle;
+            stone.SetDestroyedCycle(cycle);
         }
         private void Advance(float dt)
         {
@@ -423,11 +384,12 @@ namespace Herbalist.Levels
             }
             return nextIndex;
         }
-        private void ResolveStones(float previousClock, Vector3 previousCarrier)
+        private void ResolveStones(float previousClock, Vector3 previousCarrier, BranchRideTrack previousTrack)
         {
             if (_hazards == null) return;
-            foreach (var stone in _hazards)
+            for (int i = 0; i < _hazards.Length; i++)
             {
+                var stone = _hazards[i];
                 if (stone == null || !stone.Sample(_stoneClock, out var now)) continue;
                 bool continuous = stone.Sample(previousClock, out var before) && stone.CycleAt(previousClock) == stone.CycleAt(_stoneClock);
                 if (!continuous) before = now;
@@ -447,10 +409,20 @@ namespace Herbalist.Levels
                     if (destroyed) break;
                 }
                 if (destroyed) continue;
+                if (stone.Track != null && stone.Track != previousTrack && stone.Track != _track[_segment])
+                    continue;
+                bool touchesCarrier = BranchRideTrack.DistanceToSegment(Vector3.zero,
+                    before - previousCarrier, now - _carrierPosition) <= stone.HitRadius + _collisionRadius;
+                if (touchesCarrier && stone.Track != null && i < _destroyedStoneCycles.Length &&
+                    (stone.IsFallingAt(_stoneClock) || (continuous && stone.IsFallingAt(previousClock))))
+                {
+                    BreakStone(stone, i);
+                    continue;
+                }
                 foreach (var leaf in _leaves)
                     if (leaf.Installed && BranchRideTrack.DistanceToSegment(leaf.ContactPoint, before, now) <= stone.HitRadius + .25f)
                         leaf.BeginReturn();
-                if (BranchRideTrack.DistanceToSegment(Vector3.zero, before - previousCarrier, now - _carrierPosition) <= stone.HitRadius + _collisionRadius)
+                if (touchesCarrier)
                 { FailRide(); return; }
             }
         }
@@ -489,13 +461,7 @@ namespace Herbalist.Levels
             _landingStartRotation = _carrierRotation;
             _landingRotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(_carrierRotation * Vector3.forward, Vector3.up));
             _blocked = false;
-        }
-
-        private void BeginEnding()
-        {
-            _phase = BranchRidePhase.Ending;
             _endingElapsed = 0f;
-            foreach (var actor in _dismountedRiders) LockForEnding(actor);
             foreach (var actor in _riders) LockForEnding(actor);
         }
 
@@ -563,7 +529,6 @@ namespace Herbalist.Levels
                 foreach (var stone in _hazards) if (stone != null) stone.SetDestroyedCycle(int.MinValue);
             _incomingDirection = Vector3.zero;
             System.Array.Clear(_boardingRemaining, 0, _boardingRemaining.Length);
-            System.Array.Clear(_dismountedRiders, 0, _dismountedRiders.Length);
             _endingElapsed = 0f;
             _contactRemaining = Vector2.zero;
             _phase = BranchRidePhase.Boarding; _turns = Vector4.zero; _blocked = false;
