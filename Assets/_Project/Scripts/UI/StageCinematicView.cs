@@ -23,6 +23,7 @@ namespace Herbalist.GameUI
         [SerializeField] private RawImage _video;
         [SerializeField] private AspectRatioFitter _aspect;
         [SerializeField] private GameObject _skipPrompt;
+        [SerializeField] private GameObject _loadingPrompt;
         [SerializeField] private TMP_Text _skipLabel, _waitingLabel;
         [SerializeField] private Image _holdFill;
         [SerializeField] private InputActionReference _skipAction;
@@ -71,7 +72,8 @@ namespace Herbalist.GameUI
                 _input = _skipAction.action.Clone();
                 _input.Enable();
                 _needsRelease = true;
-                _skipLabel.text = $"<b>{_input.GetBindingDisplayString()}</b> 꾹 누르기   SKIP";
+                _skipLabel.text = _input.GetBindingDisplayString();
+                if (_onHoldChanged == null) _waitingLabel.text = "0/1";
                 _skipPrompt.SetActive(true);
             }
             else Debug.LogError("Stage cinematic is missing its skip action.", this);
@@ -111,15 +113,13 @@ namespace Herbalist.GameUI
             if (progress >= 1f)
             {
                 _voted = true;
-                _skipLabel.text = "스킵 동의 완료";
                 if (_onHoldChanged == null) FinishVideo();
             }
         }
 
         internal void ShowVotes(int votes, int total)
         {
-            _waitingLabel.text = $"스킵 동의 {votes}/{total}";
-            _waitingLabel.gameObject.SetActive(true);
+            _waitingLabel.text = $"{votes}/{total}";
             if (total > 0 && votes == total) ShowLoading();
         }
 
@@ -129,9 +129,8 @@ namespace Herbalist.GameUI
             _loading = true;
             if (!_finished) _videoPlayer.Pause();
             _video.gameObject.SetActive(false);
-            _skipPrompt.SetActive(true);
-            _skipLabel.text = "다음 스테이지 로딩 중…";
-            _holdFill.fillAmount = 0;
+            _skipPrompt.SetActive(false);
+            _loadingPrompt.SetActive(true);
         }
 
         internal void Hide()
