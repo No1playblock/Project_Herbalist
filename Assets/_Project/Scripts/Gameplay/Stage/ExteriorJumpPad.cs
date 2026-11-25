@@ -208,24 +208,66 @@ namespace Herbalist.Levels
         {
             ReleaseRiders(false);
             var leaf = _sockets[_output].InstalledLeaf;
-            if (leaf != null)
-                foreach (var actor in StageActor.All)
-                    if (actor.Available && actor.Slot >= 0 && actor.Slot < _carriedActors.Length && leaf.Supports(actor.GetComponent<CharacterController>(), _settings.standingTolerance))
-                    {
-                        _riders |= 1u << actor.Slot;
-                        _carriedActors[actor.Slot] = actor;
-                        actor.Abilities.Sap?.Cancel();
-                        actor.Abilities.SetInputLock(this, true);
-                    }
-            if (_riders == 0) return;
-            _launchCount++;
+            if (leaf == null) return;
+
             _flight = _settings.flightDuration;
             _cooldown = _settings.cooldown;
+            foreach (var actor in StageActor.All)
+                if (actor.Available && actor.Slot >= 0 && actor.Slot < _carriedActors.Length && leaf.Supports(actor.GetComponent<CharacterController>(), _settings.standingTolerance))
+                    AddRider(actor);
+            if (_riders == 0) return;
+
+            StageActor lowerRider = null;
+            CharacterController overheadController = null;
+            foreach (var rider in _carriedActors)
+            {
+                if (rider == null) continue;
+                var lowerController = rider.GetComponent<CharacterController>();
+                var upper = FindOverheadPlayer(lowerController);
+                if (upper == null) continue;
+
+                lowerRider = rider;
+                overheadController = upper.GetComponent<CharacterController>();
+                if (upper.GetComponent<PlayerController>().Motor is CharacterControllerMotor upperMotor &&
+                    upperMotor.IsGrounded && upperMotor.WalkableGround == lowerController)
+                    AddRider(upper);
+                break;
+            }
+
+            _launchCount++;
             // Launch on eruption, while the leaf and water jet are still at their starting height.
-            ReleaseRiders(true);
-            if (_recallLeafAfterLaunch && leaf != null) leaf.BeginReturn();
+            ReleaseRiders(true, lowerRider, overheadController);
+            if (_recallLeafAfterLaunch) leaf.BeginReturn();
         }
-        private void ReleaseRiders(bool launch)
+
+        private void AddRider(StageActor actor)
+        {
+            _riders |= 1u << actor.Slot;
+            _carriedActors[actor.Slot] = actor;
+            actor.Abilities.Sap?.Cancel();
+            actor.Abilities.SetInputLock(this, true);
+        }
+
+        private StageActor FindOverheadPlayer(CharacterController lowerController)
+        {
+            var lower = lowerController.bounds;
+            foreach (var actor in StageActor.All)
+            {
+                if (!actor.Available || actor.Slot < 0 || actor.Slot >= _carriedActors.Length ||
+                    (_riders & (1u << actor.Slot)) != 0) continue;
+                var controller = actor.GetComponent<CharacterController>();
+                if (controller == null || !controller.enabled) continue;
+
+                var upper = controller.bounds;
+                if (upper.center.y > lower.center.y && upper.min.y <= lower.max.y + _settings.standingTolerance &&
+                    upper.min.x <= lower.max.x && upper.max.x >= lower.min.x &&
+                    upper.min.z <= lower.max.z && upper.max.z >= lower.min.z)
+                    return actor;
+            }
+            return null;
+        }
+
+        private void ReleaseRiders(bool launch, StageActor lowerRider = null, CharacterController overheadController = null)
         {
             for (int slot = 0; slot < _carriedActors.Length; slot++)
             {
@@ -234,13 +276,14 @@ namespace Herbalist.Levels
                 var player = actor.GetComponent<PlayerController>();
                 player.Motor.SetLiftSpeed(0);
                 actor.Abilities.SetInputLock(this, false);
+                var collisionPartner = actor == lowerRider ? overheadController : null;
                 var net = actor.GetComponent<NetworkPlayer>();
                 if (net != null && net.Object != null && net.Object.IsValid && net.HasStateAuthority)
                 {
                     net.SetLiftAuthoritatively(0);
-                    if (launch) net.LaunchAuthoritatively(Vector3.up * _settings.riderLaunchSpeed, player.Tuning.gravity, true);
+                    if (launch) net.LaunchAuthoritatively(Vector3.up * _settings.riderLaunchSpeed, player.Tuning.gravity, true, collisionPartner);
                 }
-                else if (!Online && launch) player.Motor.Launch(Vector3.up * _settings.riderLaunchSpeed, player.Tuning.gravity, true);
+                else if (!Online && launch) player.Motor.Launch(Vector3.up * _settings.riderLaunchSpeed, player.Tuning.gravity, true, collisionPartner);
                 _carriedActors[slot] = null;
             }
             _riders = 0;

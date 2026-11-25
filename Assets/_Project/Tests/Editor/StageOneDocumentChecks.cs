@@ -320,17 +320,111 @@ namespace Herbalist.Editor
                     leaf.BeginReturn();UnityEngine.Object.DestroyImmediate(leaf.gameObject);leaf=null;player.Motor.ResetMotion();count++;
                 }
                 player.Motor.Teleport(saved);Physics.SyncTransforms();
-                var emptyPad=UnityEngine.Object.FindObjectsByType<ExteriorJumpPad>(FindObjectsSortMode.None).First(p=>p.enabled);
-                emptyPad.Tick(5f);var emptyTarget=Read<LeafInstallTarget[]>(emptyPad,"_sockets")[0];
-                typeof(LeafInstallTarget).GetMethod("TickReuseDelay",Private).Invoke(emptyTarget,
-                    new object[]{Read<float>(emptyTarget,"_reuseDelayAfterRelease")});
-                leaf=UnityEngine.Object.Instantiate(leafSettings.offlinePrefab);leaf.Initialize(leafSettings,actor.transform,emptyTarget.SocketPosition,emptyTarget.SocketPosition,null,true);
-                Check(leaf.TryInstallAtSocket(emptyTarget),"Install leaf for empty eruption check.");
-                Read<SapInjectionPort[]>(emptyPad,"_ports")[0].Inject(1.1f);emptyPad.Tick(1.1f);emptyPad.Tick(3.1f);
-                Check(leaf.Installed,"Empty eruption must preserve the unused leaf.");
-                return "PASS Play: actual hose and jet queries; all "+count+" pad leaves survive 120 seconds, launch actual riders and recall after use; empty eruption preserves leaf.";
+                return "PASS Play: actual hose and jet queries; all "+count+" pad leaves survive 120 seconds, launch actual riders and recall after use. "+UnoccupiedAndStackedPadPlay();
             }
             finally{if(leaf!=null)UnityEngine.Object.DestroyImmediate(leaf.gameObject);actor.Abilities.Sap.Clear();player.Motor.Teleport(saved);player.Motor.ResetMotion();}
+        }
+
+        public static string UnoccupiedAndStackedPadPlay()
+        {
+            Check(Application.isPlaying && StageOneFlow.Instance != null && StageOneFlow.Instance.Authority,
+                "Offline Stage One Play required.");
+            var actors = StageActor.All.Where(a => a.Available).OrderBy(a => a.Slot).ToArray();
+            Check(actors.Length == 2, "Two distinct Stage One actors are required.");
+            var motors = actors.Select(actor => actor.GetComponent<PlayerController>().Motor).ToArray();
+            var controllers = actors.Select(actor => actor.GetComponent<CharacterController>()).ToArray();
+            var positions = actors.Select(actor => actor.transform.position).ToArray();
+            var pad = UnityEngine.Object.FindObjectsByType<ExteriorJumpPad>(FindObjectsSortMode.None)
+                .First(candidate => candidate.isActiveAndEnabled && Read<SapInjectionPort[]>(candidate, "_ports").Length == 1);
+            var settings = Read<SapJumpPadSettings>(pad, "_settings");
+            var port = Read<SapInjectionPort[]>(pad, "_ports")[0];
+            var target = Read<LeafInstallTarget[]>(pad, "_sockets")[0];
+            var leafSettings = StageLevel.Instance.abilityRules.leaf;
+            var leaf = UnityEngine.Object.Instantiate(leafSettings.offlinePrefab);
+            try
+            {
+                float recoveryTime = Mathf.Max(settings.flightDuration, settings.cooldown) + .01f;
+                pad.Tick(recoveryTime);
+                typeof(LeafInstallTarget).GetMethod("TickReuseDelay", Private).Invoke(target, new object[] { target.ReuseDelay });
+                leaf.Initialize(leafSettings, actors[0].transform, target.SocketPosition, target.SocketPosition, null, true);
+                Check(leaf.TryInstallAtSocket(target), "Install a leaf for the unoccupied and stacked pad checks.");
+                var surface = Read<BoxCollider>(leaf, "_surface");
+                var feet = surface.transform.TransformPoint(surface.center + Vector3.up * surface.size.y * .5f)
+                    + Vector3.up * .02f;
+                for (int slot = 0; slot < motors.Length; slot++)
+                {
+                    motors[slot].ResetMotion();
+                    motors[slot].Teleport(feet + Vector3.up * (10 + slot * 10));
+                }
+                Physics.SyncTransforms();
+                Check(controllers.All(controller => !leaf.Supports(controller, settings.standingTolerance)),
+                    "Neither player is supported by the leaf.");
+                int launchCount = pad.LaunchCount;
+                Erupt();
+                Check(pad.PresentationFlight > 0 && !pad.Ready, "The unoccupied pad erupts and enters recovery.");
+                Check(leaf.Installed && pad.LaunchCount == launchCount,
+                    "An unoccupied eruption preserves its leaf and does not count as a rider launch.");
+
+                pad.Tick(recoveryTime);
+                var lower = controllers[1];
+                var upper = controllers[0];
+                var lowerMotor = motors[1];
+                var upperMotor = motors[0];
+                lowerMotor.Teleport(PositionWithFeetAt(lower, feet));
+                Physics.SyncTransforms();
+                var upperFeet = new Vector3(feet.x, lower.bounds.max.y + .02f, feet.z);
+                upperMotor.Teleport(PositionWithFeetAt(upper, upperFeet));
+                Physics.SyncTransforms();
+                upperMotor.Simulate(Vector3.zero, .06f);
+                Check(upperMotor.IsGrounded &&
+                    Read<Collider>(upperMotor, "<WalkableGround>k__BackingField") == lower,
+                    "The upper player starts grounded on the lower player's capsule.");
+                Check(leaf.Supports(lower, settings.standingTolerance) &&
+                    !leaf.Supports(upper, settings.standingTolerance),
+                    "Only the lower character is supported when feet share the same horizontal position.");
+                float lowerStartY = lower.transform.position.y;
+                float upperStartY = upper.transform.position.y;
+                Erupt();
+                Check(Mathf.Approximately(lowerMotor.Velocity.y, settings.riderLaunchSpeed) &&
+                    Mathf.Approximately(upperMotor.Velocity.y, settings.riderLaunchSpeed) &&
+                    pad.LaunchCount == launchCount + 1,
+                    "The pad gives both stacked players its launch velocity without jump input.");
+                Check(Physics.GetIgnoreCollision(lower, upper), "The launch temporarily ignores the two player capsules.");
+                for (int step = 0; step < 3; step++)
+                {
+                    lowerMotor.Simulate(Vector3.zero, .02f);
+                    upperMotor.Simulate(Vector3.zero, .02f);
+                    Physics.SyncTransforms();
+                }
+                Check(lower.transform.position.y > lowerStartY && upper.transform.position.y > upperStartY &&
+                    lowerMotor.Velocity.y > 0 && upperMotor.Velocity.y > 0,
+                    "Both stacked players rise under the pad impulse without blocking each other.");
+                upperMotor.Teleport(upper.transform.position + Vector3.right * (lower.bounds.size.x + upper.bounds.size.x));
+                Physics.SyncTransforms();
+                lowerMotor.Simulate(Vector3.zero, .02f);
+                Check(!Physics.GetIgnoreCollision(lower, upper), "Player collision is restored once the capsules separate.");
+                return "PASS: empty eruption preserves its leaf; both stacked players launch and collision returns after separation.";
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(leaf.gameObject);
+                for (int slot = 0; slot < motors.Length; slot++)
+                {
+                    motors[slot].Teleport(positions[slot]);
+                    motors[slot].ResetMotion();
+                }
+            }
+
+            void Erupt()
+            {
+                Check(port.Inject(settings.chargeUnits / Read<float>(port, "_unitsPerSecond") + .01f), "Pad injection accepted.");
+                pad.Tick(.01f);
+                pad.Tick(settings.launchDelaySeconds + .01f);
+            }
+
+            static Vector3 PositionWithFeetAt(CharacterController controller, Vector3 point)
+                => point - controller.transform.TransformVector(controller.center) +
+                   Vector3.up * controller.height * Mathf.Abs(controller.transform.lossyScale.y) * .5f;
         }
 
         private static bool ChargeGrowthFromNearbyGround(StageActor actor, PlayerMotor motor, StageOneDocumentMechanism growth)
