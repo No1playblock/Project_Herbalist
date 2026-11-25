@@ -63,6 +63,11 @@ namespace Herbalist.Abilities
         [Range(0.1f, 1f)] public float surfaceVolumeFootprintRatio = 0.72f;
         [Tooltip("Maximum outward thickness of the raised liquid layer in world units.")]
         [Min(0.001f)] public float surfaceVolumeThickness = 0.09f;
+        [Header("Attached water blob")]
+        [Tooltip("Width and height of a rounded water blob attached to a vertical surface.")]
+        public Vector2 attachedBlobSize = new Vector2(0.9f, 0.7f);
+        [Tooltip("Depth of a rounded water blob along the hit surface normal.")]
+        [Min(0.01f)] public float attachedBlobDepth = 0.38f;
         [Min(0.01f)] public float extractionSpeed = 4;
         [Min(0.001f)] public float arrivalTolerance = 0.03f;
         [Min(0.001f)] public float streamWidth = 0.045f;

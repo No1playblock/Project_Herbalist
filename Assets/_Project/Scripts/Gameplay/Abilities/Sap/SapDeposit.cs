@@ -167,15 +167,18 @@ public void SetStream(Vector3 start, bool active)
             bool attached = active && IsPlaced;
             bool groundHoseMark = hoseMark &&
                 Vector3.Dot(transform.forward, Vector3.up) >= settings.groundWaterNormalThreshold;
+            bool attachedBlob = attached && hoseMark && !groundHoseMark &&
+                surfaceVolume != null && surfaceVolume.AttachedBlobAvailable;
             bool raised = attached && surfaceVolume != null && surfaceVolume.Available &&
                 (!hoseMark || groundHoseMark);
             bool projected = attached && surfaceMark != null && surfaceMark.Available &&
-                (!groundHoseMark || !raised);
-            visual.gameObject.SetActive(active && !projected && !raised &&
+                !attachedBlob && (!groundHoseMark || !raised);
+            visual.gameObject.SetActive(active && !projected && !raised && !attachedBlob &&
                 !(settings.orbitEnabled && State == SapState.Controlled));
             visual.localScale = IsPlaced ? Vector3.Scale(settings.attachedScale, new Vector3(markScale, markScale, 1)) : settings.controlledScale;
             if (surfaceMark != null) surfaceMark.SetVisible(projected, settings, markScale, absorptionProgress);
-            if (surfaceVolume != null) surfaceVolume.SetVisible(raised, settings, markScale, absorptionProgress);
+            if (surfaceVolume != null)
+                surfaceVolume.SetVisible(raised || attachedBlob, settings, markScale, absorptionProgress, attachedBlob);
         }
     }
 }

@@ -208,10 +208,12 @@ namespace Herbalist.Levels
         {
             ReleaseRiders(false);
             var leaf = _sockets[_output].InstalledLeaf;
-            if (leaf == null) return;
-
+            // The sap outlet erupts visually even when no leaf is installed. The
+            // leaf is only required to carry riders, not to show the water column.
             _flight = _settings.flightDuration;
             _cooldown = _settings.cooldown;
+            if (leaf == null) return;
+
             foreach (var actor in StageActor.All)
                 if (actor.Available && actor.Slot >= 0 && actor.Slot < _carriedActors.Length && leaf.Supports(actor.GetComponent<CharacterController>(), _settings.standingTolerance))
                     AddRider(actor);

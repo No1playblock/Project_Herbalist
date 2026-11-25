@@ -84,7 +84,7 @@ namespace Herbalist.Abilities
                         transform.position += delta.normalized * hit.distance;
                         BeginMissReturn(hit.normal);
                     }
-                    else if (target != null && target.CanInstall) Install(target, hit.point, hit.normal, delta);
+                    else if (target != null && target.CanInstall) Install(target, hit.point, hit.normal, delta, hit.collider);
                     else
                     {
                         if (hit.collider.GetComponentInParent<Herbalist.Player.PlayerController>() != null)
@@ -186,10 +186,12 @@ namespace Herbalist.Abilities
         public bool TryInstallAtSocket(LeafInstallTarget target)
         {
             if (!initialized || State != LeafState.Flying || target == null || !target.HasSocket || !target.CanInstall) return false;
-            Install(target, target.SocketPosition, target.SocketRotation * Vector3.up, target.SocketRotation * Vector3.forward);
+            Install(target, target.SocketPosition, target.SocketRotation * Vector3.up,
+                target.SocketRotation * Vector3.forward, null);
             return true;
         }
-        private void Install(LeafInstallTarget target, Vector3 hit, Vector3 normal, Vector3 heading)
+        private void Install(LeafInstallTarget target, Vector3 hit, Vector3 normal, Vector3 heading,
+            Collider contactSurface)
         {
             if (target.ReplaceOnInstall)
             {
@@ -204,12 +206,33 @@ namespace Herbalist.Abilities
             if (_visual != null) _visual.transform.localRotation = _baseVisualRotation;
             Vector3 offset = target.ExactSocketPlacement ? Vector3.zero : EmbedOffset(normal, target.PointUpOnInstall);
             transform.position = target.Position(hit, normal, 0) + offset;
+            if (!target.ExactSocketPlacement && !target.PointUpOnInstall && contactSurface != null &&
+                Mathf.Abs(Vector3.Dot(normal.normalized, Vector3.up)) < 0.5f)
+                SeparateFromWall(contactSurface);
             _uprightOffset = target.PointUpOnInstall ? Quaternion.Inverse(transform.rotation) * offset : Vector3.zero;
             localPosition = target.transform.InverseTransformPoint(transform.position);
             localRotation = Quaternion.Inverse(target.transform.rotation) * transform.rotation;
             State = LeafState.Installed;
             remaining = settings.lifetime; InstalledAt = Time.time;
             target.Attach(this); RefreshVisuals();
+        }
+        private void SeparateFromWall(Collider wall)
+        {
+            if (_surface == null || wall == null || wall.transform.IsChildOf(transform)) return;
+
+            float clearance = Mathf.Max(0f, settings.wallSurfaceClearance);
+            const int maxSeparationPasses = 6;
+            for (int i = 0; i < maxSeparationPasses; i++)
+            {
+                if (!Physics.ComputePenetration(
+                        _surface, _surface.transform.position, _surface.transform.rotation,
+                        wall, wall.transform.position, wall.transform.rotation,
+                        out Vector3 direction, out float distance))
+                    break;
+
+                if (direction.sqrMagnitude < 0.000001f || distance <= 0f) break;
+                transform.position += direction.normalized * (distance + clearance);
+            }
         }
         private Vector3 EmbedOffset(Vector3 normal, bool pointUp)
         {

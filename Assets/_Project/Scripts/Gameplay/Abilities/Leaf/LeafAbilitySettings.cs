@@ -34,6 +34,8 @@ namespace Herbalist.Abilities
         [Min(0)] public float surfaceOffset = 0.12f;
         [Min(0)] public float tipEmbedDepth = 0.12f;
         [Range(0, 0.49f)] public float maxEmbedFraction = 0.1f;
+        [Tooltip("Clearance left between a wall-mounted leaf collider and the contacted surface.")]
+        [Min(0)] public float wallSurfaceClearance = 0.02f;
         [Min(0.01f)] public float catchDistance = 0.25f;
         [Tooltip("Start the catch pose this many seconds before the returning leaf reaches the player.")]
         [Min(0)] public float catchAnticipationSeconds = 0.2f;
