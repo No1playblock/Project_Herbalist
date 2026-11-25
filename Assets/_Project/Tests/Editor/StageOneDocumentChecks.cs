@@ -327,6 +327,7 @@ namespace Herbalist.Editor
                 leaf=UnityEngine.Object.Instantiate(leafSettings.offlinePrefab);leaf.Initialize(leafSettings,actor.transform,emptyTarget.SocketPosition,emptyTarget.SocketPosition,null,true);
                 Check(leaf.TryInstallAtSocket(emptyTarget),"Install leaf for empty eruption check.");
                 Read<SapInjectionPort[]>(emptyPad,"_ports")[0].Inject(1.1f);emptyPad.Tick(1.1f);emptyPad.Tick(3.1f);
+                Check(emptyPad.PresentationFlight > 0, "The unoccupied pad erupts.");
                 Check(leaf.Installed,"Empty eruption must preserve the unused leaf.");
                 return "PASS Play: actual hose and jet queries; all "+count+" pad leaves survive 120 seconds, launch actual riders and recall after use; empty eruption preserves leaf.";
             }
