@@ -29,7 +29,6 @@ Assets/_Project/Art/Environments/Stage_02/**/*.fbx -filter -diff -merge -text
 Assets/_Project/Art/Environments/Stage_02/**/*.png -filter -diff -merge -text
 Assets/_Project/Art/Character_anime/**/*.fbx -filter -diff -merge -text
 Assets/_Project/Art/Character_anime/**/*.FBX -filter -diff -merge -text
-
 # Isolated environment modeling source assets
 Assets/_Project/Art/Environments/EnvironmentModelingImport_20261103/**/*.png -filter -diff -merge -text
 Assets/_Project/Art/Environments/EnvironmentModelingImport_20261103/**/*.jpeg -filter -diff -merge -text
@@ -43,13 +42,11 @@ Assets/_Project/Art/Environments/EnvironmentModelingImport_20261111/**/*.fbx -fi
 Assets/_Project/Art/Environments/EnvironmentModelingImport_20261111/New[[:space:]]Terrain[[:space:]]4.asset -filter -diff -merge -text
 Assets/_Project/Scenes/Stages/Stage_03/Stage_03_EnvironmentModeling_FinalReference/*.png -filter -diff -merge -text
 Assets/_Project/Scenes/Stages/Stage_03/Stage_03_EnvironmentModeling_FinalReference/*.exr -filter -diff -merge -text
-
 # Isolated Stage 1 redesign visual source assets
 # Stage 1 environment refresh source assets
 Assets/_Project/Art/Environments/Stage_01/DevelopStage1Import_20261108/**/*.png -filter -diff -merge -text
 Assets/_Project/Art/Environments/Stage_01/DevelopStage1Import_20261108/**/*.fbx -filter -diff -merge -text
 Assets/_Project/Art/Environments/Stage_01/DevelopStage1Import_20261108/**/*.asset -filter -diff -merge -text
-
 Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Ff][Bb][Xx] -filter -diff -merge -text
 Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Pp][Nn][Gg] -filter -diff -merge -text
 Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Tt][Gg][Aa] -filter -diff -merge -text
@@ -57,3 +54,4 @@ Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Jj][Pp][Ee][Gg] -filter -diff 
 Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Bb][Mm][Pp] -filter -diff -merge -text
 Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Pp][Ss][Dd] -filter -diff -merge -text
 Assets/_Project/Art/Stage1Redesign/Imported/**/*.[Tt][Ii][Ff] -filter -diff -merge -text
+Assets/_Project/Scenes/Stages/**/*.Cell*.bytes filter=lfs diff=lfs merge=lfs -text
