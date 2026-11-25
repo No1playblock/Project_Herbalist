@@ -63,7 +63,7 @@ namespace Herbalist.Audio
             float height = _character.height * Mathf.Abs(transform.lossyScale.y);
             var delta = transform.position - _position;
             bool teleported = delta.magnitude > height * tuning.teleportDistanceInHeights;
-            if (teleported) _emitter.Play(9);
+            // Teleport recovery is silent here; the R command owns its single feedback cue.
             var surface = GroundSurface(tuning);
             if (!teleported && _grounded && !grounded && velocity.y > 0 &&
                 !(online ? (bool)_network.ExternalFlight : _player.Motor.CaptureState().ExternalFlight))
@@ -73,7 +73,9 @@ namespace Herbalist.Audio
                 _emitter.Play(sodam ? 13 : 14);
             }
             if (!teleported && !_grounded && grounded && _velocity.y < 0)
-                _emitter.Play(surface == SfxSurfaceKind.Wood || surface == SfxSurfaceKind.Bark ? 16 : 15,
+                _emitter.Play(surface == SfxSurfaceKind.Leaf ? tuning.leafLandingSoundId :
+                    surface == SfxSurfaceKind.Mushroom ? tuning.mushroomLandingSoundId :
+                    surface == SfxSurfaceKind.Wood || surface == SfxSurfaceKind.Bark ? 16 : 15,
                     1, -_velocity.y < tuning.strongLandingSpeed);
             if (grounded && !teleported && (flow == null || flow.Minigame == StageMinigameKind.None))
             {
@@ -135,6 +137,7 @@ namespace Herbalist.Audio
             if (Physics.Raycast(feet + Vector3.up * tuning.groundProbeHeight, Vector3.down, out var hit,
                 tuning.groundProbeHeight + tuning.groundProbeDistance, tuning.groundMask, QueryTriggerInteraction.Ignore))
             {
+                if (hit.collider.GetComponentInParent<Herbalist.Abilities.LeafProjectile>() != null) return SfxSurfaceKind.Leaf;
                 var surface = hit.collider.GetComponentInParent<SfxSurface>();
                 if (surface != null) return surface.Kind;
                 if (hit.collider is TerrainCollider) return SfxSurfaceKind.Grass;

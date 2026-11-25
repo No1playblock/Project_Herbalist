@@ -60,8 +60,10 @@ namespace Herbalist.Audio
             if (!CanPlay(sound)) return;
             if (_loops.TryGetValue(id, out int existing))
             {
-                _channels[existing].volume = sound.volume * Mathf.Clamp01(gain);
+                _channels[existing].volume = sound.volume * Mathf.Clamp01(gain) * StageGain(sound.id);
                 _channels[existing].transform.position = position ?? transform.position;
+                if (!_channels[existing].isPlaying && !_paused[existing] && !GameplayPause.IsPaused)
+                    _channels[existing].Play();
                 return;
             }
             if (GameplayPause.IsPaused && sound.pauseWithGameplay) return;
@@ -77,6 +79,9 @@ namespace Herbalist.Audio
             foreach (var slot in _loops.Values) { _channels[slot].Stop(); _playing[slot] = 0; _paused[slot] = false; }
             _loops.Clear();
         }
+        private float StageGain(int id) => _catalog != null && id != _catalog.quietStageExemptSoundId &&
+            UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.StartsWith(_catalog.quietStageScene, System.StringComparison.Ordinal)
+            ? _catalog.quietStageGain : 1f;
         private static bool CanPlay(SfxDefinition s) => s != null && s.clips != null && s.clips.Length > 0;
         private static AudioClip Pick(SfxDefinition s) => s.clips[Random.Range(0, s.clips.Length)];
         private int FreeChannel()
@@ -90,7 +95,7 @@ namespace Herbalist.Audio
             var channel = _channels[slot];
             channel.transform.position = position;
             channel.playOnAwake = false; channel.clip = clip; channel.loop = loop;
-            channel.volume = sound.volume * Mathf.Clamp01(gain);
+            channel.volume = sound.volume * Mathf.Clamp01(gain) * StageGain(sound.id);
             channel.pitch = Random.Range(sound.pitchRange.x, sound.pitchRange.y);
             channel.spatialBlend = sound.spatialBlend;
             channel.minDistance = sound.minDistance; channel.maxDistance = sound.maxDistance;

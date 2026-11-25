@@ -45113,6 +45113,7 @@ MonoBehaviour:
   - {fileID: 46402606}
   - {fileID: 2114378536}
   _placeOfflineAtStarts: 0
+  _terrainDetailDistanceLimit: 250
   _fallHeight: -15
   _contactPadding: 0.08
   _recoveryGrace: 0.5
@@ -49454,6 +49455,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Audio.WorldSfxPresentation
   _kind: 3
   _subject: {fileID: 337337183}
+  _ambientSoundId: 0
   _motion: {fileID: 504217335}
   _stones: []
 --- !u!114 &337337182
@@ -80258,6 +80260,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Audio.WorldSfxPresentation
   _kind: 3
   _subject: {fileID: 628767736}
+  _ambientSoundId: 0
   _motion: {fileID: 413229485}
   _stones: []
 --- !u!114 &628767735
@@ -91700,6 +91703,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Audio.WorldSfxPresentation
   _kind: 2
   _subject: {fileID: 685529129}
+  _ambientSoundId: 0
   _motion: {fileID: 0}
   _stones: []
 --- !u!114 &685529125
@@ -91734,6 +91738,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Audio.WorldSfxPresentation
   _kind: 2
   _subject: {fileID: 685529129}
+  _ambientSoundId: 0
   _motion: {fileID: 0}
   _stones: []
 --- !u!114 &685529127
@@ -130197,9 +130202,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Levels.StageLevel
   nextScenePath: Assets/_Project/Scenes/Stages/Stage_02/Stage_02_Mazes.unity
+  _offlineCinematicScenePath: 
   requireEarnedAbilities: 1
   abilityRules: {fileID: 11400000, guid: 44ebab51bf3ac9d47bd3a64c203dd5a8, type: 2}
   _playerCameraPostProcessing: 0
+  _minimumPlayerCameraFarClip: 0
 --- !u!4 &996864011
 Transform:
   m_ObjectHideFlags: 0
@@ -138882,6 +138889,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Audio.WorldSfxPresentation
   _kind: 2
   _subject: {fileID: 1093431519}
+  _ambientSoundId: 0
   _motion: {fileID: 0}
   _stones: []
 --- !u!114 &1093431517
@@ -211604,8 +211612,71 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3922557916846617685, guid: e4dae9dd9bf98ff4bb16440d6ebec43e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1518317764}
+    - targetCorrespondingSourceObject: {fileID: 3008853980262503059, guid: e4dae9dd9bf98ff4bb16440d6ebec43e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1518317765}
+    - targetCorrespondingSourceObject: {fileID: 8903357829569680248, guid: e4dae9dd9bf98ff4bb16440d6ebec43e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1518317766}
   m_SourcePrefab: {fileID: 100100000, guid: e4dae9dd9bf98ff4bb16440d6ebec43e, type: 3}
+--- !u!1 &1518317761 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3922557916846617685, guid: e4dae9dd9bf98ff4bb16440d6ebec43e, type: 3}
+  m_PrefabInstance: {fileID: 1518317760}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1518317762 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3008853980262503059, guid: e4dae9dd9bf98ff4bb16440d6ebec43e, type: 3}
+  m_PrefabInstance: {fileID: 1518317760}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1518317763 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8903357829569680248, guid: e4dae9dd9bf98ff4bb16440d6ebec43e, type: 3}
+  m_PrefabInstance: {fileID: 1518317760}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1518317764
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1518317761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 736303600ca5d0e47ba40d0163c7467f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Audio.SfxUiFeedback
+  _clickId: 1
+--- !u!114 &1518317765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1518317762}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 736303600ca5d0e47ba40d0163c7467f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Audio.SfxUiFeedback
+  _clickId: 1
+--- !u!114 &1518317766
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1518317763}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 736303600ca5d0e47ba40d0163c7467f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Audio.SfxUiFeedback
+  _clickId: 1
 --- !u!1 &1518550646
 GameObject:
   m_ObjectHideFlags: 0
@@ -240180,6 +240251,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Audio.WorldSfxPresentation
   _kind: 2
   _subject: {fileID: 1675691045}
+  _ambientSoundId: 0
   _motion: {fileID: 0}
   _stones: []
 --- !u!114 &1675691043
@@ -258949,6 +259021,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Herbalist.Audio.WorldSfxPresentation
   _kind: 3
   _subject: {fileID: 1740355059}
+  _ambientSoundId: 0
   _motion: {fileID: 1574169091}
   _stones: []
 --- !u!114 &1740355058

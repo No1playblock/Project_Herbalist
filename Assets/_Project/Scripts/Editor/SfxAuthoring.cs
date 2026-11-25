@@ -39,7 +39,7 @@ namespace Herbalist.Editor
             EditorSceneManager.MarkSceneDirty(scene);
         }
         [MenuItem("Tools/Herbalist/Audio/Apply SFX Catalog And Presenters")]
-        public static void ApplyMenu() => Debug.Log(Apply());
+        public static void ApplyMenu() => Debug.Log(Apply(false));
         public static void ApplyBatch()
         {
             try { Debug.Log(Apply(false)); }
@@ -57,7 +57,7 @@ namespace Herbalist.Editor
                 File.WriteAllText("Temp/SfxIntegration/progress.log", "Building catalog\n");
                 if (rebuildCatalog) BuildCatalog();
                 else _catalog = AssetDatabase.LoadAssetAtPath<SfxCatalog>(CatalogPath);
-                if (_catalog == null || _catalog.sounds.Length != 57) throw new Exception("Build the complete 57-ID SFX catalog first");
+                if (_catalog == null || _catalog.sounds.Length < 57) throw new Exception("Build the complete 57-ID SFX catalog first");
                 File.AppendAllText("Temp/SfxIntegration/progress.log", "Catalog ready\n");
                 foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/_Project/Prefabs" }))
                 {
@@ -135,7 +135,8 @@ namespace Herbalist.Editor
                 if (surface != null) continue;
                 string n = AnimationUtility.CalculateTransformPath(c.transform, root.transform).ToLowerInvariant();
                 SfxSurfaceKind kind = c is TerrainCollider || n.Contains("grass") ? SfxSurfaceKind.Grass :
-                    n.Contains("mush") || n.Contains("musroom") || n.Contains("branch") || n.Contains("leaf") || n.Contains("raft") || n.Contains("deck") || n.Contains("platform") || n.Contains("wood") ? SfxSurfaceKind.Wood :
+                    n.Contains("mush") || n.Contains("musroom") ? SfxSurfaceKind.Mushroom :
+                    n.Contains("branch") || n.Contains("leaf") || n.Contains("raft") || n.Contains("deck") || n.Contains("platform") || n.Contains("wood") ? SfxSurfaceKind.Wood :
                     n.Contains("tree") || n.Contains("root") || n.Contains("seonang") ? SfxSurfaceKind.Bark : SfxSurfaceKind.Dirt;
                 surface = c.gameObject.AddComponent<SfxSurface>(); Int(surface, "_kind", (int)kind); changed = true;
             }

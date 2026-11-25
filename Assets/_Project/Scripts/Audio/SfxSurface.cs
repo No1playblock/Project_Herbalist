@@ -1,7 +1,7 @@
 using UnityEngine;
 namespace Herbalist.Audio
 {
-    public enum SfxSurfaceKind { Dirt, Grass, Wood, Bark }
+    public enum SfxSurfaceKind { Dirt, Grass, Wood, Bark, Mushroom, Leaf }
     public sealed class SfxSurface : MonoBehaviour
     {
         [SerializeField] private SfxSurfaceKind _kind;

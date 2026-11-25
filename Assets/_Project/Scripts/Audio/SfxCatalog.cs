@@ -30,6 +30,14 @@ namespace Herbalist.Audio
         [Header("Presentation tuning")]
         [Tooltip("Shared walking sound for every ground surface.")]
         public int footstepSoundId = 10;
+        public int mushroomLandingSoundId = 60;
+        public int leafLandingSoundId = 61;
+        public int clothWindSoundId = 64;
+        public int launchCountdownSoundId = 65;
+        public string quietStageScene = "Stage_03_";
+        [Range(0, 1)] public float quietStageGain = .15f;
+        public int quietStageExemptSoundId = 49;
+        [Min(.001f)] public float inletContactRadius = .12f;
         public bool fallingWindEnabled;
         [HideInInspector, Min(.05f)] public float stepDistanceInHeights = .4f; // Legacy serialized compatibility.
         [Tooltip("Foot sole distance from ground, relative to controller height, for a footfall.")]
