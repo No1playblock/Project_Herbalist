@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Herbalist.Audio
 {
-    public enum SfxWorldKind { Leaf, Water, JumpPad, Cloth, Maze, Descent, BranchRide, AltarRing, Altar }
+    public enum SfxWorldKind { Leaf, Water, JumpPad, Cloth, Maze, Descent, BranchRide, AltarRing, Altar, Ambient }
 
     [DefaultExecutionOrder(240)]
     [RequireComponent(typeof(SfxEmitter))]
@@ -13,9 +13,11 @@ namespace Herbalist.Audio
     {
         [SerializeField] private SfxWorldKind _kind;
         [SerializeField] private Component _subject;
+        [SerializeField] private int _ambientSoundId;
         [SerializeField] private Transform _motion;
         [SerializeField] private Transform[] _stones = System.Array.Empty<Transform>();
         private SfxEmitter _emitter;
+        private readonly Collider[] _inletContacts = new Collider[16];
         private bool _initialized, _impact, _placed, _exit, _blocked;
         private float _charge, _flight, _clock, _angle;
         private int _phase, _branches;
@@ -36,6 +38,7 @@ namespace Herbalist.Audio
             if (GameplayPause.IsPaused) return;
             switch (_kind)
             {
+                case SfxWorldKind.Ambient: _emitter.SetLoop(_ambientSoundId, _subject.gameObject.activeInHierarchy, 1, transform.position); break;
                 case SfxWorldKind.Leaf: Leaf((LeafProjectile)_subject); break;
                 case SfxWorldKind.Water: Water((SapDeposit)_subject); break;
                 case SfxWorldKind.JumpPad: Pad((ExteriorJumpPad)_subject); break;
@@ -64,15 +67,28 @@ namespace Herbalist.Audio
         }
         private void Water(SapDeposit water)
         {
-            _emitter.SetLoop(31, water.HasStream && !water.HoseRetracting);
-            if (water.HoseImpact && !_impact) _emitter.PlayAt(32, water.StreamEnd);
-            if (water.IsPlaced && !_placed) _emitter.Play(32);
-            _impact = water.HoseImpact; _placed = water.IsPlaced;
+            bool streaming = water.HasStream && !water.HoseRetracting;
+            bool inlet = false;
+            if (streaming && water.HoseStream && !water.HoseImpact)
+            {
+                int count = Physics.OverlapSphereNonAlloc(water.StreamEnd, _emitter.Catalog.inletContactRadius,
+                    _inletContacts, water.Settings.collisionMask, QueryTriggerInteraction.Ignore);
+                for (int i = 0; i < count; i++)
+                {
+                    var port = _inletContacts[i].GetComponentInParent<SapInjectionPort>();
+                    if (port != null && port.isActiveAndEnabled) { inlet = true; break; }
+                }
+            }
+            _emitter.SetLoop(31, streaming);
+            bool contact = streaming && (inlet || water.HoseImpact);
+            if (contact && !_impact) _emitter.PlayAt(32, water.StreamEnd);
+            if (water.IsPlaced && !water.IsHoseMark && !_placed) _emitter.Play(32);
+            _impact = contact; _placed = water.IsPlaced;
         }
         private void Pad(ExteriorJumpPad pad)
         {
             float charge = pad.ChargeFraction, flight = pad.PresentationFlight;
-            if (_initialized && charge > _charge && flight <= 0) _emitter.Play(39);
+            // Inlet flow follows the replicated water endpoint in Water(), including tree inlets.
             if (_initialized && flight > 0 && _flight <= 0)
             {
                 _emitter.Play(40);
@@ -83,9 +99,9 @@ namespace Herbalist.Audio
         private void Cloth()
         {
             if (_motion == null) return;
-            if (_initialized && Time.deltaTime > 0 &&
-                Vector3.Distance(_motion.position, _position) / Time.deltaTime > _emitter.Catalog.clothMotionThreshold)
-                _emitter.PlayAt(38, _motion.position);
+            // Only intentional local rider input is audible: lowering and passive sway are silent.
+            bool driven = _subject is HangingCloth cloth && cloth.LocalRiderHasDirectionalInput;
+            _emitter.SetLoop(_emitter.Catalog.clothWindSoundId, driven, 1, _motion.position);
             _position = _motion.position;
         }
         private void Maze(SapMazeBoard board)
@@ -94,15 +110,16 @@ namespace Herbalist.Audio
                 Vector2.Distance(board.SapPosition, _mazePosition) > _emitter.Catalog.movementThreshold * Time.deltaTime;
             Vector3 point = _motion != null ? _motion.position : transform.position;
             _emitter.SetLoop(42, moving, 1, point);
-            if (board.Active && board.AnyLeak) _emitter.PlayAt(44, point);
+            _emitter.SetLoop(44, board.Active && board.State.Phase == MazePhase.Running && board.AnyLeak, 1, point);
             _mazePosition = board.SapPosition;
         }
         private void Descent(DescendingMazeFlow flow)
         {
             int phase = flow.PresentationPhase;
             Vector3 point = _motion != null ? _motion.position : transform.position;
-            if (_initialized && phase == 2 && _phase != 2) { _emitter.PlayAt(45, point); _emitter.PlayAt(46, point); }
-            if (_initialized && _phase == 2 && phase != 2) _emitter.PlayAt(47, point);
+            _emitter.SetLoop(45, phase == 2, 1, point);
+            if (_initialized && phase == 2 && _phase != 2) _emitter.PlayAt(46, point);
+            // Arrival cue removed at the user's request.
             _phase = phase;
         }
         private void Branch(BranchRideFlow flow)

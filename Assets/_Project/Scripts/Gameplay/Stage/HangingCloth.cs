@@ -238,6 +238,17 @@ namespace Herbalist.Levels
             => Online ? (Rider0 == actor.Slot ? 0 : Rider1 == actor.Slot ? 1 : -1) :
                         (_riders[0] == actor ? 0 : _riders[1] == actor ? 1 : -1);
 
+        public bool LocalRiderHasDirectionalInput
+        {
+            get
+            {
+                if (_waterDriven && !_allowRiderDriveWithWater) return false;
+                foreach (var actor in StageActor.All)
+                    if (actor.Local && RiderSide(actor) == 0 && RemainingGrab(0) <= 0f)
+                        return actor.GetComponent<PlayerController>().Input.Move.sqrMagnitude > .25f;
+                return false;
+            }
+        }
         private float RemainingGrab(int side) => (Online ? GrabRemaining : _grabRemaining)[side];
 
         private static HangingCloth FindRiderCloth(StageActor actor, out float remaining)

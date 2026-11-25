@@ -37,6 +37,7 @@ namespace Herbalist.GameUI
         [SerializeField] private VideoPlayer _videoPlayer;
         [SerializeField] private Button _closeButton;
         [SerializeField, Min(0)] private float _closeDelay = .2f;
+        [SerializeField] private int _dismissSoundId = 1;
         [SerializeField] private Trigger _trigger;
         [SerializeField] private DescendingMazeFlow _mazeFlow;
         [SerializeField] private StageNarrativePresenter _stageOneNarrative;
@@ -153,7 +154,10 @@ namespace Herbalist.GameUI
 
         private void Dismiss()
         {
-            _closeAt ??= Time.unscaledTimeAsDouble + _closeDelay;
+            if (_closeAt.HasValue) return;
+            if (_closeButton.GetComponent<Herbalist.Audio.SfxUiFeedback>() == null)
+                Herbalist.Audio.SfxEmitter.ScenePool?.Play(_dismissSoundId);
+            _closeAt = Time.unscaledTimeAsDouble + _closeDelay;
         }
 
         private void Hide()

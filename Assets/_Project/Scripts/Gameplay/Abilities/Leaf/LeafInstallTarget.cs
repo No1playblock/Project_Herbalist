@@ -96,7 +96,7 @@ namespace Herbalist.Abilities
                 if (_installSplash != null)
                 {
                     _installSplash.Play(true);
-                    Herbalist.Audio.SfxEmitter.ScenePool?.PlayAt(32, SocketPosition);
+                    // Leaf attachment keeps its own sound; this particle effect adds no water cue.
                 }
             }
         }

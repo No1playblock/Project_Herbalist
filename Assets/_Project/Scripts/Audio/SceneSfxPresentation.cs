@@ -15,6 +15,7 @@ namespace Herbalist.Audio
         private StageMinigameKind _minigame;
         private uint _result;
         private int _members, _choice = -1;
+        private int _lastCountdownSecond;
         private bool _ready, _initialized;
         private PlayerHud[] _huds;
         private bool[] _help;
@@ -28,6 +29,10 @@ namespace Herbalist.Audio
         private void LateUpdate()
         {
             _emitter.SetLoop(37, _forestAmbience);
+            int countdownSecond = ExteriorJumpPad.TryGetLaunchCountdown(out float remaining) ? Mathf.CeilToInt(remaining) : 0;
+            if (countdownSecond > 0 && countdownSecond != _lastCountdownSecond)
+                _emitter.Play(_emitter.Catalog.launchCountdownSoundId);
+            _lastCountdownSecond = countdownSecond;
             var session = FusionLobbySession.Instance;
             int members = session != null ? session.ConnectedCount : 0;
             var room = RoomControl.Instance;
@@ -43,7 +48,7 @@ namespace Herbalist.Audio
             if (_huds != null) for (int i = 0; i < _huds.Length; i++)
             {
                 bool visible = _huds[i] != null && _huds[i].helpPanel != null && _huds[i].helpPanel.activeInHierarchy;
-                if (visible && !_help[i]) _emitter.Play(8);
+                // Ctrl help is intentionally silent; its chime is used by recovery (59).
                 _help[i] = visible;
             }
             var flow = StageOneFlow.Instance;
