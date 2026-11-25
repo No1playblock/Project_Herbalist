@@ -3,6 +3,7 @@ using Herbalist.StageOne;
 using Herbalist.Networking;
 using Herbalist.Abilities;
 using Herbalist.GameUI;
+using Herbalist.Presentation;
 using UnityEngine.SceneManagement;
 namespace Herbalist.Levels
 {
@@ -25,18 +26,39 @@ namespace Herbalist.Levels
                 return session.State == LobbyState.Loading;
             }
             if (_loading) return false;
-            foreach (var actor in StageActor.All) if (actor.Local) { _offlineUnlocked = actor.Abilities.Unlocked; _offlineKind = actor.Abilities.Kind; _offlineBothUnlocked = actor.Abilities.OfflineBothUnlocked; break; }
+            var clip = StageCinematicClip.StageTwoExit;
+            foreach (var actor in StageActor.All)
+            {
+                if (!actor.Local) continue;
+                _offlineUnlocked = actor.Abilities.Unlocked;
+                _offlineKind = actor.Abilities.Kind;
+                _offlineBothUnlocked = actor.Abilities.OfflineBothUnlocked;
+                if (StageOneFlow.Instance is { } stageOne)
+                {
+                    bool sodamHasSap = (stageOne.RoleFor(actor) == CharacterRole.Sodam) ==
+                        (_offlineKind == PlayerAbilityKind.Sap);
+                    clip = sodamHasSap ? StageCinematicClip.SodamSap : StageCinematicClip.DuyeongSap;
+                }
+                break;
+            }
             _loading = true;
             string destination = level.nextScenePath;
             string cinematic = level.OfflineCinematicScenePath;
-            if (string.IsNullOrEmpty(cinematic) || SceneUtility.GetBuildIndexByScenePath(cinematic) < 0)
+            if (!TryPlayOfflineCinematic(cinematic, destination, clip))
                 SceneManager.LoadSceneAsync(destination);
-            else
-                SceneManager.LoadSceneAsync(cinematic).completed += _ => PlayOfflineCinematic(destination);
             return true;
         }
 
-        private static void PlayOfflineCinematic(string destination)
+        internal static bool TryPlayOfflineCinematic(string cinematic, string destination, StageCinematicClip clip)
+        {
+            if (string.IsNullOrEmpty(cinematic) || SceneUtility.GetBuildIndexByScenePath(cinematic) < 0 ||
+                SceneUtility.GetBuildIndexByScenePath(destination) < 0)
+                return false;
+            SceneManager.LoadSceneAsync(cinematic).completed += _ => PlayOfflineCinematic(destination, clip);
+            return true;
+        }
+
+        private static void PlayOfflineCinematic(string destination, StageCinematicClip clip)
         {
             var view = Object.FindAnyObjectByType<StageCinematicView>();
             if (view == null)
@@ -45,8 +67,14 @@ namespace Herbalist.Levels
                 return;
             }
 
-            view.Prepare(StageCinematicClip.StageTwoExit, view.Play, null,
-                () => SceneManager.LoadSceneAsync(destination));
+            AsyncOperation preload = null;
+            view.Prepare(clip, () =>
+            {
+                // Keep the cinematic scene alive while Unity reads the next scene.
+                preload = SceneManager.LoadSceneAsync(destination, LoadSceneMode.Single);
+                preload.allowSceneActivation = false;
+                view.Play();
+            }, null, () => preload.allowSceneActivation = true);
         }
         public static void RestoreOffline(PlayerAbilityController ability)
         {

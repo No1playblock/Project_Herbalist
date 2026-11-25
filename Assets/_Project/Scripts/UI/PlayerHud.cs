@@ -46,6 +46,11 @@ namespace Herbalist.GameUI
         private float _feedbackMotionElapsed;
         private bool _feedbackEntering, _feedbackExiting;
         private const float FeedbackSlideDuration = .3f;
+        // Fractions of the scroll artwork inside its rolled ends and horizontal borders.
+        private const float FeedbackClothWidth = .86f;
+        private const float FeedbackClothHeight = .22f;
+        private string _measuredFeedback;
+        private float _measuredFeedbackWidth;
         private uint _abilityFeedback;
         private uint _minigameResult;
         private StageNarrativePresenter _narrative;
@@ -54,6 +59,9 @@ namespace Herbalist.GameUI
         [SerializeField] private RectTransform _questPanel;
         [SerializeField] private RectTransform[] _questLayoutTargets = System.Array.Empty<RectTransform>();
         [SerializeField, Min(0)] private float _questRightMargin = 24f;
+        [SerializeField, Range(.1f, .9f)] private float _splitQuestWidth = .42f;
+        [SerializeField, Range(0f, .1f)] private float _splitQuestRightInset = .03f;
+        [SerializeField, Range(0f, .5f)] private float _splitQuestTopInset = .18f;
         private Vector3[] _questOriginalPositions;
         private static Texture2D _softQuestBackdropTexture;
 
@@ -70,8 +78,8 @@ namespace Herbalist.GameUI
                 feedback.fontSize = 18f;
                 feedback.fontSizeMax = 18f;
                 feedback.fontSizeMin = 12f;
-                feedback.textWrappingMode = TextWrappingModes.NoWrap;
-                feedback.overflowMode = TextOverflowModes.Overflow;
+                feedback.textWrappingMode = TextWrappingModes.Normal;
+                feedback.overflowMode = TextOverflowModes.Ellipsis;
                 feedback.color = new Color(.24f, .16f, .09f, 1f);
                 if (_feedbackScroll != null)
                 {
@@ -86,13 +94,13 @@ namespace Herbalist.GameUI
                 _feedbackRect.anchoredPosition = _feedbackHiddenPosition;
                 feedback.text = string.Empty;
             }
-            ApplyQuestTrackerStyle();
+            ApplyQuestTrackerStyle(screen != null && screen.IsSplitVisible);
             _questOriginalPositions = new Vector3[_questLayoutTargets.Length];
             for (int i = 0; i < _questLayoutTargets.Length; i++)
                 if (_questLayoutTargets[i] != null) _questOriginalPositions[i] = _questLayoutTargets[i].anchoredPosition3D;
         }
 
-        private void ApplyQuestTrackerStyle()
+        private void ApplyQuestTrackerStyle(bool split)
         {
             if (_questPanel == null || _questLayoutTargets == null || _questLayoutTargets.Length < 2) return;
 
@@ -105,10 +113,10 @@ namespace Herbalist.GameUI
                 float scale = canvas != null ? Mathf.Max(.001f, canvas.scaleFactor) : 1f;
                 viewport = new Vector2(Screen.width / scale, Screen.height / scale);
             }
-            float width = viewport.x * .26f;
+            float width = viewport.x * (split ? _splitQuestWidth : .26f);
             float height = viewport.y * .09f;
-            float rightMargin = viewport.x * .02f;
-            float topMargin = viewport.y * .21f;
+            float rightMargin = viewport.x * (split ? _splitQuestRightInset : .02f);
+            float topMargin = viewport.y * (split ? _splitQuestTopInset : .21f);
             ConfigureQuestRoot(_questPanel, width, height, rightMargin, topMargin);
             ConfigureQuestRoot(content, width, height, rightMargin, topMargin);
             _questRightMargin = rightMargin;
@@ -333,11 +341,13 @@ namespace Herbalist.GameUI
         {
             _contextHintCandidateSeenThisFrame = false;
             var rootRect = transform as RectTransform;
+            bool split = screen != null && screen.IsSplitVisible;
             if (rootRect != null && _questPanel != null && rootRect.rect.width > 0f && rootRect.rect.height > 0f &&
-                (Mathf.Abs(_questPanel.sizeDelta.x - rootRect.rect.width * .26f) > 1f || Mathf.Abs(_questPanel.sizeDelta.y - rootRect.rect.height * .09f) > 1f))
-                ApplyQuestTrackerStyle();
-            PositionQuestPanel((RectTransform)transform, _questPanel, _questLayoutTargets,
-                _questOriginalPositions, screen != null && screen.IsSplitVisible, _questRightMargin);
+                (Mathf.Abs(_questPanel.sizeDelta.x - rootRect.rect.width * (split ? _splitQuestWidth : .26f)) > 1f ||
+                 Mathf.Abs(_questPanel.sizeDelta.y - rootRect.rect.height * .09f) > 1f ||
+                 Mathf.Abs(_questPanel.anchoredPosition.y + rootRect.rect.height * (split ? _splitQuestTopInset : .21f)) > 1f))
+                ApplyQuestTrackerStyle(split);
+            PositionQuestPanel(rootRect, _questPanel, _questLayoutTargets, _questOriginalPositions, split, _questRightMargin);
             var view=screen!=null?screen.ViewForSlot(slot):null;
             if(view==null)
             {
@@ -360,7 +370,7 @@ namespace Herbalist.GameUI
             bool local=player.LocallyControlled;
             if (_stagePlaytestHud == null) _stagePlaytestHud = FindFirstObjectByType<StagePlaytestHud>();
             bool showContextHints = _stagePlaytestHud == null || !_stagePlaytestHud.GuideActive;
-            PresentQuest(local || (screen != null && screen.IsSplitVisible));
+            PresentQuest(local || split);
             PresentNavigation(local, view.Camera);
             var maze = SapMazeBoard.LocalMazeView;
             bool mazeView = maze != null && maze.IsViewedBy(view);
@@ -542,14 +552,18 @@ namespace Herbalist.GameUI
         private void PresentFeedback(bool shouldShow)
         {
             if (feedback == null || _feedbackRect == null) return;
-            UpdateFeedbackLayout();
             string nextMessage = shouldShow ? previousFeedback : string.Empty;
+            bool startsNewMessage = !string.IsNullOrEmpty(nextMessage) && nextMessage != _displayedFeedback;
+            if (startsNewMessage)
+            {
+                _displayedFeedback = nextMessage;
+                feedback.text = nextMessage;
+            }
+            UpdateFeedbackLayout();
             if (!string.IsNullOrEmpty(nextMessage))
             {
-                if (nextMessage != _displayedFeedback)
+                if (startsNewMessage)
                 {
-                    _displayedFeedback = nextMessage;
-                    feedback.text = nextMessage;
                     _feedbackRect.anchoredPosition = _feedbackHiddenPosition;
                     _feedbackEnterStart = _feedbackHiddenPosition;
                     _feedbackMotionElapsed = 0f;
@@ -594,6 +608,8 @@ namespace Herbalist.GameUI
                     _feedbackExiting = false;
                 }
             }
+            else if (!string.IsNullOrEmpty(_displayedFeedback))
+                _feedbackRect.anchoredPosition = _feedbackShownPosition;
 
             if (_feedbackScroll != null)
             {
@@ -614,23 +630,32 @@ namespace Herbalist.GameUI
             _questPanel.GetWorldCorners(corners);
             Vector3 bottomLeft = parent.InverseTransformPoint(corners[0]);
             Vector3 bottomRight = parent.InverseTransformPoint(corners[3]);
-            float width = Mathf.Max(1f, bottomRight.x - bottomLeft.x);
-            const float feedbackTextSideInset = 24f;
-            _feedbackRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,
-                Mathf.Max(1f, width - feedbackTextSideInset * 2f));
-            if (_feedbackScroll != null)
+            float scrollWidth = Mathf.Min(Mathf.Max(320f, bottomRight.x - bottomLeft.x + 88f),
+                Mathf.Max(1f, parent.rect.width - 24f));
+            float textWidth = scrollWidth * FeedbackClothWidth;
+            if (_measuredFeedback != _displayedFeedback || !Mathf.Approximately(_measuredFeedbackWidth, textWidth))
             {
-                RectTransform scrollRect = _feedbackScroll.rectTransform;
-                scrollRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width + 88f);
-                scrollRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
-                    Mathf.Max(90f, _feedbackRect.rect.height * 1.8f));
+                _measuredFeedback = _displayedFeedback;
+                _measuredFeedbackWidth = textWidth;
+                float preferredHeight = feedback.GetPreferredValues(_displayedFeedback, textWidth, Mathf.Infinity).y;
+                float textHeight = Mathf.Clamp(Mathf.Ceil(preferredHeight) + 4f, 24f, 84f);
+                _feedbackRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, textWidth);
+                _feedbackRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, textHeight);
+                if (_feedbackScroll != null)
+                {
+                    RectTransform scrollRect = _feedbackScroll.rectTransform;
+                    scrollRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, scrollWidth);
+                    scrollRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, textHeight / FeedbackClothHeight);
+                }
             }
 
+            float halfScrollWidth = scrollWidth * .5f;
+            float centerX = Mathf.Clamp((bottomLeft.x + bottomRight.x) * .5f,
+                parent.rect.xMin + halfScrollWidth, parent.rect.xMax - halfScrollWidth);
             _feedbackShownPosition = new Vector2(
-                (bottomLeft.x + bottomRight.x) * .5f,
-                bottomLeft.y - 10f - _feedbackRect.rect.height * .5f);
+                centerX, bottomLeft.y - 10f - _feedbackRect.rect.height * .65f);
             _feedbackHiddenPosition = new Vector2(
-                parent.rect.xMax + _feedbackRect.rect.width * .5f + 32f,
+                parent.rect.xMax + halfScrollWidth + 32f,
                 _feedbackShownPosition.y);
         }
 

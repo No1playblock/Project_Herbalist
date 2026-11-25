@@ -27,6 +27,8 @@ namespace Herbalist.Networking
         public event Action Changed;
         private NetworkRunner runner;
         public NetworkRunner Runner => runner;
+        internal string OpeningCinematicScene(string destination) =>
+            destination == settings.playScenePath ? settings.stageOneCinematicScenePath : null;
         private bool connecting, stopping, loadRequested, started;
         private CancellationTokenSource cancellation;
         private struct StagePlayerState { public int Slot; public Herbalist.Abilities.PlayerAbilityKind? Ability; }

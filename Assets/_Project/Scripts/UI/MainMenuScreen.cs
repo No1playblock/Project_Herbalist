@@ -101,7 +101,9 @@ namespace Herbalist.GameUI
         {
             if(Session.HasNetworkSession || soloLoading)return;
             soloLoading=true; loading.SetActive(true);
-            UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(settings.soloScene);
+            if (!Herbalist.Levels.StageTransition.TryPlayOfflineCinematic(
+                    Session.OpeningCinematicScene(settings.soloScene), settings.soloScene, StageCinematicClip.Opening))
+                UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(settings.soloScene);
         }
         private void Update()
         {

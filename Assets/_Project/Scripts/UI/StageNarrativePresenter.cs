@@ -49,12 +49,13 @@ namespace Herbalist.GameUI
         private Vector3[] _questOriginalPositions;
         private RectTransform[] _questLayoutTargets;
         private PlayScreenController _screen;
+        private bool _sharedQuestHiddenForSplit;
         public string MainQuestText => _mainQuest != null ? _mainQuest.text : string.Empty;
         public bool InlineQuestCount { get; private set; }
         public bool ParenthesizeQuestCount { get; private set; }
         public bool ShowQuestCount { get; private set; } = true;
         public string DetailQuestText => _subQuest != null && _subQuest.gameObject.activeSelf ? _subQuest.text : string.Empty;
-        public bool QuestVisible => _mainQuest != null && _mainQuest.transform.parent.gameObject.activeSelf;
+        public bool QuestVisible => _questRoot != null && (_sharedQuestHiddenForSplit || _questRoot.gameObject.activeSelf);
         public bool TryNavigationTarget(out Vector3 point, out string label)
         {
             point = default;
@@ -85,8 +86,18 @@ namespace Herbalist.GameUI
 
         private void LateUpdate()
         {
-            PlayerHud.PositionQuestPanel((RectTransform)_questRoot.parent, _questRoot, _questLayoutTargets,
-                _questOriginalPositions, _screen != null && _screen.IsSplitVisible, _questRightMargin);
+            bool split = _screen != null && _screen.IsSplitVisible;
+            if (split && _questRoot.gameObject.activeSelf)
+            {
+                _sharedQuestHiddenForSplit = true;
+                _questRoot.gameObject.SetActive(false);
+            }
+            else if (!split)
+            {
+                RestoreSharedQuest();
+                PlayerHud.PositionQuestPanel((RectTransform)_questRoot.parent, _questRoot, _questLayoutTargets,
+                    _questOriginalPositions, false, _questRightMargin);
+            }
             if (GameplayPause.IsPaused || _text == null)
                 return;
             var actor = StageActor.All.FirstOrDefault(a => a.Local);
@@ -112,6 +123,15 @@ namespace Herbalist.GameUI
             else if (_ride != null)
                 StageThree(actor);
             RangeDialogue(actor);
+        }
+
+        private void OnDisable() => RestoreSharedQuest();
+
+        private void RestoreSharedQuest()
+        {
+            if (!_sharedQuestHiddenForSplit) return;
+            _sharedQuestHiddenForSplit = false;
+            if (_questRoot != null) _questRoot.gameObject.SetActive(true);
         }
 
         private void Quest(string main, string detail = null, int count = -1, bool showCount = true)
