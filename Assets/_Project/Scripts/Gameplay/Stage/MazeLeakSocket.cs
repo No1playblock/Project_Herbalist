@@ -5,11 +5,14 @@ namespace Herbalist.Levels
     public sealed class MazeLeakSocket : MonoBehaviour
     {
         [SerializeField] private LeafInstallTarget _target;
+        [Tooltip("Fluid-side leak position relative to this rear-side target.")]
+        [SerializeField] private Vector3 _flowOffset;
         [SerializeField] private GameObject _wetSurface;
         [SerializeField] private GameObject _stream;
         [SerializeField] private GameObject _approachSplash;
         [SerializeField, Min(0f)] private float _approachDistance = 3f;
         public LeafInstallTarget Target => _target;
+        public Vector3 FlowPosition => transform.TransformPoint(_flowOffset);
         public bool Blocked => _target != null && _target.HasLeaf;
         public void Present(bool leaking, float sapDistance = float.PositiveInfinity)
         {

@@ -144,22 +144,11 @@ namespace Herbalist.Levels
             _surfaceLeaks=new Vector2[_leaks.Length];
             for(int i=0;i<_leaks.Length;i++)
             {
-                var marker=_leaks[i]!=null?_leaks[i].transform:null;
+                var leak=_leaks[i];
                 var fallback=_definition.leakNodes!=null && i<_definition.leakNodes.Length ?
                     _definition.nodes[_definition.leakNodes[i]] : Vector2.zero;
-                _surfaceLeaks[i]=ResolvePlacement(marker,fallback,"leak " + (i+1));
-                if(_leaks[i]!=null && _leaks[i].Target!=null)
-                {
-                    var target=_leaks[i].Target.transform;
-                    var socket=_leaks[i].Target.Socket;
-                    var socketOffset=socket!=null ? socket.position-target.position : Vector3.zero;
-                    var local=transform.InverseTransformPoint(target.position);
-                    target.position=transform.TransformPoint(new Vector3(_surfaceLeaks[i].x,_surfaceLeaks[i].y,local.z));
-                    if(socket!=null)
-                    {
-                        socket.position=target.position+socketOffset;
-                    }
-                }
+                _surfaceLeaks[i]=ResolvePlacement(leak!=null?leak.transform:null,fallback,
+                    "leak " + (i+1),leak!=null?leak.FlowPosition:(Vector3?)null);
             }
             _surfaceRefills=new Vector2[_refillMarkers!=null?_refillMarkers.Length:0];
             for(int i=0;i<_surfaceRefills.Length;i++)
@@ -171,10 +160,10 @@ namespace Herbalist.Levels
             if(!_surface.TryFindPath(_surfaceStart,_surfaceGoal,route))
                 Debug.LogError("Maze surface has no route from start to goal: " + name, this);
         }
-        private Vector2 ResolvePlacement(Transform marker,Vector2 fallback,string label)
+        private Vector2 ResolvePlacement(Transform marker,Vector2 fallback,string label,Vector3? worldPosition=null)
         {
             if(marker==null)return _surface.Snap(fallback);
-            var local=transform.InverseTransformPoint(marker.position);
+            var local=transform.InverseTransformPoint(worldPosition ?? marker.position);
             var placed=new Vector2(local.x,local.y);
             var snapped=_surface.Snap(placed);
             if(Vector2.Distance(placed,snapped)>_placementWarningDistance)
@@ -192,22 +181,26 @@ namespace Herbalist.Levels
             DrawPlacementWarning(_goalMarker,"Goal");
             if(_leaks==null)return;
             for(int i=0;i<_leaks.Length;i++)
-                DrawPlacementWarning(_leaks[i]!=null?_leaks[i].transform:null,"Leak " + (i+1));
+            {
+                var leak=_leaks[i];
+                if(leak!=null)DrawPlacementWarning(leak.transform,"Leak " + (i+1),leak.FlowPosition);
+            }
             if(_refillMarkers!=null)
                 for(int i=0;i<_refillMarkers.Length;i++)
                     DrawPlacementWarning(_refillMarkers[i],"Refill " + (i+1));
         }
-        private void DrawPlacementWarning(Transform marker,string label)
+        private void DrawPlacementWarning(Transform marker,string label,Vector3? worldPosition=null)
         {
             if(marker==null)return;
-            var local=transform.InverseTransformPoint(marker.position);
+            var placedWorld=worldPosition ?? marker.position;
+            var local=transform.InverseTransformPoint(placedWorld);
             var placed=new Vector2(local.x,local.y);
             var snapped=_surface.Snap(placed);
             var distance=Vector2.Distance(placed,snapped);
             if(distance<=_placementWarningDistance)return;
             var corrected=transform.TransformPoint(new Vector3(snapped.x,snapped.y,local.z));
             Gizmos.color=Color.yellow;
-            Gizmos.DrawLine(marker.position,corrected);
+            Gizmos.DrawLine(placedWorld,corrected);
             Gizmos.DrawWireSphere(corrected,.12f);
             UnityEditor.Handles.color=Color.yellow;
             UnityEditor.Handles.Label(marker.position,label + " outside channel: " + distance.ToString("0.00"));
